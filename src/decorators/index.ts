@@ -1,4 +1,14 @@
 export {
+  AgentEntity,
+  AgentEvent,
+  AgentMethod,
+  Invariant,
+  type AgentEntityOptions,
+  type AgentEventOptions,
+  type AgentMethodOptions,
+  type InvariantOptions,
+} from './domain.js';
+export {
   Registry,
   activeRegistry,
   createRegistry,
