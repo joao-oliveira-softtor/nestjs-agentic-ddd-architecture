@@ -162,7 +162,8 @@ Multi-agente complexo, UI, autenticação/multi-tenancy, múltiplos adapters de 
 | Aprovação humana | `requiresApproval` declarativo → política interna → `ApprovalPort` síncrono. |
 | Eventos × operator | Emissão + eventos no `tool_result`; `reactsTo` fica para o v0.1. |
 | Local dos gerados | Bloco gerado no `AGENTS.md`; `.agents/skills/` (+ espelho `.claude/skills/`); `.agentic/`; `changes/`. |
-| Declaração primeiro | A pessoa decora o esqueleto (corpos `notImplemented()`); o compilador lista as pendências na skill de dev e o agente de código implementa até o `verify` passar. |
+| Declaração primeiro | O gerente decora o esqueleto (corpos `notImplemented()`, `uses` nos use-cases); skills não têm estado. |
+| Estado do projeto | Grafo de work items calculado sob demanda (`status`, `next` em ondas, `packet`, `verify --item`) para coordenar gerente (Opus/Sonnet) e executores baratos (Haiku). Skill do framework no v0.1. |
 
 ## 9. Decisões abertas
 
