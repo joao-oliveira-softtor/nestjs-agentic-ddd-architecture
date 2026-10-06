@@ -162,6 +162,7 @@ Multi-agente complexo, UI, autenticação/multi-tenancy, múltiplos adapters de 
 | Aprovação humana | `requiresApproval` declarativo → política interna → `ApprovalPort` síncrono. |
 | Eventos × operator | Emissão + eventos no `tool_result`; `reactsTo` fica para o v0.1. |
 | Local dos gerados | Bloco gerado no `AGENTS.md`; `.agents/skills/` (+ espelho `.claude/skills/`); `.agentic/`; `changes/`. |
+| Declaração primeiro | A pessoa decora o esqueleto (corpos `notImplemented()`); o compilador lista as pendências na skill de dev e o agente de código implementa até o `verify` passar. |
 
 ## 9. Decisões abertas
 

@@ -27,6 +27,8 @@ Criação:     código decorado ──▶ documentação gerada ──▶ obriga
 Manutenção:  proposta (changes/) ──▶ código ──▶ compile reconcilia ──▶ verify ──▶ done
 ```
 
+**Declaração primeiro (criação ou manutenção com agente de código):** a pessoa escreve só o **esqueleto declarado** (decorators completos, corpos `notImplemented()`), gera a proposta com `--draft-change`, preenche Motivo e critérios de aceite; o compilador lista as **pendências de implementação** na skill de dev; o agente de código (Claude Code, Codex…) implementa corpos, infraestrutura e testes com `covers` até o `verify` retornar `done`/`needs-human`.
+
 A única documentação escrita à mão é a **proposta de change** (e o texto livre fora do bloco gerado do `AGENTS.md`). Tudo o mais é gerado e nunca editado à mão.
 
 ### 1.2 Sucesso do v0
@@ -57,6 +59,7 @@ proposta de change → código → compile reconcilia → verify = done
 | D11 | Aprovação humana | `requiresApproval` declarativo, normalizado para política interna `allow/deny/require_approval`, com `ApprovalPort` síncrono. |
 | D12 | Eventos e operator | v0: emissão, eventos no `tool_result` e no trace. **`reactsTo` fica para v0.1** (design na §14.2). |
 | D13 | Local dos gerados | Pasta canônica por público; `AGENTS.md` com bloco gerado entre marcadores; `CLAUDE.md` com `@AGENTS.md`; skills de dev em `.agents/skills/` + espelho `.claude/skills/`; runtime e lock em `.agentic/`; propostas em `changes/`. |
+| D14 | Declaração primeiro | Esqueleto com `notImplemented()` detectado pelo compilador → "Pendências de implementação" na skill de dev + gate G7 no `verify` (§6.6). |
 | — | Já decididos antes | TypeORM, Zod v4, decorators + `reflect-metadata`, licença MIT, Bun + `@nestbun/platform`. |
 
 ---
@@ -113,6 +116,7 @@ O repositório é ao mesmo tempo o framework e o app de exemplo: o `agentic.conf
 | `AggregateRoot<Id>` | `protected record(event)`; `pullEvents(): DomainEvent[]` (retorna e limpa) |
 | `DomainEvent` | `eventId`, `name`, `occurredAt`, `correlationId`, `causationId`, `payload` |
 | `DomainError` | erro de regra de negócio com `code` estável e mensagem acionável |
+| `notImplemented(): never` | lança `NotImplementedError`; marca corpo declarado e ainda não implementado (§6.6) |
 | `UseCase<In, Out>` | `execute(input, ctx): Promise<Out>`; `ctx` carrega `correlationId`/`causationId` e o publicador de eventos |
 | `Repository<T>` (port) | interface por agregado; nenhuma publicação de eventos dentro do repository |
 
@@ -191,11 +195,12 @@ agentic.config.ts ─import─▶ Registry ─▶ IR ─▶ Validação ─▶ D
 
 - mapa: módulos → skill de dev, operators → skill de runtime (só nomes + caminhos);
 - convenções não-óbvias: onde criar entidade/use-case/operator, decorators obrigatórios, IDs estáveis de regra;
-- fluxo obrigatório de mudança: criar proposta em `changes/`, implementar, `compile`, e **"a tarefa só está concluída quando `agentic-ddd verify <change>` retorna `done` ou `needs-human`"**.
+- fluxo obrigatório de mudança: criar proposta em `changes/`, implementar, `compile`, e **"a tarefa só está concluída quando `agentic-ddd verify <change>` retorna `done` ou `needs-human`"**;
+- convenção de esqueleto: corpo declarado e não implementado usa `notImplemented()`; as pendências estão na seção "Pendências de implementação" de cada skill de dev.
 
 **Skill de runtime** (`metadata.audience: runtime`): `description` do operator; para cada use-case permitido: propósito, quando usar / quando não usar, parâmetros, eventos emitidos, se exige aprovação; invariantes e transições relevantes em **tabelas**. `references/tools.schema.json` com os JSON Schemas; `references/state-machine.md` com a tabela `from → to`.
 
-**Skill de dev** (`metadata.audience: dev`): entidades, invariantes (com ID), métodos, eventos, use-cases e operators do módulo, cada item com `source`; seção "Como estender" com o caminho e o decorator de cada tipo de artefato; obrigações de teste (IDs de regra); link para `references/history.md`.
+**Skill de dev** (`metadata.audience: dev`): entidades, invariantes (com ID), métodos, eventos, use-cases e operators do módulo, cada item com `source`; seção "Como estender" com o caminho e o decorator de cada tipo de artefato; seção **"Pendências de implementação"** (§6.6; omitida quando vazia); obrigações de teste (IDs de regra); link para `references/history.md`.
 
 **Frontmatter** (somente campos da especificação agentskills.io):
 
@@ -224,7 +229,7 @@ metadata:
 |---|---|
 | `compile` | valida, reconcilia, escreve tudo; exit 1 em erro |
 | `compile --check [--diff]` | não escreve; exit 1 se algo gerado difere do disco, se há diff de domínio sem change, ou se o change aberto não foi reconciliado. É o que roda no CI |
-| `compile --report` | árvore gerada com ≈tokens por nível (≈ chars/4) × orçamento; avisos de lint; regras sem teste; cobertura registry → skill |
+| `compile --report` | árvore gerada com ≈tokens por nível (≈ chars/4) × orçamento; avisos de lint; regras sem teste; pendências de implementação; cobertura registry → skill |
 | `compile --draft-change <slug>` | cria `changes/NNNN-<slug>/proposal.md` a partir do diff atual, com `origin: code-first` e seção Motivo vazia |
 | `ir` | imprime a IR canônica (depuração) |
 | `verify <NNNN>` | ver §8 |
@@ -235,6 +240,15 @@ metadata:
 - ✱ `SKILL.md` ≤ 500 linhas; referências a no máximo um nível de profundidade.
 - orçamento de ≈tokens: metadados ~100, corpo < 5000.
 - regra de domínio sem nenhum teste com `covers` (ver §8).
+
+### 6.6 Pendências de implementação (fluxo "declaração primeiro")
+
+- **Detecção:** para cada método com `@AgentMethod` e para o `execute` de cada `@AgentUseCase`, o compilador testa `/\bnotImplemented\(\)/` sobre `fn.toString()` (verificado no Bun 1.4.2: o corpo transpilado preserva a chamada, inclusive em métodos estáticos e em `return notImplemented()`). Resultado na IR: `implemented: true | false`.
+- `implemented` fica **fora do hash de conteúdo**, como `source`: implementar um corpo não é mudança de regra e não gera diff de domínio.
+- Um esqueleto declarado é válido para o compilador: passa na validação, gera skills e entra no delta da proposta normalmente.
+- **Seção "Pendências de implementação"** na skill de dev, uma linha por elemento com `implemented: false`: ID, `source`, regras (`invariant:`) e transição que ele precisa respeitar, eventos que deve emitir e obrigações de teste.
+- **Limite conhecido:** só a chamada literal `notImplemented()` é reconhecida; corpo vazio sem o helper conta como implementado. A convenção vai documentada no `AGENTS.md` (§6.2).
+- O compilador sabe que **existe** implementação, não que ela está **correta**; correção é provada pelos testes com `covers` e pelos critérios de aceite (§8).
 
 ---
 
@@ -326,12 +340,13 @@ O `verify` roda `bun test --reporter=junit --reporter-outfile=<tmp>` e extrai os
 | G4 Regras | toda regra ADDED/MODIFIED do delta tem ≥1 teste que a cobre e passou; testes de regras MODIFIED são listados como "revisar" (aviso) |
 | G5 Qualidade | os comandos `verify.commands` (typecheck, lint, test) saem com 0; o teste de arquitetura está incluído na suíte |
 | G6 Manual | critérios `manual: true` listados como pendentes |
+| G7 Pendências | nenhum elemento do delta tem `implemented: false`; cada pendência vira finding com `source` |
 
 Saída: JSON em stdout `{ change, status, gates: [{ id, status, findings: [{ message, fix, source? }] }] }` e exit code:
 
-- `done` (0) — G1–G5 passam e não há critério manual;
-- `needs-human` (0) — G1–G5 passam e há critérios manuais;
-- `failed` (1) — qualquer gate G1–G5 falhou. Cada finding traz uma ação concreta (ex.: `"crie um teste com covers(['criterion:0002/rejeita-cancelamento-sem-motivo'], …)"`).
+- `done` (0) — G1–G5 e G7 passam e não há critério manual;
+- `needs-human` (0) — G1–G5 e G7 passam e há critérios manuais;
+- `failed` (1) — qualquer gate G1–G5 ou G7 falhou. Cada finding traz uma ação concreta (ex.: `"crie um teste com covers(['criterion:0002/rejeita-cancelamento-sem-motivo'], …)"`).
 
 ---
 
@@ -443,7 +458,8 @@ Roteirizável e determinístico: recebe uma lista de respostas (ou funções `re
 - Uma fixture por regra de validação, verificando mensagem e `arquivo:linha`.
 - `--check` detecta edição manual em arquivo gerado e no bloco do `AGENTS.md` (e ignora o texto fora do bloco).
 - Diff e reconciliação: fixtures antes/depois para ADDED/MODIFIED/REMOVED, classificação breaking/behavioral/docs, proposta que bate, proposta que diverge, duas propostas abertas.
-- `verify`: proposta com tudo coberto (`done`), com critério manual (`needs-human`), sem teste (`failed` com finding acionável).
+- `verify`: proposta com tudo coberto (`done`), com critério manual (`needs-human`), sem teste (`failed` com finding acionável), com esqueleto `notImplemented()` (`failed` listando pendências no G7).
+- Detecção de pendências: `notImplemented()` em método de instância, estático, com `return` e em `execute` de use-case → `implemented: false`; corpo real → `true`; alternar entre os dois não altera o hash de conteúdo.
 
 ### 12.2 Domínio e runtime
 
@@ -518,6 +534,7 @@ Higiene do repo (Vitest → `bun test`; remover supertest, `@nestjs/platform-exp
 6. Nenhum `@Controller` no repositório.
 7. Teste de arquitetura (§3) passa.
 8. O `AGENTS.md` indica caminho e decorator para criar um novo use-case; verificado por revisão manual e pelo dataset da camada 2 (versionado para o runner do v0.1).
+9. **Declaração primeiro:** uma fixture com o esqueleto declarado do `Order` (corpos `notImplemented()`) compila, gera a seção "Pendências de implementação" na skill de dev (verificada por snapshot) e `verify` retorna `failed` com uma finding G7 por pendência; com os corpos implementados e os testes com `covers`, o mesmo change retorna `done`/`needs-human`.
 
 ---
 
