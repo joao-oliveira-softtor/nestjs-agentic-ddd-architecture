@@ -79,7 +79,7 @@ esqueleto declarado → next (ondas) → packet → verify --item → … → ve
 ```
 src/                              # o framework (futuros pacotes @agentic-ddd/*)
   core/                           # building blocks DDD — sem dependências externas além de zod
-  decorators/                     # @AgentEntity, @AgentMethod, @Invariant, @AgentUseCase, @DomainEvent, @Operator + registry
+  decorators/                     # @AgentEntity, @AgentMethod, @Invariant, @AgentUseCase, @AgentEvent, @Operator + registry
   compiler/                       # IR, validação, lock, diff, changes, renderers
   runtime/                        # LlmPort, FakeLlm, loop do operator, ApprovalPort, EventBus
   nestjs/                         # AgenticModule (integração Nest)
@@ -143,7 +143,7 @@ Todos os decorators **só registram metadados explícitos** no registry. Nenhum 
 | `@AgentEntity` | `description` | `states: string[]` (obrigatório se algum método declarar `transition`) |
 | `@Invariant` (empilhável; na **classe** = garantida na construção/fábrica; num **método** com `@AgentMethod` = garantida por aquele método) | `id` (kebab-case, único na entidade), `text` | — |
 | `@AgentMethod` | `description` | `emits: EventClass[]`, `transition: { from: State[], to: State }` |
-| `@DomainEvent` | `name`, `description`, `payload` (Zod) | — |
+| `@AgentEvent` (o nome do evento é o nome da classe, PascalCase) | `description`, `payload` (Zod) | — |
 | `@AgentUseCase` | `name` (snake_case, `^[a-z][a-z0-9_]{0,63}$`, único), `description`, `whenToUse`, `input` (Zod), `output` (Zod), `uses` (IDs `method:…` acionados; pode ser vazio só para use-case que não toca agregado) | `whenNotToUse`, `emits` |
 | `@Operator` | `name` (`^[a-z0-9]+(-[a-z0-9]+)*$`, ≤64), `description`, `instructions`, `useCases` | `requiresApproval`, `limits: { maxSteps (default 8), timeoutMs (default 30000) }`, `model` (default `'default'`) |
 
@@ -175,12 +175,12 @@ Toda referência (delta de change, `covers`, mensagens de erro) usa a gramática
 agentic.config.ts ─import─▶ Registry ─▶ IR ─▶ Validação ─▶ Diff (IR × lock) ─▶ Reconciliação de changes ─▶ Renderers ─▶ arquivos
 ```
 
-1. **Entrada:** `agentic.config.ts` exporta `{ modules: string[] /* globs a importar */, out: {...caminhos}, mirrors: ['.claude/skills'], verify: { commands: { typecheck, lint, test } } }`.
+1. **Entrada:** `agentic.config.ts` exporta `defineConfig({ root?, modules: [{ name, path }], out?: {...caminhos}, mirrors?: [".claude/skills"], verify?: { commands: { typecheck, lint, test } } })`. Cada módulo é uma pasta; o compilador importa todos os `*.ts` dela, exceto testes (`*.test.ts`, `test/`) e fixtures. A flag `--out-root <dir>` muda só a base de escrita (usada nos testes).
 2. **IR:** objeto canônico com `irVersion: 1`, `entities`, `events`, `useCases`, `operators`; cada elemento com `id`, `source` e conteúdo. Schemas Zod convertidos com `z.toJSONSchema()`. O **lock** (`.agentic/domain.lock.json`) = IR canônica + índice dos changes aplicados (`changes: [{ id, hash }]`, hash do `proposal.md` arquivado).
 3. **Validação** (erro = mensagem com `arquivo:linha` + exit code 1):
    - campo obrigatório ausente ou vazio (ex.: invariante sem `text`);
    - `id`/`name` fora do padrão ou duplicado;
-   - `emits` apontando para classe sem `@DomainEvent`;
+   - `emits` apontando para classe sem `@AgentEvent`;
    - `transition.from/to` vazio;
    - operator com use-case não decorado; `requiresApproval` fora da allowlist;
    - método público **declarado na própria classe** (de instância ou estático; ignora métodos herdados como `pullEvents`, getters/setters e `constructor`) de `@AgentEntity` sem `@AgentMethod` (convenção: tudo que o agente pode acionar é declarado);
