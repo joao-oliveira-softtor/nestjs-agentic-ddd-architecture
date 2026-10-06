@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -48,6 +55,20 @@ describe('agentic-ddd compile (CLI)', () => {
     expect(check.stderr).toContain(
       'desatualizado (changed): .agents/skills/orders-dev/SKILL.md',
     );
+  });
+
+  test('--check com diretório real no lugar do link do espelho dá dica de remover/renomear', async () => {
+    run('compile', '--out-root', out);
+    const mirror = join(out, '.claude/skills/orders-dev');
+    await rm(mirror, { recursive: true, force: true });
+    await mkdir(mirror, { recursive: true });
+    const check = run('compile', '--check', '--out-root', out);
+    expect(check.code).toBe(1);
+    expect(check.stderr).toContain(
+      'desatualizado (mirror): .claude/skills/orders-dev',
+    );
+    expect(check.stderr).toContain('remova ou renomeie o diretório existente');
+    expect(check.stderr).not.toContain('rode `bun run agentic compile`');
   });
 
   test('erro de declaração sai com 1 e aponta arquivo:linha', () => {
