@@ -100,6 +100,7 @@ describe('agentic-ddd compile (CLI)', () => {
   test('uso incorreto sai com 2', () => {
     expect(run('build').code).toBe(2);
     expect(run('compile', '--nada').code).toBe(2);
+    expect(run('constructor').code).toBe(2);
   });
 
   test('--report imprime tokens por arquivo', () => {

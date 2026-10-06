@@ -13,7 +13,10 @@ const COMMANDS: Readonly<
 
 export async function main(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
-  const run = command === undefined ? undefined : COMMANDS[command];
+  const run =
+    command === undefined || !Object.hasOwn(COMMANDS, command)
+      ? undefined
+      : COMMANDS[command];
   if (!run) {
     console.error(USAGE);
     return 2;
