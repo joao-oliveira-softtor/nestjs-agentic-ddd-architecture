@@ -22,14 +22,17 @@ const io = { input: z.object({}), output: z.object({}) };
 function errorsOf(define: () => void): string[] {
   const registry = createRegistry();
   withRegistry(registry, define);
-  return analyze(registry, { root: ROOT, modules: [{ name: 'compiler', path: 'src/compiler' }] }).errors.map(
-    (e) => `${e.source ?? '-'} ${e.message}`,
-  );
+  return analyze(registry, {
+    root: ROOT,
+    modules: [{ name: 'compiler', path: 'src/compiler' }],
+  }).errors.map((e) => `${e.source ?? '-'} ${e.message}`);
 }
 
 describe('validate', () => {
   test('o shop é válido', () => {
-    expect(analyze(defineShop(), { root: ROOT, modules: [SHOP_MODULE] }).errors).toEqual([]);
+    expect(
+      analyze(defineShop(), { root: ROOT, modules: [SHOP_MODULE] }).errors,
+    ).toEqual([]);
   });
 
   test('id de invariante precisa ser kebab-case', () => {
@@ -41,32 +44,48 @@ describe('validate', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(HERE);
-    expect(errors[0]).toContain('invariant:Thing/Id Ruim: o id da invariante deve ser kebab-case');
+    expect(errors[0]).toContain(
+      'invariant:Thing/Id Ruim: o id da invariante deve ser kebab-case',
+    );
   });
 
   test('transição exige states declarados na entidade', () => {
     const errors = errorsOf(() => {
       @AgentEntity({ description: 'Porta.' })
       class Door extends AggregateRoot<string> {
-        @AgentMethod({ description: 'Abre.', transition: { from: ['closed'], to: 'open' } })
+        @AgentMethod({
+          description: 'Abre.',
+          transition: { from: ['closed'], to: 'open' },
+        })
         open(): void {}
       }
       void Door;
     });
-    expect(errors.some((e) => e.includes('entity:Door tem métodos com transition, mas @AgentEntity não declara states'))).toBe(true);
+    expect(
+      errors.some((e) =>
+        e.includes(
+          'entity:Door tem métodos com transition, mas @AgentEntity não declara states',
+        ),
+      ),
+    ).toBe(true);
   });
 
   test('transição com estado desconhecido', () => {
     const errors = errorsOf(() => {
       @AgentEntity({ description: 'Porta.', states: ['closed', 'open'] })
       class Door extends AggregateRoot<string> {
-        @AgentMethod({ description: 'Abre.', transition: { from: ['locked'], to: 'open' } })
+        @AgentMethod({
+          description: 'Abre.',
+          transition: { from: ['locked'], to: 'open' },
+        })
         open(): void {}
       }
       void Door;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('method:Door.open: estado "locked" não está em states de Door');
+    expect(errors[0]).toContain(
+      'method:Door.open: estado "locked" não está em states de Door',
+    );
   });
 
   test('emits precisa apontar para classe com @AgentEvent', () => {
@@ -79,17 +98,29 @@ describe('validate', () => {
       }
       void Bell;
     });
-    expect(errors.some((e) => e.includes('emits aponta para NotAnEvent, que não tem @AgentEvent'))).toBe(true);
+    expect(
+      errors.some((e) =>
+        e.includes('emits aponta para NotAnEvent, que não tem @AgentEvent'),
+      ),
+    ).toBe(true);
   });
 
   test('uses precisa citar método existente', () => {
     const errors = errorsOf(() => {
-      @AgentUseCase({ name: 'do_it', description: 'Faz.', whenToUse: 'Sempre.', ...io, uses: ['method:Ghost.boo'] })
+      @AgentUseCase({
+        name: 'do_it',
+        description: 'Faz.',
+        whenToUse: 'Sempre.',
+        ...io,
+        uses: ['method:Ghost.boo'],
+      })
       class DoIt {}
       void DoIt;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('usecase:do_it: uses cita method:Ghost.boo, que não existe');
+    expect(errors[0]).toContain(
+      'usecase:do_it: uses cita method:Ghost.boo, que não existe',
+    );
   });
 
   test('emits do use-case precisa vir dos métodos em uses', () => {
@@ -101,37 +132,75 @@ describe('validate', () => {
         @AgentMethod({ description: 'Toca.' })
         ring(): void {}
       }
-      @AgentUseCase({ name: 'ring_bell', description: 'Toca.', whenToUse: 'Sempre.', ...io, uses: ['method:Bell.ring'], emits: [Rang] })
+      @AgentUseCase({
+        name: 'ring_bell',
+        description: 'Toca.',
+        whenToUse: 'Sempre.',
+        ...io,
+        uses: ['method:Bell.ring'],
+        emits: [Rang],
+      })
       class RingBell {}
       void Bell;
       void RingBell;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('usecase:ring_bell: emite event:Rang, mas nenhum método em uses emite esse evento');
+    expect(errors[0]).toContain(
+      'usecase:ring_bell: emite event:Rang, mas nenhum método em uses emite esse evento',
+    );
   });
 
   test('requiresApproval precisa estar na allowlist', () => {
     const errors = errorsOf(() => {
-      @AgentUseCase({ name: 'a_case', description: 'A.', whenToUse: 'A.', ...io, uses: [] })
+      @AgentUseCase({
+        name: 'a_case',
+        description: 'A.',
+        whenToUse: 'A.',
+        ...io,
+        uses: [],
+      })
       class ACase {}
-      @AgentUseCase({ name: 'b_case', description: 'B.', whenToUse: 'B.', ...io, uses: [] })
+      @AgentUseCase({
+        name: 'b_case',
+        description: 'B.',
+        whenToUse: 'B.',
+        ...io,
+        uses: [],
+      })
       class BCase {}
-      @Operator({ name: 'op', description: 'Op.', instructions: 'Op.', useCases: [ACase], requiresApproval: [BCase] })
+      @Operator({
+        name: 'op',
+        description: 'Op.',
+        instructions: 'Op.',
+        useCases: [ACase],
+        requiresApproval: [BCase],
+      })
       class Op {}
       void Op;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('operator:op: requiresApproval cita usecase:b_case, que não está em useCases');
+    expect(errors[0]).toContain(
+      'operator:op: requiresApproval cita usecase:b_case, que não está em useCases',
+    );
   });
 
   test('operator com classe sem @AgentUseCase', () => {
     const errors = errorsOf(() => {
       class Plain {}
-      @Operator({ name: 'op', description: 'Op.', instructions: 'Op.', useCases: [Plain] })
+      @Operator({
+        name: 'op',
+        description: 'Op.',
+        instructions: 'Op.',
+        useCases: [Plain],
+      })
       class Op {}
       void Op;
     });
-    expect(errors.some((e) => e.includes('operator:op: Plain não tem @AgentUseCase'))).toBe(true);
+    expect(
+      errors.some((e) =>
+        e.includes('operator:op: Plain não tem @AgentUseCase'),
+      ),
+    ).toBe(true);
   });
 
   test('método público sem @AgentMethod é erro; #privado e getters não', () => {
@@ -151,7 +220,9 @@ describe('validate', () => {
       void Account;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('Account.helper é público e não tem @AgentMethod');
+    expect(errors[0]).toContain(
+      'Account.helper é público e não tem @AgentMethod',
+    );
   });
 
   test('duas entidades com o mesmo nome geram ID duplicado', () => {
@@ -167,17 +238,33 @@ describe('validate', () => {
         void Item;
       }
     });
-    expect(errors.some((e) => e.includes('ID duplicado entity:Item (também declarado em src/compiler/validate.test.ts:'))).toBe(true);
+    expect(
+      errors.some((e) =>
+        e.includes(
+          'ID duplicado entity:Item (também declarado em src/compiler/validate.test.ts:',
+        ),
+      ),
+    ).toBe(true);
   });
 
   test('nome de use-case precisa ser snake_case e whenToUse não pode ser vazio', () => {
     const errors = errorsOf(() => {
-      @AgentUseCase({ name: 'PublishProduct', description: 'Publica.', whenToUse: ' ', ...io, uses: [] })
+      @AgentUseCase({
+        name: 'PublishProduct',
+        description: 'Publica.',
+        whenToUse: ' ',
+        ...io,
+        uses: [],
+      })
       class PublishProduct {}
       void PublishProduct;
     });
-    expect(errors.some((e) => e.includes('name deve ser snake_case'))).toBe(true);
-    expect(errors.some((e) => e.includes('whenToUse é obrigatório'))).toBe(true);
+    expect(errors.some((e) => e.includes('name deve ser snake_case'))).toBe(
+      true,
+    );
+    expect(errors.some((e) => e.includes('whenToUse é obrigatório'))).toBe(
+      true,
+    );
   });
 
   test('@Invariant em método sem @AgentMethod', () => {
@@ -189,7 +276,13 @@ describe('validate', () => {
       }
       void Box;
     });
-    expect(errors.some((e) => e.includes('invariant:Box/nunca-cheia está num método sem @AgentMethod (method:Box.fill)'))).toBe(true);
+    expect(
+      errors.some((e) =>
+        e.includes(
+          'invariant:Box/nunca-cheia está num método sem @AgentMethod (method:Box.fill)',
+        ),
+      ),
+    ).toBe(true);
   });
 
   test('ordenação determinística de analyze: erros misturados de buildIR e validate em ordem diferente da declaração', () => {
@@ -210,7 +303,12 @@ describe('validate', () => {
 
           // Plain class sem @AgentUseCase, referenciado em operator (buildIR error)
           class Plain {}
-          @Operator({ name: 'op', description: 'Op.', instructions: 'Op.', useCases: [Plain] })
+          @Operator({
+            name: 'op',
+            description: 'Op.',
+            instructions: 'Op.',
+            useCases: [Plain],
+          })
           class Op {}
           void Op;
         });
@@ -219,11 +317,19 @@ describe('validate', () => {
       { root: ROOT, modules: [{ name: 'compiler', path: 'src/compiler' }] },
     );
 
-    const errorStrings = result.errors.map((e) => `${e.source ?? ''}|${e.message}`);
+    const errorStrings = result.errors.map(
+      (e) => `${e.source ?? ''}|${e.message}`,
+    );
     const sorted = [...errorStrings].sort();
     expect(errorStrings).toEqual(sorted);
-    expect(result.errors.some((e) => e.message.includes('Bad-Case'))).toBe(true);
-    expect(result.errors.some((e) => e.message.includes('Plain não tem @AgentUseCase'))).toBe(true);
+    expect(result.errors.some((e) => e.message.includes('Bad-Case'))).toBe(
+      true,
+    );
+    expect(
+      result.errors.some((e) =>
+        e.message.includes('Plain não tem @AgentUseCase'),
+      ),
+    ).toBe(true);
   });
 
   test('invariante com text vazio', () => {
@@ -234,14 +340,19 @@ describe('validate', () => {
       void Thing;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('invariant:Thing/empty-text: text é obrigatório e não pode ser vazio');
+    expect(errors[0]).toContain(
+      'invariant:Thing/empty-text: text é obrigatório e não pode ser vazio',
+    );
   });
 
   test('transition com from vazio', () => {
     const errors = errorsOf(() => {
       @AgentEntity({ description: 'Porta.', states: ['closed', 'open'] })
       class Door extends AggregateRoot<string> {
-        @AgentMethod({ description: 'Abre.', transition: { from: [], to: 'open' } })
+        @AgentMethod({
+          description: 'Abre.',
+          transition: { from: [], to: 'open' },
+        })
         open(): void {}
       }
       void Door;
@@ -252,7 +363,12 @@ describe('validate', () => {
 
   test('@Operator com useCases vazio', () => {
     const errors = errorsOf(() => {
-      @Operator({ name: 'op', description: 'Op.', instructions: 'Op.', useCases: [] })
+      @Operator({
+        name: 'op',
+        description: 'Op.',
+        instructions: 'Op.',
+        useCases: [],
+      })
       class Op {}
       void Op;
     });
@@ -262,14 +378,27 @@ describe('validate', () => {
 
   test('operator com name fora de kebab-case', () => {
     const errors = errorsOf(() => {
-      @AgentUseCase({ name: 'do_it', description: 'Faz.', whenToUse: 'Sempre.', ...io, uses: [] })
+      @AgentUseCase({
+        name: 'do_it',
+        description: 'Faz.',
+        whenToUse: 'Sempre.',
+        ...io,
+        uses: [],
+      })
       class DoIt {}
-      @Operator({ name: 'Op Ruim', description: 'Op.', instructions: 'Op.', useCases: [DoIt] })
+      @Operator({
+        name: 'Op Ruim',
+        description: 'Op.',
+        instructions: 'Op.',
+        useCases: [DoIt],
+      })
       class Op {}
       void Op;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('operator:Op Ruim: name deve ser kebab-case com até 64 caracteres');
+    expect(errors[0]).toContain(
+      'operator:Op Ruim: name deve ser kebab-case com até 64 caracteres',
+    );
   });
 
   test('método estático público sem @AgentMethod', () => {
@@ -281,7 +410,9 @@ describe('validate', () => {
       void Account;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('Account.helper é público e não tem @AgentMethod');
+    expect(errors[0]).toContain(
+      'Account.helper é público e não tem @AgentMethod',
+    );
   });
 
   test('@AgentMethod numa classe sem @AgentEntity', () => {
@@ -293,6 +424,8 @@ describe('validate', () => {
       void NotEntity;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('NotEntity.doIt tem @AgentMethod, mas NotEntity não tem @AgentEntity');
+    expect(errors[0]).toContain(
+      'NotEntity.doIt tem @AgentMethod, mas NotEntity não tem @AgentEntity',
+    );
   });
 });

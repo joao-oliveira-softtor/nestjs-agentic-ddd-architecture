@@ -117,22 +117,35 @@ export function irHash(ir: IR): string {
   return sha256(stableStringify(ir));
 }
 
-export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildResult {
+export function buildIR(
+  registry: Registry,
+  options: IRBuildOptions,
+): IRBuildResult {
   const errors: CompileError[] = [];
-  const modules = [...options.modules].sort((a, b) => b.path.length - a.path.length);
+  const modules = [...options.modules].sort(
+    (a, b) => b.path.length - a.path.length,
+  );
   const loc = (s: SourceLoc): string => sourceOf(options.root, s);
 
   const moduleOf = (s: SourceLoc): string => {
     const file = toPosix(relative(options.root, s.file));
-    const found = modules.find((m) => file === m.path || file.startsWith(`${m.path}/`));
+    const found = modules.find(
+      (m) => file === m.path || file.startsWith(`${m.path}/`),
+    );
     if (found) return found.name;
-    errors.push({ message: 'elemento declarado fora dos módulos de agentic.config.ts', source: loc(s) });
+    errors.push({
+      message: 'elemento declarado fora dos módulos de agentic.config.ts',
+      source: loc(s),
+    });
     return UNASSIGNED_MODULE;
   };
 
   const eventId = (cls: ClassRef, at: SourceLoc): string => {
     if (!registry.events.some((e) => e.target === cls)) {
-      errors.push({ message: `emits aponta para ${cls.name}, que não tem @AgentEvent`, source: loc(at) });
+      errors.push({
+        message: `emits aponta para ${cls.name}, que não tem @AgentEvent`,
+        source: loc(at),
+      });
     }
     return `event:${cls.name}`;
   };
@@ -140,13 +153,23 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
   const useCaseId = (cls: ClassRef, at: SourceLoc, owner: string): string => {
     const found = registry.useCases.find((u) => u.target === cls);
     if (found) return `usecase:${found.name}`;
-    errors.push({ message: `${owner}: ${cls.name} não tem @AgentUseCase`, source: loc(at) });
+    errors.push({
+      message: `${owner}: ${cls.name} não tem @AgentUseCase`,
+      source: loc(at),
+    });
     return `usecase:${cls.name}`;
   };
 
-  const schema = (zod: ZodType, at: SourceLoc, what: string, io: 'input' | 'output' = 'output'): JsonSchema => {
+  const schema = (
+    zod: ZodType,
+    at: SourceLoc,
+    what: string,
+    io: 'input' | 'output' = 'output',
+  ): JsonSchema => {
     try {
-      const json: JsonSchema = { ...(z.toJSONSchema(zod, { io }) as JsonSchema) };
+      const json: JsonSchema = {
+        ...(z.toJSONSchema(zod, { io }) as JsonSchema),
+      };
       delete json.$schema;
       return json;
     } catch (error) {
@@ -183,7 +206,9 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
             name: m.name,
             static: m.isStatic,
             description: m.description,
-            transition: m.transition ? { from: [...m.transition.from], to: m.transition.to } : null,
+            transition: m.transition
+              ? { from: [...m.transition.from], to: m.transition.to }
+              : null,
             emits: m.emits.map((e) => eventId(e, m.source)).sort(),
             source: loc(m.source),
           }))
@@ -199,7 +224,12 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
       name: rec.target.name,
       module: moduleOf(rec.source),
       description: rec.description,
-      payloadSchema: schema(rec.payload, rec.source, `event:${rec.target.name} payload`, 'output'),
+      payloadSchema: schema(
+        rec.payload,
+        rec.source,
+        `event:${rec.target.name} payload`,
+        'output',
+      ),
       source: loc(rec.source),
     }))
     .sort(byId);
@@ -212,8 +242,18 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
       description: rec.description,
       whenToUse: rec.whenToUse,
       whenNotToUse: rec.whenNotToUse,
-      inputSchema: schema(rec.input, rec.source, `usecase:${rec.name} input`, 'input'),
-      outputSchema: schema(rec.output, rec.source, `usecase:${rec.name} output`, 'output'),
+      inputSchema: schema(
+        rec.input,
+        rec.source,
+        `usecase:${rec.name} input`,
+        'input',
+      ),
+      outputSchema: schema(
+        rec.output,
+        rec.source,
+        `usecase:${rec.name} output`,
+        'output',
+      ),
       uses: [...rec.uses].sort(),
       emits: rec.emits.map((e) => eventId(e, rec.source)).sort(),
       source: loc(rec.source),
@@ -229,9 +269,16 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
         module: moduleOf(rec.source),
         description: rec.description,
         instructions: rec.instructions,
-        useCases: rec.useCases.map((u) => useCaseId(u, rec.source, owner)).sort(),
-        requiresApproval: rec.requiresApproval.map((u) => useCaseId(u, rec.source, owner)).sort(),
-        limits: { maxSteps: rec.limits.maxSteps, timeoutMs: rec.limits.timeoutMs },
+        useCases: rec.useCases
+          .map((u) => useCaseId(u, rec.source, owner))
+          .sort(),
+        requiresApproval: rec.requiresApproval
+          .map((u) => useCaseId(u, rec.source, owner))
+          .sort(),
+        limits: {
+          maxSteps: rec.limits.maxSteps,
+          timeoutMs: rec.limits.timeoutMs,
+        },
         model: rec.model,
         source: loc(rec.source),
       };
@@ -241,7 +288,9 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
   return {
     ir: {
       irVersion: 1,
-      modules: [...options.modules].map((m) => ({ name: m.name, path: m.path })).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)),
+      modules: [...options.modules]
+        .map((m) => ({ name: m.name, path: m.path }))
+        .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)),
       entities,
       events,
       useCases,

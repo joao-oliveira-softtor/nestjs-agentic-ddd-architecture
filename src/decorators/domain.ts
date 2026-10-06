@@ -1,5 +1,9 @@
 import type { ZodType } from 'zod';
-import { activeRegistry, type ClassRef, type TransitionSpec } from './registry.js';
+import {
+  activeRegistry,
+  type ClassRef,
+  type TransitionSpec,
+} from './registry.js';
 import { captureSource } from './source.js';
 
 export interface AgentEntityOptions {
@@ -24,11 +28,15 @@ export interface InvariantOptions {
   readonly text: string;
 }
 
-export function Invariant(options: InvariantOptions): ClassDecorator & MethodDecorator {
+export function Invariant(
+  options: InvariantOptions,
+): ClassDecorator & MethodDecorator {
   const source = captureSource();
   const decorator = (target: object, key?: string | symbol): void => {
     const onClass = key === undefined;
-    const entity = (onClass || typeof target === 'function' ? target : target.constructor) as ClassRef;
+    const entity = (
+      onClass || typeof target === 'function' ? target : target.constructor
+    ) as ClassRef;
     activeRegistry().invariants.push({
       entity,
       method: onClass ? null : String(key),

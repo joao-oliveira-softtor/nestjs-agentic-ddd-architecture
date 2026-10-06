@@ -6,13 +6,23 @@ export abstract class ValueObject<P extends object> {
   }
 
   equals(other: ValueObject<P> | null | undefined): boolean {
-    return other != null && other.constructor === this.constructor && deepEqual(this.props, other.props);
+    return (
+      other != null &&
+      other.constructor === this.constructor &&
+      deepEqual(this.props, other.props)
+    );
   }
 }
 
 function deepEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
-  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (
+    typeof a !== 'object' ||
+    typeof b !== 'object' ||
+    a === null ||
+    b === null
+  )
+    return false;
   if (a.constructor !== b.constructor) return false;
 
   // Handle Date

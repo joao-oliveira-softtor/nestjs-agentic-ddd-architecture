@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'bun:test';
-import { activeRegistry, captureSource, createRegistry, defaultRegistry, parseFrame, withRegistry } from '@agentic-ddd/decorators';
+import {
+  activeRegistry,
+  captureSource,
+  createRegistry,
+  defaultRegistry,
+  parseFrame,
+  withRegistry,
+} from '@agentic-ddd/decorators';
 import { located } from '../../test/fixtures/located.js';
 
 describe('captureSource', () => {
@@ -77,8 +84,19 @@ describe('registry', () => {
   test('reset esvazia todas as listas', () => {
     const registry = createRegistry();
     const source = { file: '/x.ts', line: 1 };
-    registry.entities.push({ target: class X {}, description: 'x', states: [], source });
-    registry.invariants.push({ entity: class X {}, method: null, id: 'inv1', text: 'invariant', source });
+    registry.entities.push({
+      target: class X {},
+      description: 'x',
+      states: [],
+      source,
+    });
+    registry.invariants.push({
+      entity: class X {},
+      method: null,
+      id: 'inv1',
+      text: 'invariant',
+      source,
+    });
     registry.methods.push({
       entity: class X {},
       name: 'method',
@@ -89,7 +107,12 @@ describe('registry', () => {
       fn: () => {},
       source,
     });
-    registry.events.push({ target: class X {}, description: 'event', payload: {} as any, source });
+    registry.events.push({
+      target: class X {},
+      description: 'event',
+      payload: {} as any,
+      source,
+    });
     registry.useCases.push({
       target: class X {},
       name: 'uc',

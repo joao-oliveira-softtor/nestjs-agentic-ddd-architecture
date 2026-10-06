@@ -38,7 +38,10 @@ class SetVO extends ValueObject<{ items: Set<number> }> {
   }
 }
 
-class NestedVO extends ValueObject<{ nested: { value: number }; array: number[] }> {
+class NestedVO extends ValueObject<{
+  nested: { value: number };
+  array: number[];
+}> {
   constructor(nested: { value: number }, array: number[]) {
     super({ nested, array });
   }
@@ -73,12 +76,18 @@ describe('core', () => {
   });
 
   test('DomainEvent gera id e data e aceita um único carimbo de correlação', () => {
-    const event = new Ping({ n: 1 }, { eventId: 'e1', occurredAt: new Date('2026-01-01T00:00:00Z') });
+    const event = new Ping(
+      { n: 1 },
+      { eventId: 'e1', occurredAt: new Date('2026-01-01T00:00:00Z') },
+    );
     expect(event.eventId).toBe('e1');
     expect(event.occurredAt.toISOString()).toBe('2026-01-01T00:00:00.000Z');
     expect(event.correlationId).toBeNull();
     event.stamp('run-1', 'step-1');
-    expect([event.correlationId, event.causationId]).toEqual(['run-1', 'step-1']);
+    expect([event.correlationId, event.causationId]).toEqual([
+      'run-1',
+      'step-1',
+    ]);
     expect(() => event.stamp('run-2', 'step-2')).toThrow('já foi carimbado');
   });
 

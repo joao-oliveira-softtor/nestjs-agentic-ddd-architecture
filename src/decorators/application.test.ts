@@ -1,7 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import { z } from 'zod';
 import { notImplemented } from '@agentic-ddd/core';
-import { AgentUseCase, DEFAULT_LIMITS, Operator, createRegistry, withRegistry } from '@agentic-ddd/decorators';
+import {
+  AgentUseCase,
+  DEFAULT_LIMITS,
+  Operator,
+  createRegistry,
+  withRegistry,
+} from '@agentic-ddd/decorators';
 
 function declareCatalog() {
   const registry = createRegistry();
@@ -52,7 +58,10 @@ describe('decorators de aplicação', () => {
     expect(operator.target).toBe(CatalogOperator);
     expect(operator.useCases).toEqual([PublishProduct]);
     expect(operator.requiresApproval).toEqual([PublishProduct]);
-    expect(operator.limits).toEqual({ maxSteps: 3, timeoutMs: DEFAULT_LIMITS.timeoutMs });
+    expect(operator.limits).toEqual({
+      maxSteps: 3,
+      timeoutMs: DEFAULT_LIMITS.timeoutMs,
+    });
     expect(operator.model).toBe('default');
   });
 });

@@ -1,5 +1,9 @@
 import type { ZodType } from 'zod';
-import { activeRegistry, type ClassRef, type OperatorLimits } from './registry.js';
+import {
+  activeRegistry,
+  type ClassRef,
+  type OperatorLimits,
+} from './registry.js';
 import { captureSource } from './source.js';
 
 export interface AgentUseCaseOptions {
@@ -31,7 +35,10 @@ export function AgentUseCase(options: AgentUseCaseOptions): ClassDecorator {
   };
 }
 
-export const DEFAULT_LIMITS: OperatorLimits = { maxSteps: 8, timeoutMs: 30_000 };
+export const DEFAULT_LIMITS: OperatorLimits = {
+  maxSteps: 8,
+  timeoutMs: 30_000,
+};
 
 export interface OperatorOptions {
   readonly name: string;

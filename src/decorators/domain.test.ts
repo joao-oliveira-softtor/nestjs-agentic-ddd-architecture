@@ -14,11 +14,20 @@ import {
 function declareProduct() {
   const registry = createRegistry();
   const classes = withRegistry(registry, () => {
-    @AgentEvent({ description: 'Produto publicado.', payload: z.object({ productId: z.string() }) })
+    @AgentEvent({
+      description: 'Produto publicado.',
+      payload: z.object({ productId: z.string() }),
+    })
     class ProductPublished extends DomainEvent<{ productId: string }> {}
 
-    @AgentEntity({ description: 'Produto do catálogo.', states: ['draft', 'published'] })
-    @Invariant({ id: 'preco-positivo', text: 'O preço é sempre maior que zero.' })
+    @AgentEntity({
+      description: 'Produto do catálogo.',
+      states: ['draft', 'published'],
+    })
+    @Invariant({
+      id: 'preco-positivo',
+      text: 'O preço é sempre maior que zero.',
+    })
     class Product extends AggregateRoot<string> {
       @AgentMethod({ description: 'Cria um rascunho.' })
       static create(): Product {
@@ -30,7 +39,10 @@ function declareProduct() {
         transition: { from: ['draft'], to: 'published' },
         emits: [ProductPublished],
       })
-      @Invariant({ id: 'publicacao-exige-estoque', text: 'Só publica com estoque.' })
+      @Invariant({
+        id: 'publicacao-exige-estoque',
+        text: 'Só publica com estoque.',
+      })
       publish(): void {
         notImplemented();
       }
@@ -78,12 +90,16 @@ describe('decorators de domínio', () => {
   test('a fonte aponta para este arquivo de teste', () => {
     const { registry } = declareProduct();
     const publish = registry.methods.find((m) => m.name === 'publish')!;
-    expect(publish.source.file.endsWith('/src/decorators/domain.test.ts')).toBe(true);
+    expect(publish.source.file.endsWith('/src/decorators/domain.test.ts')).toBe(
+      true,
+    );
     expect(publish.source.line).toBeGreaterThan(0);
   });
 
   test('decorators dentro de withRegistry não vazam para o registry default', () => {
     const { Product } = declareProduct();
-    expect(defaultRegistry.entities.some((e) => e.target === Product)).toBe(false);
+    expect(defaultRegistry.entities.some((e) => e.target === Product)).toBe(
+      false,
+    );
   });
 });
