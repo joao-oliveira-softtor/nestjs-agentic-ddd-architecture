@@ -107,7 +107,7 @@ Aliases de import (tsconfig `paths`): `@agentic-ddd/core`, `@agentic-ddd/decorat
 
 **Regras de dependência** (verificadas por teste de arquitetura):
 
-1. `src/core` não importa nada de `src/*` nem pacotes externos, exceto `zod`; `src/decorators` importa apenas `src/core`, `zod` e `reflect-metadata` (por isso o domínio do exemplo pode usá-lo sem herdar Nest ou LLM).
+1. `src/core` não importa nada de `src/*` nem pacotes externos, exceto `zod`; `src/decorators` importa apenas `src/core`, `zod`, `reflect-metadata` e `node:*` (`node:path`, `node:url`) (por isso o domínio do exemplo pode usá-lo sem herdar Nest ou LLM).
 2. `examples/*/domain` e `examples/*/application` não importam `@nestjs/*` nem nada de `src/runtime`/LLM.
 3. `examples/**` só importa o framework via `@agentic-ddd/*` (proibido import relativo para `src/`).
 4. `src/compiler` não importa `src/runtime` e vice-versa (ambos dependem de `core`/`decorators`).
