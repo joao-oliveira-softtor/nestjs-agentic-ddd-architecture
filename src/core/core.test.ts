@@ -26,6 +26,30 @@ class Money extends ValueObject<{ amount: number; currency: string }> {
   }
 }
 
+class DateVO extends ValueObject<{ date: Date }> {
+  constructor(date: Date) {
+    super({ date });
+  }
+}
+
+class SetVO extends ValueObject<{ items: Set<number> }> {
+  constructor(items: Set<number>) {
+    super({ items });
+  }
+}
+
+class NestedVO extends ValueObject<{ nested: { value: number }; array: number[] }> {
+  constructor(nested: { value: number }, array: number[]) {
+    super({ nested, array });
+  }
+}
+
+class OtherMoney extends ValueObject<{ amount: number; currency: string }> {
+  constructor(amount: number, currency: string) {
+    super({ amount, currency });
+  }
+}
+
 describe('core', () => {
   test('AggregateRoot acumula eventos e pullEvents os esvazia', () => {
     const counter = new Counter('c1');
@@ -71,5 +95,56 @@ describe('core', () => {
 
   test('notImplemented lança NotImplementedError', () => {
     expect(() => notImplemented()).toThrow(NotImplementedError);
+  });
+
+  test('ValueObject com objeto aninhado e array compara estruturalmente', () => {
+    const vo1 = new NestedVO({ value: 42 }, [1, 2, 3]);
+    const vo2 = new NestedVO({ value: 42 }, [1, 2, 3]);
+    const vo3 = new NestedVO({ value: 42 }, [1, 2, 4]);
+    const vo4 = new NestedVO({ value: 43 }, [1, 2, 3]);
+    expect(vo1.equals(vo2)).toBe(true);
+    expect(vo1.equals(vo3)).toBe(false);
+    expect(vo1.equals(vo4)).toBe(false);
+  });
+
+  test('ValueObject com Date compara por getTime()', () => {
+    const date1 = new Date('2026-01-01T00:00:00Z');
+    const date2 = new Date('2026-01-01T00:00:00Z');
+    const date3 = new Date('2026-01-02T00:00:00Z');
+    const vo1 = new DateVO(date1);
+    const vo2 = new DateVO(date2);
+    const vo3 = new DateVO(date3);
+    expect(vo1.equals(vo2)).toBe(true);
+    expect(vo1.equals(vo3)).toBe(false);
+  });
+
+  test('ValueObject com Set compara por conteúdo', () => {
+    const vo1 = new SetVO(new Set([1, 2, 3]));
+    const vo2 = new SetVO(new Set([1, 2, 3]));
+    const vo3 = new SetVO(new Set([1, 2, 4]));
+    expect(vo1.equals(vo2)).toBe(true);
+    expect(vo1.equals(vo3)).toBe(false);
+  });
+
+  test('ValueObject.equals(null) retorna false', () => {
+    const money = new Money(10, 'BRL');
+    expect(money.equals(null)).toBe(false);
+  });
+
+  test('ValueObject de classes diferentes com mesmas props retorna false', () => {
+    const money = new Money(10, 'BRL');
+    const other = new OtherMoney(10, 'BRL');
+    expect(money.equals(other as any)).toBe(false);
+  });
+
+  test('Entity com mesmo id mas classes diferentes retorna false', () => {
+    class OtherCounter extends AggregateRoot<string> {
+      constructor(id: string) {
+        super(id);
+      }
+    }
+    const counter = new Counter('a');
+    const other = new OtherCounter('a');
+    expect(counter.equals(other as any)).toBe(false);
   });
 });
