@@ -23,6 +23,15 @@ async function configFor(path: string): Promise<string> {
   return file;
 }
 
+async function failure(file: string): Promise<string> {
+  try {
+    await loadConfig(file);
+    return '';
+  } catch (error) {
+    return (error as Error).message;
+  }
+}
+
 describe('validação do caminho dos módulos', () => {
   test('resolveConfig rejeita "." (raiz do projeto)', () => {
     expect(() =>
@@ -42,7 +51,7 @@ describe('validação do caminho dos módulos', () => {
 
   test('loadConfig rejeita caminho inexistente', async () => {
     const file = await configFor('nao-existe');
-    await expect(loadConfig(file)).rejects.toThrow(
+    expect(await failure(file)).toContain(
       'agentic.config.ts: o caminho "nao-existe" do módulo "x" não existe ou não é um diretório',
     );
   });
@@ -50,14 +59,12 @@ describe('validação do caminho dos módulos', () => {
   test('loadConfig rejeita caminho que é arquivo', async () => {
     await writeFile(join(dir, 'arquivo.ts'), '');
     const file = await configFor('arquivo.ts');
-    await expect(loadConfig(file)).rejects.toThrow(
-      'não existe ou não é um diretório',
-    );
+    expect(await failure(file)).toContain('não existe ou não é um diretório');
   });
 
   test('loadConfig rejeita "."', async () => {
     const file = await configFor('.');
-    await expect(loadConfig(file)).rejects.toThrow(
+    expect(await failure(file)).toContain(
       'o módulo "x" não pode apontar para a raiz do projeto',
     );
   });
