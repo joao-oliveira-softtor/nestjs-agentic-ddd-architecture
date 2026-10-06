@@ -1,0 +1,214 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`renderDevSkill snapshot dos arquivos: SKILL.md 1`] = `
+"---
+name: shop-dev
+description: "Domínio shop: entidades Product; use-cases create_product, publish_product; operators catalog-operator. Use quando for implementar, alterar, testar ou revisar código em src/compiler/__fixtures__."
+metadata:
+  agentic-ddd.audience: dev
+  agentic-ddd.generated: "true"
+  agentic-ddd.ir-hash: "hash-fixo"
+---
+<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__ -->
+
+# Módulo \`shop\`
+
+Código em \`src/compiler/__fixtures__\`. Esta skill descreve o domínio declarado (requisitos, regras e contratos); ela não registra estado de implementação.
+
+## Entidades
+
+### Product — \`entity:Product\`
+
+Produto do catálogo da loja.
+
+Fonte: \`src/compiler/__fixtures__/shop.ts:26\` · Estados: \`draft\`, \`published\`
+
+| Invariante | Regra | Garantida por | Fonte |
+|---|---|---|---|
+| \`invariant:Product/preco-positivo\` | O preço de um produto é sempre maior que zero. | construção | \`src/compiler/__fixtures__/shop.ts:27\` |
+| \`invariant:Product/publicacao-exige-estoque\` | Só é possível publicar um produto com estoque maior que zero. | \`Product.publish\` | \`src/compiler/__fixtures__/shop.ts:39\` |
+
+| Método | Descrição | Transição | Emite | Fonte |
+|---|---|---|---|---|
+| \`Product.create\` | Cria um produto em rascunho. | — | \`ProductCreated\` | \`src/compiler/__fixtures__/shop.ts:29\` |
+| \`Product.publish\` | Publica o produto no catálogo. | \`draft\` → \`published\` | \`ProductPublished\` | \`src/compiler/__fixtures__/shop.ts:34\` |
+
+## Eventos
+
+| Evento | Descrição | Fonte |
+|---|---|---|
+| \`ProductCreated\` | Um produto foi criado como rascunho. | \`src/compiler/__fixtures__/shop.ts:20\` |
+| \`ProductPublished\` | Um produto foi publicado no catálogo. | \`src/compiler/__fixtures__/shop.ts:23\` |
+
+## Use-cases
+
+| Use-case | Descrição | Aciona | Emite | Fonte |
+|---|---|---|---|---|
+| \`create_product\` | Cria um produto em rascunho. | \`Product.create\` | \`ProductCreated\` | \`src/compiler/__fixtures__/shop.ts:51\` |
+| \`publish_product\` | Publica um produto em rascunho no catálogo. | \`Product.publish\` | \`ProductPublished\` | \`src/compiler/__fixtures__/shop.ts:69\` |
+
+## Operators
+
+| Operator | Use-cases | Exige aprovação | Fonte |
+|---|---|---|---|
+| \`catalog-operator\` | \`create_product\`, \`publish_product\` | \`publish_product\` | \`src/compiler/__fixtures__/shop.ts:85\` |
+
+## Dependências entre itens
+
+| Item | Camada | Depende de |
+|---|---|---|
+| \`entity:Product\` | domain | — |
+| \`method:Product.publish\` | domain | \`entity:Product\` |
+| \`operator:catalog-operator\` | operators | \`usecase:create_product\`, \`usecase:publish_product\` |
+| \`usecase:create_product\` | application | \`entity:Product\` |
+| \`usecase:publish_product\` | application | \`method:Product.publish\` |
+
+## Obrigações de teste
+
+Cada ID abaixo precisa de ao menos um teste nomeado com \`covers([...ids], título)\` de \`@agentic-ddd/testing\`.
+
+| Item | IDs a cobrir |
+|---|---|
+| \`entity:Product\` | \`invariant:Product/preco-positivo\`, \`method:Product.create\` |
+| \`method:Product.publish\` | \`invariant:Product/publicacao-exige-estoque\`, \`method:Product.publish\` |
+| \`operator:catalog-operator\` | \`operator:catalog-operator\` |
+| \`usecase:create_product\` | \`usecase:create_product\` |
+| \`usecase:publish_product\` | \`usecase:publish_product\` |
+
+## Como estender
+
+| Artefato | Onde criar | Como declarar |
+|---|---|---|
+| Entidade | \`src/compiler/__fixtures__/domain/<nome>.ts\` | \`@AgentEntity({ description, states })\` + \`@Invariant({ id, text })\` na classe |
+| Método de entidade | na classe da entidade | \`@AgentMethod({ description, transition?, emits? })\`; regra garantida pelo método: \`@Invariant\` no método; auxiliares: \`#privado\` |
+| Evento | \`src/compiler/__fixtures__/domain/<agregado>.events.ts\` | \`@AgentEvent({ description, payload })\` estendendo \`DomainEvent\` |
+| Use-case | \`src/compiler/__fixtures__/application/<nome>.ts\` | \`@AgentUseCase({ name, description, whenToUse, input, output, uses, emits? })\` |
+| Operator | \`src/compiler/__fixtures__/operators/<nome>.operator.ts\` | \`@Operator({ name, description, instructions, useCases, requiresApproval? })\` |
+
+Corpo declarado e ainda não implementado usa \`notImplemented()\` de \`@agentic-ddd/core\`.
+
+## Referências
+
+- [Schemas de eventos e use-cases](references/schemas.json)
+- [Máquina de estados](references/state-machine.md)
+"
+`;
+
+exports[`renderDevSkill snapshot dos arquivos: references/schemas.json 1`] = `
+"{
+  "events": {
+    "ProductCreated": {
+      "additionalProperties": false,
+      "properties": {
+        "productId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "productId"
+      ],
+      "type": "object"
+    },
+    "ProductPublished": {
+      "additionalProperties": false,
+      "properties": {
+        "productId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "productId"
+      ],
+      "type": "object"
+    }
+  },
+  "useCases": {
+    "create_product": {
+      "input": {
+        "properties": {
+          "price": {
+            "description": "Preço em reais",
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "product_id": {
+            "description": "Id do novo produto",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "price"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "draft",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    "publish_product": {
+      "input": {
+        "properties": {
+          "product_id": {
+            "description": "Id do produto a publicar",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "published",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    }
+  }
+}
+"
+`;
+
+exports[`renderDevSkill snapshot dos arquivos: references/state-machine.md 1`] = `
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__ -->
+
+# Máquina de estados
+
+## Product
+
+Estados: \`draft\`, \`published\`
+
+| Método | De | Para | Emite |
+|---|---|---|---|
+| \`Product.publish\` | \`draft\` | \`published\` | \`ProductPublished\` |
+"
+`;
