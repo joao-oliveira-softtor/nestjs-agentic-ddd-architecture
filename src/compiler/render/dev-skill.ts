@@ -19,7 +19,7 @@ export function renderDevSkill(
   const operators = inModule(ir.operators);
   const items = inModule(workItems(ir));
 
-  const summary =
+  const summaryWithNames =
     [
       entities.length > 0
         ? `entidades ${entities.map((e) => e.name).join(', ')}`
@@ -33,7 +33,24 @@ export function renderDevSkill(
     ]
       .filter((part): part is string => part !== null)
       .join('; ') || 'sem elementos declarados';
-  const description = `Domínio ${module.name}: ${summary}. Use quando for implementar, alterar, testar ou revisar código em ${module.path}.`;
+
+  const descriptionWithNames = `Domínio ${module.name}: ${summaryWithNames}. Use quando for implementar, alterar, testar ou revisar código em ${module.path}.`;
+
+  let description: string;
+  if (descriptionWithNames.length > 1024) {
+    // Use count-based form
+    const parts = [
+      entities.length > 0 ? `${entities.length} entidades` : null,
+      useCases.length > 0 ? `${useCases.length} use-cases` : null,
+      operators.length > 0 ? `${operators.length} operators` : null,
+    ]
+      .filter((part): part is string => part !== null)
+      .join(', ');
+
+    description = `Domínio ${module.name}: ${parts || 'sem elementos declarados'}. Use quando for implementar, alterar, testar ou revisar código em ${module.path}.`;
+  } else {
+    description = descriptionWithNames;
+  }
 
   const lines: string[] = [
     frontmatter({
