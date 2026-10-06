@@ -68,7 +68,7 @@ esqueleto declarado → next (ondas) → packet → verify --item → … → ve
 | D12 | Eventos e operator | v0: emissão, eventos no `tool_result` e no trace. **`reactsTo` fica para v0.1** (design na §14.2). |
 | D13 | Local dos gerados | Pasta canônica por público; `AGENTS.md` com bloco gerado entre marcadores; `CLAUDE.md` com `@AGENTS.md`; skills de dev em `.agents/skills/` + espelho `.claude/skills/`; runtime e lock em `.agentic/`; propostas em `changes/`. |
 | D14 | Declaração primeiro | Corpos `notImplemented()` detectados pelo compilador (§6.6) como **sinal** para o estado do projeto; nunca aparecem nas skills. |
-| D15 | Dependências entre camadas | `@AgentUseCase({ uses: [...] })` **obrigatório** declara os métodos de domínio acionados; o compilador valida existência e `emits ⊆ emits dos uses`. |
+| D15 | Dependências entre camadas | `@AgentUseCase({ uses: [...] })` **obrigatório** declara os métodos de domínio acionados; o compilador valida existência e `emits ⊆ emits dos uses`. `@Invariant` vai na classe (garantida na construção) **ou** no método que a garante; fábricas estáticas pertencem ao item da entidade. |
 | D16 | Estado do projeto | Grafo de work items (entidade, método, use-case, operator) com estados `declared → implemented → covered → done` + `blocked`, **calculado sob demanda** (sem arquivo); comandos `status`, `next` (ondas), `packet`, `verify --item` (§8.3). Infraestrutura fora do grafo no v0. Skill do framework e definições de subagente gerente/executor no v0.1. |
 | — | Já decididos antes | TypeORM, Zod v4, decorators + `reflect-metadata`, licença MIT, Bun + `@nestbun/platform`. |
 
@@ -141,7 +141,7 @@ Todos os decorators **só registram metadados explícitos** no registry. Nenhum 
 | Decorator | Campos obrigatórios | Opcionais |
 |---|---|---|
 | `@AgentEntity` | `description` | `states: string[]` (obrigatório se algum método declarar `transition`) |
-| `@Invariant` (na **classe**; pode ser empilhado) | `id` (kebab-case, único na entidade), `text` | — |
+| `@Invariant` (empilhável; na **classe** = garantida na construção/fábrica; num **método** com `@AgentMethod` = garantida por aquele método) | `id` (kebab-case, único na entidade), `text` | — |
 | `@AgentMethod` | `description` | `emits: EventClass[]`, `transition: { from: State[], to: State }` |
 | `@DomainEvent` | `name`, `description`, `payload` (Zod) | — |
 | `@AgentUseCase` | `name` (snake_case, `^[a-z][a-z0-9_]{0,63}$`, único), `description`, `whenToUse`, `input` (Zod), `output` (Zod), `uses` (IDs `method:…` acionados; pode ser vazio só para use-case que não toca agregado) | `whenNotToUse`, `emits` |
@@ -185,7 +185,8 @@ agentic.config.ts ─import─▶ Registry ─▶ IR ─▶ Validação ─▶ D
    - operator com use-case não decorado; `requiresApproval` fora da allowlist;
    - método público **declarado na própria classe** (de instância ou estático; ignora métodos herdados como `pullEvents`, getters/setters e `constructor`) de `@AgentEntity` sem `@AgentMethod` (convenção: tudo que o agente pode acionar é declarado);
    - `transition.from`/`to` com estado fora de `@AgentEntity({ states })`; entidade com transições sem `states` declarado;
-   - `uses` citando método inexistente; `emits` do use-case que não está contido na união dos `emits` dos métodos em `uses`.
+   - `uses` citando método inexistente; `emits` do use-case que não está contido na união dos `emits` dos métodos em `uses`;
+   - `@Invariant` em método sem `@AgentMethod`.
 4. **Diff semântico** IR × `domain.lock.json` (ver §7).
 5. **Reconciliação** com a proposta aberta (ver §7).
 6. **Renderers** puros (IR → `Map<caminho, conteúdo>`); a escrita em disco é uma etapa separada.
@@ -257,7 +258,8 @@ metadata:
 
 ### 6.6 Detecção de implementação (sinal para o estado do projeto)
 
-- Para cada método com `@AgentMethod` e para o `execute` de cada `@AgentUseCase`, o framework testa `/\bnotImplemented\(\)/` sobre `fn.toString()` (verificado no Bun 1.4.2: o corpo transpilado preserva a chamada, inclusive em métodos estáticos e em `return notImplemented()`). Para a entidade, o sinal é o `constructor`/fábrica.
+- Para cada método com `@AgentMethod` e para o `execute` de cada `@AgentUseCase`, o framework testa `/\bnotImplemented\(\)/` sobre o `toString()` **da função do método** (verificado no Bun 1.4.2: o corpo transpilado preserva a chamada, inclusive em métodos estáticos e em `return notImplemented()`). Nunca sobre `toString()` da classe, que devolveria o corpo inteiro e misturaria os métodos.
+- Para o item da entidade, o sinal são as **fábricas estáticas** com `@AgentMethod`: implementada quando nenhuma delas contém `notImplemented()`; entidade sem fábrica estática é considerada implementada (o estado vem só das obrigações).
 - O resultado alimenta **apenas** o estado do projeto (§8.3). Ele **não entra na IR versionada, no lock nem em nenhuma skill**: implementar um corpo não muda nenhum arquivo gerado nem gera diff de domínio.
 - Um esqueleto declarado é válido para o compilador: passa na validação, gera skills e entra no delta da proposta normalmente.
 - **Limite conhecido:** só a chamada literal `notImplemented()` é reconhecida; corpo vazio sem o helper conta como implementado. A convenção vai documentada no `AGENTS.md` (§6.2).
@@ -275,7 +277,7 @@ Comparando IR atual com `domain.lock.json`, por ID de elemento:
 - O hash de conteúdo **exclui `source`** (`arquivo:linha` é metadado de localização): formatar o código ou mover um decorator de linha não gera diff de domínio, só atualiza os caminhos nos arquivos gerados.
 - Classificação de cada item:
   - `breaking` — contrato de tool muda de forma incompatível para quem chama: use-case removido/renomeado; campo de input adicionado como obrigatório, removido ou com tipo alterado; campo de output removido ou com tipo alterado; transição removida;
-  - `behavioral` — regra de negócio muda sem quebrar o contrato: invariante adicionada/modificada/removida; transição adicionada; `emits` alterado; allowlist ou aprovação de operator alterada;
+  - `behavioral` — regra de negócio muda sem quebrar o contrato: invariante adicionada/modificada/removida/movida de lugar; transição adicionada; `emits` alterado; `uses` alterado (muda o grafo de dependências); allowlist ou aprovação de operator alterada;
   - `docs` — só descrições/`whenToUse` mudaram. **Não exige proposta**: o `compile` aplica direto no lock e o item aparece no `--diff`, mas não entra no histórico (reescrever uma descrição não é mudança de regra).
 
 ### 7.2 Formato da proposta
@@ -369,12 +371,12 @@ Saída: JSON em stdout `{ change, status, gates: [{ id, status, findings: [{ mes
 
 | Item | Camada | Depende de | Obrigações (IDs que precisam de teste com `covers`) |
 |---|---|---|---|
-| `entity:X` (fábrica/`constructor` + invariantes) | domain | — | cada `invariant:X/…` |
-| `method:X.m` | domain | `entity:X` | `method:X.m` (transição + emits) |
-| `usecase:u` | application | cada `method:` em `uses` | `usecase:u` |
+| `entity:X` (construção: fábricas estáticas + invariantes de classe) | domain | — | cada `invariant:` declarada **na classe** + `method:X.f` de cada fábrica estática `f` |
+| `method:X.m` (métodos de **instância**) | domain | `entity:X` | `method:X.m` (transição + emits) + cada `invariant:` declarada **nesse método** |
+| `usecase:u` | application | o item de cada `method:` em `uses` (fábrica estática resolve para `entity:X`) | `usecase:u` |
 | `operator:o` (wiring + e2e com `FakeLlm`) | operators | cada use-case da allowlist | `operator:o` |
 
-Eventos são só declaração (sem item). **Infraestrutura fica fora do grafo no v0** (repository adapters e wiring são código de suporte); `@Port`/`@Adapter` trazem adapters para o grafo no roadmap. O grafo é acíclico por construção (método → entidade → nada; use-case → métodos; operator → use-cases).
+Fábricas estáticas (`method:Order.create`) continuam sendo IDs de documentação e alvos válidos de `uses`, mas **pertencem ao item `entity:X`**: a construção do agregado é uma unidade só. Isso evita o ciclo "método depende da entidade, entidade depende do teste que chama o método": cada invariante é obrigação do item que a garante. Eventos são só declaração (sem item). **Infraestrutura fica fora do grafo no v0** (repository adapters e wiring são código de suporte); `@Port`/`@Adapter` trazem adapters para o grafo no roadmap. O grafo é acíclico por construção (método → entidade → nada; use-case → métodos; operator → use-cases).
 
 Se há proposta aberta, os critérios de aceite cujo `covers` intersecta as obrigações de um item **também** viram obrigações dele (`criterion:NNNN/…`). Assim, uma regra modificada por proposta tira o item de `done` até os testes novos existirem e passarem, sem guardar histórico de estado.
 
@@ -392,8 +394,10 @@ Se há proposta aberta, os critérios de aceite cujo `covers` intersecta as obri
 
 | Comando | Papel | Efeito |
 |---|---|---|
-| `status [--json] [--static]` | gerente | estado de todos os itens; roda a suíte uma vez com reporter JUnit e mapeia `covers`. `--static` não roda testes e para em `covered` |
-| `next [--json]` | gerente | itens não `done` e não bloqueados (onda 1) + projeção das próximas ondas (níveis topológicos dos itens restantes) |
+| `status [--json] [--static] [--change NNNN]` | gerente | estado dos itens; roda a suíte uma vez com reporter JUnit e mapeia `covers`. `--static` não roda testes e para em `covered` |
+| `next [--json] [--change NNNN]` | gerente | itens não `done` e não bloqueados (onda 1) + projeção das próximas ondas (níveis topológicos dos itens restantes) |
+
+Escopo: por padrão, **o projeto inteiro** (dívida existente, como item sem teste com `covers`, fica visível de propósito). `--change NNNN` restringe aos itens tocados pelo delta da proposta, mais as dependências deles que não estão `done`; é o modo do gerente durante uma manutenção.
 | `packet <item>` | executor | pacote de trabalho em markdown determinístico (abaixo) |
 | `verify --item <item> --spec-hash <h> [--json]` | executor | verificação só do item (abaixo) |
 
@@ -500,13 +504,18 @@ Roteirizável e determinístico: recebe uma lista de respostas (ou funções `re
 
 - **Estados:** `pending`, `confirmed`, `cancelled`.
 - **Métodos:** `Order.create` (fábrica, emite `OrderCreated`); `confirm` (`pending → confirmed`, emite `OrderConfirmed`); `cancel` (`pending|confirmed → cancelled`, emite `OrderCancelled`).
-- **Invariantes:** `total-nao-negativo`, `ao-menos-um-item`.
+- **Invariantes:** `total-nao-negativo` e `ao-menos-um-item` na **classe** (garantidas por `Order.create`, obrigação de `entity:Order`).
+- **Grafo de work items e ondas esperadas:**
+  1. `entity:Order`
+  2. `method:Order.confirm`, `method:Order.cancel`, `usecase:create_order` (este depende só de `entity:Order`)
+  3. `usecase:confirm_order`, `usecase:cancel_order`
+  4. `operator:order-operator`
 - **Use-cases:** `create_order` (`uses: [method:Order.create]`), `confirm_order` (`uses: [method:Order.confirm]`), `cancel_order` (`uses: [method:Order.cancel]`).
 - **Operator:** `order-operator` com os três use-cases; `cancel_order` em `requiresApproval`.
 - **Infra:** `InMemoryOrderRepository`.
 - **Changes de exemplo:**
   - `0001-estado-inicial` (code-first, gerado por `--draft-change`), arquivado;
-  - `0002-cancelamento-exige-motivo` (proposal-first): `cancel_order` ganha `reason` obrigatório (**breaking**) + invariante `cancelamento-exige-motivo` (**behavioral**) + critério de aceite; usado no e2e de manutenção.
+  - `0002-cancelamento-exige-motivo` (proposal-first): `cancel_order` ganha `reason` obrigatório (**breaking**) + invariante `cancelamento-exige-motivo` declarada **no método `cancel`** (**behavioral**, obrigação de `method:Order.cancel`) + critério de aceite; usado no e2e de manutenção.
 
 ---
 
@@ -526,7 +535,8 @@ Roteirizável e determinístico: recebe uma lista de respostas (ou funções `re
 - Detecção (§6.6): `notImplemented()` em método de instância, estático, com `return` e em `execute` de use-case → não implementado; corpo real → implementado; alternar entre os dois **não altera nenhum arquivo gerado** nem o hash de conteúdo.
 - Validação de `uses`: método inexistente e `emits` fora da união dos `emits` dos `uses` geram erro com `arquivo:linha`.
 - Estado do projeto (§8.3), com fixtures em cada estado: `declared`, `implemented`, `covered`, `done`, `blocked(…)`; critério de proposta aberta tirando um item de `done`; `status --static` sem rodar testes.
-- `next`: ondas corretas para o grafo do `Order` (entidade → métodos em paralelo → use-cases → operator) e exclusão de itens bloqueados.
+- `next`: as quatro ondas da §11 para o grafo do `Order`, exclusão de itens bloqueados e `--change` restringindo ao delta.
+- Regressão do ciclo: invariante declarada num método é obrigação daquele método (não da entidade); fábrica estática resolve para `entity:X`; nenhuma configuração do exemplo deixa um item eternamente `blocked`.
 - `packet`: snapshot do markdown de cada tipo de item; determinismo (duas execuções, mesmos bytes).
 - `verify --item`: dependência não `done` → `failed`; `notImplemented()` restante → `failed`; `specHash` divergente (decorator alterado) → `failed`; obrigação sem teste → `failed`; tudo certo → `done`.
 
@@ -605,7 +615,7 @@ Higiene do repo (Vitest → `bun test`; remover supertest, `@nestjs/platform-exp
 6. Nenhum `@Controller` no repositório.
 7. Teste de arquitetura (§3) passa.
 8. O `AGENTS.md` indica caminho e decorator para criar um novo use-case; verificado por revisão manual e pelo dataset da camada 2 (versionado para o runner do v0.1).
-9. **Declaração primeiro + coordenação:** uma fixture com o esqueleto declarado do `Order` (corpos `notImplemented()`) compila e gera skills **idênticas** às da versão implementada (prova de que skills não têm estado); `next` devolve as ondas entidade → métodos → use-cases → operator; `packet` de cada item bate com o snapshot; implementando item a item, `verify --item` passa onda após onda (e falha se o decorator for alterado); ao final `verify <change>` retorna `done`/`needs-human`.
+9. **Declaração primeiro + coordenação:** uma fixture com o esqueleto declarado do `Order` (corpos `notImplemented()`) compila e gera skills **idênticas** às da versão implementada (prova de que skills não têm estado); `next` devolve as quatro ondas da §11; `packet` de cada item bate com o snapshot; implementando item a item, `verify --item` passa onda após onda (e falha se o decorator for alterado); ao final `verify <change>` retorna `done`/`needs-human`.
 
 ---
 
