@@ -1,4 +1,4 @@
-import type { DomainEvent } from './domain-event.js';
+import type { DomainEvent } from './domain-event';
 
 export interface UseCaseContext {
   readonly correlationId: string;

@@ -1,10 +1,6 @@
 import { AggregateRoot, DomainError } from '@agentic-ddd/core';
 import { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';
-import {
-  OrderCancelled,
-  OrderConfirmed,
-  OrderCreated,
-} from './order.events.js';
+import { OrderCancelled, OrderConfirmed, OrderCreated } from './order.events';
 
 export type OrderStatus = 'pending' | 'confirmed' | 'cancelled';
 

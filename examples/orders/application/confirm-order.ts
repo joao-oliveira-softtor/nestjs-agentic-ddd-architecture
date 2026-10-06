@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import type { UseCase, UseCaseContext } from '@agentic-ddd/core';
 import { AgentUseCase } from '@agentic-ddd/decorators';
-import { OrderConfirmed } from '../domain/order.events.js';
-import type { OrderRepository } from '../domain/order.repository.js';
-import { loadOrder } from './load-order.js';
+import { OrderConfirmed } from '../domain/order.events';
+import type { OrderRepository } from '../domain/order.repository';
+import { loadOrder } from './load-order';
 
 export const confirmOrderInput = z.object({
   order_id: z.string().min(1).describe('Id do pedido a confirmar'),

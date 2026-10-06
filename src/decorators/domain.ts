@@ -1,10 +1,6 @@
 import type { ZodType } from 'zod';
-import {
-  activeRegistry,
-  type ClassRef,
-  type TransitionSpec,
-} from './registry.js';
-import { captureSource } from './source.js';
+import { activeRegistry, type ClassRef, type TransitionSpec } from './registry';
+import { captureSource } from './source';
 
 export interface AgentEntityOptions {
   readonly description: string;

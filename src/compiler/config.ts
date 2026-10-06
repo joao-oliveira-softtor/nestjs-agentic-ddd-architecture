@@ -1,8 +1,8 @@
 import { stat } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { toPosix } from './ir.js';
-import { DEFAULT_OUT, type OutputPaths } from './render/index.js';
+import { toPosix } from './ir';
+import { DEFAULT_OUT, type OutputPaths } from './render/index';
 
 export interface ModuleConfig {
   readonly name: string;

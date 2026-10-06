@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Runtime e testes: **Bun 1.4.2**; testes com `bun test` importando de `bun:test`. Nada de Vitest, Jest ou supertest.
-- ESM com `"module": "nodenext"`: imports relativos **com sufixo `.js`** (`./entity.js`), mesmo apontando para `.ts`.
+- ~~ESM com `"module": "nodenext"`: imports relativos com sufixo `.js`.~~ **Revogado após a execução deste plano:** o projeto passou a usar `"module": "preserve"` + `"moduleResolution": "bundler"` e imports relativos sem extensão (`./entity`). Os blocos de código abaixo mantêm o `.js` como registro histórico.
 - `isolatedModules` + `emitDecoratorMetadata`: tipo usado em assinatura de classe decorada (ex.: parâmetro de construtor) é importado com **`import type`**.
 - Aliases (tsconfig `paths`): `@agentic-ddd/core`, `@agentic-ddd/decorators`, `@agentic-ddd/compiler`, `@agentic-ddd/testing` (e, nos planos seguintes, `@agentic-ddd/runtime`, `@agentic-ddd/nestjs`).
 - `examples/**` importa o framework **só** via `@agentic-ddd/*`; `src/core` só importa `zod` e arquivos do próprio `core`.

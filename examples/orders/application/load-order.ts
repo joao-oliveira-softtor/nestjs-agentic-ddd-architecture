@@ -1,6 +1,6 @@
 import { DomainError } from '@agentic-ddd/core';
-import type { Order } from '../domain/order.js';
-import type { OrderRepository } from '../domain/order.repository.js';
+import type { Order } from '../domain/order';
+import type { OrderRepository } from '../domain/order.repository';
 
 export async function loadOrder(
   orders: OrderRepository,

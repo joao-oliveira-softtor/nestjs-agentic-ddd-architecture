@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { DomainError } from '@agentic-ddd/core';
 import { covers } from '@agentic-ddd/testing';
-import { Order } from '../domain/order.js';
+import { Order } from '../domain/order';
 
 const item = { sku: 'SKU-1', quantity: 2, unitPrice: 10 };
 

@@ -4,7 +4,7 @@ export {
   Operator,
   type AgentUseCaseOptions,
   type OperatorOptions,
-} from './application.js';
+} from './application';
 export {
   AgentEntity,
   AgentEvent,
@@ -14,7 +14,7 @@ export {
   type AgentEventOptions,
   type AgentMethodOptions,
   type InvariantOptions,
-} from './domain.js';
+} from './domain';
 export {
   Registry,
   activeRegistry,
@@ -30,5 +30,5 @@ export {
   type OperatorRecord,
   type TransitionSpec,
   type UseCaseRecord,
-} from './registry.js';
-export { captureSource, parseFrame, type SourceLoc } from './source.js';
+} from './registry';
+export { captureSource, parseFrame, type SourceLoc } from './source';

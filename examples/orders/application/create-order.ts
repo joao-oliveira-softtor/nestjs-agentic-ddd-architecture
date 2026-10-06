@@ -5,9 +5,9 @@ import {
   type UseCaseContext,
 } from '@agentic-ddd/core';
 import { AgentUseCase } from '@agentic-ddd/decorators';
-import { Order } from '../domain/order.js';
-import { OrderCreated } from '../domain/order.events.js';
-import type { OrderRepository } from '../domain/order.repository.js';
+import { Order } from '../domain/order';
+import { OrderCreated } from '../domain/order.events';
+import type { OrderRepository } from '../domain/order.repository';
 
 export const createOrderInput = z.object({
   order_id: z.string().min(1).describe('Id do novo pedido'),

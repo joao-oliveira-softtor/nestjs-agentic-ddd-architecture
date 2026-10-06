@@ -10,10 +10,10 @@ import {
 } from 'node:fs/promises';
 import type { Stats } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
-import type { ResolvedConfig } from './config.js';
-import { toPosix } from './ir.js';
-import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md.js';
-import type { Rendered } from './render/index.js';
+import type { ResolvedConfig } from './config';
+import { toPosix } from './ir';
+import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
+import type { Rendered } from './render/index';
 
 export type DriftReason =
   'missing' | 'changed' | 'extra' | 'mirror' | 'conflict';

@@ -1,5 +1,5 @@
 import type { Registry } from '@agentic-ddd/decorators';
-import { sourceOf, type CompileError, type IR, type IRMethod } from './ir.js';
+import { sourceOf, type CompileError, type IR, type IRMethod } from './ir';
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SNAKE = /^[a-z][a-z0-9_]{0,63}$/;

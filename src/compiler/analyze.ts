@@ -4,8 +4,8 @@ import {
   type CompileError,
   type IRBuildOptions,
   type IRBuildResult,
-} from './ir.js';
-import { validate } from './validate.js';
+} from './ir';
+import { validate } from './validate';
 
 function errorKey(error: CompileError): string {
   return `${error.source ?? ''}|${error.message}`;

@@ -1,3 +1,3 @@
-import { captureSource } from '../../src/decorators/source.js';
+import { captureSource } from '../../src/decorators/source';
 
 export const located = captureSource();

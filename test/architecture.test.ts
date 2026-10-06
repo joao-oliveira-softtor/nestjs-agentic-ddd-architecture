@@ -43,8 +43,8 @@ function offenders(
 describe('arquitetura', () => {
   test('o extrator de imports funciona', () => {
     expect(importsOf('src/core/aggregate-root.ts')).toEqual([
-      './domain-event.js',
-      './entity.js',
+      './domain-event',
+      './entity',
     ]);
   });
 

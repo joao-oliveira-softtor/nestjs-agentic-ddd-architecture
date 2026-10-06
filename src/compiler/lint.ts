@@ -1,4 +1,4 @@
-import type { Rendered } from './render/index.js';
+import type { Rendered } from './render/index';
 
 export interface LintFinding {
   readonly path: string;

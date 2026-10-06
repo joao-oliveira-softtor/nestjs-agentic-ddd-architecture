@@ -14,9 +14,9 @@ import {
   createRegistry,
   withRegistry,
 } from '@agentic-ddd/decorators';
-import { SHOP_MODULE, defineShop } from './__fixtures__/shop.js';
-import { canonicalize, stableStringify } from './canonical.js';
-import { buildIR, irHash } from './ir.js';
+import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
+import { canonicalize, stableStringify } from './canonical';
+import { buildIR, irHash } from './ir';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const options = { root: ROOT, modules: [SHOP_MODULE] };

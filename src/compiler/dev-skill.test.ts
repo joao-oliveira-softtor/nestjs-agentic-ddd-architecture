@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
-import { SHOP_MODULE, defineShop } from './__fixtures__/shop.js';
-import { analyze } from './analyze.js';
-import { renderDevSkill } from './render/dev-skill.js';
-import type { IR } from './ir.js';
+import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
+import { analyze } from './analyze';
+import { renderDevSkill } from './render/dev-skill';
+import type { IR } from './ir';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const { ir } = analyze(defineShop(), { root: ROOT, modules: [SHOP_MODULE] });

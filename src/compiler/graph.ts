@@ -1,5 +1,5 @@
-import { byId } from './canonical.js';
-import type { IR } from './ir.js';
+import { byId } from './canonical';
+import type { IR } from './ir';
 
 export type Layer = 'domain' | 'application' | 'operators';
 

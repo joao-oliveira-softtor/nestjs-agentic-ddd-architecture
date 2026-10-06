@@ -7,7 +7,7 @@ import {
   parseFrame,
   withRegistry,
 } from '@agentic-ddd/decorators';
-import { located } from '../../test/fixtures/located.js';
+import { located } from '../../test/fixtures/located';
 
 describe('captureSource', () => {
   test('aponta o arquivo e a linha de quem chamou', () => {

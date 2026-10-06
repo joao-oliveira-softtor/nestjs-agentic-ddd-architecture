@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
-import { SHOP_MODULE, defineShop } from './__fixtures__/shop.js';
-import { analyze } from './analyze.js';
-import { approxTokens, lintRendered, lintSkill } from './lint.js';
-import { DEFAULT_OUT, renderAll } from './render/index.js';
+import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
+import { analyze } from './analyze';
+import { approxTokens, lintRendered, lintSkill } from './lint';
+import { DEFAULT_OUT, renderAll } from './render/index';
 
 const ROOT = resolve(import.meta.dir, '../..');
 

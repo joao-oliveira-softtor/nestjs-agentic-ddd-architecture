@@ -1,7 +1,7 @@
 import { relative, sep } from 'node:path';
 import { z, type ZodType } from 'zod';
 import type { ClassRef, Registry, SourceLoc } from '@agentic-ddd/decorators';
-import { byId, sha256, stableStringify } from './canonical.js';
+import { byId, sha256, stableStringify } from './canonical';
 
 export type JsonSchema = Record<string, unknown>;
 

@@ -1,6 +1,6 @@
-import type { IREntity } from '../ir.js';
-import { GENERATED_HEADER } from './frontmatter.js';
-import { code, idList, stripKind, table } from './markdown.js';
+import type { IREntity } from '../ir';
+import { GENERATED_HEADER } from './frontmatter';
+import { code, idList, stripKind, table } from './markdown';
 
 export function renderStateMachine(
   entities: readonly IREntity[],

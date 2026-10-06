@@ -1,5 +1,5 @@
-import { compile } from '../compiler/compile.js';
-import { formatReport } from '../compiler/report.js';
+import { compile } from '../compiler/compile';
+import { formatReport } from '../compiler/report';
 
 export const USAGE =
   'uso: agentic-ddd compile [--check] [--report] [--config <arquivo>] [--out-root <dir>]';

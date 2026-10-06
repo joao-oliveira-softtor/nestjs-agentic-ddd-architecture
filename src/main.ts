@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { BunAdapter, type NestBunApplication } from '@nestbun/platform';
-import { AppModule } from './app.module.js';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestBunApplication>(

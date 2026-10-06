@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { ResolvedConfig } from './config.js';
-import { toPosix } from './ir.js';
+import type { ResolvedConfig } from './config';
+import { toPosix } from './ir';
 
 const SKIPPED_DIR = /(^|\/)(test|__fixtures__|__snapshots__)\//;
 const SKIPPED_FILE = /\.(test|spec)\.ts$|\.d\.ts$/;

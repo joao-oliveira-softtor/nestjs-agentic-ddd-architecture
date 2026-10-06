@@ -1,6 +1,6 @@
-import { stableStringify } from '../canonical.js';
-import type { IR, IREntity, IROperator, IRUseCase } from '../ir.js';
-import { GENERATED_HEADER, frontmatter } from './frontmatter.js';
+import { stableStringify } from '../canonical';
+import type { IR, IREntity, IROperator, IRUseCase } from '../ir';
+import { GENERATED_HEADER, frontmatter } from './frontmatter';
 import {
   code,
   guardedBy,
@@ -8,8 +8,8 @@ import {
   parameterRows,
   stripKind,
   table,
-} from './markdown.js';
-import { renderStateMachine } from './state-machine.js';
+} from './markdown';
+import { renderStateMachine } from './state-machine';
 
 export function relatedEntities(
   ir: IR,

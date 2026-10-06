@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
-import { SHOP_MODULE, defineShop } from './__fixtures__/shop.js';
-import { analyze } from './analyze.js';
-import { irHash } from './ir.js';
-import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md.js';
-import { DEFAULT_OUT, renderAll } from './render/index.js';
-import { stripKind } from './render/markdown.js';
+import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
+import { analyze } from './analyze';
+import { irHash } from './ir';
+import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
+import { DEFAULT_OUT, renderAll } from './render/index';
+import { stripKind } from './render/markdown';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const { ir } = analyze(defineShop(), { root: ROOT, modules: [SHOP_MODULE] });

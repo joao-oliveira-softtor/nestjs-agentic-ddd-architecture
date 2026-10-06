@@ -1,7 +1,7 @@
-import { irHash, type IR } from '../ir.js';
-import { renderAgentsBlock } from './agents-md.js';
-import { renderDevSkill } from './dev-skill.js';
-import { renderRuntimeSkill } from './runtime-skill.js';
+import { irHash, type IR } from '../ir';
+import { renderAgentsBlock } from './agents-md';
+import { renderDevSkill } from './dev-skill';
+import { renderRuntimeSkill } from './runtime-skill';
 
 export interface OutputPaths {
   readonly agentsMd: string;

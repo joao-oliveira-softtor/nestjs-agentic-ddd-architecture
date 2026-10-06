@@ -1,4 +1,4 @@
-import type { JsonSchema } from '../ir.js';
+import type { JsonSchema } from '../ir';
 
 export function cell(text: string): string {
   return text.replace(/\r?\n/g, ' ').replace(/\|/g, '\\|').trim();

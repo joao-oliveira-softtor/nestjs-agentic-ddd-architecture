@@ -1,5 +1,5 @@
-import type { IR } from '../ir.js';
-import { code, table } from './markdown.js';
+import type { IR } from '../ir';
+import { code, table } from './markdown';
 
 export const BLOCK_BEGIN = '<!-- agentic-ddd:begin -->';
 export const BLOCK_END = '<!-- agentic-ddd:end -->';

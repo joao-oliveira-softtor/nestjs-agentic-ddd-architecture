@@ -12,18 +12,18 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { SHOP_MODULE, defineShop } from './__fixtures__/shop.js';
-import { analyze } from './analyze.js';
-import type { ResolvedConfig } from './config.js';
-import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md.js';
-import { DEFAULT_OUT, renderAll } from './render/index.js';
+import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
+import { analyze } from './analyze';
+import type { ResolvedConfig } from './config';
+import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
+import { DEFAULT_OUT, renderAll } from './render/index';
 import {
   CLAUDE_MD_CONTENT,
   extractAgentsBlock,
   checkOutputs,
   mergeAgentsBlock,
   writeOutputs,
-} from './write.js';
+} from './write';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const rendered = renderAll(

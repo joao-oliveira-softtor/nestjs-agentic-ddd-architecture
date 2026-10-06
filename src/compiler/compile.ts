@@ -1,13 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { defaultRegistry, type Registry } from '@agentic-ddd/decorators';
-import { analyze } from './analyze.js';
-import { loadConfig, type ResolvedConfig } from './config.js';
-import type { CompileError, IR } from './ir.js';
-import { lintRendered, type LintFinding } from './lint.js';
-import { importModules } from './load.js';
-import { renderAll, type Rendered } from './render/index.js';
-import { checkOutputs, writeOutputs, type Drift } from './write.js';
+import { analyze } from './analyze';
+import { loadConfig, type ResolvedConfig } from './config';
+import type { CompileError, IR } from './ir';
+import { lintRendered, type LintFinding } from './lint';
+import { importModules } from './load';
+import { renderAll, type Rendered } from './render/index';
+import { checkOutputs, writeOutputs, type Drift } from './write';
 
 export interface CompileOptions {
   readonly configPath: string;

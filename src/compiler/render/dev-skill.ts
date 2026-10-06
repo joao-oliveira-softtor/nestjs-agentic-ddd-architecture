@@ -1,9 +1,9 @@
-import { stableStringify } from '../canonical.js';
-import { workItems } from '../graph.js';
-import type { IR, IRModule } from '../ir.js';
-import { GENERATED_HEADER, frontmatter } from './frontmatter.js';
-import { code, guardedBy, idList, stripKind, table } from './markdown.js';
-import { renderStateMachine } from './state-machine.js';
+import { stableStringify } from '../canonical';
+import { workItems } from '../graph';
+import type { IR, IRModule } from '../ir';
+import { GENERATED_HEADER, frontmatter } from './frontmatter';
+import { code, guardedBy, idList, stripKind, table } from './markdown';
+import { renderStateMachine } from './state-machine';
 
 export function renderDevSkill(
   ir: IR,

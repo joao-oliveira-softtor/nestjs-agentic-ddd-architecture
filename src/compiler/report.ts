@@ -1,7 +1,7 @@
-import type { LintFinding } from './lint.js';
-import { approxTokens } from './lint.js';
-import { code, table } from './render/markdown.js';
-import type { Rendered } from './render/index.js';
+import type { LintFinding } from './lint';
+import { approxTokens } from './lint';
+import { code, table } from './render/markdown';
+import type { Rendered } from './render/index';
 
 export function formatReport(
   rendered: Rendered,

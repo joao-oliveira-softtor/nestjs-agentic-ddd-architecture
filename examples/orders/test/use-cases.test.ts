@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import { DomainError } from '@agentic-ddd/core';
 import { covers, createTestContext } from '@agentic-ddd/testing';
-import { CancelOrder } from '../application/cancel-order.js';
-import { ConfirmOrder } from '../application/confirm-order.js';
-import { CreateOrder } from '../application/create-order.js';
-import { InMemoryOrderRepository } from '../infrastructure/in-memory-order.repository.js';
+import { CancelOrder } from '../application/cancel-order';
+import { ConfirmOrder } from '../application/confirm-order';
+import { CreateOrder } from '../application/create-order';
+import { InMemoryOrderRepository } from '../infrastructure/in-memory-order.repository';
 
 const input = {
   order_id: 'o1',

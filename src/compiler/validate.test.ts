@@ -12,8 +12,8 @@ import {
   createRegistry,
   withRegistry,
 } from '@agentic-ddd/decorators';
-import { SHOP_MODULE, defineShop } from './__fixtures__/shop.js';
-import { analyze } from './analyze.js';
+import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
+import { analyze } from './analyze';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const HERE = /^src\/compiler\/validate\.test\.ts:\d+ /;

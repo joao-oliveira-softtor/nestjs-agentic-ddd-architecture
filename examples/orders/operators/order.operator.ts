@@ -1,7 +1,7 @@
 import { Operator } from '@agentic-ddd/decorators';
-import { CancelOrder } from '../application/cancel-order.js';
-import { ConfirmOrder } from '../application/confirm-order.js';
-import { CreateOrder } from '../application/create-order.js';
+import { CancelOrder } from '../application/cancel-order';
+import { ConfirmOrder } from '../application/confirm-order';
+import { CreateOrder } from '../application/create-order';
 
 @Operator({
   name: 'order-operator',

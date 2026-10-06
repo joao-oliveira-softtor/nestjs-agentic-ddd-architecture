@@ -1,10 +1,6 @@
 import type { ZodType } from 'zod';
-import {
-  activeRegistry,
-  type ClassRef,
-  type OperatorLimits,
-} from './registry.js';
-import { captureSource } from './source.js';
+import { activeRegistry, type ClassRef, type OperatorLimits } from './registry';
+import { captureSource } from './source';
 
 export interface AgentUseCaseOptions {
   readonly name: string;

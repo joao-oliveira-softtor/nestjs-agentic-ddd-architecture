@@ -1,2 +1,2 @@
-export { createTestContext, type TestContext } from './context.js';
-export { covers, parseCovers } from './covers.js';
+export { createTestContext, type TestContext } from './context';
+export { covers, parseCovers } from './covers';

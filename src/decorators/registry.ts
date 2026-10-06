@@ -1,5 +1,5 @@
 import type { ZodType } from 'zod';
-import type { SourceLoc } from './source.js';
+import type { SourceLoc } from './source';
 
 export type ClassRef = Function;
 
