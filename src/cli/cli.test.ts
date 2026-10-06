@@ -68,4 +68,13 @@ describe('agentic-ddd compile (CLI)', () => {
     expect(run('build').code).toBe(2);
     expect(run('compile', '--nada').code).toBe(2);
   });
+
+  test('--report imprime tokens por arquivo', () => {
+    const result = run('compile', '--report', '--out-root', out);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain(
+      '| `.agentic/runtime/order-operator/SKILL.md` |',
+    );
+    expect(result.stdout).toContain('≈tokens');
+  });
 });

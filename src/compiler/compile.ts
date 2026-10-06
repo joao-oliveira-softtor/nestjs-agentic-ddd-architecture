@@ -4,6 +4,7 @@ import { defaultRegistry, type Registry } from '@agentic-ddd/decorators';
 import { analyze } from './analyze.js';
 import { loadConfig, type ResolvedConfig } from './config.js';
 import type { CompileError, IR } from './ir.js';
+import { lintRendered, type LintFinding } from './lint.js';
 import { importModules } from './load.js';
 import { renderAll, type Rendered } from './render/index.js';
 import { checkOutputs, writeOutputs, type Drift } from './write.js';
@@ -21,6 +22,7 @@ export interface CompileResult {
   readonly drift: Drift[];
   readonly written: string[];
   readonly warnings: string[];
+  readonly lint: LintFinding[];
   readonly ir: IR | null;
   readonly rendered: Rendered | null;
   readonly config: ResolvedConfig;
@@ -52,21 +54,32 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
       drift: [],
       written: [],
       warnings: [],
+      lint: [],
       ir,
       rendered: null,
       config,
     };
   }
   const rendered = renderAll(ir, config.out);
-  const warnings = await claudeWarnings(config);
+  const lint = lintRendered(rendered);
+  const lintErrors: CompileError[] = lint
+    .filter((f) => f.severity === 'error')
+    .map((f) => ({ message: `lint: ${f.message}`, source: f.path }));
+  const warnings = [
+    ...(await claudeWarnings(config)),
+    ...lint
+      .filter((f) => f.severity === 'warning')
+      .map((f) => `${f.path}: ${f.message}`),
+  ];
   if (options.mode === 'check') {
     const drift = await checkOutputs(config, rendered);
     return {
-      ok: drift.length === 0,
-      errors: [],
+      ok: drift.length === 0 && lintErrors.length === 0,
+      errors: lintErrors,
       drift,
       written: [],
       warnings,
+      lint,
       ir,
       rendered,
       config,
@@ -74,11 +87,12 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   }
   const result = await writeOutputs(config, rendered);
   return {
-    ok: true,
-    errors: [],
+    ok: lintErrors.length === 0,
+    errors: lintErrors,
     drift: [],
     written: result.written,
     warnings: [...warnings, ...result.warnings],
+    lint,
     ir,
     rendered,
     config,

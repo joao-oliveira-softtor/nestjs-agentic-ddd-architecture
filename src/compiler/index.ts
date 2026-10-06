@@ -25,6 +25,13 @@ export {
   type JsonSchema,
 } from './ir.js';
 export {
+  approxTokens,
+  lintRendered,
+  lintSkill,
+  type LintFinding,
+} from './lint.js';
+export { formatReport } from './report.js';
+export {
   DEFAULT_OUT,
   renderAll,
   type OutputPaths,

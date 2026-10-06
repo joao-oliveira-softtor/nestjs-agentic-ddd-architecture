@@ -1,20 +1,28 @@
 import { compile } from '../compiler/compile.js';
+import { formatReport } from '../compiler/report.js';
 
 export const USAGE =
-  'uso: agentic-ddd compile [--check] [--config <arquivo>] [--out-root <dir>]';
+  'uso: agentic-ddd compile [--check] [--report] [--config <arquivo>] [--out-root <dir>]';
 
 interface Flags {
   check: boolean;
+  report: boolean;
   config: string;
   outRoot?: string;
 }
 
 function parseFlags(args: readonly string[]): Flags | string {
-  const flags: Flags = { check: false, config: 'agentic.config.ts' };
+  const flags: Flags = {
+    check: false,
+    report: false,
+    config: 'agentic.config.ts',
+  };
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]!;
     if (arg === '--check') {
       flags.check = true;
+    } else if (arg === '--report') {
+      flags.report = true;
     } else if (arg === '--config' || arg === '--out-root') {
       const value = args[++i];
       if (!value) return `${arg} exige um valor`;
@@ -44,6 +52,8 @@ export async function main(argv: readonly string[]): Promise<number> {
       outRoot: flags.outRoot,
       mode: flags.check ? 'check' : 'write',
     });
+    if (flags.report && result.rendered)
+      console.log(formatReport(result.rendered, result.lint));
     for (const error of result.errors)
       console.error(`${error.source ?? '-'}: ${error.message}`);
     for (const item of result.drift)
