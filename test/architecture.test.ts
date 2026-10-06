@@ -111,4 +111,18 @@ describe('arquitetura', () => {
       ),
     ).toEqual([]);
   });
+
+  test('os diretórios governados pelas regras existem e têm arquivos', () => {
+    const dirs = [
+      'src/core',
+      'src/decorators',
+      'src/compiler',
+      'examples/orders/domain',
+      'examples/orders/application',
+    ];
+    for (const dir of dirs) {
+      expect(filesIn(dir).length > 0).toBe(true);
+    }
+    expect(filesIn('examples', { includeTests: true }).length > 0).toBe(true);
+  });
 });
