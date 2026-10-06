@@ -126,8 +126,8 @@ Todos os decorators **só registram metadados explícitos** no registry. Nenhum 
 
 | Decorator | Campos obrigatórios | Opcionais |
 |---|---|---|
-| `@AgentEntity` | `description` | — |
-| `@Invariant` | `id` (kebab-case, único na entidade), `text` | — |
+| `@AgentEntity` | `description` | `states: string[]` (obrigatório se algum método declarar `transition`) |
+| `@Invariant` (na **classe**; pode ser empilhado) | `id` (kebab-case, único na entidade), `text` | — |
 | `@AgentMethod` | `description` | `emits: EventClass[]`, `transition: { from: State[], to: State }` |
 | `@DomainEvent` | `name`, `description`, `payload` (Zod) | — |
 | `@AgentUseCase` | `name` (snake_case, `^[a-z][a-z0-9_]{0,63}$`, único), `description`, `whenToUse`, `input` (Zod), `output` (Zod) | `whenNotToUse`, `emits` |
@@ -169,7 +169,8 @@ agentic.config.ts ─import─▶ Registry ─▶ IR ─▶ Validação ─▶ D
    - `emits` apontando para classe sem `@DomainEvent`;
    - `transition.from/to` vazio;
    - operator com use-case não decorado; `requiresApproval` fora da allowlist;
-   - método público (de instância ou estático, exceto getters/setters e `constructor`) de `@AgentEntity` sem `@AgentMethod` (convenção: tudo que o agente pode acionar é declarado).
+   - método público **declarado na própria classe** (de instância ou estático; ignora métodos herdados como `pullEvents`, getters/setters e `constructor`) de `@AgentEntity` sem `@AgentMethod` (convenção: tudo que o agente pode acionar é declarado);
+   - `transition.from`/`to` com estado fora de `@AgentEntity({ states })`; entidade com transições sem `states` declarado.
 4. **Diff semântico** IR × `domain.lock.json` (ver §7).
 5. **Reconciliação** com a proposta aberta (ver §7).
 6. **Renderers** puros (IR → `Map<caminho, conteúdo>`); a escrita em disco é uma etapa separada.
@@ -244,10 +245,11 @@ metadata:
 Comparando IR atual com `domain.lock.json`, por ID de elemento:
 
 - **ADDED** — ID novo; **REMOVED** — ID sumiu; **MODIFIED** — mesmo ID, hash do conteúdo canônico diferente.
+- O hash de conteúdo **exclui `source`** (`arquivo:linha` é metadado de localização): formatar o código ou mover um decorator de linha não gera diff de domínio, só atualiza os caminhos nos arquivos gerados.
 - Classificação de cada item:
   - `breaking` — contrato de tool muda de forma incompatível para quem chama: use-case removido/renomeado; campo de input adicionado como obrigatório, removido ou com tipo alterado; campo de output removido ou com tipo alterado; transição removida;
   - `behavioral` — regra de negócio muda sem quebrar o contrato: invariante adicionada/modificada/removida; transição adicionada; `emits` alterado; allowlist ou aprovação de operator alterada;
-  - `docs` — só descrições/`whenToUse` mudaram.
+  - `docs` — só descrições/`whenToUse` mudaram. **Não exige proposta**: o `compile` aplica direto no lock e o item aparece no `--diff`, mas não entra no histórico (reescrever uma descrição não é mudança de regra).
 
 ### 7.2 Formato da proposta
 
@@ -287,7 +289,8 @@ acceptance:
 - **Manutenção / proposal-first:** a proposta é escrita antes do código, com `delta` e `acceptance`. O código é implementado.
 - **Reconciliação no `compile`:**
   - conjunto de IDs do diff real **igual** ao `delta` da proposta aberta → `status: applied`, pasta movida para `changes/archive/`, lock atualizado, `history.md` regenerado;
-  - diferente → erro listando cada divergência (ID no delta sem mudança no código; mudança no código fora do delta).
+  - diferente → divergências listadas (ID no delta sem mudança no código; mudança no código fora do delta). O `compile` **continua renderizando** skills, `AGENTS.md` e `ir-hash` a partir da IR atual (o app e os testes rodam durante o TDD), mas **não** atualiza o lock nem arquiva a proposta, e sai com exit 0 mais aviso; o `--check` falha até reconciliar.
+- **Regra do lock:** o lock só muda por reconciliação (ou por diff exclusivamente `docs`). Diff `breaking`/`behavioral` sem proposta segue a mesma regra acima: renderiza, não atualiza o lock, `--check` falha e sugere `--draft-change`.
 - **Restrições do v0:**
   - no máximo **uma** proposta com `status: proposed` por vez (mais de uma = erro);
   - Motivo vazio = erro;
@@ -434,7 +437,8 @@ Roteirizável e determinístico: recebe uma lista de respostas (ou funções `re
 
 - Golden/snapshot (`toMatchSnapshot`) da IR e de cada arquivo renderizado, por fixture.
 - Idempotência: compilar duas vezes produz bytes idênticos.
-- Independência de ordem: importar os módulos da fixture em ordem embaralhada produz a mesma saída.
+- Independência de ordem: construir o registry **programaticamente** com os registros inseridos em ordem embaralhada produz a mesma IR e a mesma saída (reimportar módulos ESM em outra ordem não funciona por causa do cache de módulos, e os decorators só rodam uma vez).
+- Os golden das fixtures compilam pelo **CLI em subprocesso** (`bun src/cli/main.ts compile` sobre a fixture), testando também o ponto de entrada real.
 - Fidelidade: todo elemento do registry aparece na IR e em ao menos uma skill; o JSON Schema gerado aceita e rejeita as mesmas amostras que o Zod.
 - Uma fixture por regra de validação, verificando mensagem e `arquivo:linha`.
 - `--check` detecta edição manual em arquivo gerado e no bloco do `AGENTS.md` (e ignora o texto fora do bloco).
