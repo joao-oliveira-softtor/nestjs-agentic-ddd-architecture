@@ -339,6 +339,7 @@ git commit -m "feat(cli): organiza o CLI por comandos e adiciona agentic-ddd ir"
 **Interfaces:**
 - Consumes: os schemas exportados pelos use-cases do exemplo (`createOrderInput`, `createOrderOutput`, `confirmOrderInput`, `cancelOrderInput`), o payload de `OrderCreated` via `defaultRegistry`.
 - Produces: nenhuma API; garante a spec §12.1 ("o JSON Schema gerado aceita e rejeita as mesmas amostras que o Zod").
+- Nota: este teste importa `examples/orders` a partir de `src/compiler` **de propósito** — ele fixa os schemas reais do exemplo, não os da fixture `shop`. O teste de arquitetura só vigia arquivos que não são `*.test.ts`, então não há violação.
 
 - [ ] **Step 1: Instalar o validador (só para teste)**
 
@@ -436,7 +437,7 @@ describe('JSON Schema gerado ≡ Zod', () => {
 - [ ] **Step 3: Rodar**
 
 Run: `bun test src/compiler/json-schema.test.ts`
-Expected: `5 pass`. Se algum caso divergir, NÃO mude o teste para passar: reporte a amostra divergente (é uma diferença real entre o Zod e o JSON Schema que as tools publicam).
+Expected: `5 pass`. Se algum caso divergir, NÃO mude o teste para passar: reporte a amostra divergente (é uma diferença real entre o Zod e o JSON Schema que as tools publicam). Se o `ajv` reclamar de alguma palavra-chave, mantenha o `strict: false` já configurado; não acrescente `allErrors`, não remova palavras-chave do schema e não mexa no gerador de JSON Schema.
 
 - [ ] **Step 4: Verificar e commitar**
 
@@ -2114,11 +2115,15 @@ In `src/compiler/compile.test.ts`:
     await expect(compile({ configPath, outRoot: out, mode: 'write', draftChange: 'nada' })).rejects.toThrow(
       'não há mudança de domínio para propor',
     );
-    const other = await compile({ configPath, outRoot: await mkdtemp(join(tmpdir(), 'agentic-compile-')), mode: 'write', draftChange: 'a' });
-    await expect(
-      compile({ configPath, outRoot: other.config.outRoot, mode: 'write', draftChange: 'b' }),
-    ).rejects.toThrow('já existe uma proposta aberta');
-    await rm(other.config.outRoot, { recursive: true, force: true });
+    const otherOut = await mkdtemp(join(tmpdir(), 'agentic-compile-'));
+    try {
+      await compile({ configPath, outRoot: otherOut, mode: 'write', draftChange: 'a' });
+      await expect(compile({ configPath, outRoot: otherOut, mode: 'write', draftChange: 'b' })).rejects.toThrow(
+        'já existe uma proposta aberta',
+      );
+    } finally {
+      await rm(otherOut, { recursive: true, force: true });
+    }
     await expect(compile({ configPath, outRoot: out, mode: 'write', draftChange: 'Slug Ruim' })).rejects.toThrow(
       '--draft-change: o slug "Slug Ruim" deve ser kebab-case',
     );
@@ -2127,7 +2132,7 @@ In `src/compiler/compile.test.ts`:
 
 In `src/cli/cli.test.ts`:
 1. Add `import { bootstrapChanges } from '../../test/helpers/bootstrap';`.
-2. In `'escreve e depois --check sai com 0'`, make the test `async` and call `await bootstrapChanges(out);` before the first `run(...)`.
+2. In `'escreve e depois --check sai com 0'`, `'--check com diretório real no lugar do link do espelho dá dica de remover/renomear'` and `'--check com link do espelho ausente manda rodar o compile'`, make each test `async` (if it is not) and call `await bootstrapChanges(out);` before the first `run(...)` — assim esses testes não dependem do texto da pendência "mudança sem proposta".
 3. Append:
 
 ```ts
@@ -3248,7 +3253,11 @@ bun run agentic compile --check
 bun run agentic verify 0001
 ```
 
-Expected: tudo verde (o e2e `verify 0001` dentro da suíte passa e demora mais que os outros); o `AGENTS.md` regenerado tem as duas convenções; `verify 0001` imprime `change 0001 — done`, todos os gates `passed`, e sai com 0. Se G4 falhar por alguma regra sem `covers`, acrescente o teste que falta em `examples/orders/test/` (não relaxe o gate).
+Expected: tudo verde (o e2e `verify 0001` dentro da suíte passa e demora mais que os outros); o `AGENTS.md` regenerado tem as duas convenções; `verify 0001` imprime `change 0001 — done`, todos os gates `passed`, e sai com 0.
+
+Se o G4 falhar, **não relaxe o gate**. Diagnóstico esperado:
+- O delta do 0001 lista todas as regras do exemplo. Cada uma precisa de um teste com `covers`: as duas invariantes de classe, `method:Order.create`, `method:Order.confirm` e `method:Order.cancel` (em `order.test.ts`), os três use-cases (em `use-cases.test.ts`) e `operator:order-operator` (o `operator.test.ts` desta task). Se faltar algum, acrescente o teste em `examples/orders/test/`.
+- O achado "covers cita X, que não existe" só aparece se o **nome** de algum teste do repositório começar com `[covers: …]` citando um ID fora da IR. `src/testing/testing.test.ts` chama `covers()` só como valor dentro do teste, não como nome; `test-run.test.ts` grava os testes num diretório temporário; `gates.test.ts` usa resultados falsos. Nenhum deles aparece no JUnit da suíte.
 
 - [ ] **Step 7: Commit**
 
