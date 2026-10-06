@@ -1,4 +1,11 @@
 export {
+  AgentUseCase,
+  DEFAULT_LIMITS,
+  Operator,
+  type AgentUseCaseOptions,
+  type OperatorOptions,
+} from './application.js';
+export {
   AgentEntity,
   AgentEvent,
   AgentMethod,
