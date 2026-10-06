@@ -54,4 +54,42 @@ describe('lock', () => {
     await writeFile(join(dir, 'l.json'), serializeLock(lock));
     expect(await readLock(join(dir, 'l.json'), 'l.json')).toEqual(lock);
   });
+
+  test('JSON válido que não é objeto vira lock incompleto', () => {
+    expect(() => parseLock('[]', 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
+    expect(() => parseLock('null', 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
+    expect(() => parseLock('5', 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
+    expect(() => parseLock('"x"', 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
+  });
+
+  test('lock com ir válido mas sem arrays vira incompleto', () => {
+    expect(() => parseLock('{"lockVersion":1,"ir":{"irVersion":1},"changes":[]}', 'l.json')).toThrow(
+      'l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git',
+    );
+  });
+
+  test('lock com change faltando hash vira incompleto', () => {
+    const invalid = {
+      lockVersion: 1,
+      ir: EMPTY_IR,
+      changes: [
+        {
+          id: '0001',
+          title: 'test',
+          path: 'changes/0001/proposal.md',
+          summary: 'test',
+          // hash ausente
+          items: [],
+        },
+      ],
+    };
+    expect(() => parseLock(JSON.stringify(invalid), 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
+  });
+
+  test('readLock propaga erro de JSON malformado', async () => {
+    await writeFile(join(dir, 'broken.json'), '{');
+    expect(readLock(join(dir, 'broken.json'), 'broken.json')).rejects.toThrow(
+      'broken.json: lock inválido (JSON malformado); restaure-o pelo git',
+    );
+  });
 });
