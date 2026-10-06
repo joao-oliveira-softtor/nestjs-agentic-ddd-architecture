@@ -133,31 +133,91 @@ const properties = (schema: unknown): Record<string, JsonSchema> =>
 const requiredOf = (schema: unknown): Set<string> =>
   new Set(((schema as JsonSchema | undefined)?.required ?? []) as string[]);
 const typeOf = (property: JsonSchema | undefined): string =>
-  stableStringify(
-    property?.type ??
-      property?.anyOf ??
-      property?.enum ??
-      property?.const ??
-      null,
-  );
+  stableStringify({
+    type: property?.type,
+    anyOf: property?.anyOf,
+    const: property?.const,
+    format: property?.format,
+  });
+
+function enumBreaksInput(before: unknown, after: unknown): boolean {
+  const beforeEnum = (before as JsonSchema | undefined)?.enum as
+    string[] | undefined;
+  const afterEnum = (after as JsonSchema | undefined)?.enum as
+    string[] | undefined;
+  if (!beforeEnum && afterEnum) return true;
+  if (beforeEnum && !afterEnum) return true;
+  if (beforeEnum && afterEnum) {
+    return beforeEnum.some((val) => !afterEnum.includes(val));
+  }
+  return false;
+}
+
+function enumBreaksOutput(before: unknown, after: unknown): boolean {
+  const beforeEnum = (before as JsonSchema | undefined)?.enum as
+    string[] | undefined;
+  const afterEnum = (after as JsonSchema | undefined)?.enum as
+    string[] | undefined;
+  if (!beforeEnum && afterEnum) return true;
+  if (beforeEnum && !afterEnum) return true;
+  if (beforeEnum && afterEnum) {
+    return afterEnum.some((val) => !beforeEnum.includes(val));
+  }
+  return false;
+}
 
 function inputBreaks(before: unknown, after: unknown): boolean {
   const old = properties(before);
   const next = properties(after);
   const oldRequired = requiredOf(before);
-  if (Object.keys(old).some((key) => !(key in next))) return true;
-  if ([...requiredOf(after)].some((key) => !oldRequired.has(key))) return true;
-  return Object.keys(old).some(
-    (key) => key in next && typeOf(old[key]) !== typeOf(next[key]),
-  );
+  const newRequired = requiredOf(after);
+
+  for (const key of Object.keys(old)) {
+    if (!Object.hasOwn(next, key)) return true;
+    const oldProp = old[key];
+    const nextProp = next[key];
+
+    if (enumBreaksInput(oldProp, nextProp)) return true;
+    if (typeOf(oldProp) !== typeOf(nextProp)) return true;
+    if (inputBreaks(oldProp, nextProp)) return true;
+    const oldPropItems = (oldProp as JsonSchema | undefined)?.items;
+    const nextPropItems = (nextProp as JsonSchema | undefined)?.items;
+    if (
+      oldPropItems &&
+      nextPropItems &&
+      stableStringify(oldPropItems) !== stableStringify(nextPropItems)
+    )
+      return true;
+  }
+
+  if ([...newRequired].some((key) => !oldRequired.has(key))) return true;
+
+  return false;
 }
 
 function outputBreaks(before: unknown, after: unknown): boolean {
   const old = properties(before);
   const next = properties(after);
-  return Object.keys(old).some(
-    (key) => !(key in next) || typeOf(old[key]) !== typeOf(next[key]),
-  );
+
+  for (const key of Object.keys(old)) {
+    if (!Object.hasOwn(next, key)) return true;
+    const oldProp = old[key];
+    const nextProp = next[key];
+
+    if (enumBreaksOutput(oldProp, nextProp)) return true;
+    if (typeOf(oldProp) !== typeOf(nextProp)) return true;
+    if (outputBreaks(oldProp, nextProp)) return true;
+    const oldPropItems = (oldProp as JsonSchema | undefined)?.items;
+    const nextPropItems = (nextProp as JsonSchema | undefined)?.items;
+    if (
+      oldPropItems &&
+      nextPropItems &&
+      stableStringify(oldPropItems) !== stableStringify(nextPropItems)
+    )
+      return true;
+  }
+
+  return false;
 }
 
 function classifyModified(
@@ -173,7 +233,8 @@ function classifyModified(
       stableStringify(before.content[key] ?? null) !==
       stableStringify(after.content[key] ?? null),
   );
-  if (changed.every((key) => DOC_FIELDS.has(key))) return 'docs';
+  if (changed.length > 0 && changed.every((key) => DOC_FIELDS.has(key)))
+    return 'docs';
   if (
     after.kind === 'usecase' &&
     (inputBreaks(before.content.inputSchema, after.content.inputSchema) ||

@@ -170,4 +170,111 @@ describe('semanticDiff', () => {
         .classification,
     ).toBe('breaking');
   });
+
+  test('campo aninhado removido no input → breaking', () => {
+    const before = clone();
+    const input = useCase(before, 'create_product').inputSchema;
+    input.properties.metadata = {
+      type: 'object',
+      properties: { sku: { type: 'string' } },
+    };
+    input.required = ['product_id', 'price', 'metadata'];
+
+    const after = clone();
+    const inputAfter = useCase(after, 'create_product').inputSchema;
+    inputAfter.properties.metadata = { type: 'object', properties: {} };
+    inputAfter.required = ['product_id', 'price', 'metadata'];
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('items de array muda de tipo no input → breaking', () => {
+    const before = clone();
+    const input = useCase(before, 'create_product').inputSchema;
+    input.properties.tags = { type: 'array', items: { type: 'string' } };
+
+    const after = clone();
+    const inputAfter = useCase(after, 'create_product').inputSchema;
+    inputAfter.properties.tags = { type: 'array', items: { type: 'number' } };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('enum no input: valor removido → breaking; valor adicionado → behavioral', () => {
+    const before = clone();
+    const input = useCase(before, 'publish_product').inputSchema;
+    input.properties.priority = { enum: ['low', 'medium', 'high'] };
+
+    const afterRemoved = clone();
+    useCase(afterRemoved, 'publish_product').inputSchema.properties.priority = {
+      enum: ['low', 'medium'],
+    };
+    expect(
+      semanticDiff(before, afterRemoved).find(
+        (i) => i.id === 'usecase:publish_product',
+      )!.classification,
+    ).toBe('breaking');
+
+    const afterAdded = clone();
+    useCase(afterAdded, 'publish_product').inputSchema.properties.priority = {
+      enum: ['low', 'medium', 'high', 'urgent'],
+    };
+    expect(
+      semanticDiff(before, afterAdded).find(
+        (i) => i.id === 'usecase:publish_product',
+      )!.classification,
+    ).toBe('behavioral');
+  });
+
+  test('enum no output: valor adicionado → breaking', () => {
+    const before = clone();
+    const output = useCase(before, 'create_product').outputSchema;
+    output.properties.result = { enum: ['success', 'pending'] };
+
+    const after = clone();
+    useCase(after, 'create_product').outputSchema.properties.result = {
+      enum: ['success', 'pending', 'failed'],
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('propriedade input chamada constructor removida → breaking', () => {
+    const before = clone();
+    const input = useCase(before, 'create_product').inputSchema;
+    input.properties.constructor = { type: 'string' };
+    input.required = ['product_id', 'price', 'constructor'];
+
+    const after = clone();
+    const inputAfter = useCase(after, 'create_product').inputSchema;
+    delete inputAfter.properties.constructor;
+    inputAfter.required = ['product_id', 'price'];
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('description muda + campo input opcional novo → behavioral (não docs)', () => {
+    const ir = clone();
+    useCase(ir, 'create_product').description = 'Nova descrição.';
+    useCase(ir, 'create_product').inputSchema.properties.note = {
+      type: 'string',
+    };
+    expect(semanticDiff(base, ir)[0]!.classification).toBe('behavioral');
+  });
 });
