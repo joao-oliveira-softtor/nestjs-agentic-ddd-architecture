@@ -49,12 +49,18 @@ describe('lintSkill', () => {
   test('SKILL.md acima de 500 linhas e referência profunda', () => {
     expect(
       errorsOf('x/s/SKILL.md', skill('s', 'D.', 'linha\n'.repeat(500))),
-    ).toContain('SKILL.md com 507 linhas (máximo 500)');
+    ).toContain('SKILL.md com 506 linhas (máximo 500)');
     expect(
       errorsOf('x/s/SKILL.md', skill('s', 'D.', '[x](references/a/b.md)\n')),
     ).toEqual([
       'referência references/a/b.md passa de um nível de profundidade',
     ]);
+  });
+
+  test('SKILL.md com exatamente 500 linhas não tem erro', () => {
+    expect(
+      errorsOf('x/s/SKILL.md', skill('s', 'D.', 'linha\n'.repeat(494))),
+    ).toEqual([]);
   });
 
   test('frontmatter ausente', () => {

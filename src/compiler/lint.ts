@@ -49,7 +49,9 @@ export function lintSkill(path: string, content: string): LintFinding[] {
       `description com ${description.length} caracteres (precisa de 1 a 1024)`,
     );
   }
-  const lines = content.split('\n').length;
+  const lines = content.endsWith('\n')
+    ? content.split('\n').length - 1
+    : content.split('\n').length;
   if (lines > 500) add('error', `SKILL.md com ${lines} linhas (máximo 500)`);
   for (const link of content.matchAll(/\]\((references\/[^)]+)\)/g)) {
     if (link[1]!.split('/').length > 2)

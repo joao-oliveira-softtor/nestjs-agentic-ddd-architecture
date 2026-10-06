@@ -7,11 +7,12 @@ export function formatReport(
   rendered: Rendered,
   findings: readonly LintFinding[],
 ): string {
-  const rows = [...rendered.files].map(([path, content]) => [
-    code(path),
-    String(content.split('\n').length),
-    String(approxTokens(content)),
-  ]);
+  const rows = [...rendered.files].map(([path, content]) => {
+    const lines = content.endsWith('\n')
+      ? content.split('\n').length - 1
+      : content.split('\n').length;
+    return [code(path), String(lines), String(approxTokens(content))];
+  });
   const lines = [
     '# agentic-ddd — relatório',
     '',

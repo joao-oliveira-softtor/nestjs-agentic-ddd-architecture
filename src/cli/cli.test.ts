@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -76,5 +76,44 @@ describe('agentic-ddd compile (CLI)', () => {
       '| `.agentic/runtime/order-operator/SKILL.md` |',
     );
     expect(result.stdout).toContain('≈tokens');
+  });
+
+  test('erro de lint no modo write sai com 1 mas ainda escreve', async () => {
+    const result = run(
+      'compile',
+      '--config',
+      'test/fixtures/long-description/agentic.config.ts',
+      '--out-root',
+      out,
+    );
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('lint: description com');
+    const skillPath = join(out, '.agentic/runtime/long-operator/SKILL.md');
+    try {
+      await access(skillPath);
+      expect(true).toBe(true); // File exists
+    } catch {
+      expect.unreachable('File should exist');
+    }
+  });
+
+  test('erro de lint no modo --check sai com 1', () => {
+    run(
+      'compile',
+      '--config',
+      'test/fixtures/long-description/agentic.config.ts',
+      '--out-root',
+      out,
+    );
+    const checkResult = run(
+      'compile',
+      '--check',
+      '--config',
+      'test/fixtures/long-description/agentic.config.ts',
+      '--out-root',
+      out,
+    );
+    expect(checkResult.code).toBe(1);
+    expect(checkResult.stderr).toContain('lint: description com');
   });
 });
