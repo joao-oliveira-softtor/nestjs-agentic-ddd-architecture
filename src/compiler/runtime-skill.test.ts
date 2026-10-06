@@ -85,6 +85,9 @@ describe('renderRuntimeSkill', () => {
     expect(typeLabel({ type: 'array' })).toBe('array');
     expect(typeLabel({ type: 'object' })).toBe('object');
     expect(typeLabel({})).toBe('qualquer');
+    expect(typeLabel({ type: 'array', items: true as never })).toBe(
+      'array<qualquer>',
+    );
   });
 
   test('SKILL.md contém legenda de aprovação e referência ao schema', () => {

@@ -34,6 +34,7 @@ export function guardedBy(on: string | null): string {
 }
 
 export function typeLabel(schema: JsonSchema): string {
+  if (typeof schema !== 'object' || schema === null) return 'qualquer';
   if (Array.isArray(schema.enum))
     return `enum: ${(schema.enum as unknown[]).map(String).join(', ')}`;
   if ('const' in schema) return `const: ${String(schema.const)}`;
