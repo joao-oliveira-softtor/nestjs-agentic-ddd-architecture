@@ -55,3 +55,4 @@ export {
   type Rendered,
 } from './render/index';
 export { checkOutputs, writeOutputs, type Drift } from './write';
+export { LOCK_VERSION, parseLock, readLock, serializeLock, type DomainLock, type LockChange } from './lock';
