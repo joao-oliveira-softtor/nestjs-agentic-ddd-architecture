@@ -271,6 +271,26 @@ describe('writeOutputs / checkOutputs', () => {
     ]);
   });
 
+  test('pasta gerenciada existente sem SKILL.md é conflito e não perde arquivos do usuário', async () => {
+    const dir = join(out, '.agents/skills/shop-dev');
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, 'notes.md'), 'minhas notas\n');
+
+    for (let i = 0; i < 2; i++) {
+      const { warnings } = await writeOutputs(config, rendered);
+      expect(warnings).toEqual([
+        '.agents/skills/shop-dev existe e não foi gerado pelo agentic-ddd; não foi sobrescrito',
+      ]);
+      expect(await readdir(dir)).toEqual(['notes.md']);
+      expect(await readFile(join(dir, 'notes.md'), 'utf8')).toBe(
+        'minhas notas\n',
+      );
+    }
+    expect(await checkOutputs(config, rendered)).toEqual([
+      { path: '.agents/skills/shop-dev', reason: 'conflict' },
+    ]);
+  });
+
   test('a marca de gerado só vale no frontmatter', async () => {
     const dir = join(out, '.agentic/runtime/doc-operator');
     await mkdir(dir, { recursive: true });

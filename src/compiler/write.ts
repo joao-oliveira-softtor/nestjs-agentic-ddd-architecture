@@ -114,10 +114,9 @@ async function conflictingDirs(
   const conflicts = new Set<string>();
   for (const [base, keep] of managedBases(config, rendered)) {
     for (const dir of keep) {
-      const skill = await readOrNull(
-        join(config.outRoot, base, dir, 'SKILL.md'),
-      );
-      if (skill !== null && !isGenerated(skill))
+      const absolute = join(config.outRoot, base, dir);
+      if ((await lstatOrNull(absolute)) === null) continue;
+      if (!isGenerated(await readOrNull(join(absolute, 'SKILL.md'))))
         conflicts.add(`${base}/${dir}`);
     }
   }
