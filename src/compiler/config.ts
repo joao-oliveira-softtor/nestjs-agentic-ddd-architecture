@@ -1,4 +1,5 @@
-import { dirname, resolve } from 'node:path';
+import { stat } from 'node:fs/promises';
+import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { toPosix } from './ir.js';
 import { DEFAULT_OUT, type OutputPaths } from './render/index.js';
@@ -46,6 +47,17 @@ export function resolveConfig(
       );
   }
   const root = resolve(configDir, config.root ?? '.');
+  for (const module of config.modules) {
+    const fromRoot = relative(root, resolve(root, module.path));
+    if (fromRoot === '')
+      throw new Error(
+        `agentic.config.ts: o módulo "${module.name}" não pode apontar para a raiz do projeto`,
+      );
+    if (fromRoot.startsWith('..') || isAbsolute(fromRoot))
+      throw new Error(
+        `agentic.config.ts: o módulo "${module.name}" não pode apontar para fora da raiz do projeto`,
+      );
+  }
   return {
     root,
     outRoot: overrides.outRoot ? resolve(overrides.outRoot) : root,
@@ -70,5 +82,17 @@ export async function loadConfig(
     throw new Error(
       `${configPath}: esperado export default defineConfig({ modules: [...] })`,
     );
-  return resolveConfig(loaded.default, dirname(absolute), overrides);
+  const config = resolveConfig(loaded.default, dirname(absolute), overrides);
+  // A checagem de existência fica aqui (e não em resolveConfig) para que
+  // resolveConfig continue puro, sem I/O.
+  for (const module of config.modules) {
+    const info = await stat(resolve(config.root, module.path)).catch(
+      () => null,
+    );
+    if (info === null || !info.isDirectory())
+      throw new Error(
+        `agentic.config.ts: o caminho "${module.path}" do módulo "${module.name}" não existe ou não é um diretório`,
+      );
+  }
+  return config;
 }
