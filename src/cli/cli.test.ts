@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -38,7 +38,11 @@ describe('agentic-ddd compile (CLI)', () => {
 
   test('--check sai com 1 e lista o arquivo desatualizado', async () => {
     run('compile', '--out-root', out);
-    await writeFile(join(out, '.agents/skills/orders-dev/SKILL.md'), 'editado');
+    const skillPath = join(out, '.agents/skills/orders-dev/SKILL.md');
+    await writeFile(
+      skillPath,
+      `${await readFile(skillPath, 'utf8')}\neditado\n`,
+    );
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(1);
     expect(check.stderr).toContain(

@@ -59,9 +59,10 @@ describe('compile (exemplo orders)', () => {
 
   test('check acusa arquivo gerado editado à mão', async () => {
     await compile({ configPath, outRoot: out, mode: 'write' });
+    const skillPath = join(out, '.agentic/runtime/order-operator/SKILL.md');
     await writeFile(
-      join(out, '.agentic/runtime/order-operator/SKILL.md'),
-      'editado',
+      skillPath,
+      `${await readFile(skillPath, 'utf8')}\neditado\n`,
     );
     const check = await compile({ configPath, outRoot: out, mode: 'check' });
     expect(check.ok).toBe(false);

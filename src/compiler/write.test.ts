@@ -3,6 +3,7 @@ import {
   lstat,
   mkdir,
   mkdtemp,
+  readdir,
   readFile,
   readlink,
   rm,
@@ -18,6 +19,7 @@ import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md.js';
 import { DEFAULT_OUT, renderAll } from './render/index.js';
 import {
   CLAUDE_MD_CONTENT,
+  extractAgentsBlock,
   checkOutputs,
   mergeAgentsBlock,
   writeOutputs,
@@ -72,6 +74,31 @@ describe('mergeAgentsBlock', () => {
       `${existing.trimEnd()}\n\n${block}\n`,
     );
   });
+
+  test('marcador citado no meio de uma frase não conta como bloco', () => {
+    const existing = `Use ${BLOCK_BEGIN} para abrir o bloco.\n\n${BLOCK_BEGIN}\nvelho\n${BLOCK_END}\n\nRodapé.\n`;
+    expect(extractAgentsBlock(existing)).toBe(
+      `${BLOCK_BEGIN}\nvelho\n${BLOCK_END}`,
+    );
+    expect(mergeAgentsBlock(existing, block)).toBe(
+      `Use ${BLOCK_BEGIN} para abrir o bloco.\n\n${block}\n\nRodapé.\n`,
+    );
+    expect(extractAgentsBlock(`Só cita ${BLOCK_BEGIN} e ${BLOCK_END}.\n`)).toBe(
+      null,
+    );
+  });
+
+  test('é idempotente, inclusive com marcadores corrompidos', () => {
+    for (const existing of [
+      null,
+      '# Projeto\n\nNotas.\n',
+      `${BLOCK_BEGIN}\nvelho\n${BLOCK_END}\n`,
+      `${BLOCK_END}\n${BLOCK_BEGIN}\n`,
+    ]) {
+      const once = mergeAgentsBlock(existing, block);
+      expect(mergeAgentsBlock(once, block)).toBe(once);
+    }
+  });
 });
 
 describe('writeOutputs / checkOutputs', () => {
@@ -88,9 +115,10 @@ describe('writeOutputs / checkOutputs', () => {
 
   test('detecta arquivo alterado, removido e extra', async () => {
     await writeOutputs(config, rendered);
+    const skillPath = join(out, '.agents/skills/shop-dev/SKILL.md');
     await writeFile(
-      join(out, '.agents/skills/shop-dev/SKILL.md'),
-      'mexido à mão',
+      skillPath,
+      `${await readFile(skillPath, 'utf8')}\nmexido à mão\n`,
     );
     await rm(
       join(
@@ -186,5 +214,75 @@ describe('writeOutputs / checkOutputs', () => {
     expect(
       (await lstat(join(out, '.claude/skills/shop-dev'))).isDirectory(),
     ).toBe(true);
+  });
+
+  test('espelho: remove só link órfão de skill gerada; link do usuário sobrevive', async () => {
+    const old = join(out, '.agents/skills/velha-dev');
+    await mkdir(old, { recursive: true });
+    await writeFile(
+      join(old, 'SKILL.md'),
+      '---\nname: velha-dev\nmetadata:\n  agentic-ddd.generated: "true"\n---\n',
+    );
+    const mine = join(out, '.agents/skills/minha');
+    await mkdir(mine, { recursive: true });
+    await writeFile(join(mine, 'SKILL.md'), '---\nname: minha\n---\n');
+    await mkdir(join(out, '.claude/skills'), { recursive: true });
+    const skills = join(out, '.claude/skills');
+    await symlink('../../.agents/skills/velha-dev', join(skills, 'velha-dev'));
+    await symlink('../../.agents/skills/minha', join(skills, 'minha'));
+    await symlink('../../.agents/skills/sumiu', join(skills, 'sumiu'));
+    await symlink('../../fora/nao-existe', join(skills, 'fora'));
+
+    await writeOutputs(config, rendered);
+
+    expect(await lstat(join(skills, 'velha-dev')).catch(() => null)).toBeNull();
+    expect(await lstat(join(skills, 'sumiu')).catch(() => null)).toBeNull();
+    expect(await readlink(join(skills, 'minha'))).toBe(
+      '../../.agents/skills/minha',
+    );
+    expect(await readlink(join(skills, 'fora'))).toBe('../../fora/nao-existe');
+    expect(await readFile(join(mine, 'SKILL.md'), 'utf8')).toBe(
+      '---\nname: minha\n---\n',
+    );
+  });
+
+  test('skill do usuário com o mesmo nome não é sobrescrita e vira conflito', async () => {
+    const dir = join(out, '.agents/skills/shop-dev');
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      join(dir, 'SKILL.md'),
+      '---\nname: shop-dev\n---\nmanual\n',
+    );
+
+    const { warnings } = await writeOutputs(config, rendered);
+
+    expect(warnings).toEqual([
+      '.agents/skills/shop-dev existe e não foi gerado pelo agentic-ddd; não foi sobrescrito',
+    ]);
+    expect(await readFile(join(dir, 'SKILL.md'), 'utf8')).toBe(
+      '---\nname: shop-dev\n---\nmanual\n',
+    );
+    expect(await readdir(dir)).toEqual(['SKILL.md']);
+    expect(
+      await lstat(join(out, '.claude/skills/shop-dev')).catch(() => null),
+    ).toBeNull();
+    expect(await checkOutputs(config, rendered)).toEqual([
+      { path: '.agents/skills/shop-dev', reason: 'conflict' },
+    ]);
+  });
+
+  test('a marca de gerado só vale no frontmatter', async () => {
+    const dir = join(out, '.agentic/runtime/doc-operator');
+    await mkdir(dir, { recursive: true });
+    const text =
+      '---\nname: doc-operator\n---\nCita agentic-ddd.generated: "true"\n';
+    await writeFile(join(dir, 'SKILL.md'), text);
+
+    expect(await checkOutputs(config, rendered)).not.toContainEqual({
+      path: '.agentic/runtime/doc-operator',
+      reason: 'extra',
+    });
+    await writeOutputs(config, rendered);
+    expect(await readFile(join(dir, 'SKILL.md'), 'utf8')).toBe(text);
   });
 });

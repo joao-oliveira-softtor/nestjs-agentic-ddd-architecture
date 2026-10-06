@@ -15,7 +15,8 @@ import { toPosix } from './ir.js';
 import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md.js';
 import type { Rendered } from './render/index.js';
 
-export type DriftReason = 'missing' | 'changed' | 'extra' | 'mirror';
+export type DriftReason =
+  'missing' | 'changed' | 'extra' | 'mirror' | 'conflict';
 
 export interface Drift {
   readonly path: string;
@@ -46,11 +47,28 @@ async function lstatOrNull(path: string): Promise<Stats | null> {
   }
 }
 
+function locateAgentsBlock(
+  text: string,
+): { start: number; end: number } | null {
+  let offset = 0;
+  let begin: number | null = null;
+  let end: number | null = null;
+  for (const line of text.split('\n')) {
+    const marker = line.trim();
+    if (marker === BLOCK_BEGIN) {
+      begin = offset + (line.length - line.trimStart().length);
+      end = null;
+    } else if (marker === BLOCK_END && begin !== null && end === null) {
+      end = offset + line.trimEnd().length;
+    }
+    offset += line.length + 1;
+  }
+  return begin === null || end === null ? null : { start: begin, end };
+}
+
 export function extractAgentsBlock(text: string): string | null {
-  const begin = text.indexOf(BLOCK_BEGIN);
-  const end = text.indexOf(BLOCK_END);
-  if (begin === -1 || end === -1 || end < begin) return null;
-  return text.slice(begin, end + BLOCK_END.length);
+  const located = locateAgentsBlock(text);
+  return located === null ? null : text.slice(located.start, located.end);
 }
 
 export function mergeAgentsBlock(
@@ -58,10 +76,20 @@ export function mergeAgentsBlock(
   block: string,
 ): string {
   if (existing === null) return `# AGENTS.md\n\n${block}\n`;
-  const current = extractAgentsBlock(existing);
-  if (current === null) return `${existing.trimEnd()}\n\n${block}\n`;
-  const begin = existing.indexOf(current);
-  return `${existing.slice(0, begin)}${block}${existing.slice(begin + current.length)}`;
+  const located = locateAgentsBlock(existing);
+  if (located === null) return `${existing.trimEnd()}\n\n${block}\n`;
+  return `${existing.slice(0, located.start)}${block}${existing.slice(located.end)}`;
+}
+
+function isGenerated(skill: string | null): boolean {
+  if (skill === null) return false;
+  const lines = skill.split('\n');
+  if (lines[0]?.trim() !== '---') return false;
+  const close = lines.findIndex((line, i) => i > 0 && line.trim() === '---');
+  return (
+    close !== -1 &&
+    lines.slice(1, close).some((line) => line.includes(GENERATED_MARK))
+  );
 }
 
 async function generatedSkillDirs(base: string): Promise<string[]> {
@@ -73,10 +101,32 @@ async function generatedSkillDirs(base: string): Promise<string[]> {
   }
   const result: string[] = [];
   for (const name of names.sort()) {
-    const skill = await readOrNull(join(base, name, 'SKILL.md'));
-    if (skill?.includes(GENERATED_MARK)) result.push(name);
+    if (isGenerated(await readOrNull(join(base, name, 'SKILL.md'))))
+      result.push(name);
   }
   return result;
+}
+
+async function conflictingDirs(
+  config: ResolvedConfig,
+  rendered: Rendered,
+): Promise<Set<string>> {
+  const conflicts = new Set<string>();
+  for (const [base, keep] of managedBases(config, rendered)) {
+    for (const dir of keep) {
+      const skill = await readOrNull(
+        join(config.outRoot, base, dir, 'SKILL.md'),
+      );
+      if (skill !== null && !isGenerated(skill))
+        conflicts.add(`${base}/${dir}`);
+    }
+  }
+  return conflicts;
+}
+
+function inConflict(conflicts: ReadonlySet<string>, path: string): boolean {
+  for (const dir of conflicts) if (path.startsWith(`${dir}/`)) return true;
+  return false;
 }
 
 async function listFiles(dir: string): Promise<string[]> {
@@ -119,18 +169,27 @@ export async function writeOutputs(
 ): Promise<WriteResult> {
   const written: string[] = [];
   const warnings: string[] = [];
+  const conflicts = await conflictingDirs(config, rendered);
+  for (const dir of [...conflicts].sort()) {
+    warnings.push(
+      `${dir} existe e não foi gerado pelo agentic-ddd; não foi sobrescrito`,
+    );
+  }
 
+  const removedOrphans = new Set<string>();
   for (const [base, keep] of managedBases(config, rendered)) {
     for (const dir of await generatedSkillDirs(join(config.outRoot, base))) {
-      await rm(join(config.outRoot, base, dir), {
-        recursive: true,
-        force: true,
-      });
-      if (!keep.includes(dir)) written.push(`${base}/${dir} (removido)`);
+      const absolute = join(config.outRoot, base, dir);
+      await rm(absolute, { recursive: true, force: true });
+      if (!keep.includes(dir)) {
+        removedOrphans.add(resolve(absolute));
+        written.push(`${base}/${dir} (removido)`);
+      }
     }
   }
 
   for (const [path, content] of rendered.files) {
+    if (inConflict(conflicts, path)) continue;
     const absolute = join(config.outRoot, path);
     await mkdir(dirname(absolute), { recursive: true });
     await writeFile(absolute, content);
@@ -160,12 +219,16 @@ export async function writeOutputs(
       const stat = await lstat(link);
       if (!stat.isSymbolicLink() || rendered.devSkillDirs.includes(name))
         continue;
-      if (resolve(mirrorDir, await readlink(link)).startsWith(skillsRoot)) {
+      const target = resolve(mirrorDir, await readlink(link));
+      const dangling =
+        target.startsWith(skillsRoot) && (await lstatOrNull(target)) === null;
+      if (dangling || removedOrphans.has(target)) {
         await rm(link, { force: true });
         written.push(`${mirror}/${name} (link removido)`);
       }
     }
     for (const dir of rendered.devSkillDirs) {
+      if (conflicts.has(`${config.out.devSkills}/${dir}`)) continue;
       const link = join(mirrorDir, dir);
       const stat = await lstatOrNull(link);
       if (stat && !stat.isSymbolicLink()) {
@@ -188,8 +251,11 @@ export async function checkOutputs(
   rendered: Rendered,
 ): Promise<Drift[]> {
   const drift: Drift[] = [];
+  const conflicts = await conflictingDirs(config, rendered);
+  for (const dir of conflicts) drift.push({ path: dir, reason: 'conflict' });
 
   for (const [path, content] of rendered.files) {
+    if (inConflict(conflicts, path)) continue;
     const actual = await readOrNull(join(config.outRoot, path));
     if (actual === null) drift.push({ path, reason: 'missing' });
     else if (actual !== content) drift.push({ path, reason: 'changed' });
@@ -221,6 +287,7 @@ export async function checkOutputs(
 
   for (const mirror of config.mirrors) {
     for (const dir of rendered.devSkillDirs) {
+      if (conflicts.has(`${config.out.devSkills}/${dir}`)) continue;
       const link = join(config.outRoot, mirror, dir);
       const stat = await lstatOrNull(link);
       if (
