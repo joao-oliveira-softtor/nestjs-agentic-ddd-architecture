@@ -14,10 +14,19 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": ".",
-    "incremental": true,
     "skipLibCheck": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "types": ["vitest/globals", "node"]
-  }
+    "noEmit": true,
+    "types": ["bun"],
+    "paths": {
+      "@agentic-ddd/core": ["./src/core/index.ts"],
+      "@agentic-ddd/decorators": ["./src/decorators/index.ts"],
+      "@agentic-ddd/compiler": ["./src/compiler/index.ts"],
+      "@agentic-ddd/testing": ["./src/testing/index.ts"],
+      "@agentic-ddd/runtime": ["./src/runtime/index.ts"],
+      "@agentic-ddd/nestjs": ["./src/nestjs/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
 }
