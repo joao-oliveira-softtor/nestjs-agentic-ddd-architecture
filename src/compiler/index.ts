@@ -1,6 +1,17 @@
 export { analyze } from './analyze';
 export { byId, canonicalize, sha256, stableStringify } from './canonical';
 export {
+  EMPTY_IR,
+  contentHash,
+  elementsOf,
+  semanticDiff,
+  type ChangeKind,
+  type Classification,
+  type DiffItem,
+  type DomainElement,
+  type ElementKind,
+} from './diff';
+export {
   analyzeProject,
   compile,
   type CompileOptions,
