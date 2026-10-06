@@ -135,7 +135,6 @@ exports[`buildIR IR estável (snapshot) 1`] = `
       ],
       "id": "usecase:create_product",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "price": {
             "description": "Preço em reais",
@@ -187,7 +186,6 @@ exports[`buildIR IR estável (snapshot) 1`] = `
       ],
       "id": "usecase:publish_product",
       "inputSchema": {
-        "additionalProperties": false,
         "properties": {
           "product_id": {
             "description": "Id do produto a publicar",

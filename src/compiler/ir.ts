@@ -144,9 +144,9 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
     return `usecase:${cls.name}`;
   };
 
-  const schema = (zod: ZodType, at: SourceLoc, what: string): JsonSchema => {
+  const schema = (zod: ZodType, at: SourceLoc, what: string, io: 'input' | 'output' = 'output'): JsonSchema => {
     try {
-      const json: JsonSchema = { ...(z.toJSONSchema(zod) as JsonSchema) };
+      const json: JsonSchema = { ...(z.toJSONSchema(zod, { io }) as JsonSchema) };
       delete json.$schema;
       return json;
     } catch (error) {
@@ -199,7 +199,7 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
       name: rec.target.name,
       module: moduleOf(rec.source),
       description: rec.description,
-      payloadSchema: schema(rec.payload, rec.source, `event:${rec.target.name} payload`),
+      payloadSchema: schema(rec.payload, rec.source, `event:${rec.target.name} payload`, 'output'),
       source: loc(rec.source),
     }))
     .sort(byId);
@@ -212,8 +212,8 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
       description: rec.description,
       whenToUse: rec.whenToUse,
       whenNotToUse: rec.whenNotToUse,
-      inputSchema: schema(rec.input, rec.source, `usecase:${rec.name} input`),
-      outputSchema: schema(rec.output, rec.source, `usecase:${rec.name} output`),
+      inputSchema: schema(rec.input, rec.source, `usecase:${rec.name} input`, 'input'),
+      outputSchema: schema(rec.output, rec.source, `usecase:${rec.name} output`, 'output'),
       uses: [...rec.uses].sort(),
       emits: rec.emits.map((e) => eventId(e, rec.source)).sort(),
       source: loc(rec.source),
@@ -241,7 +241,7 @@ export function buildIR(registry: Registry, options: IRBuildOptions): IRBuildRes
   return {
     ir: {
       irVersion: 1,
-      modules: [...options.modules].map((m) => ({ name: m.name, path: m.path })).sort((a, b) => (a.name < b.name ? -1 : 1)),
+      modules: [...options.modules].map((m) => ({ name: m.name, path: m.path })).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)),
       entities,
       events,
       useCases,

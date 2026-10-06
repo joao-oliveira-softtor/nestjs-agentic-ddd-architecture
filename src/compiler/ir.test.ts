@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { z } from 'zod';
-import { DomainEvent } from '@agentic-ddd/core';
-import { AgentEvent, Registry, createRegistry, withRegistry } from '@agentic-ddd/decorators';
+import { DomainEvent, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';
+import { AgentEvent, AgentUseCase, Registry, createRegistry, withRegistry } from '@agentic-ddd/decorators';
 import { SHOP_MODULE, defineShop } from './__fixtures__/shop.js';
 import { canonicalize, stableStringify } from './canonical.js';
-import { buildIR } from './ir.js';
+import { buildIR, irHash } from './ir.js';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const options = { root: ROOT, modules: [SHOP_MODULE] };
@@ -85,5 +85,69 @@ describe('buildIR', () => {
   test('elemento fora dos módulos configurados vira erro', () => {
     const { errors } = buildIR(defineShop(), { root: ROOT, modules: [{ name: 'outro', path: 'examples/outro' }] });
     expect(errors.some((e) => e.message.includes('fora dos módulos'))).toBe(true);
+  });
+
+  test('inputSchema omite campos com default do required', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentUseCase({
+        name: 'test_case',
+        description: 'Testa input com default.',
+        whenToUse: 'Teste.',
+        input: z.object({ a: z.string().default('x'), b: z.string() }),
+        output: z.object({ result: z.string() }),
+        uses: [],
+        emits: [],
+      })
+      class TestCase implements UseCase<{ a: string; b: string }, { result: string }> {
+        execute(_input: { a: string; b: string }, _ctx: UseCaseContext): Promise<{ result: string }> {
+          return notImplemented();
+        }
+      }
+      void TestCase;
+    });
+    const { ir, errors } = buildIR(registry, { root: ROOT, modules: [{ name: 'compiler', path: 'src/compiler' }] });
+    expect(errors).toEqual([]);
+    const useCase = ir.useCases[0]!;
+    expect(useCase.inputSchema.required).toEqual(['b']);
+  });
+
+  test('inputSchema com transform não gera erro', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentUseCase({
+        name: 'transform_case',
+        description: 'Testa input com transform.',
+        whenToUse: 'Teste.',
+        input: z.object({ text: z.string().transform((s) => s.length) }),
+        output: z.object({ length: z.number() }),
+        uses: [],
+        emits: [],
+      })
+      class TransformCase implements UseCase<{ text: string }, { length: number }> {
+        execute(_input: { text: string }, _ctx: UseCaseContext): Promise<{ length: number }> {
+          return notImplemented();
+        }
+      }
+      void TransformCase;
+    });
+    const { ir, errors } = buildIR(registry, { root: ROOT, modules: [{ name: 'compiler', path: 'src/compiler' }] });
+    expect(errors).toEqual([]);
+    expect(ir.useCases[0]!.inputSchema.properties).toBeDefined();
+  });
+
+  test('irHash é estável e sensível a mudanças', () => {
+    const { ir } = buildIR(defineShop(), options);
+    const hash1 = irHash(ir);
+    const hash2 = irHash(ir);
+    expect(hash1).toBe(hash2);
+    expect(hash1).toMatch(/^[a-f0-9]{64}$/);
+
+    const modified = {
+      ...ir,
+      entities: [{ ...ir.entities[0]!, description: 'modificada' }],
+    };
+    const hash3 = irHash(modified as typeof ir);
+    expect(hash3).not.toBe(hash1);
   });
 });
