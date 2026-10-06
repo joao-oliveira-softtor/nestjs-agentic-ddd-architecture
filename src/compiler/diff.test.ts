@@ -277,4 +277,97 @@ describe('semanticDiff', () => {
     };
     expect(semanticDiff(base, ir)[0]!.classification).toBe('behavioral');
   });
+
+  test('enum removido de propriedade do input → behavioral', () => {
+    const before = clone();
+    const input = useCase(before, 'publish_product').inputSchema;
+    input.properties.priority = { enum: ['low', 'medium', 'high'] };
+
+    const after = clone();
+    useCase(after, 'publish_product').inputSchema.properties.priority = {
+      type: 'string',
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:publish_product',
+      )!.classification,
+    ).toBe('behavioral');
+  });
+
+  test('enum adicionado a propriedade do output → behavioral', () => {
+    const before = clone();
+    const output = useCase(before, 'create_product').outputSchema;
+    output.properties.result = { type: 'string' };
+
+    const after = clone();
+    useCase(after, 'create_product').outputSchema.properties.result = {
+      enum: ['success', 'pending'],
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('behavioral');
+  });
+
+  test('enum adicionado a propriedade do input → breaking', () => {
+    const before = clone();
+    const input = useCase(before, 'publish_product').inputSchema;
+    input.properties.priority = { type: 'string' };
+
+    const after = clone();
+    useCase(after, 'publish_product').inputSchema.properties.priority = {
+      enum: ['low', 'medium', 'high'],
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:publish_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('enum removido de propriedade do output → breaking', () => {
+    const before = clone();
+    const output = useCase(before, 'create_product').outputSchema;
+    output.properties.result = { enum: ['success', 'pending'] };
+
+    const after = clone();
+    useCase(after, 'create_product').outputSchema.properties.result = {
+      type: 'string',
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('array de objetos no input cujo item ganha campo opcional → behavioral', () => {
+    const before = clone();
+    const input = useCase(before, 'create_product').inputSchema;
+    input.properties.tags = {
+      type: 'array',
+      items: { type: 'object', properties: { name: { type: 'string' } } },
+    };
+
+    const after = clone();
+    const inputAfter = useCase(after, 'create_product').inputSchema;
+    inputAfter.properties.tags = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { name: { type: 'string' }, value: { type: 'string' } },
+      },
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('behavioral');
+  });
 });

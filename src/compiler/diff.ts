@@ -146,7 +146,6 @@ function enumBreaksInput(before: unknown, after: unknown): boolean {
   const afterEnum = (after as JsonSchema | undefined)?.enum as
     string[] | undefined;
   if (!beforeEnum && afterEnum) return true;
-  if (beforeEnum && !afterEnum) return true;
   if (beforeEnum && afterEnum) {
     return beforeEnum.some((val) => !afterEnum.includes(val));
   }
@@ -158,7 +157,6 @@ function enumBreaksOutput(before: unknown, after: unknown): boolean {
     string[] | undefined;
   const afterEnum = (after as JsonSchema | undefined)?.enum as
     string[] | undefined;
-  if (!beforeEnum && afterEnum) return true;
   if (beforeEnum && !afterEnum) return true;
   if (beforeEnum && afterEnum) {
     return afterEnum.some((val) => !beforeEnum.includes(val));
@@ -166,7 +164,61 @@ function enumBreaksOutput(before: unknown, after: unknown): boolean {
   return false;
 }
 
+function inputBreaksRoot(
+  before: JsonSchema | undefined,
+  after: JsonSchema | undefined,
+): boolean {
+  const beforeEnum = before?.enum;
+  const afterEnum = after?.enum;
+
+  if (enumBreaksInput(before, after)) return true;
+
+  if (typeOf(before) !== typeOf(after)) {
+    if (beforeEnum && !afterEnum) {
+      return false;
+    }
+    return true;
+  }
+
+  const beforeItems = before?.items as JsonSchema | undefined;
+  const afterItems = after?.items as JsonSchema | undefined;
+  if (beforeItems && afterItems && inputBreaksRoot(beforeItems, afterItems))
+    return true;
+  return false;
+}
+
+function outputBreaksRoot(
+  before: JsonSchema | undefined,
+  after: JsonSchema | undefined,
+): boolean {
+  const beforeEnum = before?.enum;
+  const afterEnum = after?.enum;
+
+  if (enumBreaksOutput(before, after)) return true;
+
+  if (typeOf(before) !== typeOf(after)) {
+    if (!beforeEnum && afterEnum) {
+      return false;
+    }
+    return true;
+  }
+
+  const beforeItems = before?.items as JsonSchema | undefined;
+  const afterItems = after?.items as JsonSchema | undefined;
+  if (beforeItems && afterItems && outputBreaksRoot(beforeItems, afterItems))
+    return true;
+  return false;
+}
+
 function inputBreaks(before: unknown, after: unknown): boolean {
+  if (
+    inputBreaksRoot(
+      before as JsonSchema | undefined,
+      after as JsonSchema | undefined,
+    )
+  )
+    return true;
+
   const old = properties(before);
   const next = properties(after);
   const oldRequired = requiredOf(before);
@@ -177,17 +229,7 @@ function inputBreaks(before: unknown, after: unknown): boolean {
     const oldProp = old[key];
     const nextProp = next[key];
 
-    if (enumBreaksInput(oldProp, nextProp)) return true;
-    if (typeOf(oldProp) !== typeOf(nextProp)) return true;
     if (inputBreaks(oldProp, nextProp)) return true;
-    const oldPropItems = (oldProp as JsonSchema | undefined)?.items;
-    const nextPropItems = (nextProp as JsonSchema | undefined)?.items;
-    if (
-      oldPropItems &&
-      nextPropItems &&
-      stableStringify(oldPropItems) !== stableStringify(nextPropItems)
-    )
-      return true;
   }
 
   if ([...newRequired].some((key) => !oldRequired.has(key))) return true;
@@ -196,6 +238,14 @@ function inputBreaks(before: unknown, after: unknown): boolean {
 }
 
 function outputBreaks(before: unknown, after: unknown): boolean {
+  if (
+    outputBreaksRoot(
+      before as JsonSchema | undefined,
+      after as JsonSchema | undefined,
+    )
+  )
+    return true;
+
   const old = properties(before);
   const next = properties(after);
 
@@ -204,17 +254,7 @@ function outputBreaks(before: unknown, after: unknown): boolean {
     const oldProp = old[key];
     const nextProp = next[key];
 
-    if (enumBreaksOutput(oldProp, nextProp)) return true;
-    if (typeOf(oldProp) !== typeOf(nextProp)) return true;
     if (outputBreaks(oldProp, nextProp)) return true;
-    const oldPropItems = (oldProp as JsonSchema | undefined)?.items;
-    const nextPropItems = (nextProp as JsonSchema | undefined)?.items;
-    if (
-      oldPropItems &&
-      nextPropItems &&
-      stableStringify(oldPropItems) !== stableStringify(nextPropItems)
-    )
-      return true;
   }
 
   return false;
