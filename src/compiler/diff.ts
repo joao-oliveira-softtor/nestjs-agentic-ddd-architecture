@@ -164,101 +164,46 @@ function enumBreaksOutput(before: unknown, after: unknown): boolean {
   return false;
 }
 
-function inputBreaksRoot(
-  before: JsonSchema | undefined,
-  after: JsonSchema | undefined,
-): boolean {
-  const beforeEnum = before?.enum;
-  const afterEnum = after?.enum;
+type Mode = 'input' | 'output';
 
-  if (enumBreaksInput(before, after)) return true;
-
-  if (typeOf(before) !== typeOf(after)) {
-    if (beforeEnum && !afterEnum) {
-      return false;
-    }
-    return true;
-  }
-
-  const beforeItems = before?.items as JsonSchema | undefined;
-  const afterItems = after?.items as JsonSchema | undefined;
-  if (beforeItems && afterItems && inputBreaksRoot(beforeItems, afterItems))
-    return true;
-  return false;
-}
-
-function outputBreaksRoot(
-  before: JsonSchema | undefined,
-  after: JsonSchema | undefined,
-): boolean {
-  const beforeEnum = before?.enum;
-  const afterEnum = after?.enum;
-
-  if (enumBreaksOutput(before, after)) return true;
-
-  if (typeOf(before) !== typeOf(after)) {
-    if (!beforeEnum && afterEnum) {
-      return false;
-    }
-    return true;
-  }
-
-  const beforeItems = before?.items as JsonSchema | undefined;
-  const afterItems = after?.items as JsonSchema | undefined;
-  if (beforeItems && afterItems && outputBreaksRoot(beforeItems, afterItems))
-    return true;
-  return false;
-}
-
-function inputBreaks(before: unknown, after: unknown): boolean {
+function schemaBreaks(before: unknown, after: unknown, mode: Mode): boolean {
   if (
-    inputBreaksRoot(
-      before as JsonSchema | undefined,
-      after as JsonSchema | undefined,
-    )
+    typeOf(before as JsonSchema | undefined) !==
+    typeOf(after as JsonSchema | undefined)
   )
     return true;
-
-  const old = properties(before);
-  const next = properties(after);
-  const oldRequired = requiredOf(before);
-  const newRequired = requiredOf(after);
-
-  for (const key of Object.keys(old)) {
-    if (!Object.hasOwn(next, key)) return true;
-    const oldProp = old[key];
-    const nextProp = next[key];
-
-    if (inputBreaks(oldProp, nextProp)) return true;
-  }
-
-  if ([...newRequired].some((key) => !oldRequired.has(key))) return true;
-
-  return false;
-}
-
-function outputBreaks(before: unknown, after: unknown): boolean {
   if (
-    outputBreaksRoot(
-      before as JsonSchema | undefined,
-      after as JsonSchema | undefined,
-    )
+    mode === 'input'
+      ? enumBreaksInput(before, after)
+      : enumBreaksOutput(before, after)
   )
     return true;
-
   const old = properties(before);
   const next = properties(after);
-
   for (const key of Object.keys(old)) {
     if (!Object.hasOwn(next, key)) return true;
-    const oldProp = old[key];
-    const nextProp = next[key];
-
-    if (outputBreaks(oldProp, nextProp)) return true;
+    if (schemaBreaks(old[key], next[key], mode)) return true;
   }
-
+  if (mode === 'input') {
+    const oldRequired = requiredOf(before);
+    if ([...requiredOf(after)].some((key) => !oldRequired.has(key)))
+      return true;
+  }
+  const oldItems = (before as JsonSchema | undefined)?.items;
+  const nextItems = (after as JsonSchema | undefined)?.items;
+  if (
+    oldItems !== undefined &&
+    nextItems !== undefined &&
+    schemaBreaks(oldItems, nextItems, mode)
+  )
+    return true;
   return false;
 }
+
+const inputBreaks = (before: unknown, after: unknown): boolean =>
+  schemaBreaks(before, after, 'input');
+const outputBreaks = (before: unknown, after: unknown): boolean =>
+  schemaBreaks(before, after, 'output');
 
 function classifyModified(
   before: DomainElement,

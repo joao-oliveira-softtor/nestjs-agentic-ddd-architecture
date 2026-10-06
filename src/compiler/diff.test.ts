@@ -281,7 +281,10 @@ describe('semanticDiff', () => {
   test('enum removido de propriedade do input → behavioral', () => {
     const before = clone();
     const input = useCase(before, 'publish_product').inputSchema;
-    input.properties.priority = { enum: ['low', 'medium', 'high'] };
+    input.properties.priority = {
+      type: 'string',
+      enum: ['low', 'medium', 'high'],
+    };
 
     const after = clone();
     useCase(after, 'publish_product').inputSchema.properties.priority = {
@@ -302,6 +305,7 @@ describe('semanticDiff', () => {
 
     const after = clone();
     useCase(after, 'create_product').outputSchema.properties.result = {
+      type: 'string',
       enum: ['success', 'pending'],
     };
 
@@ -319,6 +323,7 @@ describe('semanticDiff', () => {
 
     const after = clone();
     useCase(after, 'publish_product').inputSchema.properties.priority = {
+      type: 'string',
       enum: ['low', 'medium', 'high'],
     };
 
@@ -332,7 +337,10 @@ describe('semanticDiff', () => {
   test('enum removido de propriedade do output → breaking', () => {
     const before = clone();
     const output = useCase(before, 'create_product').outputSchema;
-    output.properties.result = { enum: ['success', 'pending'] };
+    output.properties.result = {
+      type: 'string',
+      enum: ['success', 'pending'],
+    };
 
     const after = clone();
     useCase(after, 'create_product').outputSchema.properties.result = {
@@ -369,5 +377,128 @@ describe('semanticDiff', () => {
         (i) => i.id === 'usecase:create_product',
       )!.classification,
     ).toBe('behavioral');
+  });
+
+  test('input array item perde campo → breaking', () => {
+    const before = clone();
+    const input = useCase(before, 'create_product').inputSchema;
+    input.properties.items = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { id: { type: 'string' }, name: { type: 'string' } },
+      },
+    };
+
+    const after = clone();
+    const inputAfter = useCase(after, 'create_product').inputSchema;
+    inputAfter.properties.items = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+      },
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('output array item perde campo → breaking', () => {
+    const before = clone();
+    const output = useCase(before, 'create_product').outputSchema;
+    output.properties.items = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { id: { type: 'string' }, name: { type: 'string' } },
+      },
+    };
+
+    const after = clone();
+    const outputAfter = useCase(after, 'create_product').outputSchema;
+    outputAfter.properties.items = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { id: { type: 'string' } },
+      },
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('input array item ganha required em campo existente → breaking', () => {
+    const before = clone();
+    const input = useCase(before, 'create_product').inputSchema;
+    input.properties.items = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { id: { type: 'string' }, name: { type: 'string' } },
+      },
+    };
+
+    const after = clone();
+    const inputAfter = useCase(after, 'create_product').inputSchema;
+    inputAfter.properties.items = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { id: { type: 'string' }, name: { type: 'string' } },
+        required: ['id', 'name'],
+      },
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('input type string with enum → number → breaking', () => {
+    const before = clone();
+    const input = useCase(before, 'publish_product').inputSchema;
+    input.properties.priority = {
+      type: 'string',
+      enum: ['low', 'medium', 'high'],
+    };
+
+    const after = clone();
+    useCase(after, 'publish_product').inputSchema.properties.priority = {
+      type: 'number',
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:publish_product',
+      )!.classification,
+    ).toBe('breaking');
+  });
+
+  test('output type string → number with enum → breaking', () => {
+    const before = clone();
+    const output = useCase(before, 'create_product').outputSchema;
+    output.properties.code = { type: 'string' };
+
+    const after = clone();
+    useCase(after, 'create_product').outputSchema.properties.code = {
+      type: 'number',
+      enum: [1, 2, 3],
+    };
+
+    expect(
+      semanticDiff(before, after).find(
+        (i) => i.id === 'usecase:create_product',
+      )!.classification,
+    ).toBe('breaking');
   });
 });
