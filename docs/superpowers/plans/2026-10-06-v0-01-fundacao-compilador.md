@@ -3573,7 +3573,7 @@ git commit -m "feat(compiler): renderiza o bloco do AGENTS.md e agrega todas as 
 ### Task 12: Config, escrita/verificação em disco e CLI `compile`
 
 **Files:**
-- Create: `src/compiler/config.ts`, `src/compiler/load.ts`, `src/compiler/write.ts`, `src/compiler/compile.ts`, `src/compiler/index.ts`, `src/cli/main.ts`, `agentic.config.ts`, `test/fixtures/broken/agentic.config.ts`, `test/fixtures/broken/domain/thing.ts`
+- Create: `src/compiler/config.ts`, `src/compiler/load.ts`, `src/compiler/write.ts`, `src/compiler/compile.ts`, `src/compiler/index.ts`, `src/cli/main.ts`, `agentic.config.ts`, `test/fixtures/broken/agentic.config.ts`, `test/fixtures/broken/domain/thing.ts`  (a fixture `broken` é só typecheckada e usada pelo CLI em subprocesso; nunca é importada no processo de teste)
 - Test: `src/compiler/write.test.ts`, `src/compiler/compile.test.ts`, `src/cli/cli.test.ts`
 - Create (gerado + manual): `AGENTS.md`, `CLAUDE.md`, `.agents/skills/orders-dev/**`, `.claude/skills/orders-dev` (symlink), `.agentic/runtime/order-operator/**`
 
@@ -4324,7 +4324,7 @@ Expected: `agentic-ddd: N arquivo(s) atualizado(s)`; o `--check` imprime `arquiv
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/compiler src/cli agentic.config.ts test/fixtures/broken AGENTS.md CLAUDE.md .agents .claude .agentic
+git add src/compiler src/cli agentic.config.ts test/fixtures/broken AGENTS.md CLAUDE.md .agents/skills .claude/skills .agentic
 git commit -m "feat(compiler): adiciona compile/--check, escrita em disco e gera as skills do exemplo"
 ```
 
