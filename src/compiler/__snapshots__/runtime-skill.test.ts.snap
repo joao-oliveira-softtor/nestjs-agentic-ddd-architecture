@@ -17,6 +17,8 @@ Opera o catálogo de produtos: cadastrar e publicar. Use quando a conversa for s
 
 ## Tools
 
+Tools marcadas com **Exige aprovação humana: sim** só executam depois de uma pessoa aprovar; se a aprovação for negada, a tool devolve o erro \`approval_denied\` e nada é alterado.
+
 ### \`create_product\`
 
 Cria um produto em rascunho.
@@ -31,6 +33,8 @@ Cria um produto em rascunho.
 | \`product_id\` | string | sim | Id do novo produto |
 | \`price\` | number | sim | Preço em reais |
 
+Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`create_product\`.
+
 ### \`publish_product\`
 
 Publica um produto em rascunho no catálogo.
@@ -44,6 +48,8 @@ Publica um produto em rascunho no catálogo.
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | \`product_id\` | string | sim | Id do produto a publicar |
+
+Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`publish_product\`.
 
 ## Regras de negócio
 

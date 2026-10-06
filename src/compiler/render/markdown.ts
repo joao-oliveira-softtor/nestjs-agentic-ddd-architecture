@@ -37,7 +37,13 @@ export function typeLabel(schema: JsonSchema): string {
   if (Array.isArray(schema.enum))
     return `enum: ${(schema.enum as unknown[]).map(String).join(', ')}`;
   if ('const' in schema) return `const: ${String(schema.const)}`;
-  if (typeof schema.type === 'string') return schema.type;
+  if (typeof schema.type === 'string') {
+    if (schema.type === 'array' && schema.items) {
+      const items = schema.items as JsonSchema;
+      return `array<${typeLabel(items)}>`;
+    }
+    return schema.type;
+  }
   if (Array.isArray(schema.type)) return (schema.type as string[]).join(' | ');
   if (Array.isArray(schema.anyOf))
     return (schema.anyOf as JsonSchema[]).map(typeLabel).join(' | ');

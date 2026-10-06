@@ -46,6 +46,8 @@ export function renderRuntimeSkill(
     '',
     '## Tools',
     '',
+    'Tools marcadas com **Exige aprovação humana: sim** só executam depois de uma pessoa aprovar; se a aprovação for negada, a tool devolve o erro `approval_denied` e nada é alterado.',
+    '',
   ];
   for (const useCase of useCases) {
     lines.push(
@@ -68,6 +70,8 @@ export function renderRuntimeSkill(
       rows.length > 0
         ? table(['Parâmetro', 'Tipo', 'Obrigatório', 'Descrição'], rows)
         : '_Sem parâmetros._',
+      '',
+      `Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`${useCase.name}\`.`,
       '',
     );
   }

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { SHOP_MODULE, defineShop } from './__fixtures__/shop.js';
 import { analyze } from './analyze.js';
-import { table } from './render/markdown.js';
+import { table, typeLabel } from './render/markdown.js';
 import { renderRuntimeSkill } from './render/runtime-skill.js';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -70,6 +70,30 @@ describe('renderRuntimeSkill', () => {
     ) as Record<string, { input: { required: string[] } }>;
     expect(Object.keys(tools)).toEqual(['create_product', 'publish_product']);
     expect(tools.publish_product!.input.required).toEqual(['product_id']);
+  });
+
+  test('typeLabel cobre enum, const, tipos, arrays e anyOf', () => {
+    expect(typeLabel({ enum: ['a', 'b'] })).toBe('enum: a, b');
+    expect(typeLabel({ const: 'x' })).toBe('const: x');
+    expect(typeLabel({ type: ['string', 'null'] })).toBe('string | null');
+    expect(typeLabel({ anyOf: [{ type: 'string' }, { type: 'number' }] })).toBe(
+      'string | number',
+    );
+    expect(typeLabel({ type: 'array', items: { type: 'object' } })).toBe(
+      'array<object>',
+    );
+    expect(typeLabel({ type: 'array' })).toBe('array');
+    expect(typeLabel({ type: 'object' })).toBe('object');
+    expect(typeLabel({})).toBe('qualquer');
+  });
+
+  test('SKILL.md contém legenda de aprovação e referência ao schema', () => {
+    expect(skill).toContain(
+      'Tools marcadas com **Exige aprovação humana: sim** só executam depois de uma pessoa aprovar; se a aprovação for negada, a tool devolve o erro `approval_denied` e nada é alterado.',
+    );
+    expect(skill).toContain(
+      '`references/tools.schema.json` → `publish_product`',
+    );
   });
 
   test('snapshot dos arquivos', () => {
