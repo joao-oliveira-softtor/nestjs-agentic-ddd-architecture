@@ -149,4 +149,30 @@ describe('agentic-ddd compile (CLI)', () => {
     expect(checkResult.code).toBe(1);
     expect(checkResult.stderr).toContain('lint: description com');
   });
+
+  test('ir imprime a IR canônica', () => {
+    const result = run('ir');
+    expect(result.code).toBe(0);
+    const ir = JSON.parse(result.stdout) as {
+      irVersion: number;
+      operators: { id: string }[];
+    };
+    expect(ir.irVersion).toBe(1);
+    expect(ir.operators.map((o) => o.id)).toEqual(['operator:order-operator']);
+    expect(result.stdout.endsWith('}\n')).toBe(true);
+  });
+
+  test('ir com erro de declaração sai com 1', () => {
+    const result = run(
+      'ir',
+      '--config',
+      'test/fixtures/broken/agentic.config.ts',
+    );
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('domain/thing.ts:5:');
+  });
+
+  test('ir com argumento sobrando sai com 2', () => {
+    expect(run('ir', 'extra').code).toBe(2);
+  });
 });

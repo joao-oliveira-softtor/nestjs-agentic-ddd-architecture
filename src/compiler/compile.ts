@@ -28,6 +28,28 @@ export interface CompileResult {
   readonly config: ResolvedConfig;
 }
 
+export interface ProjectAnalysis {
+  readonly config: ResolvedConfig;
+  readonly ir: IR;
+  readonly errors: CompileError[];
+}
+
+export async function analyzeProject(options: {
+  readonly configPath: string;
+  readonly outRoot?: string;
+  readonly registry?: Registry;
+}): Promise<ProjectAnalysis> {
+  const config = await loadConfig(options.configPath, {
+    outRoot: options.outRoot,
+  });
+  await importModules(config);
+  const { ir, errors } = analyze(options.registry ?? defaultRegistry, {
+    root: config.root,
+    modules: config.modules,
+  });
+  return { config, ir, errors };
+}
+
 async function claudeWarnings(config: ResolvedConfig): Promise<string[]> {
   const content = await readFile(
     join(config.outRoot, config.out.claudeMd),
@@ -39,14 +61,7 @@ async function claudeWarnings(config: ResolvedConfig): Promise<string[]> {
 }
 
 export async function compile(options: CompileOptions): Promise<CompileResult> {
-  const config = await loadConfig(options.configPath, {
-    outRoot: options.outRoot,
-  });
-  await importModules(config);
-  const { ir, errors } = analyze(options.registry ?? defaultRegistry, {
-    root: config.root,
-    modules: config.modules,
-  });
+  const { config, ir, errors } = await analyzeProject(options);
   if (errors.length > 0) {
     return {
       ok: false,

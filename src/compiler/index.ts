@@ -1,6 +1,12 @@
 export { analyze } from './analyze';
 export { byId, canonicalize, sha256, stableStringify } from './canonical';
-export { compile, type CompileOptions, type CompileResult } from './compile';
+export {
+  analyzeProject,
+  compile,
+  type CompileOptions,
+  type CompileResult,
+  type ProjectAnalysis,
+} from './compile';
 export {
   defineConfig,
   loadConfig,
