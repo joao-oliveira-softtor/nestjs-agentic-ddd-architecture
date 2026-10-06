@@ -191,4 +191,108 @@ describe('validate', () => {
     });
     expect(errors.some((e) => e.includes('invariant:Box/nunca-cheia está num método sem @AgentMethod (method:Box.fill)'))).toBe(true);
   });
+
+  test('ordenação determinística de analyze: erros misturados de buildIR e validate em ordem diferente da declaração', () => {
+    const result = analyze(
+      (() => {
+        const registry = createRegistry();
+        withRegistry(registry, () => {
+          // Declarada primeiro na ordem de registro, mas referenciada depois na fonte
+          @AgentEntity({ description: 'Depois.' })
+          class Depois extends AggregateRoot<string> {}
+          void Depois;
+
+          // Declarada segunda, com erro de invariante inválida (validate error)
+          @AgentEntity({ description: 'Antes.' })
+          @Invariant({ id: 'Bad-Case', text: 'Regra.' })
+          class Antes extends AggregateRoot<string> {}
+          void Antes;
+
+          // Plain class sem @AgentUseCase, referenciado em operator (buildIR error)
+          class Plain {}
+          @Operator({ name: 'op', description: 'Op.', instructions: 'Op.', useCases: [Plain] })
+          class Op {}
+          void Op;
+        });
+        return registry;
+      })(),
+      { root: ROOT, modules: [{ name: 'compiler', path: 'src/compiler' }] },
+    );
+
+    const errorStrings = result.errors.map((e) => `${e.source ?? ''}|${e.message}`);
+    const sorted = [...errorStrings].sort();
+    expect(errorStrings).toEqual(sorted);
+    expect(result.errors.some((e) => e.message.includes('Bad-Case'))).toBe(true);
+    expect(result.errors.some((e) => e.message.includes('Plain não tem @AgentUseCase'))).toBe(true);
+  });
+
+  test('invariante com text vazio', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'Algo.' })
+      @Invariant({ id: 'empty-text', text: '' })
+      class Thing extends AggregateRoot<string> {}
+      void Thing;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('invariant:Thing/empty-text: text é obrigatório e não pode ser vazio');
+  });
+
+  test('transition com from vazio', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'Porta.', states: ['closed', 'open'] })
+      class Door extends AggregateRoot<string> {
+        @AgentMethod({ description: 'Abre.', transition: { from: [], to: 'open' } })
+        open(): void {}
+      }
+      void Door;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('transition precisa de from (não vazio) e to');
+  });
+
+  test('@Operator com useCases vazio', () => {
+    const errors = errorsOf(() => {
+      @Operator({ name: 'op', description: 'Op.', instructions: 'Op.', useCases: [] })
+      class Op {}
+      void Op;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('operator:op: useCases não pode ser vazio');
+  });
+
+  test('operator com name fora de kebab-case', () => {
+    const errors = errorsOf(() => {
+      @AgentUseCase({ name: 'do_it', description: 'Faz.', whenToUse: 'Sempre.', ...io, uses: [] })
+      class DoIt {}
+      @Operator({ name: 'Op Ruim', description: 'Op.', instructions: 'Op.', useCases: [DoIt] })
+      class Op {}
+      void Op;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('operator:Op Ruim: name deve ser kebab-case com até 64 caracteres');
+  });
+
+  test('método estático público sem @AgentMethod', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'Conta.' })
+      class Account extends AggregateRoot<string> {
+        static helper(): void {}
+      }
+      void Account;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('Account.helper é público e não tem @AgentMethod');
+  });
+
+  test('@AgentMethod numa classe sem @AgentEntity', () => {
+    const errors = errorsOf(() => {
+      class NotEntity {
+        @AgentMethod({ description: 'Faz.' })
+        doIt(): void {}
+      }
+      void NotEntity;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('NotEntity.doIt tem @AgentMethod, mas NotEntity não tem @AgentEntity');
+  });
 });
