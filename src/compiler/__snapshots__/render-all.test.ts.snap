@@ -17,7 +17,7 @@ exports[`renderAll o bloco do AGENTS.md tem marcadores, mapa e convenções 1`] 
 ### Convenções
 
 - Entidades, métodos, eventos, use-cases e operators são declarados com \`@AgentEntity\`, \`@AgentMethod\`, \`@AgentEvent\`, \`@AgentUseCase\` e \`@Operator\` de \`@agentic-ddd/decorators\`; cada regra de negócio é um \`@Invariant({ id, text })\` com ID estável.
-- Onde criar: \`<módulo>/domain\` (entidades, eventos, ports), \`<módulo>/application\` (use-cases, sempre com \`uses\`), \`<módulo>/operators\` (operators). A skill de dev do módulo tem os caminhos exatos.
+- Onde criar: \`<caminho do módulo>/domain\` (entidades, eventos, ports), \`<caminho do módulo>/application\` (use-cases, sempre com \`uses\`), \`<caminho do módulo>/operators\` (operators). A skill de dev do módulo tem os caminhos exatos.
 - Todo método público de entidade tem \`@AgentMethod\`; métodos auxiliares usam \`#privado\`.
 - Corpo declarado e ainda não implementado usa \`notImplemented()\` de \`@agentic-ddd/core\`.
 - Testes declaram o que cobrem com \`covers([...ids], título)\` de \`@agentic-ddd/testing\`.

@@ -201,7 +201,7 @@ export function renderDevSkill(
         [
           'Use-case',
           code(`${module.path}/application/<nome>.ts`),
-          '`@AgentUseCase({ name, description, whenToUse, input, output, uses, emits? })`',
+          "`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entidade>.<método>'], emits? })`",
         ],
         [
           'Operator',

@@ -82,7 +82,7 @@ Cada ID abaixo precisa de ao menos um teste nomeado com \`covers([...ids], títu
 | Entidade | \`src/compiler/__fixtures__/domain/<nome>.ts\` | \`@AgentEntity({ description, states })\` + \`@Invariant({ id, text })\` na classe |
 | Método de entidade | na classe da entidade | \`@AgentMethod({ description, transition?, emits? })\`; regra garantida pelo método: \`@Invariant\` no método; auxiliares: \`#privado\` |
 | Evento | \`src/compiler/__fixtures__/domain/<agregado>.events.ts\` | \`@AgentEvent({ description, payload })\` estendendo \`DomainEvent\` |
-| Use-case | \`src/compiler/__fixtures__/application/<nome>.ts\` | \`@AgentUseCase({ name, description, whenToUse, input, output, uses, emits? })\` |
+| Use-case | \`src/compiler/__fixtures__/application/<nome>.ts\` | \`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entidade>.<método>'], emits? })\` |
 | Operator | \`src/compiler/__fixtures__/operators/<nome>.operator.ts\` | \`@Operator({ name, description, instructions, useCases, requiresApproval? })\` |
 
 Corpo declarado e ainda não implementado usa \`notImplemented()\` de \`@agentic-ddd/core\`.
