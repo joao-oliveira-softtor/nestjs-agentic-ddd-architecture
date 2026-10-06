@@ -214,6 +214,14 @@ describe('writeOutputs / checkOutputs', () => {
     expect(
       (await lstat(join(out, '.claude/skills/shop-dev'))).isDirectory(),
     ).toBe(true);
+    expect(await checkOutputs(config, rendered)).toEqual([
+      { path: '.claude/skills/shop-dev', reason: 'conflict' },
+    ]);
+
+    await rm(join(out, '.claude/skills/shop-dev'), { recursive: true });
+    expect(await checkOutputs(config, rendered)).toEqual([
+      { path: '.claude/skills/shop-dev', reason: 'mirror' },
+    ]);
   });
 
   test('espelho: remove só link órfão de skill gerada; link do usuário sobrevive', async () => {

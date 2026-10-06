@@ -60,9 +60,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       console.error(`desatualizado (${item.reason}): ${item.path}`);
     for (const warning of result.warnings) console.warn(`aviso: ${warning}`);
     if (!result.ok) {
-      const blocked = result.drift.filter(
-        (item) => item.reason === 'mirror' || item.reason === 'conflict',
-      );
+      const blocked = result.drift.filter((item) => item.reason === 'conflict');
       if (result.drift.length > blocked.length)
         console.error(
           'rode `bun run agentic compile` e commite os arquivos gerados',

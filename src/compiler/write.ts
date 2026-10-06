@@ -289,8 +289,10 @@ export async function checkOutputs(
       if (conflicts.has(`${config.out.devSkills}/${dir}`)) continue;
       const link = join(config.outRoot, mirror, dir);
       const stat = await lstatOrNull(link);
-      if (
-        !stat?.isSymbolicLink() ||
+      if (stat && !stat.isSymbolicLink()) {
+        drift.push({ path: `${mirror}/${dir}`, reason: 'conflict' });
+      } else if (
+        !stat ||
         (await readlink(link)) !== mirrorTarget(config, mirror, dir)
       ) {
         drift.push({ path: `${mirror}/${dir}`, reason: 'mirror' });

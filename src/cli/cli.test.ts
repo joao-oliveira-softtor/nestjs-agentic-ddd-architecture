@@ -65,10 +65,22 @@ describe('agentic-ddd compile (CLI)', () => {
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(1);
     expect(check.stderr).toContain(
-      'desatualizado (mirror): .claude/skills/orders-dev',
+      'desatualizado (conflict): .claude/skills/orders-dev',
     );
     expect(check.stderr).toContain('remova ou renomeie o diretório existente');
     expect(check.stderr).not.toContain('rode `bun run agentic compile`');
+  });
+
+  test('--check com link do espelho ausente manda rodar o compile', async () => {
+    run('compile', '--out-root', out);
+    await rm(join(out, '.claude/skills/orders-dev'));
+    const check = run('compile', '--check', '--out-root', out);
+    expect(check.code).toBe(1);
+    expect(check.stderr).toContain(
+      'desatualizado (mirror): .claude/skills/orders-dev',
+    );
+    expect(check.stderr).toContain('rode `bun run agentic compile`');
+    expect(check.stderr).not.toContain('remova ou renomeie');
   });
 
   test('erro de declaração sai com 1 e aponta arquivo:linha', () => {
