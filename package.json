@@ -9,12 +9,12 @@
   "scripts": {
     "build": "bun build ./src/main.ts --target=bun --packages=external --outdir=dist",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\"",
     "start": "bun src/main.ts",
     "start:dev": "bun --watch src/main.ts",
     "start:debug": "bun --inspect --watch src/main.ts",
     "start:prod": "bun dist/main.js",
-    "lint": "oxlint --type-aware src/ test/",
+    "lint": "oxlint --type-aware src/ test/ examples/",
     "test": "bun test",
     "test:cov": "bun test --coverage",
     "agentic": "bun src/cli/main.ts"
