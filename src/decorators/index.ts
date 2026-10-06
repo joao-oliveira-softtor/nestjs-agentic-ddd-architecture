@@ -14,4 +14,4 @@ export {
   type TransitionSpec,
   type UseCaseRecord,
 } from './registry.js';
-export { captureSource, type SourceLoc } from './source.js';
+export { captureSource, parseFrame, type SourceLoc } from './source.js';
