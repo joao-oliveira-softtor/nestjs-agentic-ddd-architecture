@@ -67,7 +67,7 @@ describe('decorators de domínio', () => {
     expect(publish.entity).toBe(Product);
     expect(publish.transition).toEqual({ from: ['draft'], to: 'published' });
     expect(publish.emits).toEqual([ProductPublished]);
-    expect(publish.fn).toBe(Product.prototype.publish);
+    expect(publish.fn).toBe(Reflect.get(Product.prototype, 'publish'));
   });
 
   test('@AgentEvent registra o evento', () => {
