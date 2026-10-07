@@ -105,6 +105,18 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
     });
   }
 
+  const appliedTexts = new Map<string, string>();
+  for (const proposal of open) {
+    try {
+      appliedTexts.set(proposal.id, markApplied(proposal.raw));
+    } catch {
+      errors.push({
+        message: `não foi possível marcar a proposta ${proposal.id} como aplicada; escreva a linha "status: proposed" literalmente no frontmatter`,
+        source: proposal.path,
+      });
+    }
+  }
+
   const diff = semanticDiff(lock?.ir ?? EMPTY_IR, input.ir);
   const unchanged = (): ReconcilePlan => ({
     diff,
@@ -148,12 +160,13 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
   }
 
   const archivedPath = archivedPathOf(proposal, input.changesDir);
+  const appliedRaw = appliedTexts.get(proposal.id)!;
   const change: LockChange = {
     id: proposal.id,
     title: proposal.title,
     path: archivedPath,
     summary: summarize(proposal.motivo),
-    hash: sha256(markApplied(proposal.raw)),
+    hash: sha256(appliedRaw),
     items: diff,
   };
   return {
