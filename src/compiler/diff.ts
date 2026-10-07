@@ -184,10 +184,14 @@ function schemaBreaks(before: unknown, after: unknown, mode: Mode): boolean {
     if (!Object.hasOwn(next, key)) return true;
     if (schemaBreaks(old[key], next[key], mode)) return true;
   }
+  const oldRequired = requiredOf(before);
+  const nextRequired = requiredOf(after);
+  // input: campo obrigatório novo quebra quem chama; output: campo que deixa de
+  // ser obrigatório quebra quem consome.
   if (mode === 'input') {
-    const oldRequired = requiredOf(before);
-    if ([...requiredOf(after)].some((key) => !oldRequired.has(key)))
-      return true;
+    if ([...nextRequired].some((key) => !oldRequired.has(key))) return true;
+  } else if ([...oldRequired].some((key) => !nextRequired.has(key))) {
+    return true;
   }
   const oldItems = (before as JsonSchema | undefined)?.items;
   const nextItems = (after as JsonSchema | undefined)?.items;

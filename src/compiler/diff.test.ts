@@ -535,4 +535,72 @@ describe('semanticDiff', () => {
       expect(classify(after)).toBe('behavioral');
     });
   });
+
+  describe('obrigatoriedade de campo', () => {
+    const classify = (before: IR, after: IR): string | undefined =>
+      semanticDiff(before, after).find((i) => i.id === 'usecase:create_product')
+        ?.classification;
+
+    test('output com required → sem required → breaking', () => {
+      const before = clone();
+      useCase(before, 'create_product').outputSchema.required = ['product_id'];
+      const after = clone();
+      delete useCase(after, 'create_product').outputSchema.required;
+      expect(classify(before, after)).toBe('breaking');
+    });
+
+    test('output: campo sai do required e continua em properties → breaking', () => {
+      const after = clone();
+      useCase(after, 'create_product').outputSchema.required = ['product_id'];
+      expect(classify(base, after)).toBe('breaking');
+    });
+
+    test('output: campo de objeto aninhado deixa de ser obrigatório → breaking', () => {
+      const nested = (required: string[]): any => ({
+        type: 'object',
+        properties: { id: { type: 'string' }, name: { type: 'string' } },
+        required,
+      });
+      const before = clone();
+      useCase(before, 'create_product').outputSchema.properties.owner = nested([
+        'id',
+        'name',
+      ]);
+      const after = clone();
+      useCase(after, 'create_product').outputSchema.properties.owner = nested([
+        'id',
+      ]);
+      expect(classify(before, after)).toBe('breaking');
+    });
+
+    test('output: campo de item de array deixa de ser obrigatório → breaking', () => {
+      const list = (required: string[]): any => ({
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { id: { type: 'string' } },
+          required,
+        },
+      });
+      const before = clone();
+      useCase(before, 'create_product').outputSchema.properties.list = list([
+        'id',
+      ]);
+      const after = clone();
+      useCase(after, 'create_product').outputSchema.properties.list = list([]);
+      expect(classify(before, after)).toBe('breaking');
+    });
+
+    test('output: campo passa a ser obrigatório → behavioral', () => {
+      const before = clone();
+      useCase(before, 'create_product').outputSchema.required = ['product_id'];
+      expect(classify(before, base)).toBe('behavioral');
+    });
+
+    test('input: campo que deixa de ser obrigatório → behavioral', () => {
+      const after = clone();
+      useCase(after, 'create_product').inputSchema.required = ['product_id'];
+      expect(classify(base, after)).toBe('behavioral');
+    });
+  });
 });
