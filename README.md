@@ -57,12 +57,19 @@ bun run agentic compile --report # tokens por arquivo e lint das skills
 Toda mudança de regra de negócio fica registrada em `changes/`, e o compilador mantém um snapshot do domínio em `.agentic/domain.lock.json`.
 
 ```bash
-# proposal-first: escreva changes/NNNN-<slug>/proposal.md (delta, critérios de aceite, ## Motivo), implemente e:
+# proposal-first (regra nova): escreva changes/NNNN-<slug>/proposal.md (delta, critérios de aceite, ## Motivo)
+# implemente com testes covers(...) e então:
 bun run agentic compile                          # aplica e arquiva a proposta quando o código bate com o delta
-# code-first: depois de mudar o código decorado
-bun run agentic compile --draft-change <slug>    # gera o rascunho com o delta preenchido; escreva o Motivo
-bun run agentic verify 0002                      # gates G1–G6 em JSON; done | needs-human | failed
-bun run agentic ir                               # IR canônica (depuração)
+bun run agentic verify NNNN                      # gates G1–G6 em JSON: done | needs-human | failed
+
+# code-first (o código já mudou):
+bun run agentic compile --draft-change <slug>    # gera o rascunho com o delta preenchido
+# preencha o ## Motivo (e os critérios de aceite) no rascunho e então:
+bun run agentic compile                          # aplica e arquiva
+bun run agentic verify NNNN
+
+# depuração
+bun run agentic ir                               # IR canônica
 ```
 
 O `verify` roda a suíte com reporter JUnit e cruza cada teste marcado com `covers([...])` com as regras e os critérios de aceite da proposta. O histórico por módulo fica em `.agents/skills/<módulo>-dev/references/history.md`.
@@ -75,7 +82,7 @@ O `verify` roda a suíte com reporter JUnit e cruza cada teste marcado com `cove
 | `src/decorators`  | decorators autodeclarativos e o registry                                               |
 | `src/compiler`    | IR, validação, renderers, escrita/verificação                                          |
 | `src/testing`     | `covers()` e `createTestContext()`                                                     |
-| `src/cli`         | `agentic-ddd compile`                                                                  |
+| `src/cli`         | `agentic-ddd compile`, `ir` e `verify`                                                 |
 | `examples/orders` | domínio de exemplo                                                                     |
 
 ## Roadmap
