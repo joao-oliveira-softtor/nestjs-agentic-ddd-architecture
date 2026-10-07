@@ -14,9 +14,14 @@ describe('renderDevSkill', () => {
   test('gera SKILL.md e references', () => {
     expect([...files.keys()]).toEqual([
       'SKILL.md',
+      'references/history.md',
       'references/schemas.json',
       'references/state-machine.md',
     ]);
+  });
+
+  test('lista o histórico de mudanças nas referências', () => {
+    expect(skill).toContain('- [Histórico de mudanças](references/history.md)');
   });
 
   test('frontmatter de dev com nome do módulo', () => {

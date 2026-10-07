@@ -18,6 +18,7 @@ describe('renderAll', () => {
       '.agentic/runtime/catalog-operator/references/state-machine.md',
       '.agentic/runtime/catalog-operator/references/tools.schema.json',
       '.agents/skills/shop-dev/SKILL.md',
+      '.agents/skills/shop-dev/references/history.md',
       '.agents/skills/shop-dev/references/schemas.json',
       '.agents/skills/shop-dev/references/state-machine.md',
     ]);

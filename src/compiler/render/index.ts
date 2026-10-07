@@ -1,4 +1,5 @@
 import { irHash, type IR } from '../ir';
+import type { LockChange } from '../lock';
 import { renderAgentsBlock } from './agents-md';
 import { renderDevSkill } from './dev-skill';
 import { renderRuntimeSkill } from './runtime-skill';
@@ -24,11 +25,23 @@ export interface Rendered {
   readonly runtimeSkillDirs: readonly string[];
 }
 
-export function renderAll(ir: IR, out: OutputPaths): Rendered {
+export interface RenderOptions {
+  readonly history?: readonly LockChange[];
+  readonly changesDir?: string;
+}
+
+export function renderAll(
+  ir: IR,
+  out: OutputPaths,
+  options: RenderOptions = {},
+): Rendered {
   const hash = irHash(ir);
   const entries: [string, string][] = [];
   for (const module of ir.modules) {
-    for (const [rel, content] of renderDevSkill(ir, module, hash))
+    for (const [rel, content] of renderDevSkill(ir, module, hash, {
+      history: options.history,
+      devSkillsDir: out.devSkills,
+    }))
       entries.push([`${out.devSkills}/${module.name}-dev/${rel}`, content]);
   }
   for (const operator of ir.operators) {
@@ -38,7 +51,10 @@ export function renderAll(ir: IR, out: OutputPaths): Rendered {
   entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   return {
     files: new Map(entries),
-    agentsBlock: renderAgentsBlock(ir, out),
+    agentsBlock: renderAgentsBlock(ir, {
+      ...out,
+      changesDir: options.changesDir ?? 'changes',
+    }),
     devSkillDirs: ir.modules.map((m) => `${m.name}-dev`),
     runtimeSkillDirs: ir.operators.map((o) => o.name),
   };

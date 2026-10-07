@@ -52,6 +52,7 @@ export {
   DEFAULT_OUT,
   renderAll,
   type OutputPaths,
+  type RenderOptions,
   type Rendered,
 } from './render/index';
 export { checkOutputs, writeOutputs, type Drift } from './write';

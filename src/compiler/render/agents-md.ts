@@ -7,6 +7,7 @@ export const BLOCK_END = '<!-- agentic-ddd:end -->';
 export interface AgentsPaths {
   readonly devSkills: string;
   readonly runtimeSkills: string;
+  readonly changesDir?: string;
 }
 
 export function renderAgentsBlock(ir: IR, paths: AgentsPaths): string {

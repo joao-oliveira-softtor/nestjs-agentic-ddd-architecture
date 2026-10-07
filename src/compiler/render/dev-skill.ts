@@ -1,7 +1,9 @@
 import { stableStringify } from '../canonical';
 import { workItems } from '../graph';
 import type { IR, IRModule } from '../ir';
+import type { LockChange } from '../lock';
 import { GENERATED_HEADER, frontmatter } from './frontmatter';
+import { renderHistory } from './history';
 import { code, guardedBy, idList, stripKind, table } from './markdown';
 import { renderStateMachine } from './state-machine';
 
@@ -9,6 +11,10 @@ export function renderDevSkill(
   ir: IR,
   module: IRModule,
   hash: string,
+  options: {
+    readonly history?: readonly LockChange[];
+    readonly devSkillsDir?: string;
+  } = {},
 ): Map<string, string> {
   const inModule = <T extends { readonly module: string }>(
     xs: readonly T[],
@@ -215,6 +221,7 @@ export function renderDevSkill(
     '',
     '## Referências',
     '',
+    '- [Histórico de mudanças](references/history.md)',
     '- [Schemas de eventos e use-cases](references/schemas.json)',
     '- [Máquina de estados](references/state-machine.md)',
     '',
@@ -229,8 +236,13 @@ export function renderDevSkill(
       ]),
     ),
   };
+  const historyPath = `${options.devSkillsDir ?? '.agents/skills'}/${module.name}-dev/references/history.md`;
   return new Map([
     ['SKILL.md', lines.join('\n')],
+    [
+      'references/history.md',
+      renderHistory(ir, module, options.history ?? [], historyPath),
+    ],
     ['references/schemas.json', stableStringify(schemas)],
     ['references/state-machine.md', renderStateMachine(entities, module.path)],
   ]);
