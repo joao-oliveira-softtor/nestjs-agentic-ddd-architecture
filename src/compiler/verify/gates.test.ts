@@ -266,4 +266,31 @@ describe('evaluateGates', () => {
       report.gates.find((g) => g.id === 'G5')!.findings.map((f) => f.message),
     ).toEqual(['lint saiu com 1', 'a suíte de testes saiu com 1']);
   });
+
+  test('G4: findings de testes com covers desconhecido saem em ordem estável (arquivo, linha, nome)', () => {
+    const cases = [
+      {
+        name: '[covers: unknown:b] test b',
+        file: 'b.test.ts',
+        line: 1,
+        status: 'passed' as const,
+        covers: ['unknown:b'],
+      },
+      {
+        name: '[covers: unknown:a] test a',
+        file: 'a.test.ts',
+        line: 9,
+        status: 'passed' as const,
+        covers: ['unknown:a'],
+      },
+    ];
+    const g4 = evaluateGates(
+      input({ tests: { exitCode: 0, cases } }),
+    ).gates.find((g) => g.id === 'G4')!;
+    const sourceFindings = g4.findings.filter((f) => f.source !== null);
+    expect(sourceFindings.map((f) => f.source)).toEqual([
+      'a.test.ts:9',
+      'b.test.ts:1',
+    ]);
+  });
 });

@@ -71,8 +71,17 @@ const gate = (
 
 export function evaluateGates(input: GateInput): VerifyReport {
   const { proposal } = input;
+  const sortedCases = [...input.tests.cases].sort((a, b) => {
+    if (a.file < b.file) return -1;
+    if (a.file > b.file) return 1;
+    if (a.line < b.line) return -1;
+    if (a.line > b.line) return 1;
+    if (a.name < b.name) return -1;
+    if (a.name > b.name) return 1;
+    return 0;
+  });
   const covering = (id: string): TestCaseResult[] =>
-    input.tests.cases.filter((c) => c.covers.includes(id));
+    sortedCases.filter((c) => c.covers.includes(id));
 
   const g1: Finding[] = [];
   if (proposal.archived) {
@@ -159,7 +168,7 @@ export function evaluateGates(input: GateInput): VerifyReport {
         });
     }
   }
-  for (const c of input.tests.cases) {
+  for (const c of sortedCases) {
     for (const id of c.covers) {
       if (!input.knownIds.has(id))
         g4.push({
