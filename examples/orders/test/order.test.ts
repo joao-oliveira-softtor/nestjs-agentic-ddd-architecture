@@ -43,6 +43,36 @@ describe('Order', () => {
   );
 
   test(
+    covers(
+      ['method:Order.create'],
+      'isola os itens do pedido de mutações externas',
+    ),
+    () => {
+      const original = { sku: 'SKU-1', quantity: 2, unitPrice: 10 };
+      const order = Order.create({
+        id: 'o1',
+        customerId: 'c1',
+        items: [original],
+      });
+      original.unitPrice = -20;
+      expect(order.total).toBe(20);
+      expect(order.items[0]!.unitPrice).toBe(10);
+
+      const returned = order.items[0] as { unitPrice: number };
+      expect(() => {
+        returned.unitPrice = -20;
+      }).toThrow(TypeError);
+      expect(() => {
+        (
+          order.items as { sku: string; quantity: number; unitPrice: number }[]
+        ).push({ sku: 'X', quantity: 1, unitPrice: 1 });
+      }).toThrow(TypeError);
+      expect(order.items).toHaveLength(1);
+      expect(order.total).toBe(20);
+    },
+  );
+
+  test(
     covers(['invariant:Order/ao-menos-um-item'], 'rejeita pedido sem itens'),
     () => {
       expectDomainError(

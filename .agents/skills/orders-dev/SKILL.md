@@ -4,7 +4,7 @@ description: "Domínio orders: entidades Order; use-cases cancel_order, confirm_
 metadata:
   agentic-ddd.audience: dev
   agentic-ddd.generated: "true"
-  agentic-ddd.ir-hash: "808d1a618d111fbfa529f39686a8900373905da31ee5e9535d95b75d9eba5146"
+  agentic-ddd.ir-hash: "249cecaf9b809fff25dbec75ec2610f45fffabb8ad1d380c64a3cfe0c3b5bda6"
 ---
 <!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders -->
 
@@ -27,9 +27,9 @@ Fonte: `examples/orders/domain/order.ts:19` · Estados: `pending`, `confirmed`, 
 
 | Método | Descrição | Transição | Emite | Fonte |
 |---|---|---|---|---|
-| `Order.cancel` | Cancela um pedido pendente ou confirmado. | `pending`, `confirmed` → `cancelled` | `OrderCancelled` | `examples/orders/domain/order.ts:100` |
-| `Order.confirm` | Confirma um pedido pendente. | `pending` → `confirmed` | `OrderConfirmed` | `examples/orders/domain/order.ts:89` |
-| `Order.create` | Cria um pedido pendente para um cliente. | — | `OrderCreated` | `examples/orders/domain/order.ts:56` |
+| `Order.cancel` | Cancela um pedido pendente ou confirmado. | `pending`, `confirmed` → `cancelled` | `OrderCancelled` | `examples/orders/domain/order.ts:103` |
+| `Order.confirm` | Confirma um pedido pendente. | `pending` → `confirmed` | `OrderConfirmed` | `examples/orders/domain/order.ts:92` |
+| `Order.create` | Cria um pedido pendente para um cliente. | — | `OrderCreated` | `examples/orders/domain/order.ts:64` |
 
 ## Eventos
 

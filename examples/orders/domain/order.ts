@@ -31,15 +31,23 @@ export interface CreateOrderProps {
 })
 export class Order extends AggregateRoot<string> {
   #status: OrderStatus;
+  readonly #items: readonly OrderItem[];
 
   private constructor(
     id: string,
     readonly customerId: string,
-    readonly items: readonly OrderItem[],
+    items: readonly OrderItem[],
     status: OrderStatus,
   ) {
     super(id);
+    this.#items = Object.freeze(
+      items.map((item) => Object.freeze({ ...item })),
+    );
     this.#status = status;
+  }
+
+  get items(): readonly OrderItem[] {
+    return this.#items;
   }
 
   get status(): OrderStatus {
@@ -47,7 +55,7 @@ export class Order extends AggregateRoot<string> {
   }
 
   get total(): number {
-    return this.items.reduce(
+    return this.#items.reduce(
       (sum, item) => sum + item.quantity * item.unitPrice,
       0,
     );
@@ -64,12 +72,7 @@ export class Order extends AggregateRoot<string> {
         'Um pedido precisa ter ao menos um item.',
       );
     }
-    const order = new Order(
-      props.id,
-      props.customerId,
-      [...props.items],
-      'pending',
-    );
+    const order = new Order(props.id, props.customerId, props.items, 'pending');
     if (order.total < 0) {
       throw new DomainError(
         'ORDER_NEGATIVE_TOTAL',
