@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { listProposals } from '../changes/proposal';
 import { compile } from '../compile';
 import { EMPTY_IR, elementsOf, semanticDiff } from '../diff';
+import type { CompileError } from '../ir';
 import { readLock } from '../lock';
 import { evaluateGates, type CommandResult, type VerifyReport } from './gates';
 import { VERIFY_ENV, runTests } from './test-run';
@@ -10,6 +11,9 @@ export interface VerifyOptions {
   readonly configPath: string;
   readonly change: string;
 }
+
+const formatErrors = (errors: readonly CompileError[]): string =>
+  errors.map((e) => `- ${e.source ?? '-'}: ${e.message}`).join('\n');
 
 export async function verify(options: VerifyOptions): Promise<VerifyReport> {
   if (!/^\d{4}$/.test(options.change))
@@ -27,10 +31,21 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
     join(config.outRoot, config.out.lock),
     config.out.lock,
   );
-  const { proposals } = await listProposals(
+  const { proposals, errors: proposalErrors } = await listProposals(
     join(config.outRoot, config.changesDir),
     config.changesDir,
   );
+  if (proposalErrors.length > 0)
+    throw new Error(
+      `verify: há propostas inválidas em ${config.changesDir}/:\n${formatErrors(proposalErrors)}`,
+    );
+  const domainErrors = check.errors.filter(
+    (e) => !e.message.startsWith('lint: '),
+  );
+  if (domainErrors.length > 0)
+    throw new Error(
+      `verify: o domínio não compila:\n${formatErrors(domainErrors)}`,
+    );
   const proposal = proposals.find((p) => p.id === options.change);
   if (!proposal) {
     throw new Error(

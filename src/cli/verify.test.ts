@@ -33,6 +33,34 @@ describe('agentic-ddd verify', () => {
     expect(missing.stderr).toContain('verify: proposta 9999 não encontrada');
   });
 
+  test('domínio que não compila mostra a causa em vez de "não encontrada"', () => {
+    const result = run(
+      'verify',
+      '0001',
+      '--config',
+      'test/fixtures/broken/agentic.config.ts',
+    );
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('verify: o domínio não compila');
+    expect(result.stderr).toContain('domain/thing.ts:5:');
+    expect(result.stderr).not.toContain('não encontrada');
+  });
+
+  test('proposta inválida mostra a dica do compile em vez de "não encontrada"', () => {
+    const result = run(
+      'verify',
+      '0001',
+      '--config',
+      'test/fixtures/invalid-proposal/agentic.config.ts',
+    );
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain(
+      'verify: há propostas inválidas em changes/',
+    );
+    expect(result.stderr).toContain('escreva o id entre aspas');
+    expect(result.stderr).not.toContain('não encontrada');
+  });
+
   test.skipIf(insideVerify)(
     'verify 0001 do exemplo retorna done',
     () => {
