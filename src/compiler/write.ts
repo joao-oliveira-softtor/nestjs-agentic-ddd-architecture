@@ -205,6 +205,7 @@ export async function writeOutputs(
 
   const claudePath = join(config.outRoot, config.out.claudeMd);
   if ((await readOrNull(claudePath)) === null) {
+    await mkdir(dirname(claudePath), { recursive: true });
     await writeFile(claudePath, CLAUDE_MD_CONTENT);
     written.push(config.out.claudeMd);
   }

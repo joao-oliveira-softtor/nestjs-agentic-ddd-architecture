@@ -102,6 +102,18 @@ describe('mergeAgentsBlock', () => {
 });
 
 describe('writeOutputs / checkOutputs', () => {
+  test('cria o diretório de um CLAUDE.md em subpasta', async () => {
+    const nested: ResolvedConfig = {
+      ...config,
+      out: { ...DEFAULT_OUT, claudeMd: 'claude/CLAUDE.md' },
+    };
+    const result = await writeOutputs(nested, rendered);
+    expect(result.written).toContain('claude/CLAUDE.md');
+    expect(await readFile(join(out, 'claude/CLAUDE.md'), 'utf8')).toContain(
+      '@AGENTS.md',
+    );
+  });
+
   test('escreve tudo e o check fica limpo', async () => {
     await writeOutputs(config, rendered);
     expect(await checkOutputs(config, rendered)).toEqual([]);
