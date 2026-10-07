@@ -78,4 +78,46 @@ describe('compile (exemplo orders)', () => {
       'CLAUDE.md existe mas não contém @AGENTS.md',
     );
   });
+
+  test('isola o registry entre configurações no mesmo processo', () => {
+    const longConfig = join(
+      ROOT,
+      'test/fixtures/long-description/agentic.config.ts',
+    );
+    // subprocesso: a fixture long-description nunca é importada no processo de teste
+    const script = `
+      import { compile } from '@agentic-ddd/compiler';
+      const first = await compile({
+        configPath: ${JSON.stringify(longConfig)},
+        outRoot: ${JSON.stringify(join(out, 'first'))},
+        mode: 'check',
+      });
+      const second = await compile({
+        configPath: ${JSON.stringify(configPath)},
+        outRoot: ${JSON.stringify(join(out, 'second'))},
+        mode: 'check',
+      });
+      console.log(JSON.stringify({
+        first: first.ir?.operators.map((o) => o.id) ?? [],
+        second: second.errors.map((e) => e.message),
+        operators: second.ir?.operators.map((o) => o.id) ?? [],
+      }));
+    `;
+    const proc = Bun.spawnSync(['bun', '-e', script], {
+      cwd: ROOT,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+    expect(proc.stderr.toString()).toBe('');
+    const result = JSON.parse(proc.stdout.toString()) as {
+      first: string[];
+      second: string[];
+      operators: string[];
+    };
+    expect(result.first).toEqual(['operator:long-operator']);
+    expect(result.second).not.toContain(
+      'elemento declarado fora dos módulos de agentic.config.ts',
+    );
+    expect(result.operators).toEqual(['operator:order-operator']);
+  });
 });

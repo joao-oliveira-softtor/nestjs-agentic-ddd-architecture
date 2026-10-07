@@ -7,6 +7,7 @@ import type { CompileError, IR } from './ir';
 import { lintRendered, type LintFinding } from './lint';
 import { importModules } from './load';
 import { renderAll, type Rendered } from './render/index';
+import { registrySizes, scopeRegistry } from './scope';
 import { checkOutputs, writeOutputs, type Drift } from './write';
 
 export interface CompileOptions {
@@ -42,8 +43,10 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   const config = await loadConfig(options.configPath, {
     outRoot: options.outRoot,
   });
-  await importModules(config);
-  const { ir, errors } = analyze(options.registry ?? defaultRegistry, {
+  const origin = options.registry ?? defaultRegistry;
+  const before = registrySizes(origin);
+  const files = await importModules(config);
+  const { ir, errors } = analyze(scopeRegistry(origin, files, before), {
     root: config.root,
     modules: config.modules,
   });
