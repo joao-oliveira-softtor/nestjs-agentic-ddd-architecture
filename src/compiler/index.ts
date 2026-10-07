@@ -72,3 +72,10 @@ export {
   type Delta,
   type Proposal,
 } from './changes/proposal';
+export {
+  archivedPathOf,
+  deltaProblems,
+  reconcile,
+  type ReconcileInput,
+  type ReconcilePlan,
+} from './changes/reconcile';
