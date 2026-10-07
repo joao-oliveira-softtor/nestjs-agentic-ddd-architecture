@@ -6,7 +6,7 @@ import { USAGE } from '../usage';
 export async function compileCommand(args: readonly string[]): Promise<number> {
   const parsed = parseArgs(args, {
     booleans: ['--check', '--report'],
-    values: ['--config', '--out-root'],
+    values: ['--config', '--out-root', '--draft-change'],
     positionals: 0,
   });
   if (typeof parsed === 'string') {
@@ -18,6 +18,7 @@ export async function compileCommand(args: readonly string[]): Promise<number> {
     configPath: parsed.values.get('--config') ?? 'agentic.config.ts',
     outRoot: parsed.values.get('--out-root'),
     mode: check ? 'check' : 'write',
+    draftChange: parsed.values.get('--draft-change'),
   });
   if (parsed.flags.has('--report') && result.rendered)
     console.log(formatReport(result.rendered, result.lint));
@@ -26,6 +27,14 @@ export async function compileCommand(args: readonly string[]): Promise<number> {
   for (const item of result.drift)
     console.error(`desatualizado (${item.reason}): ${item.path}`);
   for (const warning of result.warnings) console.warn(`aviso: ${warning}`);
+  for (const item of result.pending) console.error(`pendente: ${item}`);
+  if (result.drafted) {
+    console.log(
+      `agentic-ddd: proposta criada em ${result.drafted}; preencha o ## Motivo (e os critérios de aceite) e rode \`bun run agentic compile\``,
+    );
+  }
+  if (result.applied)
+    console.log(`agentic-ddd: proposta ${result.applied} aplicada e arquivada`);
   if (!result.ok) {
     const blocked = result.drift.filter((item) => item.reason === 'conflict');
     if (result.drift.length > blocked.length)

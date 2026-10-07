@@ -1,0 +1,444 @@
+{
+  "changes": [
+    {
+      "hash": "110fe6f308b80d5956a135c29c10c0a811c2deff84c510d096afbae0e9a2b9f8",
+      "id": "0001",
+      "items": [
+        {
+          "classification": "behavioral",
+          "id": "entity:Order",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "event:OrderCancelled",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "event:OrderConfirmed",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "event:OrderCreated",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "invariant:Order/ao-menos-um-item",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "invariant:Order/total-nao-negativo",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "method:Order.cancel",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "method:Order.confirm",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "method:Order.create",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "operator:order-operator",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "usecase:cancel_order",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "usecase:confirm_order",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "usecase:create_order",
+          "kind": "added",
+          "module": "orders"
+        }
+      ],
+      "path": "changes/archive/0001-estado-inicial/proposal.md",
+      "summary": "Registra o estado inicial do domínio `orders` — pedido com criação, confirmação e cancelamento, três use-cases e o `order-operator` — como base do histórico. A partir daqui, toda mudança de regra de negócio passa por uma proposta em `changes/`.",
+      "title": "Estado inicial do domínio orders"
+    }
+  ],
+  "ir": {
+    "entities": [
+      {
+        "description": "Pedido de compra de um cliente, com itens e ciclo de vida pendente, confirmado ou cancelado.",
+        "id": "entity:Order",
+        "invariants": [
+          {
+            "id": "invariant:Order/ao-menos-um-item",
+            "on": null,
+            "source": "examples/orders/domain/order.ts:24",
+            "text": "Um pedido precisa ter ao menos um item."
+          },
+          {
+            "id": "invariant:Order/total-nao-negativo",
+            "on": null,
+            "source": "examples/orders/domain/order.ts:28",
+            "text": "O total do pedido (soma de quantidade × preço unitário) nunca pode ser negativo."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cancela um pedido pendente ou confirmado.",
+            "emits": [
+              "event:OrderCancelled"
+            ],
+            "id": "method:Order.cancel",
+            "name": "cancel",
+            "source": "examples/orders/domain/order.ts:100",
+            "static": false,
+            "transition": {
+              "from": [
+                "pending",
+                "confirmed"
+              ],
+              "to": "cancelled"
+            }
+          },
+          {
+            "description": "Confirma um pedido pendente.",
+            "emits": [
+              "event:OrderConfirmed"
+            ],
+            "id": "method:Order.confirm",
+            "name": "confirm",
+            "source": "examples/orders/domain/order.ts:89",
+            "static": false,
+            "transition": {
+              "from": [
+                "pending"
+              ],
+              "to": "confirmed"
+            }
+          },
+          {
+            "description": "Cria um pedido pendente para um cliente.",
+            "emits": [
+              "event:OrderCreated"
+            ],
+            "id": "method:Order.create",
+            "name": "create",
+            "source": "examples/orders/domain/order.ts:56",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "orders",
+        "name": "Order",
+        "source": "examples/orders/domain/order.ts:19",
+        "states": [
+          "pending",
+          "confirmed",
+          "cancelled"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "description": "Um pedido foi cancelado.",
+        "id": "event:OrderCancelled",
+        "module": "orders",
+        "name": "OrderCancelled",
+        "payloadSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "orderId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "orderId"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/domain/order.events.ts:27"
+      },
+      {
+        "description": "Um pedido pendente foi confirmado.",
+        "id": "event:OrderConfirmed",
+        "module": "orders",
+        "name": "OrderConfirmed",
+        "payloadSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "orderId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "orderId"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/domain/order.events.ts:21"
+      },
+      {
+        "description": "Um pedido foi criado e está pendente.",
+        "id": "event:OrderCreated",
+        "module": "orders",
+        "name": "OrderCreated",
+        "payloadSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "customerId": {
+              "type": "string"
+            },
+            "orderId": {
+              "type": "string"
+            },
+            "total": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "orderId",
+            "customerId",
+            "total"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/domain/order.events.ts:11"
+      }
+    ],
+    "irVersion": 1,
+    "modules": [
+      {
+        "name": "orders",
+        "path": "examples/orders"
+      }
+    ],
+    "operators": [
+      {
+        "description": "Opera o ciclo de vida de pedidos de compra: criar, confirmar e cancelar. Use quando a mensagem pedir uma ação sobre um pedido.",
+        "id": "operator:order-operator",
+        "instructions": "Você opera pedidos de compra. Use apenas as tools disponíveis. Identifique o pedido pelo id antes de agir e responda em português.",
+        "limits": {
+          "maxSteps": 8,
+          "timeoutMs": 30000
+        },
+        "model": "default",
+        "module": "orders",
+        "name": "order-operator",
+        "requiresApproval": [
+          "usecase:cancel_order"
+        ],
+        "source": "examples/orders/operators/order.operator.ts:6",
+        "useCases": [
+          "usecase:cancel_order",
+          "usecase:confirm_order",
+          "usecase:create_order"
+        ]
+      }
+    ],
+    "useCases": [
+      {
+        "description": "Cancela um pedido pendente ou confirmado.",
+        "emits": [
+          "event:OrderCancelled"
+        ],
+        "id": "usecase:cancel_order",
+        "inputSchema": {
+          "properties": {
+            "order_id": {
+              "description": "Id do pedido a cancelar",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id"
+          ],
+          "type": "object"
+        },
+        "module": "orders",
+        "name": "cancel_order",
+        "outputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "order_id": {
+              "type": "string"
+            },
+            "status": {
+              "const": "cancelled",
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id",
+            "status"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/application/cancel-order.ts:18",
+        "uses": [
+          "method:Order.cancel"
+        ],
+        "whenNotToUse": "Para pedidos já cancelados.",
+        "whenToUse": "Quando o cliente desistir de um pedido que ainda não foi cancelado."
+      },
+      {
+        "description": "Confirma um pedido pendente.",
+        "emits": [
+          "event:OrderConfirmed"
+        ],
+        "id": "usecase:confirm_order",
+        "inputSchema": {
+          "properties": {
+            "order_id": {
+              "description": "Id do pedido a confirmar",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id"
+          ],
+          "type": "object"
+        },
+        "module": "orders",
+        "name": "confirm_order",
+        "outputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "order_id": {
+              "type": "string"
+            },
+            "status": {
+              "const": "confirmed",
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id",
+            "status"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/application/confirm-order.ts:18",
+        "uses": [
+          "method:Order.confirm"
+        ],
+        "whenNotToUse": "Para pedidos já confirmados ou cancelados.",
+        "whenToUse": "Quando o cliente ou o atendente confirmar um pedido pendente."
+      },
+      {
+        "description": "Cria um pedido pendente para um cliente com os itens informados.",
+        "emits": [
+          "event:OrderCreated"
+        ],
+        "id": "usecase:create_order",
+        "inputSchema": {
+          "properties": {
+            "customer_id": {
+              "description": "Id do cliente",
+              "minLength": 1,
+              "type": "string"
+            },
+            "items": {
+              "description": "Itens do pedido",
+              "items": {
+                "properties": {
+                  "quantity": {
+                    "description": "Quantidade",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991,
+                    "type": "integer"
+                  },
+                  "sku": {
+                    "description": "Código do produto",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "unit_price": {
+                    "description": "Preço unitário em reais",
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "sku",
+                  "quantity",
+                  "unit_price"
+                ],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "order_id": {
+              "description": "Id do novo pedido",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id",
+            "customer_id",
+            "items"
+          ],
+          "type": "object"
+        },
+        "module": "orders",
+        "name": "create_order",
+        "outputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "order_id": {
+              "type": "string"
+            },
+            "status": {
+              "const": "pending",
+              "type": "string"
+            },
+            "total": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "order_id",
+            "status",
+            "total"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/application/create-order.ts:37",
+        "uses": [
+          "method:Order.create"
+        ],
+        "whenNotToUse": "Para alterar itens de um pedido que já existe.",
+        "whenToUse": "Quando o cliente quer abrir um novo pedido."
+      }
+    ]
+  },
+  "lockVersion": 1
+}

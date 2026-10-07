@@ -9,6 +9,7 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { bootstrapChanges } from '../../test/helpers/bootstrap';
 
 const ROOT = resolve(import.meta.dir, '../..');
 
@@ -36,7 +37,8 @@ afterEach(async () => {
 });
 
 describe('agentic-ddd compile (CLI)', () => {
-  test('escreve e depois --check sai com 0', () => {
+  test('escreve e depois --check sai com 0', async () => {
+    await bootstrapChanges(out);
     expect(run('compile', '--out-root', out).code).toBe(0);
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(0);
@@ -58,6 +60,7 @@ describe('agentic-ddd compile (CLI)', () => {
   });
 
   test('--check com diretório real no lugar do link do espelho dá dica de remover/renomear', async () => {
+    await bootstrapChanges(out);
     run('compile', '--out-root', out);
     const mirror = join(out, '.claude/skills/orders-dev');
     await rm(mirror, { recursive: true, force: true });
@@ -72,6 +75,7 @@ describe('agentic-ddd compile (CLI)', () => {
   });
 
   test('--check com link do espelho ausente manda rodar o compile', async () => {
+    await bootstrapChanges(out);
     run('compile', '--out-root', out);
     await rm(join(out, '.claude/skills/orders-dev'));
     const check = run('compile', '--check', '--out-root', out);
@@ -81,6 +85,31 @@ describe('agentic-ddd compile (CLI)', () => {
     );
     expect(check.stderr).toContain('rode `bun run agentic compile`');
     expect(check.stderr).not.toContain('remova ou renomeie');
+  });
+
+  test('--check com mudança sem proposta imprime pendente e sai com 1', () => {
+    run('compile', '--out-root', out);
+    const check = run('compile', '--check', '--out-root', out);
+    expect(check.code).toBe(1);
+    expect(check.stderr).toContain('pendente: há ');
+    expect(check.stderr).toContain('--draft-change <slug>');
+  });
+
+  test('--draft-change pelo CLI cria a proposta e orienta o próximo passo', () => {
+    const result = run(
+      'compile',
+      '--draft-change',
+      'estado-inicial',
+      '--out-root',
+      out,
+    );
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain(
+      'proposta criada em changes/0001-estado-inicial/proposal.md',
+    );
+    expect(result.stderr).toContain(
+      'pendente: proposta 0001: a seção ## Motivo está vazia',
+    );
   });
 
   test('erro de declaração sai com 1 e aponta arquivo:linha', () => {

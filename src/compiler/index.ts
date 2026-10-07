@@ -80,3 +80,5 @@ export {
   type ReconcileInput,
   type ReconcilePlan,
 } from './changes/reconcile';
+export { archiveProposal } from './changes/apply';
+export { writeDraft } from './changes/draft';

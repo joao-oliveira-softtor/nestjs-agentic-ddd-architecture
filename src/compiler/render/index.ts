@@ -9,6 +9,7 @@ export interface OutputPaths {
   readonly claudeMd: string;
   readonly devSkills: string;
   readonly runtimeSkills: string;
+  readonly lock: string;
 }
 
 export const DEFAULT_OUT: OutputPaths = {
@@ -16,6 +17,7 @@ export const DEFAULT_OUT: OutputPaths = {
   claudeMd: 'CLAUDE.md',
   devSkills: '.agents/skills',
   runtimeSkills: '.agentic/runtime',
+  lock: '.agentic/domain.lock.json',
 };
 
 export interface Rendered {

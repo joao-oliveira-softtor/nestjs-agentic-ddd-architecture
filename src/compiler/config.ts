@@ -14,6 +14,7 @@ export interface AgenticConfig {
   readonly modules: readonly ModuleConfig[];
   readonly out?: Partial<OutputPaths>;
   readonly mirrors?: readonly string[];
+  readonly changes?: string;
 }
 
 export interface ResolvedConfig {
@@ -22,6 +23,7 @@ export interface ResolvedConfig {
   readonly modules: readonly ModuleConfig[];
   readonly out: OutputPaths;
   readonly mirrors: readonly string[];
+  readonly changesDir: string;
 }
 
 const MODULE_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -67,6 +69,9 @@ export function resolveConfig(
     })),
     out: { ...DEFAULT_OUT, ...config.out },
     mirrors: [...(config.mirrors ?? ['.claude/skills'])],
+    changesDir: toPosix(config.changes ?? 'changes')
+      .replace(/^\.\//, '')
+      .replace(/\/+$/, ''),
   };
 }
 
