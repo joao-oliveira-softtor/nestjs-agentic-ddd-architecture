@@ -4,7 +4,7 @@ description: "Domínio orders: entidades Order; use-cases cancel_order, confirm_
 metadata:
   agentic-ddd.audience: dev
   agentic-ddd.generated: "true"
-  agentic-ddd.ir-hash: "6666dce37d7ba716d00f90f5627799393a46aee356b2c10ffb04b2f3b855edc0"
+  agentic-ddd.ir-hash: "808d1a618d111fbfa529f39686a8900373905da31ee5e9535d95b75d9eba5146"
 ---
 <!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders -->
 
@@ -18,18 +18,18 @@ Código em `examples/orders`. Esta skill descreve o domínio declarado (requisit
 
 Pedido de compra de um cliente, com itens e ciclo de vida pendente, confirmado ou cancelado.
 
-Fonte: `examples/orders/domain/order.ts:23` · Estados: `pending`, `confirmed`, `cancelled`
+Fonte: `examples/orders/domain/order.ts:19` · Estados: `pending`, `confirmed`, `cancelled`
 
 | Invariante | Regra | Garantida por | Fonte |
 |---|---|---|---|
-| `invariant:Order/ao-menos-um-item` | Um pedido precisa ter ao menos um item. | construção | `examples/orders/domain/order.ts:28` |
-| `invariant:Order/total-nao-negativo` | O total do pedido (soma de quantidade × preço unitário) nunca pode ser negativo. | construção | `examples/orders/domain/order.ts:32` |
+| `invariant:Order/ao-menos-um-item` | Um pedido precisa ter ao menos um item. | construção | `examples/orders/domain/order.ts:24` |
+| `invariant:Order/total-nao-negativo` | O total do pedido (soma de quantidade × preço unitário) nunca pode ser negativo. | construção | `examples/orders/domain/order.ts:28` |
 
 | Método | Descrição | Transição | Emite | Fonte |
 |---|---|---|---|---|
-| `Order.cancel` | Cancela um pedido pendente ou confirmado. | `pending`, `confirmed` → `cancelled` | `OrderCancelled` | `examples/orders/domain/order.ts:104` |
-| `Order.confirm` | Confirma um pedido pendente. | `pending` → `confirmed` | `OrderConfirmed` | `examples/orders/domain/order.ts:93` |
-| `Order.create` | Cria um pedido pendente para um cliente. | — | `OrderCreated` | `examples/orders/domain/order.ts:60` |
+| `Order.cancel` | Cancela um pedido pendente ou confirmado. | `pending`, `confirmed` → `cancelled` | `OrderCancelled` | `examples/orders/domain/order.ts:100` |
+| `Order.confirm` | Confirma um pedido pendente. | `pending` → `confirmed` | `OrderConfirmed` | `examples/orders/domain/order.ts:89` |
+| `Order.create` | Cria um pedido pendente para um cliente. | — | `OrderCreated` | `examples/orders/domain/order.ts:56` |
 
 ## Eventos
 
