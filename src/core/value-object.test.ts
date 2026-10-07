@@ -66,3 +66,54 @@ describe('ValueObject: isolamento das props', () => {
     expect(Object.isFrozen(vo.props.bare)).toBe(true);
   });
 });
+
+describe('ValueObject: equals', () => {
+  test('Set é igual independentemente da ordem de inserção', () => {
+    expect(
+      new Bag({ s: new Set([1, 2]) }).equals(new Bag({ s: new Set([2, 1]) })),
+    ).toBe(true);
+    expect(
+      new Bag({ s: new Set([{ n: 1 }, { n: 2 }]) }).equals(
+        new Bag({ s: new Set([{ n: 2 }, { n: 1 }]) }),
+      ),
+    ).toBe(true);
+  });
+
+  test('Map é igual independentemente da ordem das entradas', () => {
+    const a = new Map([
+      ['x', 1],
+      ['y', 2],
+    ]);
+    const b = new Map([
+      ['y', 2],
+      ['x', 1],
+    ]);
+    expect(new Bag({ m: a }).equals(new Bag({ m: b }))).toBe(true);
+  });
+
+  test('Set com elementos profundamente iguais não casa duas vezes o mesmo elemento', () => {
+    const a = new Bag({ s: new Set([{ n: 1 }, { n: 1 }]) });
+    const b = new Bag({ s: new Set([{ n: 1 }, { n: 2 }]) });
+    expect(a.equals(b)).toBe(false);
+    expect(b.equals(a)).toBe(false);
+  });
+
+  test('Set e Map diferentes continuam diferentes', () => {
+    expect(
+      new Bag({ s: new Set([1, 2]) }).equals(new Bag({ s: new Set([1, 3]) })),
+    ).toBe(false);
+    expect(
+      new Bag({ s: new Set([1, 2]) }).equals(new Bag({ s: new Set([1]) })),
+    ).toBe(false);
+    expect(
+      new Bag({ m: new Map([['x', 1]]) }).equals(
+        new Bag({ m: new Map([['x', 2]]) }),
+      ),
+    ).toBe(false);
+    expect(
+      new Bag({ m: new Map([['x', 1]]) }).equals(
+        new Bag({ m: new Map([['y', 1]]) }),
+      ),
+    ).toBe(false);
+  });
+});

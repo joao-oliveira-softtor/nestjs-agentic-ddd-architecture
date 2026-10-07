@@ -62,6 +62,24 @@ function copyDeep(value: unknown, seen: WeakMap<object, unknown>): unknown {
   return value;
 }
 
+// Compara sem depender da ordem: cada elemento de `a` consome um elemento
+// ainda não usado de `b` (a igualdade profunda é uma equivalência, então o
+// pareamento guloso basta). O(n²).
+function unorderedEqual<T>(
+  a: readonly T[],
+  b: readonly T[],
+  same: (x: T, y: T) => boolean,
+): boolean {
+  if (a.length !== b.length) return false;
+  const used = new Set<number>();
+  return a.every((item) => {
+    const index = b.findIndex((other, i) => !used.has(i) && same(item, other));
+    if (index === -1) return false;
+    used.add(index);
+    return true;
+  });
+}
+
 function deepEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
   if (
@@ -80,18 +98,16 @@ function deepEqual(a: unknown, b: unknown): boolean {
 
   // Handle Set
   if (a instanceof Set && b instanceof Set) {
-    if (a.size !== b.size) return false;
-    const aArray = Array.from(a);
-    const bArray = Array.from(b);
-    return aArray.every((item, index) => deepEqual(item, bArray[index]));
+    return unorderedEqual(Array.from(a), Array.from(b), deepEqual);
   }
 
   // Handle Map
   if (a instanceof Map && b instanceof Map) {
-    if (a.size !== b.size) return false;
-    const aEntries = Array.from(a.entries());
-    const bEntries = Array.from(b.entries());
-    return aEntries.every((entry, index) => deepEqual(entry, bEntries[index]));
+    return unorderedEqual(
+      Array.from(a.entries()),
+      Array.from(b.entries()),
+      ([ak, av], [bk, bv]) => deepEqual(ak, bk) && deepEqual(av, bv),
+    );
   }
 
   // Handle Array
