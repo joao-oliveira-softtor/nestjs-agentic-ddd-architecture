@@ -198,6 +198,53 @@ describe('Motivo, rascunho e numeração', () => {
     );
   });
 
+  test('markApplied com aspas duplas', () => {
+    const raw = VALID.replace('status: proposed', 'status: "proposed"');
+    const result = markApplied(raw);
+    expect(result).toBe(raw.replace('status: "proposed"', 'status: applied'));
+  });
+
+  test('markApplied com aspas simples', () => {
+    const raw = VALID.replace('status: proposed', "status: 'proposed'");
+    const result = markApplied(raw);
+    expect(result).toBe(raw.replace("status: 'proposed'", 'status: applied'));
+  });
+
+  test('markApplied com comentário', () => {
+    const raw = VALID.replace('status: proposed', 'status: proposed # nota');
+    const result = markApplied(raw);
+    expect(result).toBe(
+      raw.replace('status: proposed # nota', 'status: applied'),
+    );
+  });
+
+  test('markApplied preserva CRLF', () => {
+    const crlfValid = VALID.replace(/\n/g, '\r\n');
+    const result = markApplied(crlfValid);
+    expect(result).toContain('\r\n');
+    expect(result.split('\r\n')[3]).toBe('status: applied');
+  });
+
+  test('markApplied preserva linha vazia após status', () => {
+    const raw = VALID.replace('status: proposed', 'status: proposed\n');
+    const result = markApplied(raw);
+    expect(result.includes('\nstatus: applied\n')).toBe(true);
+  });
+
+  test('markApplied não toca em status: proposed no corpo', () => {
+    const raw = `${VALID}\n\nAlgum texto com status: proposed aqui.`;
+    const result = markApplied(raw);
+    expect(result.includes('status: applied')).toBe(true);
+    expect(result.includes('Algum texto com status: proposed')).toBe(true);
+  });
+
+  test('markApplied sem linha de status lança erro', () => {
+    const raw = VALID.replace('status: proposed', 'status: drafted');
+    expect(() => markApplied(raw)).toThrow(
+      'markApplied: linha "status: proposed" não encontrada no frontmatter',
+    );
+  });
+
   test('nextChangeId usa o maior número + 1, com 4 dígitos', () => {
     expect(nextChangeId([])).toBe('0001');
     expect(nextChangeId([{ id: '0001' }, { id: '0009' }] as never)).toBe(
@@ -256,5 +303,17 @@ describe('listProposals', () => {
       proposals: [],
       errors: [],
     });
+  });
+
+  test('listProposals com arquivo no lugar de pasta lança erro', async () => {
+    const filePath = join(dir, 'changes');
+    await writeFile(filePath, 'não é pasta');
+    let thrown = false;
+    try {
+      await listProposals(filePath, 'changes');
+    } catch {
+      thrown = true;
+    }
+    expect(thrown).toBe(true);
   });
 });

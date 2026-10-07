@@ -227,20 +227,27 @@ export async function listProposals(
         .filter((entry) => entry.isDirectory() && entry.name !== 'archive')
         .map((entry) => entry.name)
         .sort();
-    } catch {
-      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === 'ENOENT') {
+        return;
+      }
+      throw error;
     }
     for (const name of names) {
-      const raw = await readFile(
-        join(dirAbs, name, 'proposal.md'),
-        'utf8',
-      ).catch(() => null);
-      if (raw === null) {
-        errors.push({
-          message: 'proposal.md ausente',
-          source: `${dirRel}/${name}`,
-        });
-        continue;
+      let raw: string;
+      try {
+        raw = await readFile(join(dirAbs, name, 'proposal.md'), 'utf8');
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === 'ENOENT') {
+          errors.push({
+            message: 'proposal.md ausente',
+            source: `${dirRel}/${name}`,
+          });
+          continue;
+        }
+        throw error;
       }
       const parsed = parseProposal(
         raw,
@@ -307,5 +314,24 @@ export function renderDraft(input: {
 }
 
 export function markApplied(raw: string): string {
-  return raw.replace(/^status:\s*proposed\s*$/m, 'status: applied');
+  const match = FRONTMATTER.exec(raw);
+  if (!match) {
+    throw new Error('markApplied: frontmatter não encontrado');
+  }
+
+  const frontmatter = match[1]!;
+  const newFrontmatter = frontmatter.replace(
+    /^status:[ \t]*(["']?)proposed\1[ \t]*(#.*)?$/m,
+    'status: applied',
+  );
+
+  if (newFrontmatter === frontmatter) {
+    throw new Error(
+      'markApplied: linha "status: proposed" não encontrada no frontmatter',
+    );
+  }
+
+  const yamlStart = raw.indexOf(frontmatter);
+  const yamlEnd = yamlStart + frontmatter.length;
+  return raw.substring(0, yamlStart) + newFrontmatter + raw.substring(yamlEnd);
 }
