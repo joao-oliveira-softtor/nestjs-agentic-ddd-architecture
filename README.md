@@ -52,6 +52,21 @@ bun run agentic compile --check  # falha se algo gerado estiver desatualizado (u
 bun run agentic compile --report # tokens por arquivo e lint das skills
 ```
 
+## Mudanças de domínio e conclusão de tarefas
+
+Toda mudança de regra de negócio fica registrada em `changes/`, e o compilador mantém um snapshot do domínio em `.agentic/domain.lock.json`.
+
+```bash
+# proposal-first: escreva changes/NNNN-<slug>/proposal.md (delta, critérios de aceite, ## Motivo), implemente e:
+bun run agentic compile                          # aplica e arquiva a proposta quando o código bate com o delta
+# code-first: depois de mudar o código decorado
+bun run agentic compile --draft-change <slug>    # gera o rascunho com o delta preenchido; escreva o Motivo
+bun run agentic verify 0002                      # gates G1–G6 em JSON; done | needs-human | failed
+bun run agentic ir                               # IR canônica (depuração)
+```
+
+O `verify` roda a suíte com reporter JUnit e cruza cada teste marcado com `covers([...])` com as regras e os critérios de aceite da proposta. O histórico por módulo fica em `.agents/skills/<módulo>-dev/references/history.md`.
+
 ## Estrutura
 
 | Caminho           | Conteúdo                                                                               |

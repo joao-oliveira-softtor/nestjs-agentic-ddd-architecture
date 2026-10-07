@@ -1,0 +1,22 @@
+# Dataset da camada 2 (spec §12.3): perguntas com resposta verificável sobre as
+# skills geradas do exemplo orders. O runner que pergunta a LLMs reais é do v0.1.
+- id: confirmar-pedido
+  audience: runtime
+  question: "Qual tool confirma o pedido 7f3c, e com quais argumentos?"
+  expect: { type: tool_call, name: confirm_order, input: { order_id: "7f3c" } }
+- id: cancelar-com-motivo
+  audience: runtime
+  question: "O cliente pediu para cancelar o pedido 7f3c porque desistiu. Qual tool e quais argumentos?"
+  expect: { type: tool_call, name: cancel_order, input: { order_id: "7f3c", reason: "desistiu" } }
+- id: cancelar-exige-aprovacao
+  audience: runtime
+  question: "Cancelar um pedido exige aprovação humana? Responda sim ou não."
+  expect: { type: exact, value: "sim" }
+- id: confirmar-cancelado
+  audience: dev
+  question: "Um pedido cancelled pode ser confirmado? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: onde-criar-use-case
+  audience: dev
+  question: "Em que caminho e com qual decorator crio o use-case refund_order?"
+  expect: { type: exact, value: "examples/orders/application/refund-order.ts @AgentUseCase" }
