@@ -4,7 +4,7 @@ description: "Domínio orders: entidades Order; use-cases cancel_order, confirm_
 metadata:
   agentic-ddd.audience: dev
   agentic-ddd.generated: "true"
-  agentic-ddd.ir-hash: "4b2067a753cb54f05021b7fd81261f60359322785534b7e93e9ef1c1d93e9625"
+  agentic-ddd.ir-hash: "8d34414532936a2c65461c4e84a76bfb3412e42e212778dcad173d625baeb57a"
 ---
 <!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders -->
 
@@ -23,14 +23,14 @@ Fonte: `examples/orders/domain/order.ts:19` · Estados: `pending`, `confirmed`, 
 | Invariante | Regra | Garantida por | Fonte |
 |---|---|---|---|
 | `invariant:Order/ao-menos-um-item` | Um pedido precisa ter ao menos um item. | construção | `examples/orders/domain/order.ts:24` |
-| `invariant:Order/cancelamento-exige-motivo` | Todo cancelamento precisa de um motivo não vazio. | `Order.cancel` | `examples/orders/domain/order.ts:105` |
+| `invariant:Order/cancelamento-exige-motivo` | Todo cancelamento precisa de um motivo não vazio. | `Order.cancel` | `examples/orders/domain/order.ts:108` |
 | `invariant:Order/total-nao-negativo` | O total do pedido (soma de quantidade × preço unitário) nunca pode ser negativo. | construção | `examples/orders/domain/order.ts:28` |
 
 | Método | Descrição | Transição | Emite | Fonte |
 |---|---|---|---|---|
-| `Order.cancel` | Cancela um pedido pendente ou confirmado. | `pending`, `confirmed` → `cancelled` | `OrderCancelled` | `examples/orders/domain/order.ts:100` |
-| `Order.confirm` | Confirma um pedido pendente. | `pending` → `confirmed` | `OrderConfirmed` | `examples/orders/domain/order.ts:89` |
-| `Order.create` | Cria um pedido pendente para um cliente. | — | `OrderCreated` | `examples/orders/domain/order.ts:56` |
+| `Order.cancel` | Cancela um pedido pendente ou confirmado. | `pending`, `confirmed` → `cancelled` | `OrderCancelled` | `examples/orders/domain/order.ts:103` |
+| `Order.confirm` | Confirma um pedido pendente. | `pending` → `confirmed` | `OrderConfirmed` | `examples/orders/domain/order.ts:92` |
+| `Order.create` | Cria um pedido pendente para um cliente. | — | `OrderCreated` | `examples/orders/domain/order.ts:64` |
 
 ## Eventos
 

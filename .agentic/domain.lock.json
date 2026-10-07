@@ -124,7 +124,7 @@
           {
             "id": "invariant:Order/cancelamento-exige-motivo",
             "on": "method:Order.cancel",
-            "source": "examples/orders/domain/order.ts:105",
+            "source": "examples/orders/domain/order.ts:108",
             "text": "Todo cancelamento precisa de um motivo não vazio."
           },
           {
@@ -142,7 +142,7 @@
             ],
             "id": "method:Order.cancel",
             "name": "cancel",
-            "source": "examples/orders/domain/order.ts:100",
+            "source": "examples/orders/domain/order.ts:103",
             "static": false,
             "transition": {
               "from": [
@@ -159,7 +159,7 @@
             ],
             "id": "method:Order.confirm",
             "name": "confirm",
-            "source": "examples/orders/domain/order.ts:89",
+            "source": "examples/orders/domain/order.ts:92",
             "static": false,
             "transition": {
               "from": [
@@ -175,7 +175,7 @@
             ],
             "id": "method:Order.create",
             "name": "create",
-            "source": "examples/orders/domain/order.ts:56",
+            "source": "examples/orders/domain/order.ts:64",
             "static": true,
             "transition": null
           }

@@ -62,8 +62,10 @@ export function resolveConfig(
       );
   }
   const root = resolve(configDir, config.root ?? '.');
+  const modulePaths = new Map<ModuleConfig, string>();
   for (const module of config.modules) {
     const fromRoot = relative(root, resolve(root, module.path));
+    modulePaths.set(module, toPosix(fromRoot));
     if (fromRoot === '')
       throw new Error(
         `agentic.config.ts: o módulo "${module.name}" não pode apontar para a raiz do projeto`,
@@ -78,7 +80,7 @@ export function resolveConfig(
     outRoot: overrides.outRoot ? resolve(overrides.outRoot) : root,
     modules: config.modules.map((m) => ({
       name: m.name,
-      path: toPosix(m.path).replace(/^\.\//, '').replace(/\/+$/, ''),
+      path: modulePaths.get(m)!,
     })),
     out: { ...DEFAULT_OUT, ...config.out },
     mirrors: [...(config.mirrors ?? ['.claude/skills'])],

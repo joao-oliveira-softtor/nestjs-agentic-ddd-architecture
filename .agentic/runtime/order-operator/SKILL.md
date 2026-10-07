@@ -4,7 +4,7 @@ description: "Opera o ciclo de vida de pedidos de compra: criar, confirmar e can
 metadata:
   agentic-ddd.audience: runtime
   agentic-ddd.generated: "true"
-  agentic-ddd.ir-hash: "4b2067a753cb54f05021b7fd81261f60359322785534b7e93e9ef1c1d93e9625"
+  agentic-ddd.ir-hash: "8d34414532936a2c65461c4e84a76bfb3412e42e212778dcad173d625baeb57a"
 ---
 <!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders/operators/order.operator.ts:6 -->
 
