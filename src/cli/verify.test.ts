@@ -48,4 +48,31 @@ describe('agentic-ddd verify', () => {
     },
     300_000,
   );
+
+  test.skipIf(insideVerify)(
+    'verify 0002 do exemplo retorna needs-human por causa do critério manual',
+    () => {
+      const result = run('verify', '0002');
+      const report = JSON.parse(result.stdout) as {
+        status: string;
+        gates: {
+          id: string;
+          status: string;
+          findings: { message: string }[];
+          warnings: { message: string }[];
+        }[];
+      };
+      expect(report.gates.filter((g) => g.status === 'failed')).toEqual([]);
+      expect(report.status).toBe('needs-human');
+      const g6 = report.gates.find((g) => g.id === 'G6')!;
+      expect(g6.findings.map((f) => f.message)).toEqual([
+        'critério manual pendente: criterion:0002/revisao-de-copy — a mensagem de erro do cancelamento sem motivo foi revisada pelo time de produto',
+      ]);
+      expect(
+        report.gates.find((g) => g.id === 'G4')!.warnings.length,
+      ).toBeGreaterThan(0);
+      expect(result.code).toBe(0);
+    },
+    300_000,
+  );
 });

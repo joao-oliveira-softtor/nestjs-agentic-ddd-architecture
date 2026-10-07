@@ -102,7 +102,17 @@ export class Order extends AggregateRoot<string> {
     transition: { from: ['pending', 'confirmed'], to: 'cancelled' },
     emits: [OrderCancelled],
   })
-  cancel(): void {
+  @Invariant({
+    id: 'cancelamento-exige-motivo',
+    text: 'Todo cancelamento precisa de um motivo não vazio.',
+  })
+  cancel(reason: string): void {
+    if (reason.trim() === '') {
+      throw new DomainError(
+        'CANCELLATION_REASON_REQUIRED',
+        'Informe o motivo do cancelamento.',
+      );
+    }
     this.#ensureStatus(['pending', 'confirmed'], 'cancelar');
     this.#status = 'cancelled';
     this.record(new OrderCancelled({ orderId: this.id }));

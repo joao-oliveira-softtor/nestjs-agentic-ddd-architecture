@@ -86,6 +86,27 @@
       "path": "changes/archive/0001-estado-inicial/proposal.md",
       "summary": "Registra o estado inicial do domínio `orders` — pedido com criação, confirmação e cancelamento, três use-cases e o `order-operator` — como base do histórico. A partir daqui, toda mudança de regra de negócio passa por uma proposta em `changes/`.",
       "title": "Estado inicial do domínio orders"
+    },
+    {
+      "hash": "4717f6747571176cf8fc969ba722801c360b0eac592a9a49e684bdf007c7d7ec",
+      "id": "0002",
+      "items": [
+        {
+          "classification": "behavioral",
+          "id": "invariant:Order/cancelamento-exige-motivo",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "breaking",
+          "id": "usecase:cancel_order",
+          "kind": "modified",
+          "module": "orders"
+        }
+      ],
+      "path": "changes/archive/0002-cancelamento-exige-motivo/proposal.md",
+      "summary": "O atendimento precisa saber por que cada pedido foi cancelado para tratar reclamações e medir desistências. Hoje `cancel_order` aceita cancelar sem nenhuma justificativa.",
+      "title": "Cancelamento exige motivo"
     }
   ],
   "ir": {
@@ -99,6 +120,12 @@
             "on": null,
             "source": "examples/orders/domain/order.ts:24",
             "text": "Um pedido precisa ter ao menos um item."
+          },
+          {
+            "id": "invariant:Order/cancelamento-exige-motivo",
+            "on": "method:Order.cancel",
+            "source": "examples/orders/domain/order.ts:105",
+            "text": "Todo cancelamento precisa de um motivo não vazio."
           },
           {
             "id": "invariant:Order/total-nao-negativo",
@@ -273,10 +300,16 @@
               "description": "Id do pedido a cancelar",
               "minLength": 1,
               "type": "string"
+            },
+            "reason": {
+              "description": "Motivo do cancelamento informado pelo cliente",
+              "minLength": 1,
+              "type": "string"
             }
           },
           "required": [
-            "order_id"
+            "order_id",
+            "reason"
           ],
           "type": "object"
         },
@@ -299,7 +332,7 @@
           ],
           "type": "object"
         },
-        "source": "examples/orders/application/cancel-order.ts:18",
+        "source": "examples/orders/application/cancel-order.ts:22",
         "uses": [
           "method:Order.cancel"
         ],

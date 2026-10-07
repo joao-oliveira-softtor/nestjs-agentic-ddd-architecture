@@ -4,7 +4,7 @@ description: "Opera o ciclo de vida de pedidos de compra: criar, confirmar e can
 metadata:
   agentic-ddd.audience: runtime
   agentic-ddd.generated: "true"
-  agentic-ddd.ir-hash: "808d1a618d111fbfa529f39686a8900373905da31ee5e9535d95b75d9eba5146"
+  agentic-ddd.ir-hash: "4b2067a753cb54f05021b7fd81261f60359322785534b7e93e9ef1c1d93e9625"
 ---
 <!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders/operators/order.operator.ts:6 -->
 
@@ -29,6 +29,7 @@ Cancela um pedido pendente ou confirmado.
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
 | `order_id` | string | sim | Id do pedido a cancelar |
+| `reason` | string | sim | Motivo do cancelamento informado pelo cliente |
 
 Schema completo (restrições, campos aninhados e saída): `references/tools.schema.json` → `cancel_order`.
 
@@ -71,6 +72,7 @@ Schema completo (restrições, campos aninhados e saída): `references/tools.sch
 | Invariante | Regra | Garantida por |
 |---|---|---|
 | `invariant:Order/ao-menos-um-item` | Um pedido precisa ter ao menos um item. | construção |
+| `invariant:Order/cancelamento-exige-motivo` | Todo cancelamento precisa de um motivo não vazio. | `Order.cancel` |
 | `invariant:Order/total-nao-negativo` | O total do pedido (soma de quantidade × preço unitário) nunca pode ser negativo. | construção |
 
 ## Estados e transições
