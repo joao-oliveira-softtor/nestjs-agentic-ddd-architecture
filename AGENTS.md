@@ -29,5 +29,7 @@ Este repositório é o framework `@agentic-ddd` (em `src/`) e o app de exemplo `
 - Todo método público de entidade tem `@AgentMethod`; métodos auxiliares usam `#privado`.
 - Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.
 - Testes declaram o que cobrem com `covers([...ids], título)` de `@agentic-ddd/testing`.
+- Mudança de regra de negócio: escreva antes a proposta em `changes/NNNN-<slug>/proposal.md` (delta, critérios de aceite e `## Motivo`), implemente e rode `bun run agentic compile`; para mudança já feita no código, `bun run agentic compile --draft-change <slug>` gera o rascunho.
+- Uma tarefa só está concluída quando `bun run agentic verify <NNNN>` retorna `done` ou `needs-human`.
 - Gerados (não edite): `.agents/skills`, `.agentic/runtime`, os espelhos de skills e este bloco. Altere o código decorado e rode `bun run agentic compile`; o CI roda `bun run agentic compile --check`.
 <!-- agentic-ddd:end -->

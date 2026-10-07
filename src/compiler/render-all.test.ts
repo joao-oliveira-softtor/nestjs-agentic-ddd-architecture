@@ -42,6 +42,10 @@ describe('renderAll', () => {
       '| catalog-operator | `.agentic/runtime/catalog-operator/SKILL.md` |',
     );
     expect(rendered.agentsBlock).toContain('`notImplemented()`');
+    expect(rendered.agentsBlock).toContain(
+      '`bun run agentic verify <NNNN>` retorna `done` ou `needs-human`',
+    );
+    expect(rendered.agentsBlock).toContain('`changes/NNNN-<slug>/proposal.md`');
     expect(rendered.agentsBlock).toMatchSnapshot();
   });
 

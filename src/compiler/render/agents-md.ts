@@ -11,6 +11,7 @@ export interface AgentsPaths {
 }
 
 export function renderAgentsBlock(ir: IR, paths: AgentsPaths): string {
+  const changes = paths.changesDir ?? 'changes';
   const lines: string[] = [
     BLOCK_BEGIN,
     '<!-- GERADO por agentic-ddd compile — não edite este bloco; o texto fora dele é seu. -->',
@@ -41,6 +42,8 @@ export function renderAgentsBlock(ir: IR, paths: AgentsPaths): string {
     '- Todo método público de entidade tem `@AgentMethod`; métodos auxiliares usam `#privado`.',
     '- Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.',
     '- Testes declaram o que cobrem com `covers([...ids], título)` de `@agentic-ddd/testing`.',
+    `- Mudança de regra de negócio: escreva antes a proposta em ${code(`${changes}/NNNN-<slug>/proposal.md`)} (delta, critérios de aceite e \`## Motivo\`), implemente e rode \`bun run agentic compile\`; para mudança já feita no código, \`bun run agentic compile --draft-change <slug>\` gera o rascunho.`,
+    '- Uma tarefa só está concluída quando `bun run agentic verify <NNNN>` retorna `done` ou `needs-human`.',
     `- Gerados (não edite): ${code(paths.devSkills)}, ${code(paths.runtimeSkills)}, os espelhos de skills e este bloco. Altere o código decorado e rode \`bun run agentic compile\`; o CI roda \`bun run agentic compile --check\`.`,
     BLOCK_END,
   );

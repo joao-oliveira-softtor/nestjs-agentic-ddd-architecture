@@ -44,6 +44,7 @@ beforeEach(async () => {
     out: DEFAULT_OUT,
     mirrors: ['.claude/skills'],
     changesDir: 'changes',
+    verify: { test: ['bun', 'test'], commands: [] },
   };
 });
 

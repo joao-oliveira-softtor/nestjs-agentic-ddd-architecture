@@ -1,5 +1,6 @@
 import { compileCommand } from './commands/compile';
 import { irCommand } from './commands/ir';
+import { verifyCommand } from './commands/verify';
 import { USAGE } from './usage';
 
 export { USAGE };
@@ -9,6 +10,7 @@ const COMMANDS: Readonly<
 > = {
   compile: compileCommand,
   ir: irCommand,
+  verify: verifyCommand,
 };
 
 export async function main(argv: readonly string[]): Promise<number> {

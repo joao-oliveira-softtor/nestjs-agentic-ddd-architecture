@@ -82,3 +82,19 @@ export {
 } from './changes/reconcile';
 export { archiveProposal } from './changes/apply';
 export { writeDraft } from './changes/draft';
+export { verify, type VerifyOptions } from './verify/index';
+export {
+  evaluateGates,
+  type Finding,
+  type GateResult,
+  type VerifyReport,
+  type VerifyStatus,
+} from './verify/gates';
+export {
+  VERIFY_ENV,
+  parseJUnit,
+  runTests,
+  type TestCaseResult,
+  type TestRun,
+} from './verify/test-run';
+export type { VerifyConfig } from './config';
