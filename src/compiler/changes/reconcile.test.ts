@@ -4,6 +4,7 @@ import { SHOP_MODULE, defineShop } from '../__fixtures__/shop';
 import { analyze } from '../analyze';
 import { sha256 } from '../canonical';
 import { semanticDiff, EMPTY_IR } from '../diff';
+import type { IR } from '../ir';
 import type { DomainLock } from '../lock';
 import {
   markApplied,
@@ -234,5 +235,115 @@ describe('reconcile', () => {
     ]);
     expect(plan.nextLock).toBeNull();
     expect(plan.apply).toBeNull();
+  });
+
+  describe('mudanças de documentação com proposta aberta', () => {
+    const archivedBase = () =>
+      proposal({ motivo: 'Base.', archived: true, applied: true });
+    const baseLock = (): DomainLock => {
+      const applied = archivedBase();
+      return {
+        lockVersion: 1,
+        ir,
+        changes: [
+          {
+            id: '0001',
+            title: 'estado inicial',
+            path: applied.path,
+            summary: 'Base.',
+            hash: sha256(applied.raw),
+            items: [],
+          },
+        ],
+      };
+    };
+    const edited = (change: (useCase: (name: string) => any) => void): IR => {
+      const current = JSON.parse(JSON.stringify(ir));
+      change((name) => current.useCases.find((u: any) => u.name === name));
+      return current;
+    };
+
+    test('delta que declara a mudança só de docs aplica e registra o item', () => {
+      const current = edited((useCase) => {
+        useCase('create_product').description = 'Descrição nova.';
+      });
+      const open = proposal({
+        id: '0002',
+        delta: {
+          added: [],
+          modified: ['usecase:create_product'],
+          removed: [],
+        },
+        motivo: 'Reescreve a descrição.',
+      });
+      const plan = reconcile(
+        input(baseLock(), [archivedBase(), open], current),
+      );
+      expect(plan.errors).toEqual([]);
+      expect(plan.pending).toEqual([]);
+      expect(plan.apply?.id).toBe('0002');
+      expect(plan.nextLock?.changes).toHaveLength(2);
+      const applied = plan.nextLock!.changes[1]!;
+      expect(applied.id).toBe('0002');
+      expect(applied.items).toEqual([
+        expect.objectContaining({
+          kind: 'modified',
+          id: 'usecase:create_product',
+          classification: 'docs',
+        }),
+      ]);
+    });
+
+    test('item docs não declarado fica fora do histórico da change', () => {
+      const current = edited((useCase) => {
+        useCase('create_product').description = 'Descrição nova.';
+        useCase('publish_product').uses = [];
+      });
+      const open = proposal({
+        id: '0002',
+        delta: {
+          added: [],
+          modified: ['usecase:publish_product'],
+          removed: [],
+        },
+        motivo: 'Publicar não usa mais o método.',
+      });
+      const plan = reconcile(
+        input(baseLock(), [archivedBase(), open], current),
+      );
+      expect(plan.pending).toEqual([]);
+      expect(plan.apply?.id).toBe('0002');
+      expect(
+        plan.nextLock!.changes[1]!.items.map((i) => `${i.kind} ${i.id}`),
+      ).toEqual(['modified usecase:publish_product']);
+      expect(plan.nextLock!.ir).toEqual(current);
+    });
+
+    test('delta que não bate com o diff só de docs continua pendente', () => {
+      const lock = baseLock();
+      const current = edited((useCase) => {
+        useCase('publish_product').description = 'Descrição nova.';
+      });
+      const open = proposal({
+        id: '0002',
+        delta: {
+          added: [],
+          modified: ['usecase:create_product'],
+          removed: [],
+        },
+        motivo: 'X.',
+      });
+      const plan = reconcile(input(lock, [archivedBase(), open], current));
+      expect(plan.apply).toBeNull();
+      expect(plan.pending).toEqual([
+        'a proposta 0002 está aberta, mas o código ainda não tem as mudanças de domínio do delta',
+      ]);
+      // comportamento atual: o lock absorve o diff só de docs e não registra change
+      expect(plan.nextLock).toEqual({
+        lockVersion: 1,
+        ir: current,
+        changes: lock.changes,
+      });
+    });
   });
 });

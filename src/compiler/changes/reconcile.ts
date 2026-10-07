@@ -26,15 +26,18 @@ export function archivedPathOf(proposal: Proposal, changesDir: string): string {
   return `${changesDir}/archive/${proposal.id}-${proposal.slug}/proposal.md`;
 }
 
-export function deltaProblems(
-  proposal: Proposal,
-  diff: readonly DiffItem[],
-): string[] {
-  const declared = new Set([
+const declaredEntries = (proposal: Proposal): Set<string> =>
+  new Set([
     ...proposal.delta.added.map((id) => entry('added', id)),
     ...proposal.delta.modified.map((id) => entry('modified', id)),
     ...proposal.delta.removed.map((id) => entry('removed', id)),
   ]);
+
+export function deltaProblems(
+  proposal: Proposal,
+  diff: readonly DiffItem[],
+): string[] {
+  const declared = declaredEntries(proposal);
   const actual = new Set(diff.map((item) => entry(item.kind, item.id)));
   const problems: string[] = [];
   for (const item of diff) {
@@ -131,7 +134,14 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
   const required = diff.filter((item) => item.classification !== 'docs');
   const proposal = open[0] ?? null;
 
-  if (required.length === 0) {
+  // Uma proposta aberta que declara exatamente o que mudou (inclusive itens
+  // `docs`) segue o caminho de aplicação, mesmo sem mudança de domínio.
+  const declaresDocsOnlyChange =
+    proposal !== null &&
+    diff.length > 0 &&
+    deltaProblems(proposal, diff).length === 0;
+
+  if (required.length === 0 && !declaresDocsOnlyChange) {
     if (proposal)
       pending.push(
         `a proposta ${proposal.id} está aberta, mas o código ainda não tem as mudanças de domínio do delta`,
@@ -159,6 +169,11 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
     return unchanged();
   }
 
+  const declared = declaredEntries(proposal);
+  const items = diff.filter(
+    (item) =>
+      item.classification !== 'docs' || declared.has(entry(item.kind, item.id)),
+  );
   const archivedPath = archivedPathOf(proposal, input.changesDir);
   const appliedRaw = appliedTexts.get(proposal.id)!;
   const change: LockChange = {
@@ -167,7 +182,7 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
     path: archivedPath,
     summary: summarize(proposal.motivo),
     hash: sha256(appliedRaw),
-    items: diff,
+    items,
   };
   return {
     diff,
