@@ -205,6 +205,26 @@ const inputBreaks = (before: unknown, after: unknown): boolean =>
 const outputBreaks = (before: unknown, after: unknown): boolean =>
   schemaBreaks(before, after, 'output');
 
+interface Transition {
+  readonly from: readonly string[];
+  readonly to: string;
+}
+
+// Quebra se uma transição antes permitida deixa de valer: some, perde um
+// estado de origem ou muda o destino. Acrescentar estados de origem só amplia.
+function transitionBreaks(
+  before: DomainElement,
+  after: DomainElement,
+): boolean {
+  const old = before.content.transition as Transition | null;
+  if (old === null || old === undefined) return false;
+  const next = after.content.transition as Transition | null;
+  if (next === null || next === undefined) return true;
+  return (
+    old.to !== next.to || old.from.some((state) => !next.from.includes(state))
+  );
+}
+
 function classifyModified(
   before: DomainElement,
   after: DomainElement,
@@ -227,11 +247,7 @@ function classifyModified(
   ) {
     return 'breaking';
   }
-  if (
-    after.kind === 'method' &&
-    before.content.transition !== null &&
-    after.content.transition === null
-  )
+  if (after.kind === 'method' && transitionBreaks(before, after))
     return 'breaking';
   return 'behavioral';
 }

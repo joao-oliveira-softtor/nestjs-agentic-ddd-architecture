@@ -501,4 +501,38 @@ describe('semanticDiff', () => {
       )!.classification,
     ).toBe('breaking');
   });
+
+  describe('transição de método', () => {
+    const publishOf = (ir: any): any =>
+      ir.entities[0].methods.find((m: any) => m.name === 'publish');
+    const classify = (after: IR, source: IR = base): string | undefined =>
+      semanticDiff(source, after).find((i) => i.id === 'method:Product.publish')
+        ?.classification;
+
+    test('remover um estado do from → breaking', () => {
+      const before = clone();
+      publishOf(before).transition.from = ['draft', 'published'];
+      const after = clone();
+      publishOf(after).transition.from = ['draft'];
+      expect(classify(after, before)).toBe('breaking');
+    });
+
+    test('trocar o from por outro estado → breaking', () => {
+      const after = clone();
+      publishOf(after).transition.from = ['published'];
+      expect(classify(after)).toBe('breaking');
+    });
+
+    test('mudar o to → breaking', () => {
+      const after = clone();
+      publishOf(after).transition.to = 'draft';
+      expect(classify(after)).toBe('breaking');
+    });
+
+    test('acrescentar um estado ao from → behavioral', () => {
+      const after = clone();
+      publishOf(after).transition.from = ['draft', 'published'];
+      expect(classify(after)).toBe('behavioral');
+    });
+  });
 });
