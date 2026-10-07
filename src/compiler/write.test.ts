@@ -43,6 +43,8 @@ beforeEach(async () => {
     modules: [SHOP_MODULE],
     out: DEFAULT_OUT,
     mirrors: ['.claude/skills'],
+    changesDir: 'changes',
+    verify: { test: ['bun', 'test'], commands: [] },
   };
 });
 

@@ -4,7 +4,7 @@ description: "Domínio orders: entidades Order; use-cases cancel_order, confirm_
 metadata:
   agentic-ddd.audience: dev
   agentic-ddd.generated: "true"
-  agentic-ddd.ir-hash: "249cecaf9b809fff25dbec75ec2610f45fffabb8ad1d380c64a3cfe0c3b5bda6"
+  agentic-ddd.ir-hash: "8d34414532936a2c65461c4e84a76bfb3412e42e212778dcad173d625baeb57a"
 ---
 <!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders -->
 
@@ -23,6 +23,7 @@ Fonte: `examples/orders/domain/order.ts:19` · Estados: `pending`, `confirmed`, 
 | Invariante | Regra | Garantida por | Fonte |
 |---|---|---|---|
 | `invariant:Order/ao-menos-um-item` | Um pedido precisa ter ao menos um item. | construção | `examples/orders/domain/order.ts:24` |
+| `invariant:Order/cancelamento-exige-motivo` | Todo cancelamento precisa de um motivo não vazio. | `Order.cancel` | `examples/orders/domain/order.ts:108` |
 | `invariant:Order/total-nao-negativo` | O total do pedido (soma de quantidade × preço unitário) nunca pode ser negativo. | construção | `examples/orders/domain/order.ts:28` |
 
 | Método | Descrição | Transição | Emite | Fonte |
@@ -43,7 +44,7 @@ Fonte: `examples/orders/domain/order.ts:19` · Estados: `pending`, `confirmed`, 
 
 | Use-case | Descrição | Aciona | Emite | Fonte |
 |---|---|---|---|---|
-| `cancel_order` | Cancela um pedido pendente ou confirmado. | `Order.cancel` | `OrderCancelled` | `examples/orders/application/cancel-order.ts:18` |
+| `cancel_order` | Cancela um pedido pendente ou confirmado. | `Order.cancel` | `OrderCancelled` | `examples/orders/application/cancel-order.ts:22` |
 | `confirm_order` | Confirma um pedido pendente. | `Order.confirm` | `OrderConfirmed` | `examples/orders/application/confirm-order.ts:18` |
 | `create_order` | Cria um pedido pendente para um cliente com os itens informados. | `Order.create` | `OrderCreated` | `examples/orders/application/create-order.ts:37` |
 
@@ -72,7 +73,7 @@ Cada ID abaixo precisa de ao menos um teste nomeado com `covers([...ids], títul
 | Item | IDs a cobrir |
 |---|---|
 | `entity:Order` | `invariant:Order/ao-menos-um-item`, `invariant:Order/total-nao-negativo`, `method:Order.create` |
-| `method:Order.cancel` | `method:Order.cancel` |
+| `method:Order.cancel` | `invariant:Order/cancelamento-exige-motivo`, `method:Order.cancel` |
 | `method:Order.confirm` | `method:Order.confirm` |
 | `operator:order-operator` | `operator:order-operator` |
 | `usecase:cancel_order` | `usecase:cancel_order` |
@@ -93,5 +94,6 @@ Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-dd
 
 ## Referências
 
+- [Histórico de mudanças](references/history.md)
 - [Schemas de eventos e use-cases](references/schemas.json)
 - [Máquina de estados](references/state-machine.md)

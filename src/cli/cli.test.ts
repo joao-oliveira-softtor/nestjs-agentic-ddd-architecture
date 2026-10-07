@@ -9,6 +9,7 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { bootstrapChanges } from '../../test/helpers/bootstrap';
 
 const ROOT = resolve(import.meta.dir, '../..');
 
@@ -36,7 +37,8 @@ afterEach(async () => {
 });
 
 describe('agentic-ddd compile (CLI)', () => {
-  test('escreve e depois --check sai com 0', () => {
+  test('escreve e depois --check sai com 0', async () => {
+    await bootstrapChanges(out);
     expect(run('compile', '--out-root', out).code).toBe(0);
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(0);
@@ -58,6 +60,7 @@ describe('agentic-ddd compile (CLI)', () => {
   });
 
   test('--check com diretório real no lugar do link do espelho dá dica de remover/renomear', async () => {
+    await bootstrapChanges(out);
     run('compile', '--out-root', out);
     const mirror = join(out, '.claude/skills/orders-dev');
     await rm(mirror, { recursive: true, force: true });
@@ -72,6 +75,7 @@ describe('agentic-ddd compile (CLI)', () => {
   });
 
   test('--check com link do espelho ausente manda rodar o compile', async () => {
+    await bootstrapChanges(out);
     run('compile', '--out-root', out);
     await rm(join(out, '.claude/skills/orders-dev'));
     const check = run('compile', '--check', '--out-root', out);
@@ -81,6 +85,31 @@ describe('agentic-ddd compile (CLI)', () => {
     );
     expect(check.stderr).toContain('rode `bun run agentic compile`');
     expect(check.stderr).not.toContain('remova ou renomeie');
+  });
+
+  test('--check com mudança sem proposta imprime pendente e sai com 1', () => {
+    run('compile', '--out-root', out);
+    const check = run('compile', '--check', '--out-root', out);
+    expect(check.code).toBe(1);
+    expect(check.stderr).toContain('pendente: há ');
+    expect(check.stderr).toContain('--draft-change <slug>');
+  });
+
+  test('--draft-change pelo CLI cria a proposta e orienta o próximo passo', () => {
+    const result = run(
+      'compile',
+      '--draft-change',
+      'estado-inicial',
+      '--out-root',
+      out,
+    );
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain(
+      'proposta criada em changes/0001-estado-inicial/proposal.md',
+    );
+    expect(result.stderr).toContain(
+      'pendente: proposta 0001: a seção ## Motivo está vazia',
+    );
   });
 
   test('erro de declaração sai com 1 e aponta arquivo:linha', () => {
@@ -100,6 +129,7 @@ describe('agentic-ddd compile (CLI)', () => {
   test('uso incorreto sai com 2', () => {
     expect(run('build').code).toBe(2);
     expect(run('compile', '--nada').code).toBe(2);
+    expect(run('constructor').code).toBe(2);
   });
 
   test('--report imprime tokens por arquivo', () => {
@@ -148,5 +178,31 @@ describe('agentic-ddd compile (CLI)', () => {
     );
     expect(checkResult.code).toBe(1);
     expect(checkResult.stderr).toContain('lint: description com');
+  });
+
+  test('ir imprime a IR canônica', () => {
+    const result = run('ir');
+    expect(result.code).toBe(0);
+    const ir = JSON.parse(result.stdout) as {
+      irVersion: number;
+      operators: { id: string }[];
+    };
+    expect(ir.irVersion).toBe(1);
+    expect(ir.operators.map((o) => o.id)).toEqual(['operator:order-operator']);
+    expect(result.stdout.endsWith('}\n')).toBe(true);
+  });
+
+  test('ir com erro de declaração sai com 1', () => {
+    const result = run(
+      'ir',
+      '--config',
+      'test/fixtures/broken/agentic.config.ts',
+    );
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('domain/thing.ts:5:');
+  });
+
+  test('ir com argumento sobrando sai com 2', () => {
+    expect(run('ir', 'extra').code).toBe(2);
   });
 });

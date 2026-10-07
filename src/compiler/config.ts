@@ -9,11 +9,18 @@ export interface ModuleConfig {
   readonly path: string;
 }
 
+export interface VerifyConfig {
+  readonly test?: readonly string[];
+  readonly commands?: Readonly<Record<string, readonly string[]>>;
+}
+
 export interface AgenticConfig {
   readonly root?: string;
   readonly modules: readonly ModuleConfig[];
   readonly out?: Partial<OutputPaths>;
   readonly mirrors?: readonly string[];
+  readonly changes?: string;
+  readonly verify?: VerifyConfig;
 }
 
 export interface ResolvedConfig {
@@ -22,6 +29,14 @@ export interface ResolvedConfig {
   readonly modules: readonly ModuleConfig[];
   readonly out: OutputPaths;
   readonly mirrors: readonly string[];
+  readonly changesDir: string;
+  readonly verify: {
+    readonly test: readonly string[];
+    readonly commands: readonly {
+      readonly name: string;
+      readonly command: readonly string[];
+    }[];
+  };
 }
 
 const MODULE_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -69,6 +84,20 @@ export function resolveConfig(
     })),
     out: { ...DEFAULT_OUT, ...config.out },
     mirrors: [...(config.mirrors ?? ['.claude/skills'])],
+    changesDir: toPosix(config.changes ?? 'changes')
+      .replace(/^\.\//, '')
+      .replace(/\/+$/, ''),
+    verify: {
+      test: [...(config.verify?.test ?? ['bun', 'test'])],
+      commands: Object.entries(
+        config.verify?.commands ?? {
+          typecheck: ['bun', 'run', 'typecheck'],
+          lint: ['bun', 'run', 'lint'],
+        },
+      )
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([name, command]) => ({ name, command: [...command] })),
+    },
   };
 }
 

@@ -13,6 +13,7 @@
 - **Arquivos gerados** (`.agents/skills/`, `.claude/skills/`, `.agentic/`, bloco do `AGENTS.md`) nunca são editados à mão: altere o código decorado e rode `bun run agentic compile`.
 - **Imports:** relativos **sem** extensão (`./entity`; o `tsconfig` usa `moduleResolution: "bundler"`); `examples/**` só importa o framework via `@agentic-ddd/*`; tipos em assinaturas de classes decoradas usam `import type`.
 - **Commits:** [Conventional Commits](https://www.conventionalcommits.org/pt-br/) em português (`feat(compiler): …`, `fix(core): …`), pequenos e atômicos.
+- **Mudança de regra de negócio:** abra a proposta em `changes/NNNN-<slug>/proposal.md` antes do código (ou gere o rascunho com `bun run agentic compile --draft-change <slug>`), implemente com testes `covers` para as regras e os critérios, rode `bun run agentic compile` e só considere a tarefa pronta quando `bun run agentic verify <NNNN>` retornar `done` ou `needs-human`.
 
 ## Design
 

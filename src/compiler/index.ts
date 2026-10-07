@@ -1,6 +1,23 @@
 export { analyze } from './analyze';
 export { byId, canonicalize, sha256, stableStringify } from './canonical';
-export { compile, type CompileOptions, type CompileResult } from './compile';
+export {
+  EMPTY_IR,
+  contentHash,
+  elementsOf,
+  semanticDiff,
+  type ChangeKind,
+  type Classification,
+  type DiffItem,
+  type DomainElement,
+  type ElementKind,
+} from './diff';
+export {
+  analyzeProject,
+  compile,
+  type CompileOptions,
+  type CompileResult,
+  type ProjectAnalysis,
+} from './compile';
 export {
   defineConfig,
   loadConfig,
@@ -35,6 +52,49 @@ export {
   DEFAULT_OUT,
   renderAll,
   type OutputPaths,
+  type RenderOptions,
   type Rendered,
 } from './render/index';
 export { checkOutputs, writeOutputs, type Drift } from './write';
+export {
+  LOCK_VERSION,
+  parseLock,
+  readLock,
+  serializeLock,
+  type DomainLock,
+  type LockChange,
+} from './lock';
+export {
+  ELEMENT_ID,
+  MOTIVO_PLACEHOLDER,
+  listProposals,
+  parseProposal,
+  type AcceptanceCriterion,
+  type Delta,
+  type Proposal,
+} from './changes/proposal';
+export {
+  archivedPathOf,
+  deltaProblems,
+  reconcile,
+  type ReconcileInput,
+  type ReconcilePlan,
+} from './changes/reconcile';
+export { archiveProposal } from './changes/apply';
+export { writeDraft } from './changes/draft';
+export { verify, type VerifyOptions } from './verify/index';
+export {
+  evaluateGates,
+  type Finding,
+  type GateResult,
+  type VerifyReport,
+  type VerifyStatus,
+} from './verify/gates';
+export {
+  VERIFY_ENV,
+  parseJUnit,
+  runTests,
+  type TestCaseResult,
+  type TestRun,
+} from './verify/test-run';
+export type { VerifyConfig } from './config';

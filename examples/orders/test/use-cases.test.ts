@@ -93,13 +93,22 @@ describe('use-cases de orders', () => {
   );
 
   test(
-    covers(['usecase:cancel_order'], 'cancela pedido e publica OrderCancelled'),
+    covers(
+      ['usecase:cancel_order', 'criterion:0002/cancela-com-motivo'],
+      'cancela pedido com motivo e publica OrderCancelled',
+    ),
     async () => {
       await new CreateOrder(orders).execute(input, createTestContext());
       const ctx = createTestContext();
       expect(
-        await new CancelOrder(orders).execute({ order_id: 'o1' }, ctx),
-      ).toEqual({ order_id: 'o1', status: 'cancelled' });
+        await new CancelOrder(orders).execute(
+          { order_id: 'o1', reason: 'cliente desistiu' },
+          ctx,
+        ),
+      ).toEqual({
+        order_id: 'o1',
+        status: 'cancelled',
+      });
       expect(ctx.published.map((e) => e.name)).toEqual(['OrderCancelled']);
     },
   );

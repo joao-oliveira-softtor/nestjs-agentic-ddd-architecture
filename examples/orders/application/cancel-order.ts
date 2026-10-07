@@ -7,6 +7,10 @@ import { loadOrder } from './load-order';
 
 export const cancelOrderInput = z.object({
   order_id: z.string().min(1).describe('Id do pedido a cancelar'),
+  reason: z
+    .string()
+    .min(1)
+    .describe('Motivo do cancelamento informado pelo cliente'),
 });
 export const cancelOrderOutput = z.object({
   order_id: z.string(),
@@ -37,7 +41,7 @@ export class CancelOrder implements UseCase<
     ctx: UseCaseContext,
   ): Promise<CancelOrderOutput> {
     const order = await loadOrder(this.orders, input.order_id);
-    order.cancel();
+    order.cancel(input.reason);
     await this.orders.save(order);
     await ctx.publish(order.pullEvents());
     return { order_id: order.id, status: 'cancelled' };

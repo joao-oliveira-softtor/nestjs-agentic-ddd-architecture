@@ -6,10 +6,16 @@
           "description": "Id do pedido a cancelar",
           "minLength": 1,
           "type": "string"
+        },
+        "reason": {
+          "description": "Motivo do cancelamento informado pelo cliente",
+          "minLength": 1,
+          "type": "string"
         }
       },
       "required": [
-        "order_id"
+        "order_id",
+        "reason"
       ],
       "type": "object"
     },

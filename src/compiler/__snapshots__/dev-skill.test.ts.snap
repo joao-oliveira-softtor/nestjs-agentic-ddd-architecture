@@ -89,8 +89,18 @@ Corpo declarado e ainda não implementado usa \`notImplemented()\` de \`@agentic
 
 ## Referências
 
+- [Histórico de mudanças](references/history.md)
 - [Schemas de eventos e use-cases](references/schemas.json)
 - [Máquina de estados](references/state-machine.md)
+"
+`;
+
+exports[`renderDevSkill snapshot dos arquivos: references/history.md 1`] = `
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__ -->
+
+# Histórico do módulo \`shop\`
+
+_Nenhuma mudança registrada._
 "
 `;
 

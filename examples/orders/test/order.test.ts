@@ -117,7 +117,7 @@ describe('Order', () => {
     covers(['method:Order.confirm'], 'não confirma pedido cancelado'),
     () => {
       const order = newOrder();
-      order.cancel();
+      order.cancel('cliente desistiu');
       expectDomainError(() => order.confirm(), 'ORDER_INVALID_TRANSITION');
     },
   );
@@ -129,14 +129,14 @@ describe('Order', () => {
     ),
     () => {
       const pending = newOrder();
-      pending.cancel();
+      pending.cancel('cliente desistiu');
       expect(pending.status).toBe('cancelled');
       expect(pending.pullEvents().map((e) => e.name)).toEqual([
         'OrderCancelled',
       ]);
       const confirmed = newOrder();
       confirmed.confirm();
-      confirmed.cancel();
+      confirmed.cancel('cliente desistiu');
       expect(confirmed.status).toBe('cancelled');
     },
   );
@@ -145,8 +145,31 @@ describe('Order', () => {
     covers(['method:Order.cancel'], 'não cancela pedido já cancelado'),
     () => {
       const order = newOrder();
-      order.cancel();
-      expectDomainError(() => order.cancel(), 'ORDER_INVALID_TRANSITION');
+      order.cancel('cliente desistiu');
+      expectDomainError(
+        () => order.cancel('cliente desistiu'),
+        'ORDER_INVALID_TRANSITION',
+      );
+    },
+  );
+
+  test(
+    covers(
+      [
+        'invariant:Order/cancelamento-exige-motivo',
+        'criterion:0002/rejeita-cancelamento-sem-motivo',
+      ],
+      'rejeita cancelamento sem motivo ou com motivo em branco',
+    ),
+    () => {
+      const order = newOrder();
+      expectDomainError(() => order.cancel(''), 'CANCELLATION_REASON_REQUIRED');
+      expectDomainError(
+        () => order.cancel('   '),
+        'CANCELLATION_REASON_REQUIRED',
+      );
+      expect(order.status).toBe('pending');
+      expect(order.pullEvents()).toEqual([]);
     },
   );
 });

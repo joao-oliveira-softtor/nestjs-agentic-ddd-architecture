@@ -1,0 +1,21 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`renderHistory agrupa por entidade, ignora outros módulos e linka a proposta arquivada 1`] = `
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__ -->
+
+# Histórico do módulo \`shop\`
+
+## Product
+
+| Change | Título | Mudanças | Motivo |
+|---|---|---|---|
+| [0001](../../../../changes/archive/0001-estado-inicial/proposal.md) | estado inicial | added \`entity:Product\` (behavioral) | Base do histórico. |
+| [0002](../../../../changes/archive/0002-publicacao-exige-estoque/proposal.md) | Publicação exige estoque | added \`invariant:Product/publicacao-exige-estoque\` (behavioral) | Evitar vender sem estoque. |
+
+## Eventos, use-cases e operators
+
+| Change | Título | Mudanças | Motivo |
+|---|---|---|---|
+| [0001](../../../../changes/archive/0001-estado-inicial/proposal.md) | estado inicial | added \`usecase:publish_product\` (behavioral) | Base do histórico. |
+"
+`;
