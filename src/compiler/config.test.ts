@@ -41,6 +41,15 @@ describe('validação do caminho dos módulos', () => {
     );
   });
 
+  test('resolveConfig normaliza o caminho relativo à raiz', () => {
+    for (const path of ['examples/./orders', './examples/orders/']) {
+      const resolved = resolveConfig({ modules: [{ name: 'x', path }] }, dir);
+      expect(resolved.modules).toEqual([
+        { name: 'x', path: 'examples/orders' },
+      ]);
+    }
+  });
+
   test('resolveConfig rejeita caminho fora da raiz', () => {
     expect(() =>
       resolveConfig({ modules: [{ name: 'x', path: '../fora' }] }, dir),
