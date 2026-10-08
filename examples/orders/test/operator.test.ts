@@ -9,7 +9,7 @@ import {
   FakeApproval,
   InMemoryEventBus,
 } from '@agentic-ddd/testing';
-import { compile } from '@agentic-ddd/compiler';
+import { compile, loadConfig } from '@agentic-ddd/compiler';
 import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -18,8 +18,8 @@ import { OrdersModule, ORDER_REPOSITORY } from '../orders.module';
 import { InMemoryOrderRepository } from '../infrastructure/in-memory-order.repository';
 import { Order } from '../domain/order';
 
-const root = resolve(import.meta.dir, '../../..');
-const modules = [{ name: 'orders', path: 'examples/orders' }];
+const configPath = resolve(process.cwd(), 'agentic.config.ts');
+const { root, modules } = await loadConfig(configPath);
 const orderInput = {
   order_id: 'e2e-order',
   customer_id: 'customer',
@@ -71,7 +71,7 @@ describe('order-operator E2E', () => {
       const out = mkdtempSync(join(tmpdir(), 'orders-runtime-e2e-'));
       try {
         await compile({
-          configPath: join(root, 'agentic.config.ts'),
+          configPath,
           outRoot: out,
           mode: 'write',
         });

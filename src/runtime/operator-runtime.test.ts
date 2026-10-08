@@ -83,3 +83,22 @@ test('registration fails without injected allowlisted instance or for unknown op
     'Unknown operator',
   );
 });
+
+test('concurrent registrations of the same operator reject one instead of overwriting instances', async () => {
+  const f = fixture();
+  const runtime = new OperatorRuntime({ ...f, llm: new FakeLlm([]) });
+  const instances = new Map([
+    [f.Tool, { execute: async (input: unknown) => input }],
+  ]);
+  const results = await Promise.allSettled([
+    runtime.register(f.Agent, instances),
+    runtime.register(f.Agent, instances),
+  ]);
+  expect(
+    results.filter((result) => result.status === 'fulfilled'),
+  ).toHaveLength(1);
+  const rejected = results.find((result) => result.status === 'rejected');
+  expect(rejected?.status === 'rejected' && String(rejected.reason)).toContain(
+    'Duplicate operator',
+  );
+});

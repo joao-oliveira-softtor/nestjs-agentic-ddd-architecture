@@ -72,3 +72,21 @@ test('bus awaits handlers in publication order, including concurrent batches, an
   await bus.publish([new Created('d')]);
   expect(seen).toEqual(['a', 'b', 'c']);
 });
+
+test('bus rejects reentrant awaited publication without poisoning subsequent delivery', async () => {
+  const bus = new InMemoryEventBus();
+  const remove = bus.subscribe(async (event) => {
+    if (event.payload === 'outer') await bus.publish([new Created('inner')]);
+  });
+  const result = await Promise.race([
+    bus.publish([new Created('outer')]).then(
+      () => 'delivered',
+      (error) => String(error),
+    ),
+    Bun.sleep(30).then(() => 'deadlocked'),
+  ]);
+  expect(result).toContain('Reentrant publication');
+  remove();
+  await bus.publish([new Created('next')]);
+  expect(bus.events.map((event) => event.payload)).toEqual(['outer', 'next']);
+});

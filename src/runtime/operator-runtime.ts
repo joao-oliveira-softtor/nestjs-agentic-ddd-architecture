@@ -109,6 +109,10 @@ export class OperatorRuntime {
     if (record.requiresApproval.some((cls) => !record.useCases.includes(cls)))
       throw new Error('Approval target outside allowlist');
     tools.sort((a, b) => a.name.localeCompare(b.name));
+    // Skill I/O allows feature factories to register concurrently. Recheck at
+    // the commit point so the first mounted instance cannot be overwritten.
+    if (this.#operators.has(record.name))
+      throw new Error(`Duplicate operator ${record.name}`);
     this.#operators.set(record.name, {
       record,
       system: `${record.instructions}\n\n${front![2]}`,

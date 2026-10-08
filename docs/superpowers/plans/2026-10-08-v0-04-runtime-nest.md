@@ -78,3 +78,9 @@ Entrega 5: E2E real substitui o teste exclusivamente declarativo. Compile em sa�
 Decisão adicional (RED→GREEN): smoke do bundle mostrou registro sem operator: `captureSource` usava import.meta.url do bundle para excluir frames do decorator. Build agora gera source map linked; captureSource deriva o diretório dos frames mapeados. Smoke real do dist com BunAdapter passou; hashes/snapshots/compile --check preservados. Distribuir o .map junto ao bundle.
 
 Documentação atualizada com uso Nest/FakeLlm, tokens/configuração de identidade, traces, limites e cancelamento cooperativo. Helpers de runtime isolados de arquivos de teste. A revisão final e aceite completo seguem abaixo.
+
+Revisão independente: dois P2 reproduzidos e corrigidos com RED→GREEN. (1) publicação reentrante aguardada no mesmo bus causava deadlock: rejeitada explicitamente via contexto assíncrono do handler; a fila continua utilizável após o erro, sem antecipar reactsTo. (2) registros simultâneos podiam sobrescrever o mesmo operator: rechecagem de duplicidade no ponto de commit após leitura da skill.
+
+Aceite integrado encontrou a fixture do plano 3 importando OrdersModule sem resolver Nest. A fixture temporária agora compartilha node_modules via symlink; seus E2E usam root/modules do próprio agentic.config.ts, em vez do layout fixo do checkout. As quatro ondas continuam verificadas com execução real do operator na última onda, sem testes iniciais nem evidência fabricada.
+
+Correções revisadas independentemente, sem novos findings. Suíte final: 348 testes, zero falhas, 14 snapshots intactos; typecheck, lint, build e compile --check aprovados. A fixture completa também passou isoladamente (45 assertions). Verificações explícitas dos changes em execução antes da publicação.

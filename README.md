@@ -102,7 +102,7 @@ try {
 }
 ```
 
-`forRoot` exporta `LLM_PORT`, `APPROVAL_PORT`, `EVENT_BUS` e `OperatorRuntime`. `forFeature` recebe `operators`, `useCases` (classes ou providers com token da classe decorada), `providers` auxiliares e `imports` opcionais. Use-cases da allowlist precisam ter instâncias injetadas. Sem ApprovalPort, tools protegidas são negadas; o bus default é `InMemoryEventBus`, com publicação e handlers aguardados em ordem. `FakeLlm.requests` e `FakeApproval.requests` guardam o histórico para assertions; roteiro esgotado é erro explícito.
+`forRoot` exporta `LLM_PORT`, `APPROVAL_PORT`, `EVENT_BUS` e `OperatorRuntime`. `forFeature` recebe `operators`, `useCases` (classes ou providers com token da classe decorada), `providers` auxiliares e `imports` opcionais. Use-cases da allowlist precisam ter instâncias injetadas. Sem ApprovalPort, tools protegidas são negadas; o bus default é `InMemoryEventBus`, com publicação e handlers aguardados em ordem. Publicação reentrante no mesmo bus durante um handler é rejeitada explicitamente para evitar deadlock; reações enfileiradas ficam no v0.1. `FakeLlm.requests` e `FakeApproval.requests` guardam o histórico para assertions; roteiro esgotado é erro explícito.
 
 O system combina instructions com o corpo da skill; tools incluem propósito, quando usar/não usar e JSON Schema. `context` vira uma mensagem user adicional em JSON. `providerPayload` do assistant volta intacto no turno seguinte. Cada turno executa tools sequencialmente, valida entrada/saída Zod e devolve todos os resultados em uma única mensagem tool. Sucessos contêm `{ output, events: [{ name, payload }] }`; `unknown_tool`, `invalid_input` (issues Zod), `approval_denied` (motivo) e DomainError são recuperáveis. Aprovação negada nunca chama execute.
 
@@ -121,7 +121,7 @@ Timeout impede iniciar novas tools/publicações pelo contexto do run, inclusive
 
 O `AppModule` compõe orders com FakeLlm de roteiro vazio: o v0 não fornece canal HTTP nem provider real. Testes e outros canais chamam o runtime diretamente e fornecem seus roteiros/ports. `main.ts` mantém BunAdapter; o build emite source map, necessário para preservar as localizações das declarações e seus hashes no bundle. Distribua `dist/main.js.map` junto do bundle.
 
-Os [E2E](examples/orders/test/operator.test.ts) compilam a skill e validam criação/confirmacão, cancelamento, aprovação, outputs, eventos e IDs com a composição Nest.
+Os [E2E](examples/orders/test/operator.test.ts) compilam a skill e validam criação/confirmação, cancelamento, aprovação, outputs, eventos e IDs com a composição Nest.
 
 ## Mudanças de domínio e conclusão de tarefas
 
