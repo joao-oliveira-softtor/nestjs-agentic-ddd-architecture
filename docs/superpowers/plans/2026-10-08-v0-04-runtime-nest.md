@@ -53,3 +53,14 @@ Para cada entrega acima:
 - [ ] Criar commit da entrega com testes e documentação pertinente.
 
 Aceite final esperado: `bun test` sem falhas; `bun run agentic verify 0001` = `done`; `bun run agentic verify 0002` = `needs-human`; cobertura do operator passa pelo FakeLlm e pela composição Nest.
+
+## Registro de execução — 2026-10-08
+
+Base: `7a6163f`, branch `feat/plan-4-runtime-nest`. Execução inline no checkout solicitado, com TDD e commits por entrega.
+
+Pre-flight: entrega 1 fornece ports/fakes para 2–5; entrega 2 fornece registro/projeção para loop e Nest; entrega 3 fornece run para E2E; entrega 4 fornece composição para 5. Não há conflitos de interfaces.
+
+Decisão: extrair IR e canonicalização para `src/contracts`, com reexports no compiler, preservando bytes/hashes e fronteira compiler/runtime. Configuração de runtime recebe root/modules (mesma identidade do compilador); a composição filtra o registry por módulos para isolar declarações de outros projetos/testes.
+Decisão: timeout termina o run e fecha a admissão de tools/publicações; operações já iniciadas têm cancelamento cooperativo (sem rollback de efeitos externos). Aprovação ausente nega por padrão.
+
+Entrega 1 concluída: RED por exports ausentes; GREEN com 3 testes (roteiro/payload, aprovação, bus concorrente/ordem/unsubscribe), typecheck e lint. Ports/resultados públicos e fakes entregues. Bus reside no runtime e é reexportado em testing.
