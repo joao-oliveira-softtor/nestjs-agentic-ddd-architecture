@@ -123,3 +123,30 @@ test('critério aberto retira done, resolve proprietário de invariante e inclui
     'method:Product.publish',
   ]);
 });
+
+test('G7 resolve fábrica e invariantes em um único proprietário, ignora eventos e removidos', async () => {
+  const { workItemFindings } = await import('./verify/work-items');
+  const declared = evaluate(
+    [],
+    new Map([...implemented].map(([id]) => [id, false])),
+  );
+  const changed = {
+    ...proposal,
+    archived: true,
+    delta: {
+      added: [
+        'method:Product.create',
+        'invariant:Product/preco-positivo',
+        'event:ProductCreated',
+      ],
+      modified: ['method:Product.create'],
+      removed: ['method:Product.publish'],
+    },
+  };
+  const findings = workItemFindings(ir, declared, changed);
+  expect(findings).toHaveLength(1);
+  expect(findings[0]).toMatchObject({
+    message: 'entity:Product está declared',
+    fix: 'bun run agentic packet entity:Product',
+  });
+});

@@ -25,6 +25,7 @@ export interface CompileOptions {
 }
 
 export interface CompileResult {
+  readonly registry: Registry;
   readonly ok: boolean;
   readonly errors: CompileError[];
   readonly drift: Drift[];
@@ -80,8 +81,9 @@ const byPath = (a: Drift, b: Drift): number =>
   a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
 
 export async function compile(options: CompileOptions): Promise<CompileResult> {
-  const { config, ir, errors } = await analyzeProject(options);
+  const { config, ir, errors, registry } = await analyzeProject(options);
   const empty = {
+    registry,
     drift: [],
     written: [],
     warnings: [],

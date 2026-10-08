@@ -127,6 +127,7 @@ describe('evaluateGates', () => {
       G4: 'passed',
       G5: 'passed',
       G6: 'passed',
+      G7: 'passed',
     });
   });
 
@@ -293,4 +294,23 @@ describe('evaluateGates', () => {
       'b.test.ts:1',
     ]);
   });
+});
+
+test('G7 reprova um finding por proprietário de ADDED/MODIFIED, preserva needs-human quando done', () => {
+  const pending = evaluateGates(
+    input({
+      workItemFindings: [
+        {
+          message: 'method:Order.cancel está blocked(declared)',
+          source: 'examples/orders/domain/order.ts:1',
+          fix: 'bun run agentic packet method:Order.cancel',
+        },
+      ],
+    }),
+  );
+  expect(pending.status).toBe('failed');
+  expect(pending.gates.find((g) => g.id === 'G7')!.findings).toHaveLength(1);
+  const done = evaluateGates(input({ workItemFindings: [] }));
+  expect(done.status).toBe('needs-human');
+  expect(done.gates.find((g) => g.id === 'G7')!.status).toBe('passed');
 });
