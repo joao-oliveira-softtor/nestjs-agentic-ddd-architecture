@@ -1,0 +1,160 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`renderRuntimeSkill snapshot dos arquivos: SKILL.md 1`] = `
+"---
+name: catalog-operator
+description: "Opera o catálogo de produtos: cadastrar e publicar. Use quando a conversa for sobre produtos da loja."
+metadata:
+  agentic-ddd.audience: runtime
+  agentic-ddd.generated: "true"
+  agentic-ddd.ir-hash: "hash-fixo"
+---
+<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__/shop.ts:85 -->
+
+# Operator \`catalog-operator\`
+
+Opera o catálogo de produtos: cadastrar e publicar. Use quando a conversa for sobre produtos da loja.
+
+## Tools
+
+Tools marcadas com **Exige aprovação humana: sim** só executam depois de uma pessoa aprovar; se a aprovação for negada, a tool devolve o erro \`approval_denied\` e nada é alterado.
+
+### \`create_product\`
+
+Cria um produto em rascunho.
+
+- **Quando usar:** Quando pedirem para cadastrar um produto novo.
+- **Aciona:** \`Product.create\`
+- **Emite:** \`ProductCreated\`
+- **Exige aprovação humana:** não
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| \`product_id\` | string | sim | Id do novo produto |
+| \`price\` | number | sim | Preço em reais |
+
+Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`create_product\`.
+
+### \`publish_product\`
+
+Publica um produto em rascunho no catálogo.
+
+- **Quando usar:** Quando pedirem para disponibilizar um produto para venda.
+- **Quando não usar:** Para alterar preço ou estoque.
+- **Aciona:** \`Product.publish\`
+- **Emite:** \`ProductPublished\`
+- **Exige aprovação humana:** sim
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| \`product_id\` | string | sim | Id do produto a publicar |
+
+Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`publish_product\`.
+
+## Regras de negócio
+
+| Invariante | Regra | Garantida por |
+|---|---|---|
+| \`invariant:Product/preco-positivo\` | O preço de um produto é sempre maior que zero. | construção |
+| \`invariant:Product/publicacao-exige-estoque\` | Só é possível publicar um produto com estoque maior que zero. | \`Product.publish\` |
+
+## Estados e transições
+
+| Método | De | Para |
+|---|---|---|
+| \`Product.publish\` | \`draft\` | \`published\` |
+
+Detalhes: [schemas das tools](references/tools.schema.json) · [máquina de estados](references/state-machine.md)
+"
+`;
+
+exports[`renderRuntimeSkill snapshot dos arquivos: references/state-machine.md 1`] = `
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__/shop.ts:85 -->
+
+# Máquina de estados
+
+## Product
+
+Estados: \`draft\`, \`published\`
+
+| Método | De | Para | Emite |
+|---|---|---|---|
+| \`Product.publish\` | \`draft\` | \`published\` | \`ProductPublished\` |
+"
+`;
+
+exports[`renderRuntimeSkill snapshot dos arquivos: references/tools.schema.json 1`] = `
+"{
+  "create_product": {
+    "input": {
+      "properties": {
+        "price": {
+          "description": "Preço em reais",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "product_id": {
+          "description": "Id do novo produto",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "price"
+      ],
+      "type": "object"
+    },
+    "output": {
+      "additionalProperties": false,
+      "properties": {
+        "product_id": {
+          "type": "string"
+        },
+        "status": {
+          "const": "draft",
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "status"
+      ],
+      "type": "object"
+    }
+  },
+  "publish_product": {
+    "input": {
+      "properties": {
+        "product_id": {
+          "description": "Id do produto a publicar",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id"
+      ],
+      "type": "object"
+    },
+    "output": {
+      "additionalProperties": false,
+      "properties": {
+        "product_id": {
+          "type": "string"
+        },
+        "status": {
+          "const": "published",
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "status"
+      ],
+      "type": "object"
+    }
+  }
+}
+"
+`;

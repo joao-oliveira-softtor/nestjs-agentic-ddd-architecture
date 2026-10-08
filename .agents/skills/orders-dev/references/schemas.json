@@ -1,0 +1,194 @@
+{
+  "events": {
+    "OrderCancelled": {
+      "additionalProperties": false,
+      "properties": {
+        "orderId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "orderId"
+      ],
+      "type": "object"
+    },
+    "OrderConfirmed": {
+      "additionalProperties": false,
+      "properties": {
+        "orderId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "orderId"
+      ],
+      "type": "object"
+    },
+    "OrderCreated": {
+      "additionalProperties": false,
+      "properties": {
+        "customerId": {
+          "type": "string"
+        },
+        "orderId": {
+          "type": "string"
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "orderId",
+        "customerId",
+        "total"
+      ],
+      "type": "object"
+    }
+  },
+  "useCases": {
+    "cancel_order": {
+      "input": {
+        "properties": {
+          "order_id": {
+            "description": "Id do pedido a cancelar",
+            "minLength": 1,
+            "type": "string"
+          },
+          "reason": {
+            "description": "Motivo do cancelamento informado pelo cliente",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "cancelled",
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    "confirm_order": {
+      "input": {
+        "properties": {
+          "order_id": {
+            "description": "Id do pedido a confirmar",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "confirmed",
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    "create_order": {
+      "input": {
+        "properties": {
+          "customer_id": {
+            "description": "Id do cliente",
+            "minLength": 1,
+            "type": "string"
+          },
+          "items": {
+            "description": "Itens do pedido",
+            "items": {
+              "properties": {
+                "quantity": {
+                  "description": "Quantidade",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "type": "integer"
+                },
+                "sku": {
+                  "description": "Código do produto",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "unit_price": {
+                  "description": "Preço unitário em reais",
+                  "minimum": 0,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "sku",
+                "quantity",
+                "unit_price"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "order_id": {
+            "description": "Id do novo pedido",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "customer_id",
+          "items"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "pending",
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "order_id",
+          "status",
+          "total"
+        ],
+        "type": "object"
+      }
+    }
+  }
+}

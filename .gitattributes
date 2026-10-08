@@ -1,0 +1,4 @@
+* text=auto eol=lf
+.agentic/** linguist-generated=true
+.agents/skills/** linguist-generated=true
+.claude/skills/** linguist-generated=true

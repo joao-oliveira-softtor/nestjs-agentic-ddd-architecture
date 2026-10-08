@@ -1,0 +1,230 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`buildIR IR estável (snapshot) 1`] = `
+"{
+  "entities": [
+    {
+      "description": "Produto do catálogo da loja.",
+      "id": "entity:Product",
+      "invariants": [
+        {
+          "id": "invariant:Product/preco-positivo",
+          "on": null,
+          "source": "src/compiler/__fixtures__/shop.ts:27",
+          "text": "O preço de um produto é sempre maior que zero."
+        },
+        {
+          "id": "invariant:Product/publicacao-exige-estoque",
+          "on": "method:Product.publish",
+          "source": "src/compiler/__fixtures__/shop.ts:39",
+          "text": "Só é possível publicar um produto com estoque maior que zero."
+        }
+      ],
+      "methods": [
+        {
+          "description": "Cria um produto em rascunho.",
+          "emits": [
+            "event:ProductCreated"
+          ],
+          "id": "method:Product.create",
+          "name": "create",
+          "source": "src/compiler/__fixtures__/shop.ts:29",
+          "static": true,
+          "transition": null
+        },
+        {
+          "description": "Publica o produto no catálogo.",
+          "emits": [
+            "event:ProductPublished"
+          ],
+          "id": "method:Product.publish",
+          "name": "publish",
+          "source": "src/compiler/__fixtures__/shop.ts:34",
+          "static": false,
+          "transition": {
+            "from": [
+              "draft"
+            ],
+            "to": "published"
+          }
+        }
+      ],
+      "module": "shop",
+      "name": "Product",
+      "source": "src/compiler/__fixtures__/shop.ts:26",
+      "states": [
+        "draft",
+        "published"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "description": "Um produto foi criado como rascunho.",
+      "id": "event:ProductCreated",
+      "module": "shop",
+      "name": "ProductCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "type": "object"
+      },
+      "source": "src/compiler/__fixtures__/shop.ts:20"
+    },
+    {
+      "description": "Um produto foi publicado no catálogo.",
+      "id": "event:ProductPublished",
+      "module": "shop",
+      "name": "ProductPublished",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "type": "object"
+      },
+      "source": "src/compiler/__fixtures__/shop.ts:23"
+    }
+  ],
+  "irVersion": 1,
+  "modules": [
+    {
+      "name": "shop",
+      "path": "src/compiler/__fixtures__"
+    }
+  ],
+  "operators": [
+    {
+      "description": "Opera o catálogo de produtos: cadastrar e publicar. Use quando a conversa for sobre produtos da loja.",
+      "id": "operator:catalog-operator",
+      "instructions": "Você gerencia o catálogo. Use apenas as tools disponíveis e confirme o produto pelo id.",
+      "limits": {
+        "maxSteps": 8,
+        "timeoutMs": 30000
+      },
+      "model": "default",
+      "module": "shop",
+      "name": "catalog-operator",
+      "requiresApproval": [
+        "usecase:publish_product"
+      ],
+      "source": "src/compiler/__fixtures__/shop.ts:85",
+      "useCases": [
+        "usecase:create_product",
+        "usecase:publish_product"
+      ]
+    }
+  ],
+  "useCases": [
+    {
+      "description": "Cria um produto em rascunho.",
+      "emits": [
+        "event:ProductCreated"
+      ],
+      "id": "usecase:create_product",
+      "inputSchema": {
+        "properties": {
+          "price": {
+            "description": "Preço em reais",
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "product_id": {
+            "description": "Id do novo produto",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "price"
+        ],
+        "type": "object"
+      },
+      "module": "shop",
+      "name": "create_product",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "draft",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "status"
+        ],
+        "type": "object"
+      },
+      "source": "src/compiler/__fixtures__/shop.ts:51",
+      "uses": [
+        "method:Product.create"
+      ],
+      "whenNotToUse": null,
+      "whenToUse": "Quando pedirem para cadastrar um produto novo."
+    },
+    {
+      "description": "Publica um produto em rascunho no catálogo.",
+      "emits": [
+        "event:ProductPublished"
+      ],
+      "id": "usecase:publish_product",
+      "inputSchema": {
+        "properties": {
+          "product_id": {
+            "description": "Id do produto a publicar",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id"
+        ],
+        "type": "object"
+      },
+      "module": "shop",
+      "name": "publish_product",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "published",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "status"
+        ],
+        "type": "object"
+      },
+      "source": "src/compiler/__fixtures__/shop.ts:69",
+      "uses": [
+        "method:Product.publish"
+      ],
+      "whenNotToUse": "Para alterar preço ou estoque.",
+      "whenToUse": "Quando pedirem para disponibilizar um produto para venda."
+    }
+  ]
+}
+"
+`;
