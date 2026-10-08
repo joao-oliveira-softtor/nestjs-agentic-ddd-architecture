@@ -72,3 +72,9 @@ Entrega 3 concluída: RED com 15 falhas comportamentais; GREEN com 21 testes run
 Baseline confirmada: 316 testes, 14 snapshots, nenhuma falha.
 
 Entrega 4 concluída: RED na ausência de módulo/DI e no AppModule vazio; GREEN em 12 testes de composição/arquitetura, typecheck/lint/build/compile --check. AgenticModule global forRoot + forFeature com providers/factories/imports, registro assíncrono durante TestingModule.compile, tokens públicos, aprovação default deny e bus in-memory. OrdersModule e AppModule compostos, BunAdapter preservado. Ajuste de testes: get<T> explícito nos tokens Symbol evita inferência undefined no expect do Bun.
+
+Entrega 5: E2E real substitui o teste exclusivamente declarativo. Compile em saída temporária → skill carregada → Nest → criar/confirmar com output/eventos/IDs; cancelar com deny/allow, spy provando ausência de execute e eventos no deny. Testes passaram (17 testes E2E/composição/source). Declarações de negócio preservadas; OrderCancelled mantém o payload declarado `{ orderId }`.
+
+Decisão adicional (RED→GREEN): smoke do bundle mostrou registro sem operator: `captureSource` usava import.meta.url do bundle para excluir frames do decorator. Build agora gera source map linked; captureSource deriva o diretório dos frames mapeados. Smoke real do dist com BunAdapter passou; hashes/snapshots/compile --check preservados. Distribuir o .map junto ao bundle.
+
+Documentação atualizada com uso Nest/FakeLlm, tokens/configuração de identidade, traces, limites e cancelamento cooperativo. Helpers de runtime isolados de arquivos de teste. A revisão final e aceite completo seguem abaixo.

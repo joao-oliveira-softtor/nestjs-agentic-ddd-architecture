@@ -52,6 +52,77 @@ bun run agentic compile --check  # falha se algo gerado estiver desatualizado (u
 bun run agentic compile --report # tokens por arquivo e lint das skills
 ```
 
+## Executar operators com Nest
+
+O runtime carrega a skill gerada e compara seu `ir-hash` com as declarações atuais antes de registrar o operator. `root` (default: cwd) e `modules` precisam corresponder à configuração completa do compilador; `runtimeDir` pode apontar para outra saída de compile. Domínio/application continuam independentes do Nest: [OrdersModule](examples/orders/orders.module.ts) fornece factories com o repository injetado.
+
+```ts
+import { Test } from '@nestjs/testing';
+import { AgenticModule } from '@agentic-ddd/nestjs';
+import { OperatorRuntime } from '@agentic-ddd/runtime';
+import { FakeLlm, FakeApproval } from '@agentic-ddd/testing';
+import { OrdersModule } from './examples/orders/orders.module';
+
+const llm = new FakeLlm([
+  {
+    content: [
+      {
+        type: 'tool_call',
+        id: 'create-1',
+        name: 'create_order',
+        input: {
+          order_id: 'order-1',
+          customer_id: 'customer-1',
+          items: [{ sku: 'SKU', quantity: 1, unit_price: 10 }],
+        },
+      },
+    ],
+    stopReason: 'tool_calls',
+  },
+  { content: [{ type: 'text', text: 'Pedido criado.' }], stopReason: 'end' },
+]);
+const app = await Test.createTestingModule({
+  imports: [
+    AgenticModule.forRoot({
+      llm,
+      approval: new FakeApproval(false),
+      modules: [{ name: 'orders', path: 'examples/orders' }],
+    }),
+    OrdersModule,
+  ],
+}).compile();
+try {
+  const result = await app.get(OperatorRuntime).run('order-operator', {
+    message: 'Crie o pedido.',
+    context: { customer: 'customer-1' },
+  });
+  console.log(result.status, result.output, result.events);
+} finally {
+  await app.close();
+}
+```
+
+`forRoot` exporta `LLM_PORT`, `APPROVAL_PORT`, `EVENT_BUS` e `OperatorRuntime`. `forFeature` recebe `operators`, `useCases` (classes ou providers com token da classe decorada), `providers` auxiliares e `imports` opcionais. Use-cases da allowlist precisam ter instâncias injetadas. Sem ApprovalPort, tools protegidas são negadas; o bus default é `InMemoryEventBus`, com publicação e handlers aguardados em ordem. `FakeLlm.requests` e `FakeApproval.requests` guardam o histórico para assertions; roteiro esgotado é erro explícito.
+
+O system combina instructions com o corpo da skill; tools incluem propósito, quando usar/não usar e JSON Schema. `context` vira uma mensagem user adicional em JSON. `providerPayload` do assistant volta intacto no turno seguinte. Cada turno executa tools sequencialmente, valida entrada/saída Zod e devolve todos os resultados em uma única mensagem tool. Sucessos contêm `{ output, events: [{ name, payload }] }`; `unknown_tool`, `invalid_input` (issues Zod), `approval_denied` (motivo) e DomainError são recuperáveis. Aprovação negada nunca chama execute.
+
+O resultado inclui `runId`, operator, status, output textual, steps e eventos. Cada step guarda request, response, tools, política/decisão de aprovação, resultados e eventos. Eventos usam `correlationId = runId` e `causationId = step.id`.
+
+| Término                                                   | Status / reason                |
+| --------------------------------------------------------- | ------------------------------ |
+| Texto final sem tool_call, stopReason end                 | completed                      |
+| Limite de chamadas ao LLM                                 | step_limit                     |
+| Deadline do run (inclui LLM, aprovação, execute e bus)    | timeout                        |
+| max_tokens / refusal                                      | failed / max_tokens ou refused |
+| Exceção do provider                                       | failed / provider_error        |
+| Bug no use-case, output inválido ou erro de aprovação/bus | failed / use_case_error        |
+
+Timeout impede iniciar novas tools/publicações pelo contexto do run, inclusive após resolução tardia de promises. Não interrompe à força operações já iniciadas nem desfaz efeitos externos: cancelamento dessas operações é cooperativo e depende do adapter/use-case. Um evento entregue a um bus antes do timeout pode terminar de ser processado pelos handlers depois dele. Publicações pelo contexto após retorno do use-case são rejeitadas.
+
+O `AppModule` compõe orders com FakeLlm de roteiro vazio: o v0 não fornece canal HTTP nem provider real. Testes e outros canais chamam o runtime diretamente e fornecem seus roteiros/ports. `main.ts` mantém BunAdapter; o build emite source map, necessário para preservar as localizações das declarações e seus hashes no bundle. Distribua `dist/main.js.map` junto do bundle.
+
+Os [E2E](examples/orders/test/operator.test.ts) compilam a skill e validam criação/confirmacão, cancelamento, aprovação, outputs, eventos e IDs com a composição Nest.
+
 ## Mudanças de domínio e conclusão de tarefas
 
 Toda mudança de regra de negócio fica registrada em `changes/`, e o compilador mantém um snapshot do domínio em `.agentic/domain.lock.json`.
@@ -93,7 +164,7 @@ O pacote protege item, regras, contratos referenciados e critérios aplicáveis 
 
 Projetos ainda sem testes podem consultar `status`, `next` e `packet` para iniciar a implementação. A ausência de testes não certifica `done`; erros de importação ou coleta JUnit incompleta continuam impedindo consultas dinâmicas e verificação.
 
-Todos os comandos aceitam `--config`. Consultas retornam 0 mesmo com trabalho pendente; uso inválido retorna 2, análise/verificação falha retorna 1. O operator usa cobertura declarativa de allowlist e aprovação neste marco; a execução com `FakeLlm` será entregue no plano 4.
+Todos os comandos aceitam `--config`. Consultas retornam 0 mesmo com trabalho pendente; uso inválido retorna 2, análise/verificação falha retorna 1. A cobertura do operator executa os use-cases via `FakeLlm` e a composição Nest, incluindo aprovação negada e concedida.
 
 ## Estrutura
 
@@ -102,13 +173,16 @@ Todos os comandos aceitam `--config`. Consultas retornam 0 mesmo com trabalho pe
 | `src/core`        | building blocks DDD (`AggregateRoot`, `DomainEvent`, `DomainError`, `notImplemented`…) |
 | `src/decorators`  | decorators autodeclarativos e o registry                                               |
 | `src/compiler`    | IR, validação, renderers, escrita/verificação                                          |
-| `src/testing`     | `covers()` e `createTestContext()`                                                     |
-| `src/cli`         | `agentic-ddd compile`, `ir`, `status`, `next`, `packet` e `verify`                      |
+| `src/contracts`   | projeção canônica de declarações e hash compartilhados pelo compiler/runtime           |
+| `src/runtime`     | ports, registro de operators, loop, aprovação, eventos e traces                        |
+| `src/nestjs`      | `AgenticModule.forRoot/forFeature` e tokens de DI                                      |
+| `src/testing`     | `covers()`, `createTestContext()`, `FakeLlm`, `FakeApproval` e bus in-memory           |
+| `src/cli`         | `agentic-ddd compile`, `ir`, `status`, `next`, `packet` e `verify`                     |
 | `examples/orders` | domínio de exemplo                                                                     |
 
 ## Roadmap
 
-- **v0** (em andamento, ver [`docs/superpowers/plans`](docs/superpowers/plans/2026-10-06-v0-00-index.md)): compilador de documentação → lock, changes e `verify` → estado do projeto e coordenação de agentes → runtime do operator e integração Nest.
+- **v0** (implementado, ver [`docs/superpowers/plans`](docs/superpowers/plans/2026-10-06-v0-00-index.md)): compilador de documentação → lock, changes e `verify` → estado do projeto e coordenação de agentes → runtime do operator e integração Nest.
 - **v0.1**: operators reagindo a eventos (`reactsTo`), testes de contrato gerados, avaliação das skills entre LLMs, canal HTTP, skill do framework.
 
 Design: [`docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md`](docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md) · Decisões: [`docs/adr/ADR-0001.md`](docs/adr/ADR-0001.md)

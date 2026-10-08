@@ -9,7 +9,7 @@ import { FakeApproval, FakeLlm, InMemoryEventBus } from '@agentic-ddd/testing';
 import { buildIR, irHash } from '../contracts/ir';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fixture } from './operator-runtime.test';
+import { fixture } from '../../test/helpers/runtime';
 import {
   OperatorRuntime,
   type AssistantBlock,
