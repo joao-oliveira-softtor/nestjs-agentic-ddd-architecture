@@ -41,6 +41,7 @@ export interface CompileResult {
 }
 
 export interface ProjectAnalysis {
+  readonly registry: Registry;
   readonly config: ResolvedConfig;
   readonly ir: IR;
   readonly errors: CompileError[];
@@ -57,11 +58,12 @@ export async function analyzeProject(options: {
   const origin = options.registry ?? defaultRegistry;
   const before = registrySizes(origin);
   const files = await importModules(config);
-  const { ir, errors } = analyze(scopeRegistry(origin, files, before), {
+  const registry = scopeRegistry(origin, files, before);
+  const { ir, errors } = analyze(registry, {
     root: config.root,
     modules: config.modules,
   });
-  return { config, ir, errors };
+  return { config, ir, errors, registry };
 }
 
 async function claudeWarnings(config: ResolvedConfig): Promise<string[]> {
