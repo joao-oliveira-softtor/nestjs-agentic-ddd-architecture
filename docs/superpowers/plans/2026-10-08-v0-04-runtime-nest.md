@@ -84,3 +84,9 @@ Revisão independente: dois P2 reproduzidos e corrigidos com RED→GREEN. (1) pu
 Aceite integrado encontrou a fixture do plano 3 importando OrdersModule sem resolver Nest. A fixture temporária agora compartilha node_modules via symlink; seus E2E usam root/modules do próprio agentic.config.ts, em vez do layout fixo do checkout. As quatro ondas continuam verificadas com execução real do operator na última onda, sem testes iniciais nem evidência fabricada.
 
 Correções revisadas independentemente, sem novos findings. Suíte final: 348 testes, zero falhas, 14 snapshots intactos; typecheck, lint, build e compile --check aprovados. A fixture completa também passou isoladamente (45 assertions). Verificações explícitas concluídas: verify 0001 = done (G1–G7 passed); verify 0002 = needs-human (somente G6, criterion:0002/revisao-de-copy). Todos os cinco itens implementados, testados, documentados e commitados.
+
+### Follow-up do review Codex — contexto de run
+
+P2 (`src/runtime/run.ts`, review 4222854161): JSON.stringify de context fora do try rejeitava run(), em vez de devolver resultado. Reproduzido em RED: bigint, ciclo, toJSON lançando erro; função/símbolo/toJSON retornando undefined também produziam mensagem inválida.
+Decisão: manter context?: unknown e adicionar motivo público `invalid_context`. Serialização passa ao bloco protegido; falha retorna failed com runId/operator e steps/events vazios, sem LLM/tools/publicações. Não houve alteração de declarações de negócio ou gerados. Spec/README atualizados. GREEN: 28 testes runtime, typecheck e lint; aceite integrado segue abaixo.
+Validação do follow-up: 354 testes, zero falhas, 14 snapshots; typecheck, lint, build e compile --check aprovados. A suíte integrada confirmou novamente verify 0001 = done e verify 0002 = needs-human apenas por G6.

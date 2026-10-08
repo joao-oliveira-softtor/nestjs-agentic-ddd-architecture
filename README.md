@@ -104,7 +104,7 @@ try {
 
 `forRoot` exporta `LLM_PORT`, `APPROVAL_PORT`, `EVENT_BUS` e `OperatorRuntime`. `forFeature` recebe `operators`, `useCases` (classes ou providers com token da classe decorada), `providers` auxiliares e `imports` opcionais. Use-cases da allowlist precisam ter instâncias injetadas. Sem ApprovalPort, tools protegidas são negadas; o bus default é `InMemoryEventBus`, com publicação e handlers aguardados em ordem. Publicação reentrante no mesmo bus durante um handler é rejeitada explicitamente para evitar deadlock; reações enfileiradas ficam no v0.1. `FakeLlm.requests` e `FakeApproval.requests` guardam o histórico para assertions; roteiro esgotado é erro explícito.
 
-O system combina instructions com o corpo da skill; tools incluem propósito, quando usar/não usar e JSON Schema. `context` vira uma mensagem user adicional em JSON. `providerPayload` do assistant volta intacto no turno seguinte. Cada turno executa tools sequencialmente, valida entrada/saída Zod e devolve todos os resultados em uma única mensagem tool. Sucessos contêm `{ output, events: [{ name, payload }] }`; `unknown_tool`, `invalid_input` (issues Zod), `approval_denied` (motivo) e DomainError são recuperáveis. Aprovação negada nunca chama execute.
+O system combina instructions com o corpo da skill; tools incluem propósito, quando usar/não usar e JSON Schema. `context` vira uma mensagem user adicional em JSON. Se a serialização lançar erro ou não produzir JSON (por exemplo bigint, referência circular, função ou símbolo no nível superior), o run retorna `failed / invalid_context` com steps/eventos vazios, antes de chamar o LLM. `providerPayload` do assistant volta intacto no turno seguinte. Cada turno executa tools sequencialmente, valida entrada/saída Zod e devolve todos os resultados em uma única mensagem tool. Sucessos contêm `{ output, events: [{ name, payload }] }`; `unknown_tool`, `invalid_input` (issues Zod), `approval_denied` (motivo) e DomainError são recuperáveis. Aprovação negada nunca chama execute.
 
 O resultado inclui `runId`, operator, status, output textual, steps e eventos. Cada step guarda request, response, tools, política/decisão de aprovação, resultados e eventos. Eventos usam `correlationId = runId` e `causationId = step.id`.
 
@@ -115,6 +115,7 @@ O resultado inclui `runId`, operator, status, output textual, steps e eventos. C
 | Deadline do run (inclui LLM, aprovação, execute e bus)    | timeout                        |
 | max_tokens / refusal                                      | failed / max_tokens ou refused |
 | Exceção do provider                                       | failed / provider_error        |
+| Contexto sem representação JSON                           | failed / invalid_context       |
 | Bug no use-case, output inválido ou erro de aprovação/bus | failed / use_case_error        |
 
 Timeout impede iniciar novas tools/publicações pelo contexto do run, inclusive após resolução tardia de promises. Não interrompe à força operações já iniciadas nem desfaz efeitos externos: cancelamento dessas operações é cooperativo e depende do adapter/use-case. Um evento entregue a um bus antes do timeout pode terminar de ser processado pelos handlers depois dele. Publicações pelo contexto após retorno do use-case são rejeitadas.

@@ -477,6 +477,7 @@ Roteirizável e determinístico: recebe uma lista de respostas (ou funções `re
 | `timeoutMs` estourado | `timeout` |
 | `stopReason: max_tokens` | `failed` (`reason: max_tokens`) |
 | `stopReason: refusal` | `failed` (`reason: refused`) |
+| contexto cuja serialização lança erro ou não produz JSON | `failed` (`reason: invalid_context`), sem passos, tools ou eventos |
 | erro lançado pelo `LlmPort` | `failed` (`reason: provider_error`) |
 | exceção que não é `DomainError` dentro do use-case, ou output inválido | `failed` (`reason: use_case_error`) — não deixamos o modelo improvisar em cima de bug |
 | `unknown_tool`, `invalid_input`, `approval_denied`, `DomainError` | **não termina**: vira `tool_result` com `isError: true` |

@@ -33,11 +33,6 @@ export async function runOperator(
   const steps: Step[] = [];
   const events: DomainEvent[] = [];
   const messages: LlmMessage[] = [{ role: 'user', text: input.message }];
-  if (input.context !== undefined)
-    messages.push({
-      role: 'user',
-      text: `Context: ${JSON.stringify(input.context)}`,
-    });
   let active = true;
   const deadline = performance.now() + operator.record.limits.timeoutMs;
   let timer!: ReturnType<typeof setTimeout>;
@@ -72,8 +67,15 @@ export async function runOperator(
     steps,
     events,
   });
-  let failure: TerminationReason = 'provider_error';
+  let failure: TerminationReason = 'invalid_context';
   try {
+    if (input.context !== undefined) {
+      const context = JSON.stringify(input.context);
+      if (context === undefined)
+        throw new TypeError('Context has no JSON representation');
+      messages.push({ role: 'user', text: `Context: ${context}` });
+    }
+    failure = 'provider_error';
     for (let turn = 0; turn < operator.record.limits.maxSteps; turn++) {
       check();
       const request: LlmRequest = {

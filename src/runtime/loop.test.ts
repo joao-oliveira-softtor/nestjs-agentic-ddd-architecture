@@ -316,3 +316,53 @@ for (const stage of ['llm', 'approval', 'execute', 'bus'] as const) {
     expect(f.eventBus.events).toHaveLength(eventCount);
   });
 }
+
+for (const [name, context] of [
+  ['bigint', 1n],
+  [
+    'circular reference',
+    (() => {
+      const value: { self?: unknown } = {};
+      value.self = value;
+      return value;
+    })(),
+  ],
+  [
+    'throwing toJSON',
+    {
+      toJSON() {
+        throw new Error('cannot serialize');
+      },
+    },
+  ],
+  ['function', () => 'value'],
+  ['symbol', Symbol('context')],
+  [
+    'undefined JSON representation',
+    {
+      toJSON() {
+        return undefined;
+      },
+    },
+  ],
+] as const) {
+  test(`non-JSON context (${name}) returns failed without provider/tool/event side effects`, async () => {
+    let executions = 0;
+    const f = await setup([calls(call()), end], async (input) => {
+      executions++;
+      return input;
+    });
+    const result = await f.runtime.run('agent', { message: 'go', context });
+    expect(result).toMatchObject({
+      operator: 'agent',
+      status: 'failed',
+      reason: 'invalid_context',
+      steps: [],
+      events: [],
+    });
+    expect(result.runId).toBeString();
+    expect(f.llm.requests).toEqual([]);
+    expect(executions).toBe(0);
+    expect(f.eventBus.events).toEqual([]);
+  });
+}

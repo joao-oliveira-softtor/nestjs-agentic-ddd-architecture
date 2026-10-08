@@ -58,7 +58,11 @@ export interface Step {
 }
 export type RunStatus = 'completed' | 'step_limit' | 'timeout' | 'failed';
 export type TerminationReason =
-  'max_tokens' | 'refused' | 'provider_error' | 'use_case_error';
+  | 'max_tokens'
+  | 'refused'
+  | 'provider_error'
+  | 'use_case_error'
+  | 'invalid_context';
 export interface OperatorRunResult {
   runId: string;
   operator: string;
