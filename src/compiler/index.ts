@@ -105,3 +105,9 @@ export type {
   NextReport,
   BaseState,
 } from './state';
+export { packet, type PacketOptions } from './packet';
+export {
+  verifyItem,
+  type ItemVerifyOptions,
+  type ItemVerifyReport,
+} from './verify/item';

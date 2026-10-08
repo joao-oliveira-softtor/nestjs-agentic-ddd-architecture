@@ -3,6 +3,7 @@ import { irCommand } from './commands/ir';
 import { verifyCommand } from './commands/verify';
 import { USAGE } from './usage';
 import { statusCommand, nextCommand } from './commands/state';
+import { packetCommand } from './commands/packet';
 
 export { USAGE };
 
@@ -14,6 +15,7 @@ const COMMANDS: Readonly<
   verify: verifyCommand,
   status: statusCommand,
   next: nextCommand,
+  packet: packetCommand,
 };
 
 export async function main(argv: readonly string[]): Promise<number> {

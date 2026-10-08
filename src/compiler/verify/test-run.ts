@@ -89,7 +89,19 @@ export async function runTests(
     );
     const exitCode = await proc.exited;
     const xml = await readFile(outfile, 'utf8').catch(() => '');
-    return { exitCode, cases: parseJUnit(xml) };
+    const cases = parseJUnit(xml);
+    const valid =
+      /<testsuites?\b/.test(xml) && /<\/testsuites?>\s*$/.test(xml.trim());
+    return {
+      exitCode,
+      cases,
+      ...(!valid
+        ? {
+            collectionError:
+              'coleta JUnit ausente ou inválida; não é possível verificar conclusão',
+          }
+        : {}),
+    };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

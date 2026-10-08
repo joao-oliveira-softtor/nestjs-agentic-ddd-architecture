@@ -1,0 +1,65 @@
+import { expect, test } from 'bun:test';
+import { resolve } from 'node:path';
+import { defineShop, SHOP_MODULE } from './__fixtures__/shop';
+import { analyze } from './analyze';
+import { workItems } from './graph';
+import { itemSpecification, specHash } from './item-spec';
+import { renderPacket } from './packet';
+import { evaluateStatus } from './state';
+import { implementation } from './implementation';
+
+const registry = defineShop();
+const ir = analyze(registry, {
+  root: resolve(import.meta.dir, '../..'),
+  modules: [SHOP_MODULE],
+}).ir;
+const report = evaluateStatus({
+  ir,
+  implemented: implementation(ir, registry),
+  proposals: [],
+  mode: 'dynamic',
+  evidence: { exitCode: 0, cases: [] },
+});
+
+test('pacotes determinísticos dos quatro tipos compartilham hash e especificação', () => {
+  for (const id of [
+    'entity:Product',
+    'method:Product.publish',
+    'usecase:publish_product',
+    'operator:catalog-operator',
+  ]) {
+    const item = report.items.find((i) => i.id === id)!;
+    const spec = itemSpecification(ir, item, []);
+    const packet = renderPacket(item, spec, 'agentic.config.ts');
+    expect(packet).toBe(renderPacket(item, spec, 'agentic.config.ts'));
+    expect(packet).toContain(`--spec-hash ${item.specHash}`);
+    expect(packet).toMatchSnapshot(id);
+  }
+});
+
+test('hash exclui localização e mudanças independentes, inclui contratos e regras referenciados', () => {
+  const item = workItems(ir).find((i) => i.id === 'usecase:publish_product')!;
+  const hash = specHash(itemSpecification(ir, item, []));
+  const moved = JSON.parse(
+    JSON.stringify(ir).replaceAll(
+      'src/compiler/__fixtures__/shop.ts:',
+      'outro.ts:',
+    ),
+  );
+  expect(specHash(itemSpecification(moved, item, []))).toBe(hash);
+  const independent = structuredClone(ir);
+  independent.useCases[0] = {
+    ...independent.useCases[0]!,
+    description: 'Outra descrição',
+  };
+  expect(specHash(itemSpecification(independent, item, []))).toBe(hash);
+  const changed = structuredClone(ir);
+  changed.entities[0] = {
+    ...changed.entities[0]!,
+    invariants: changed.entities[0]!.invariants.map((i) => ({
+      ...i,
+      text: 'Nova regra',
+    })),
+  };
+  expect(specHash(itemSpecification(changed, item, []))).not.toBe(hash);
+});

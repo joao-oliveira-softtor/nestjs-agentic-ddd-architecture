@@ -100,3 +100,72 @@ test('novos comandos rejeitam uso inválido com 2', async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relacionada é ignorada', async () => {
+  const { dir, run } = await queryFixture();
+  try {
+    const packet = run('packet', 'entity:Thing');
+    expect(packet.code).toBe(0);
+    const hash = /specHash: `([a-f0-9]{64})`/.exec(packet.stdout)![1]!;
+    expect(
+      run('verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json')
+        .code,
+    ).toBe(0);
+    const wrong = run(
+      'verify',
+      '--item',
+      'entity:Thing',
+      '--spec-hash',
+      '0'.repeat(64),
+      '--json',
+    );
+    expect(wrong.code).toBe(1);
+    expect(
+      JSON.parse(wrong.stdout).gates.find((g: { id: string }) => g.id === 'I3')
+        .status,
+    ).toBe('failed');
+    await writeFile(
+      join(dir, 'app.test.ts'),
+      (await readFile(join(dir, 'app.test.ts'), 'utf8')) +
+        `\ntest('unrelated failure', () => expect(1).toBe(2));`,
+    );
+    expect(
+      run('verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json')
+        .code,
+    ).toBe(0);
+    const original = await readFile(join(dir, 'app/thing.ts'), 'utf8');
+    await writeFile(
+      join(dir, 'app/thing.ts'),
+      `import { notImplemented } from '@agentic-ddd/core';\n` +
+        original.replace('return new Thing();', 'return notImplemented();'),
+    );
+    expect(
+      run('verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json')
+        .code,
+    ).toBe(1);
+    await writeFile(join(dir, 'app/thing.ts'), original);
+    await writeFile(
+      join(dir, 'app.test.ts'),
+      `import { test } from 'bun:test'; test('no coverage', () => {});`,
+    );
+    expect(
+      run('verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json')
+        .code,
+    ).toBe(1);
+    const config = await readFile(join(dir, 'agentic.config.ts'), 'utf8');
+    await writeFile(
+      join(dir, 'agentic.config.ts'),
+      config.replace('process.exit(0)', 'process.exit(1)'),
+    );
+    expect(
+      run('verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json')
+        .code,
+    ).toBe(1);
+    expect(run('verify', '--item', 'entity:Thing').code).toBe(2);
+    expect(
+      run('verify', '--item', 'entity:Thing', '--spec-hash', 'no').code,
+    ).toBe(2);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

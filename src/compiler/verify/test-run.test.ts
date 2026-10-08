@@ -88,3 +88,8 @@ describe('runTests', () => {
     ]);
   });
 });
+
+test('coleta ausente não pode certificar conclusão', async () => {
+  const run = await runTests(['bun', '-e', 'process.exit(0)'], dir);
+  expect(run.collectionError).toContain('JUnit');
+});

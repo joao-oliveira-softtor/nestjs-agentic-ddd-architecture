@@ -5,7 +5,19 @@ import type { DiffItem } from '../diff';
 import type { DomainLock } from '../lock';
 import type { TestCaseResult, TestRun } from './test-run';
 
-export type GateId = 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6';
+export type GateId =
+  | 'G1'
+  | 'G2'
+  | 'G3'
+  | 'G4'
+  | 'G5'
+  | 'G6'
+  | 'G7'
+  | 'I1'
+  | 'I2'
+  | 'I3'
+  | 'I4'
+  | 'I5';
 export type GateStatus = 'passed' | 'failed' | 'pending';
 
 export interface Finding {
