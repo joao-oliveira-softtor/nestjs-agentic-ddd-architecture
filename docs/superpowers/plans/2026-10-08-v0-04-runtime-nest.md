@@ -70,3 +70,5 @@ Decisão: root/modules são configuração explícita de identidade da IR no run
 
 Entrega 3 concluída: RED com 15 falhas comportamentais; GREEN com 21 testes runtime, typecheck/lint. Loop sequencial, resultados agrupados, providerPayload preservado por identidade, IDs/eventos/trace, validação entrada/saída, aprovação e erros recuperáveis. Todas as linhas da tabela de término testadas; timeout cobre LLM/aprovação/execute/bus pendentes e resoluções tardias.
 Baseline confirmada: 316 testes, 14 snapshots, nenhuma falha.
+
+Entrega 4 concluída: RED na ausência de módulo/DI e no AppModule vazio; GREEN em 12 testes de composição/arquitetura, typecheck/lint/build/compile --check. AgenticModule global forRoot + forFeature com providers/factories/imports, registro assíncrono durante TestingModule.compile, tokens públicos, aprovação default deny e bus in-memory. OrdersModule e AppModule compostos, BunAdapter preservado. Ajuste de testes: get<T> explícito nos tokens Symbol evita inferência undefined no expect do Bun.
