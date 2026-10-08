@@ -98,3 +98,10 @@ export {
   type TestRun,
 } from './verify/test-run';
 export type { VerifyConfig } from './config';
+export { status, next, type StatusOptions } from './project-state';
+export type {
+  WorkItemStatus,
+  ProjectStatus,
+  NextReport,
+  BaseState,
+} from './state';
