@@ -1,3 +1,4 @@
+import { runOperator } from './run';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { UseCase } from '@agentic-ddd/core';
@@ -11,7 +12,7 @@ import {
 import { buildIR, irHash, type IRModule } from '../contracts/ir';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import { InMemoryEventBus } from './event-bus';
-import type { LlmRequest, LlmTool, OperatorRunResult, RunInput } from './types';
+import type { LlmTool, OperatorRunResult, RunInput } from './types';
 
 export type UseCaseInstances = ReadonlyMap<ClassRef, UseCase<unknown, unknown>>;
 export interface RuntimeOptions {
@@ -24,7 +25,7 @@ export interface RuntimeOptions {
   modules: readonly IRModule[];
   registry?: Registry;
 }
-interface MountedOperator {
+export interface MountedOperator {
   record: OperatorRecord;
   system: string;
   tools: LlmTool[];
@@ -119,37 +120,9 @@ export class OperatorRuntime {
   async run(name: string, input: RunInput): Promise<OperatorRunResult> {
     const operator = this.#operators.get(name);
     if (!operator) throw new Error(`Unknown operator: ${name}`);
-    const runId = crypto.randomUUID();
-    const request: LlmRequest = {
-      model: operator.record.model,
-      system: operator.system,
-      tools: operator.tools,
-      toolChoice: 'auto',
-      messages: [
-        { role: 'user', text: input.message },
-        ...(input.context === undefined
-          ? []
-          : [
-              {
-                role: 'user' as const,
-                text: `Context: ${JSON.stringify(input.context)}`,
-              },
-            ]),
-      ],
-    };
-    const response = await this.options.llm.complete(request);
-    return {
-      runId,
-      operator: name,
-      status: 'completed',
-      output: response.content
-        .filter((b) => b.type === 'text')
-        .map((b) => b.text)
-        .join('\n'),
-      steps: [
-        { id: crypto.randomUUID(), request, response, tools: [], events: [] },
-      ],
-      events: [],
-    };
+    return runOperator(operator, input, {
+      ...this.options,
+      eventBus: this.eventBus,
+    });
   }
 }
