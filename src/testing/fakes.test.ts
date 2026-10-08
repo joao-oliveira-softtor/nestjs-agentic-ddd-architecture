@@ -28,9 +28,7 @@ test('FakeLlm consumes responses/functions, records requests and preserves opaqu
   expect((await fake.complete(request)).providerPayload).toBe(payload);
   await fake.complete(request);
   expect(fake.requests).toEqual([request, request]);
-  await expect(fake.complete(request)).rejects.toThrow(
-    'FakeLlm script exhausted',
-  );
+  expect(fake.complete(request)).rejects.toThrow('FakeLlm script exhausted');
 });
 
 test('FakeApproval supports allow, deny and asynchronous decisions with history', async () => {

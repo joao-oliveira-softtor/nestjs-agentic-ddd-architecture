@@ -64,3 +64,6 @@ Decisão: extrair IR e canonicalização para `src/contracts`, com reexports no 
 Decisão: timeout termina o run e fecha a admissão de tools/publicações; operações já iniciadas têm cancelamento cooperativo (sem rollback de efeitos externos). Aprovação ausente nega por padrão.
 
 Entrega 1 concluída: RED por exports ausentes; GREEN com 3 testes (roteiro/payload, aprovação, bus concorrente/ordem/unsubscribe), typecheck e lint. Ports/resultados públicos e fakes entregues. Bus reside no runtime e é reexportado em testing.
+
+Entrega 2 concluída: RED por OperatorRuntime ausente; GREEN (36 testes relevantes, 4 snapshots existentes intactos), typecheck/lint. Registro rejeita skill ausente, hash ausente/divergente, declaração alterada e instância ausente; request contém apenas allowlist, schemas, instructions+corpo, model e contexto. IR/canonical extraídos com reexports compatíveis. O run desta entrega só monta o turno textual; loop e payload entre turnos na entrega 3.
+Decisão: root/modules são configuração explícita de identidade da IR no runtime/Nest (modules obrigatório, root default cwd), sem ler/importar configuração do compiler. Evita inferência de paths/nome de módulos que invalidaria hashes existentes.
