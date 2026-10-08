@@ -60,7 +60,7 @@ Toda mudança de regra de negócio fica registrada em `changes/`, e o compilador
 # proposal-first (regra nova): escreva changes/NNNN-<slug>/proposal.md (delta, critérios de aceite, ## Motivo)
 # implemente com testes covers(...) e então:
 bun run agentic compile                          # aplica e arquiva a proposta quando o código bate com o delta
-bun run agentic verify NNNN                      # gates G1–G6 em JSON: done | needs-human | failed
+bun run agentic verify NNNN                      # gates G1–G7 em JSON: done | needs-human | failed
 
 # code-first (o código já mudou):
 bun run agentic compile --draft-change <slug>    # gera o rascunho com o delta preenchido
@@ -74,6 +74,25 @@ bun run agentic ir                               # IR canônica
 
 O `verify` roda a suíte com reporter JUnit e cruza cada teste marcado com `covers([...])` com as regras e os critérios de aceite da proposta. O histórico por módulo fica em `.agents/skills/<módulo>-dev/references/history.md`.
 
+## Declaração primeiro e coordenação
+
+Declare decorators completos e corpos com `notImplemented()`, abra a proposta e compile. O estado é calculado a partir dos corpos e dos testes, sem arquivo de estado e sem alterar IR, lock ou skills ao implementar um corpo.
+
+```bash
+bun run agentic status --json                    # executa a suíte uma vez
+bun run agentic status --static                  # lê testes sem importá-los; no máximo covered
+bun run agentic next --change 0001               # primeira onda executável e projeção das próximas
+bun run agentic packet entity:Order              # especificação, obrigações e comando com specHash
+bun run agentic verify --item entity:Order --spec-hash <hash-do-packet> --json
+bun run agentic verify 0001                      # inclui G7: itens tocados precisam estar done
+```
+
+Os estados são `declared`, `implemented` (faltam testes), `covered` (falha/skip ou análise estática) e `done`; dependências pendentes sobrepõem `blocked`, preservando o estado base. `--change` seleciona itens ADDED/MODIFIED e suas dependências ainda pendentes. Critérios automáticos de propostas abertas também viram obrigações quando cobrem regras do item.
+
+O pacote protege item, regras, contratos referenciados e critérios aplicáveis com SHA-256. Alterar corpo ou localização preserva o hash; alterar uma declaração relevante o invalida. O executor altera apenas o corpo do item e testes. A verificação individual exige dependências concluídas, corpo implementado, hash preservado, cobertura passando e typecheck. Falhas de testes sem relação com o item não o reprovam; coleta JUnit ausente impede certificar conclusão.
+
+Todos os comandos aceitam `--config`. Consultas retornam 0 mesmo com trabalho pendente; uso inválido retorna 2, análise/verificação falha retorna 1. O operator usa cobertura declarativa de allowlist e aprovação neste marco; a execução com `FakeLlm` será entregue no plano 4.
+
 ## Estrutura
 
 | Caminho           | Conteúdo                                                                               |
@@ -82,7 +101,7 @@ O `verify` roda a suíte com reporter JUnit e cruza cada teste marcado com `cove
 | `src/decorators`  | decorators autodeclarativos e o registry                                               |
 | `src/compiler`    | IR, validação, renderers, escrita/verificação                                          |
 | `src/testing`     | `covers()` e `createTestContext()`                                                     |
-| `src/cli`         | `agentic-ddd compile`, `ir` e `verify`                                                 |
+| `src/cli`         | `agentic-ddd compile`, `ir`, `status`, `next`, `packet` e `verify`                      |
 | `examples/orders` | domínio de exemplo                                                                     |
 
 ## Roadmap

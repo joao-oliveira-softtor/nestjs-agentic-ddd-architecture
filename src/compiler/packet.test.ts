@@ -63,3 +63,33 @@ test('hash exclui localização e mudanças independentes, inclui contratos e re
   };
   expect(specHash(itemSpecification(changed, item, []))).not.toBe(hash);
 });
+
+test('source é dado de schema: preserva propriedade, enum e hash do contrato', () => {
+  const changed = structuredClone(ir);
+  const useCase = changed.useCases.find(
+    (u) => u.id === 'usecase:publish_product',
+  )!;
+  changed.useCases[changed.useCases.indexOf(useCase)] = {
+    ...useCase,
+    inputSchema: {
+      type: 'object',
+      properties: { source: { type: 'string', enum: ['api'] } },
+      required: ['source'],
+    },
+  };
+  const item = workItems(changed).find((i) => i.id === useCase.id)!;
+  const spec = itemSpecification(changed, item, []);
+  expect((spec.declaration as typeof useCase).inputSchema).toEqual(
+    changed.useCases[1]!.inputSchema,
+  );
+  const hash = specHash(spec);
+  changed.useCases[1] = {
+    ...changed.useCases[1]!,
+    inputSchema: {
+      type: 'object',
+      properties: { source: { type: 'string', enum: ['import'] } },
+      required: ['source'],
+    },
+  };
+  expect(specHash(itemSpecification(changed, item, []))).not.toBe(hash);
+});

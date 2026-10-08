@@ -22,9 +22,9 @@ describe('agentic-ddd verify', () => {
     expect(run('verify').code).toBe(2);
   });
 
-  test('número inválido ou proposta inexistente sai com 1 e explica', () => {
+  test('número inválido sai com 2; proposta inexistente sai com 1 e explica', () => {
     const invalid = run('verify', 'abc');
-    expect(invalid.code).toBe(1);
+    expect(invalid.code).toBe(2);
     expect(invalid.stderr).toContain(
       'verify: número de change inválido "abc" (esperado NNNN)',
     );

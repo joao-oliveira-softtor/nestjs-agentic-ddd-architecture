@@ -15,6 +15,12 @@ export async function verifyCommand(args: readonly string[]): Promise<number> {
     return 2;
   }
   const configPath = parsed.values.get('--config') ?? 'agentic.config.ts';
+  if (!itemMode && !/^\d{4}$/.test(parsed.positionals[0]!)) {
+    console.error(
+      `verify: número de change inválido "${parsed.positionals[0]}" (esperado NNNN)`,
+    );
+    return 2;
+  }
   const specHash = parsed.values.get('--spec-hash');
   if (itemMode && (!specHash || !/^[a-f0-9]{64}$/.test(specHash))) {
     console.error('--spec-hash exige um SHA-256 hexadecimal');

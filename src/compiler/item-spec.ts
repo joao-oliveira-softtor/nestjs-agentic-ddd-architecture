@@ -18,14 +18,19 @@ export interface ItemSpecification {
   readonly criteria: ItemCriterion[];
 }
 
-/** Strip every source, including nested rules/contracts. */
+/** Strip IR locations; schema fields named source are domain data. */
 function withoutSource(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(withoutSource);
   if (value !== null && typeof value === 'object')
     return Object.fromEntries(
       Object.entries(value)
         .filter(([key]) => key !== 'source')
-        .map(([key, v]) => [key, withoutSource(v)]),
+        .map(([key, v]) => [
+          key,
+          ['inputSchema', 'outputSchema', 'payloadSchema'].includes(key)
+            ? v
+            : withoutSource(v),
+        ]),
     );
   return value;
 }
