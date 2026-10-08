@@ -1,4 +1,4 @@
-import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { cp, symlink, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import ts from 'typescript';
@@ -96,7 +96,7 @@ export async function orderSkeleton() {
   await cp(join(ROOT, 'examples/orders'), join(dir, 'app'), {
     recursive: true,
   });
-  await mkdir(join(dir, 'node_modules'));
+  await symlink(join(ROOT, 'node_modules'), join(dir, 'node_modules'), 'dir');
   // Absolute paths let each new Bun process load the framework and schemas.
   await writeFile(
     join(dir, 'tsconfig.json'),

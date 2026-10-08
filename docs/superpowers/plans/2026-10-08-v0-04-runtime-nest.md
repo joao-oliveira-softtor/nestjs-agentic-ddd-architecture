@@ -7,7 +7,7 @@
 **Stack:** Bun, TypeScript, Zod, Nest e testes `bun:test`.
 
 Spec: [v0 §§9–10, aceite 2 e 3](../specs/2026-10-06-agentic-ddd-v0-design.md).
-Pré-condição: plano 3 implementado. Este plano descreve o próximo marco, sem implementar runtime nesta entrega.
+Pré-condição: plano 3 implementado. Execução concluída; decisões e evidências registradas abaixo.
 
 ## Base real e limites de imports
 
@@ -46,10 +46,47 @@ Executar typecheck, lint, bun test, build, compile --check, verify 0001 e verify
 
 Para cada entrega acima:
 
-- [ ] Escrever os testes dos cenários descritos.
-- [ ] Rodar o arquivo de testes e confirmar RED por comportamento ausente.
-- [ ] Implementar o contrato nos arquivos indicados.
-- [ ] Rodar testes relevantes, typecheck e lint; confirmar GREEN.
-- [ ] Criar commit da entrega com testes e documentação pertinente.
+- [x] Escrever os testes dos cenários descritos.
+- [x] Rodar o arquivo de testes e confirmar RED por comportamento ausente.
+- [x] Implementar o contrato nos arquivos indicados.
+- [x] Rodar testes relevantes, typecheck e lint; confirmar GREEN.
+- [x] Criar commit da entrega com testes e documentação pertinente.
 
 Aceite final esperado: `bun test` sem falhas; `bun run agentic verify 0001` = `done`; `bun run agentic verify 0002` = `needs-human`; cobertura do operator passa pelo FakeLlm e pela composição Nest.
+
+## Registro de execução — 2026-10-08
+
+Base: `7a6163f`, branch `feat/plan-4-runtime-nest`. Execução inline no checkout solicitado, com TDD e commits por entrega.
+
+Pre-flight: entrega 1 fornece ports/fakes para 2–5; entrega 2 fornece registro/projeção para loop e Nest; entrega 3 fornece run para E2E; entrega 4 fornece composição para 5. Não há conflitos de interfaces.
+
+Decisão: extrair IR e canonicalização para `src/contracts`, com reexports no compiler, preservando bytes/hashes e fronteira compiler/runtime. Configuração de runtime recebe root/modules (mesma identidade do compilador); a composição filtra o registry por módulos para isolar declarações de outros projetos/testes.
+Decisão: timeout termina o run e fecha a admissão de tools/publicações; operações já iniciadas têm cancelamento cooperativo (sem rollback de efeitos externos). Aprovação ausente nega por padrão.
+
+Entrega 1 concluída: RED por exports ausentes; GREEN com 3 testes (roteiro/payload, aprovação, bus concorrente/ordem/unsubscribe), typecheck e lint. Ports/resultados públicos e fakes entregues. Bus reside no runtime e é reexportado em testing.
+
+Entrega 2 concluída: RED por OperatorRuntime ausente; GREEN (36 testes relevantes, 4 snapshots existentes intactos), typecheck/lint. Registro rejeita skill ausente, hash ausente/divergente, declaração alterada e instância ausente; request contém apenas allowlist, schemas, instructions+corpo, model e contexto. IR/canonical extraídos com reexports compatíveis. O run desta entrega só monta o turno textual; loop e payload entre turnos na entrega 3.
+Decisão: root/modules são configuração explícita de identidade da IR no runtime/Nest (modules obrigatório, root default cwd), sem ler/importar configuração do compiler. Evita inferência de paths/nome de módulos que invalidaria hashes existentes.
+
+Entrega 3 concluída: RED com 15 falhas comportamentais; GREEN com 21 testes runtime, typecheck/lint. Loop sequencial, resultados agrupados, providerPayload preservado por identidade, IDs/eventos/trace, validação entrada/saída, aprovação e erros recuperáveis. Todas as linhas da tabela de término testadas; timeout cobre LLM/aprovação/execute/bus pendentes e resoluções tardias.
+Baseline confirmada: 316 testes, 14 snapshots, nenhuma falha.
+
+Entrega 4 concluída: RED na ausência de módulo/DI e no AppModule vazio; GREEN em 12 testes de composição/arquitetura, typecheck/lint/build/compile --check. AgenticModule global forRoot + forFeature com providers/factories/imports, registro assíncrono durante TestingModule.compile, tokens públicos, aprovação default deny e bus in-memory. OrdersModule e AppModule compostos, BunAdapter preservado. Ajuste de testes: get<T> explícito nos tokens Symbol evita inferência undefined no expect do Bun.
+
+Entrega 5: E2E real substitui o teste exclusivamente declarativo. Compile em saída temporária → skill carregada → Nest → criar/confirmar com output/eventos/IDs; cancelar com deny/allow, spy provando ausência de execute e eventos no deny. Testes passaram (17 testes E2E/composição/source). Declarações de negócio preservadas; OrderCancelled mantém o payload declarado `{ orderId }`.
+
+Decisão adicional (RED→GREEN): smoke do bundle mostrou registro sem operator: `captureSource` usava import.meta.url do bundle para excluir frames do decorator. Build agora gera source map linked; captureSource deriva o diretório dos frames mapeados. Smoke real do dist com BunAdapter passou; hashes/snapshots/compile --check preservados. Distribuir o .map junto ao bundle.
+
+Documentação atualizada com uso Nest/FakeLlm, tokens/configuração de identidade, traces, limites e cancelamento cooperativo. Helpers de runtime isolados de arquivos de teste. A revisão final e aceite completo seguem abaixo.
+
+Revisão independente: dois P2 reproduzidos e corrigidos com RED→GREEN. (1) publicação reentrante aguardada no mesmo bus causava deadlock: rejeitada explicitamente via contexto assíncrono do handler; a fila continua utilizável após o erro, sem antecipar reactsTo. (2) registros simultâneos podiam sobrescrever o mesmo operator: rechecagem de duplicidade no ponto de commit após leitura da skill.
+
+Aceite integrado encontrou a fixture do plano 3 importando OrdersModule sem resolver Nest. A fixture temporária agora compartilha node_modules via symlink; seus E2E usam root/modules do próprio agentic.config.ts, em vez do layout fixo do checkout. As quatro ondas continuam verificadas com execução real do operator na última onda, sem testes iniciais nem evidência fabricada.
+
+Correções revisadas independentemente, sem novos findings. Suíte final: 348 testes, zero falhas, 14 snapshots intactos; typecheck, lint, build e compile --check aprovados. A fixture completa também passou isoladamente (45 assertions). Verificações explícitas concluídas: verify 0001 = done (G1–G7 passed); verify 0002 = needs-human (somente G6, criterion:0002/revisao-de-copy). Todos os cinco itens implementados, testados, documentados e commitados.
+
+### Follow-up do review Codex — contexto de run
+
+P2 (`src/runtime/run.ts`, review 4222854161): JSON.stringify de context fora do try rejeitava run(), em vez de devolver resultado. Reproduzido em RED: bigint, ciclo, toJSON lançando erro; função/símbolo/toJSON retornando undefined também produziam mensagem inválida.
+Decisão: manter context?: unknown e adicionar motivo público `invalid_context`. Serialização passa ao bloco protegido; falha retorna failed com runId/operator e steps/events vazios, sem LLM/tools/publicações. Não houve alteração de declarações de negócio ou gerados. Spec/README atualizados. GREEN: 28 testes runtime, typecheck e lint; aceite integrado segue abaixo.
+Validação do follow-up: 354 testes, zero falhas, 14 snapshots; typecheck, lint, build e compile --check aprovados. A suíte integrada confirmou novamente verify 0001 = done e verify 0002 = needs-human apenas por G6.
