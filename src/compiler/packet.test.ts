@@ -93,3 +93,34 @@ test('source é dado de schema: preserva propriedade, enum e hash do contrato', 
   };
   expect(specHash(itemSpecification(changed, item, []))).not.toBe(hash);
 });
+
+test('spec de item enriquecido não duplica critérios e preserva o hash publicado', () => {
+  const proposal = {
+    id: '0009',
+    archived: false,
+    acceptance: [
+      {
+        id: 'novo',
+        covers: ['method:Product.publish'],
+        given: 'produto',
+        when: 'publicar',
+        // eslint-disable-next-line unicorn/no-thenable
+        then: 'publicado',
+        manual: false,
+      },
+    ],
+  } as import('./changes/proposal').Proposal;
+  const state = evaluateStatus({
+    ir,
+    implemented: implementation(ir, registry),
+    proposals: [proposal],
+    mode: 'dynamic',
+    evidence: { exitCode: 0, cases: [] },
+  });
+  const item = state.items.find((i) => i.id === 'method:Product.publish')!;
+  const spec = itemSpecification(ir, item, [proposal]);
+  expect(
+    spec.obligations.filter((id) => id === 'criterion:0009/novo'),
+  ).toHaveLength(1);
+  expect(specHash(spec)).toBe(item.specHash);
+});

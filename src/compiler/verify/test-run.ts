@@ -84,21 +84,28 @@ export async function runTests(
         cwd,
         env: { ...process.env, [VERIFY_ENV]: '1' },
         stdout: 'ignore',
-        stderr: 'ignore',
+        stderr: 'pipe',
       },
     );
+    // Drain concurrently: a large suite can fill the pipe before exiting.
+    const stderrPromise = new Response(proc.stderr).text();
     const exitCode = await proc.exited;
+    const stderr = await stderrPromise;
     const xml = await readFile(outfile, 'utf8').catch(() => '');
     const cases = parseJUnit(xml);
     const valid =
       /<testsuites?\b/.test(xml) && /<\/testsuites?>\s*$/.test(xml.trim());
+    // Bun omits import/setup errors from JUnit, even when other tests pass.
+    const incomplete =
+      /(?:^|\n)# Unhandled error between tests\b/.test(stderr) ||
+      (exitCode !== 0 && !cases.some((c) => c.status === 'failed'));
     return {
       exitCode,
       cases,
-      ...(!valid
+      ...(!valid || incomplete
         ? {
             collectionError:
-              'coleta JUnit ausente ou inválida; não é possível verificar conclusão',
+              'coleta JUnit ausente, inválida ou incompleta; não é possível verificar conclusão',
           }
         : {}),
     };

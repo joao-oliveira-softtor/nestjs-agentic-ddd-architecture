@@ -21,3 +21,17 @@ Todos aceitam --config. Uso inválido sai 2; análise/verificação falha sai 1;
 ## Verificação
 
 Cada entrega: teste RED, implementação GREEN, commit. Aceite final: bun run typecheck; bun run lint; bun test; bun run build; bun run agentic compile --check; bun run agentic verify 0001 (done); bun run agentic verify 0002 (needs-human).
+
+## Resultado da execução
+
+- [x] Detecção fora da IR e registry filtrado disponível na análise.
+- [x] Estados, obrigações abertas, bloqueios e leitura estática sem executar testes.
+- [x] APIs públicas e CLI status/next com coleta única e ondas ordenadas.
+- [x] Pacotes dos quatro tipos e verifyItem com cinco gates.
+- [x] G7 por proprietário ADDED/MODIFIED, inclusive changes arquivados.
+- [x] Fixture Order com cópias temporárias, subprocessos, tsc real, RED→GREEN por onda, gerados estáveis e hash protegendo decorators.
+- [x] Ajuda, README, convenções regeneradas e plano 4 sobre a base real.
+
+Aceite final: **315 testes, 0 falhas, 14 snapshots**; typecheck, lint, build e compile --check aprovados; verify 0001 = done; verify 0002 = needs-human (só G6 pendente). Revisão independente realizada; corrigidas coleta JUnit parcial (inclusive erro de import com outra assertion falhando), normalização de critérios no packet e evidência estática. Teste negativo de typecheck verifica que só I5 reprova.
+
+Decisões de execução: branch local no checkout compartilhado; representação canônica antecipada para publicar specHash nos estados; CLI de change inválido sai 2 conforme o contrato aprovado. O leitor estático requer imports de teste do Bun e diagnostica declarações parametrizadas não resolvidas.

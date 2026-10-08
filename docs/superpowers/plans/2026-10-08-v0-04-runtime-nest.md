@@ -1,5 +1,11 @@
 # Plano 4 — Runtime e integração Nest
 
+> Execução: usar `superpowers:executing-plans` ou `superpowers:subagent-driven-development`, com TDD e commits por entrega.
+
+**Objetivo:** executar operators com LLM roteirizado, aprovação e eventos, expostos pela composição Nest.
+**Arquitetura:** runtime depende dos ports e do registry; Nest compõe instâncias e infraestrutura; domínio e use-cases preservam isolamento. Compartilhar a projeção canônica necessária ao hash sem imports entre compiler e runtime.
+**Stack:** Bun, TypeScript, Zod, Nest e testes `bun:test`.
+
 Spec: [v0 §§9–10, aceite 2 e 3](../specs/2026-10-06-agentic-ddd-v0-design.md).
 Pré-condição: plano 3 implementado. Este plano descreve o próximo marco, sem implementar runtime nesta entrega.
 
@@ -37,3 +43,13 @@ Criar `src/nestjs/agentic.module.ts` e `index.ts`: forRoot registra ports/runtim
 Roteiro FakeLlm cria e confirma pedido, termina com texto; asserts: system contém skill, tools são exatamente três, output/eventos e correlationId/causationId corretos. Segundo roteiro cancela com aprovação requerida: negar não chama execute/não publica; aprovar cancela/publica. Marcar covers(['operator:order-operator']) e critérios de change se declarações de negócio mudarem. Atualizar documentação e substituir a cobertura exclusivamente declarativa do operator por e2e real.
 
 Executar typecheck, lint, bun test, build, compile --check, verify 0001 e verify 0002. Os novos e2e devem cumprir aceite 2/3 e manter o fluxo de coordenação e hashes do plano 3. Review final antes de integração.
+
+Para cada entrega acima:
+
+- [ ] Escrever os testes dos cenários descritos.
+- [ ] Rodar o arquivo de testes e confirmar RED por comportamento ausente.
+- [ ] Implementar o contrato nos arquivos indicados.
+- [ ] Rodar testes relevantes, typecheck e lint; confirmar GREEN.
+- [ ] Criar commit da entrega com testes e documentação pertinente.
+
+Aceite final esperado: `bun test` sem falhas; `bun run agentic verify 0001` = `done`; `bun run agentic verify 0002` = `needs-human`; cobertura do operator passa pelo FakeLlm e pela composição Nest.

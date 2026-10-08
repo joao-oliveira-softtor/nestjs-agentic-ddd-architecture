@@ -127,8 +127,7 @@ export function itemSpecification(
     declaration,
     contracts: unique.sort(byId as (a: unknown, b: unknown) => number),
     obligations: [
-      ...item.obligations,
-      ...criteria.map((c) => c.obligation),
+      ...new Set([...item.obligations, ...criteria.map((c) => c.obligation)]),
     ].sort(),
     criteria,
   }) as ItemSpecification;

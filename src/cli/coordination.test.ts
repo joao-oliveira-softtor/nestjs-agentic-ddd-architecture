@@ -107,6 +107,7 @@ test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relac
     const packet = run('packet', 'entity:Thing');
     expect(packet.code).toBe(0);
     const hash = /specHash: `([a-f0-9]{64})`/.exec(packet.stdout)![1]!;
+    const passingTests = await readFile(join(dir, 'app.test.ts'), 'utf8');
     expect(
       run('verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json')
         .code,
@@ -153,18 +154,59 @@ test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relac
         .code,
     ).toBe(1);
     const config = await readFile(join(dir, 'agentic.config.ts'), 'utf8');
+    await writeFile(join(dir, 'app.test.ts'), passingTests);
     await writeFile(
       join(dir, 'agentic.config.ts'),
       config.replace('process.exit(0)', 'process.exit(1)'),
     );
+    const typecheck = run(
+      'verify',
+      '--item',
+      'entity:Thing',
+      '--spec-hash',
+      hash,
+      '--json',
+    );
+    expect(typecheck.code).toBe(1);
+    const typecheckReport = JSON.parse(typecheck.stdout);
     expect(
-      run('verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json')
-        .code,
-    ).toBe(1);
+      typecheckReport.gates
+        .filter((g: { status: string }) => g.status === 'failed')
+        .map((g: { id: string }) => g.id),
+    ).toEqual(['I5']);
     expect(run('verify', '--item', 'entity:Thing').code).toBe(2);
     expect(
       run('verify', '--item', 'entity:Thing', '--spec-hash', 'no').code,
     ).toBe(2);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('status e verifyItem recusam JUnit parcial por erro de coleta', async () => {
+  const { dir, run } = await queryFixture();
+  try {
+    const hash = /specHash: `([a-f0-9]{64})`/.exec(
+      run('packet', 'entity:Thing').stdout,
+    )![1]!;
+    const config = await readFile(join(dir, 'agentic.config.ts'), 'utf8');
+    await writeFile(
+      join(dir, 'agentic.config.ts'),
+      config.replace("'bun', 'test', 'app.test.ts'", "'bun', 'test'"),
+    );
+    await writeFile(
+      join(dir, 'broken.test.ts'),
+      `throw Error('collection failed');`,
+    );
+    for (const args of [
+      ['status', '--json'],
+      ['verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json'],
+    ]) {
+      const result = run(...args);
+      expect(result.code).toBe(1);
+      expect(result.stdout).toBe('');
+      expect(result.stderr).toContain('JUnit');
+    }
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

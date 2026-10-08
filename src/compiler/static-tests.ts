@@ -13,8 +13,8 @@ export function parseStaticTests(text: string, file: string): StaticEvidence {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const cases: TestCaseResult[] = [];
   const diagnostics: string[] = [];
-  const helpers = new Set(['covers']);
-  const testNames = new Set(['test', 'it']);
+  const helpers = new Set<string>();
+  const testNames = new Set<string>();
   for (const stmt of source.statements) {
     if (
       !ts.isImportDeclaration(stmt) ||
@@ -44,13 +44,14 @@ export function parseStaticTests(text: string, file: string): StaticEvidence {
   const rootName = (n: ts.Expression): string | null => {
     if (ts.isIdentifier(n)) return n.text;
     if (ts.isPropertyAccessExpression(n)) return rootName(n.expression);
+    if (ts.isCallExpression(n)) return rootName(n.expression);
     return null;
   };
   const visit = (node: ts.Node) => {
     if (
       ts.isCallExpression(node) &&
       testNames.has(rootName(node.expression) ?? '') &&
-      node.arguments.length >= 2
+      !(ts.isCallExpression(node.parent) && node.parent.expression === node)
     ) {
       const title = node.arguments[0];
       let name = literal(title);
@@ -75,7 +76,15 @@ export function parseStaticTests(text: string, file: string): StaticEvidence {
       }
       const line =
         source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
-      if (name !== null)
+      const parameterized = ts.isCallExpression(node.expression);
+      const todo =
+        ts.isPropertyAccessExpression(node.expression) &&
+        node.expression.name.text === 'todo';
+      if (
+        name !== null &&
+        !parameterized &&
+        (node.arguments.length >= 2 || todo)
+      )
         cases.push({
           file,
           line,
