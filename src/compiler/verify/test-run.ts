@@ -16,6 +16,7 @@ export interface TestCaseResult {
 }
 
 export interface TestRun {
+  readonly collectionError?: string;
   readonly exitCode: number;
   readonly cases: TestCaseResult[];
 }
