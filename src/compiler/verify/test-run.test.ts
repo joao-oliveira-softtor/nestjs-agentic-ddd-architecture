@@ -88,3 +88,32 @@ describe('runTests', () => {
     ]);
   });
 });
+
+test('coleta ausente não pode certificar conclusão', async () => {
+  const run = await runTests(['bun', '-e', 'process.exit(0)'], dir);
+  expect(run.collectionError).toContain('JUnit');
+});
+
+test('JUnit parcial por falha de import não certifica conclusão, mesmo com outra assertion falhando', async () => {
+  await writeFile(
+    join(dir, 'a.test.ts'),
+    `import { test, expect } from 'bun:test'; test('[covers: method:A.x] passa', () => expect(1).toBe(1));`,
+  );
+  await writeFile(
+    join(dir, 'b.test.ts'),
+    `throw new Error('collection failed');`,
+  );
+  for (const withFailure of [false, true]) {
+    if (withFailure)
+      await writeFile(
+        join(dir, 'c.test.ts'),
+        `import { test, expect } from 'bun:test'; test('falha não relacionada', () => expect(1).toBe(2));`,
+      );
+    const result = await runTests(['bun', 'test'], dir);
+    expect(result.exitCode).toBe(1);
+    expect(result.collectionError).toContain('JUnit');
+    expect(
+      result.cases.find((c) => c.covers.includes('method:A.x'))?.status,
+    ).toBe('passed');
+  }
+});

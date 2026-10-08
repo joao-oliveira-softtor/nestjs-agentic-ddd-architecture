@@ -25,6 +25,7 @@ export interface CompileOptions {
 }
 
 export interface CompileResult {
+  readonly registry: Registry;
   readonly ok: boolean;
   readonly errors: CompileError[];
   readonly drift: Drift[];
@@ -41,6 +42,7 @@ export interface CompileResult {
 }
 
 export interface ProjectAnalysis {
+  readonly registry: Registry;
   readonly config: ResolvedConfig;
   readonly ir: IR;
   readonly errors: CompileError[];
@@ -57,11 +59,12 @@ export async function analyzeProject(options: {
   const origin = options.registry ?? defaultRegistry;
   const before = registrySizes(origin);
   const files = await importModules(config);
-  const { ir, errors } = analyze(scopeRegistry(origin, files, before), {
+  const registry = scopeRegistry(origin, files, before);
+  const { ir, errors } = analyze(registry, {
     root: config.root,
     modules: config.modules,
   });
-  return { config, ir, errors };
+  return { config, ir, errors, registry };
 }
 
 async function claudeWarnings(config: ResolvedConfig): Promise<string[]> {
@@ -78,8 +81,9 @@ const byPath = (a: Drift, b: Drift): number =>
   a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
 
 export async function compile(options: CompileOptions): Promise<CompileResult> {
-  const { config, ir, errors } = await analyzeProject(options);
+  const { config, ir, errors, registry } = await analyzeProject(options);
   const empty = {
+    registry,
     drift: [],
     written: [],
     warnings: [],

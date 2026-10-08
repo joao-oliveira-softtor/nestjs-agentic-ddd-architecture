@@ -4,6 +4,8 @@ import { compile } from '../compile';
 import { EMPTY_IR, elementsOf, semanticDiff } from '../diff';
 import type { CompileError } from '../ir';
 import { readLock } from '../lock';
+import { statusFromEvidence } from '../project-state';
+import { workItemFindings } from './work-items';
 import { evaluateGates, type CommandResult, type VerifyReport } from './gates';
 import { VERIFY_ENV, runTests } from './test-run';
 
@@ -75,6 +77,22 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
     ),
   ]);
   return evaluateGates({
+    workItemFindings: workItemFindings(
+      check.ir,
+      statusFromEvidence(
+        {
+          project: {
+            config,
+            ir: check.ir,
+            registry: check.registry,
+            errors: [],
+          },
+          proposals,
+        },
+        tests,
+      ),
+      proposal,
+    ),
     proposal,
     lock,
     diff: semanticDiff(lock?.ir ?? EMPTY_IR, check.ir),

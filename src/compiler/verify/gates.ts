@@ -5,7 +5,19 @@ import type { DiffItem } from '../diff';
 import type { DomainLock } from '../lock';
 import type { TestCaseResult, TestRun } from './test-run';
 
-export type GateId = 'G1' | 'G2' | 'G3' | 'G4' | 'G5' | 'G6';
+export type GateId =
+  | 'G1'
+  | 'G2'
+  | 'G3'
+  | 'G4'
+  | 'G5'
+  | 'G6'
+  | 'G7'
+  | 'I1'
+  | 'I2'
+  | 'I3'
+  | 'I4'
+  | 'I5';
 export type GateStatus = 'passed' | 'failed' | 'pending';
 
 export interface Finding {
@@ -38,6 +50,7 @@ export interface CommandResult {
 }
 
 export interface GateInput {
+  readonly workItemFindings?: readonly Finding[];
   readonly proposal: Proposal;
   readonly lock: DomainLock | null;
   readonly diff: readonly DiffItem[];
@@ -186,6 +199,13 @@ export function evaluateGates(input: GateInput): VerifyReport {
       fix: `rode ${c.command.join(' ')} e corrija`,
       source: null,
     }));
+  if (input.tests.collectionError) {
+    g5.push({
+      message: input.tests.collectionError,
+      fix: 'restaure a coleta JUnit da suíte',
+      source: null,
+    });
+  }
   if (input.tests.exitCode !== 0) {
     g5.push({
       message: `a suíte de testes saiu com ${input.tests.exitCode}`,
@@ -215,6 +235,7 @@ export function evaluateGates(input: GateInput): VerifyReport {
       findings: g6,
       warnings: [],
     },
+    gate('G7', 'Work items', [...(input.workItemFindings ?? [])]),
   ];
   const status: VerifyStatus = gates.some((g) => g.status === 'failed')
     ? 'failed'

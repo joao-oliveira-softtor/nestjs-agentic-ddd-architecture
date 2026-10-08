@@ -16,6 +16,8 @@ export interface TestCaseResult {
 }
 
 export interface TestRun {
+  readonly emptySuite?: boolean;
+  readonly collectionError?: string;
   readonly exitCode: number;
   readonly cases: TestCaseResult[];
 }
@@ -83,12 +85,37 @@ export async function runTests(
         cwd,
         env: { ...process.env, [VERIFY_ENV]: '1' },
         stdout: 'ignore',
-        stderr: 'ignore',
+        stderr: 'pipe',
       },
     );
+    // Drain concurrently: a large suite can fill the pipe before exiting.
+    const stderrPromise = new Response(proc.stderr).text();
     const exitCode = await proc.exited;
+    const stderr = await stderrPromise;
     const xml = await readFile(outfile, 'utf8').catch(() => '');
-    return { exitCode, cases: parseJUnit(xml) };
+    const cases = parseJUnit(xml);
+    const valid =
+      /<testsuites?\b/.test(xml) && /<\/testsuites?>\s*$/.test(xml.trim());
+    // Bun omits import/setup errors from JUnit, even when other tests pass.
+    const incomplete =
+      /(?:^|\n)# Unhandled error between tests\b/.test(stderr) ||
+      (exitCode !== 0 && !cases.some((c) => c.status === 'failed'));
+    const emptySuite =
+      cases.length === 0 &&
+      !/(?:^|\n)# Unhandled error between tests\b/.test(stderr) &&
+      (/(?:^|\n)No tests found!/.test(stderr) ||
+        /(?:^|\n)Ran 0 tests across \d+ files\./.test(stderr));
+    return {
+      exitCode,
+      cases,
+      ...(emptySuite ? { emptySuite: true } : {}),
+      ...(!valid || incomplete || emptySuite
+        ? {
+            collectionError:
+              'coleta JUnit ausente, inválida ou incompleta; não é possível verificar conclusão',
+          }
+        : {}),
+    };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
