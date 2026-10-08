@@ -1,5 +1,7 @@
 # @agentic-ddd
 
+Primeira release: [v0.1.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.1.0). [Demonstração reproduzível](docs/releases/0.1.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
+
 Framework open-source sobre **NestJS + DDD** em que:
 
 - **use-cases são tools** que um agente de IA pode chamar;
@@ -102,7 +104,7 @@ try {
 }
 ```
 
-`forRoot` exporta `LLM_PORT`, `APPROVAL_PORT`, `EVENT_BUS` e `OperatorRuntime`. `forFeature` recebe `operators`, `useCases` (classes ou providers com token da classe decorada), `providers` auxiliares e `imports` opcionais. Use-cases da allowlist precisam ter instâncias injetadas. Sem ApprovalPort, tools protegidas são negadas; o bus default é `InMemoryEventBus`, com publicação e handlers aguardados em ordem. Publicação reentrante no mesmo bus durante um handler é rejeitada explicitamente para evitar deadlock; reações enfileiradas ficam no v0.1. `FakeLlm.requests` e `FakeApproval.requests` guardam o histórico para assertions; roteiro esgotado é erro explícito.
+`forRoot` exporta `LLM_PORT`, `APPROVAL_PORT`, `EVENT_BUS` e `OperatorRuntime`. `forFeature` recebe `operators`, `useCases` (classes ou providers com token da classe decorada), `providers` auxiliares e `imports` opcionais. Use-cases da allowlist precisam ter instâncias injetadas. Sem ApprovalPort, tools protegidas são negadas; o bus default é `InMemoryEventBus`, com publicação e handlers aguardados em ordem. Publicação reentrante no mesmo bus durante um handler é rejeitada explicitamente para evitar deadlock; reações enfileiradas estão no [backlog](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/10). `FakeLlm.requests` e `FakeApproval.requests` guardam o histórico para assertions; roteiro esgotado é erro explícito.
 
 O system combina instructions com o corpo da skill; tools incluem propósito, quando usar/não usar e JSON Schema. `context` vira uma mensagem user adicional em JSON. Se a serialização lançar erro ou não produzir JSON (por exemplo bigint, referência circular, função ou símbolo no nível superior), o run retorna `failed / invalid_context` com steps/eventos vazios, antes de chamar o LLM. `providerPayload` do assistant volta intacto no turno seguinte. Cada turno executa tools sequencialmente, valida entrada/saída Zod e devolve todos os resultados em uma única mensagem tool. Sucessos contêm `{ output, events: [{ name, payload }] }`; `unknown_tool`, `invalid_input` (issues Zod), `approval_denied` (motivo) e DomainError são recuperáveis. Aprovação negada nunca chama execute.
 
@@ -184,7 +186,9 @@ Todos os comandos aceitam `--config`. Consultas retornam 0 mesmo com trabalho pe
 ## Roadmap
 
 - **v0** (implementado, ver [`docs/superpowers/plans`](docs/superpowers/plans/2026-10-06-v0-00-index.md)): compilador de documentação → lock, changes e `verify` → estado do projeto e coordenação de agentes → runtime do operator e integração Nest.
-- **v0.1**: operators reagindo a eventos (`reactsTo`), testes de contrato gerados, avaliação das skills entre LLMs, canal HTTP, skill do framework.
+- **v0.1.0**: primeira release da base acima.
+- **v0.2.0 — proposta**: skill do framework e agentes gerente/executor, avaliações reais, adapter LLM e demonstração CLI.
+- **Backlog**: `reactsTo`, contratos gerados, canal HTTP, propostas paralelas e distribuição npm. Veja [issues, dependências e critérios de aceite](docs/ROADMAP.md).
 
 Design: [`docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md`](docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md) · Decisões: [`docs/adr/ADR-0001.md`](docs/adr/ADR-0001.md)
 
