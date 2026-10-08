@@ -1,0 +1,9 @@
+import { z } from 'zod';
+import { DomainEvent } from '@agentic-ddd/core';
+import { AgentEvent } from '@agentic-ddd/decorators';
+
+@AgentEvent({ description: 'Uma tarefa foi criada.', payload: z.object({ taskId: z.string(), title: z.string() }) })
+export class TaskCreated extends DomainEvent<{ readonly taskId: string; readonly title: string }> {}
+
+@AgentEvent({ description: 'Uma tarefa foi concluída.', payload: z.object({ taskId: z.string() }) })
+export class TaskCompleted extends DomainEvent<{ readonly taskId: string }> {}

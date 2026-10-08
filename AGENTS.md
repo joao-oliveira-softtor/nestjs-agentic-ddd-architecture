@@ -9,6 +9,13 @@ Este repositório é o framework `@agentic-ddd` (em `src/`) e o app de exemplo `
 - `examples/**` importa o framework só via `@agentic-ddd/*`; `src/core` só importa `zod`.
 - Testes com `bun:test`; snapshots em `__snapshots__/` são revisados como código.
 
+## Skill autoral e agentes
+
+- A skill do framework tem fonte autoral em `skills/agentic-ddd/`; ela orienta autoria e papéis gerente/executor. As skills `<módulo>-dev` e de runtime são geradas e descrevem o domínio.
+- Instale com `bun run skills:install` (projeto/todos), `--scope user` (global explícito), `--target cursor|codex|claude|all`, `--root <raiz>` e `--check`. Links dependem da permanência deste checkout.
+- `.agents/skills/agentic-ddd` e `.claude/skills/agentic-ddd` são links autorais instalados, preservados por compile. Adaptadores em `.cursor/agents`, `.codex/agents` e `.claude/agents` são instalados pelo script; altere a fonte ou o instalador, respeitando conflitos ao reinstalar.
+- Tutorial isolado: `bun run skills:example --root <destino-inexistente>`; percurso em `skills/agentic-ddd/references/tutorial.md`. Não evolua orders para validar essa skill.
+
 <!-- agentic-ddd:begin -->
 <!-- GERADO por agentic-ddd compile — não edite este bloco; o texto fora dele é seu. -->
 

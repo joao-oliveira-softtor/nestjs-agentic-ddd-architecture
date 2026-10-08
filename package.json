@@ -9,15 +9,17 @@
   "scripts": {
     "build": "bun build ./src/main.ts --target=bun --packages=external --sourcemap=linked --outdir=dist",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\" \"scripts/**/*.ts\"",
     "start": "bun src/main.ts",
     "start:dev": "bun --watch src/main.ts",
     "start:debug": "bun --inspect --watch src/main.ts",
     "start:prod": "bun dist/main.js",
-    "lint": "oxlint --type-aware src/ test/ examples/",
+    "lint": "oxlint --type-aware src/ test/ examples/ scripts/",
     "test": "bun test",
     "test:cov": "bun test --coverage",
-    "agentic": "bun src/cli/main.ts"
+    "agentic": "bun src/cli/main.ts",
+    "skills:install": "bun scripts/install-skills.ts",
+    "skills:example": "bun scripts/create-skills-example.ts"
   },
   "dependencies": {
     "@nestbun/platform": "^0.1.2",

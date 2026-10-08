@@ -1,0 +1,72 @@
+diff --git a/app/domain/task.ts b/app/domain/task.ts
+index 8c9b7cc..18fa14c 100644
+--- a/app/domain/task.ts
++++ b/app/domain/task.ts
+@@ -14,7 +14,7 @@ export class Task extends AggregateRoot<string> {
+-    return notImplemented();
+-
+-
+-
+-
+-
+-
++    const normalizedTitle = title.trim();
++    if (normalizedTitle.length === 0) {
++      throw new DomainError('TASK_TITLE_REQUIRED', 'Toda tarefa precisa de título não vazio.');
++    }
++    const task = new Task(id, normalizedTitle);
++    task.record(new TaskCreated({ taskId: id, title: normalizedTitle }));
++    return task;
+diff --git a/app/test/task-create.test.ts b/app/test/task-create.test.ts
+new file mode 100644
+index 0000000..7a457a7
+--- /dev/null
++++ b/app/test/task-create.test.ts
+@@ -0,0 +1,47 @@
++import { expect, test } from 'bun:test';
++import { DomainError } from '@agentic-ddd/core';
++import { covers } from '@agentic-ddd/testing';
++import { Task } from '../domain/task';
++import { TaskCreated } from '../domain/task.events';
++
++for (const title of ['', '   ', '\t\n ']) {
++  test(covers([
++    'invariant:Task/titulo-obrigatorio',
++    'criterion:0001/titulo-invalido',
++  ], `rejeita título vazio após normalização: ${JSON.stringify(title)}`), () => {
++    let error: unknown;
++    try {
++      Task.create('t1', title);
++    } catch (caught) {
++      error = caught;
++    }
++    expect(error).toBeInstanceOf(DomainError);
++    expect((error as DomainError).code).toBe('TASK_TITLE_REQUIRED');
++  });
++}
++
++test(covers([
++  'method:Task.create',
++  'criterion:0001/criacao',
++], 'cria t1 pendente com título normalizado e registra TaskCreated'), () => {
++  const task = Task.create('t1', '  Comprar pão  ');
++
++  expect(task).toBeInstanceOf(Task);
++  expect(task.id).toBe('t1');
++  expect(task.title).toBe('Comprar pão');
++  expect(task.status).toBe('pending');
++
++  const events = task.pullEvents();
++  expect(events).toHaveLength(1);
++  expect(events[0]).toBeInstanceOf(TaskCreated);
++  expect(events[0]!.payload).toEqual({ taskId: 't1', title: 'Comprar pão' });
++  expect(task.pullEvents()).toEqual([]);
++});
++
++test(covers(['method:Task.create'], 'preserva espaços internos do título e o id recebido'), () => {
++  const task = Task.create('t2', '\t Comprar  pão \n');
++
++  expect(task.id).toBe('t2');
++  expect(task.title).toBe('Comprar  pão');
++  expect(task.pullEvents()[0]!.payload).toEqual({ taskId: 't2', title: 'Comprar  pão' });
++});

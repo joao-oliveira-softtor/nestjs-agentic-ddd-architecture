@@ -1,0 +1,32 @@
+import { z } from 'zod';
+import { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';
+import { AgentUseCase } from '@agentic-ddd/decorators';
+import { Task } from '../domain/task';
+import { TaskCreated } from '../domain/task.events';
+import type { TaskRepository } from '../domain/task.repository';
+
+export const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });
+export const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });
+export type CreateTaskInput = z.infer<typeof createTaskInput>;
+export type CreateTaskOutput = z.infer<typeof createTaskOutput>;
+
+@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })
+export class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {
+  constructor(private readonly tasks: TaskRepository) {}
+  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+}

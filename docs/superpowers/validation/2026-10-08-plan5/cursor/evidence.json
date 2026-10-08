@@ -1,0 +1,17 @@
+{
+  "target": "cursor",
+  "item": "entity:Task",
+  "version": "2026.10.01-e373342",
+  "model": "Codex 5.3 Medium",
+  "session": "b62d616a-ba2a-4917-8c36-48e0691eea34",
+  "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c",
+  "verifyExit": 0,
+  "compileCheckExit": 0,
+  "contractPreserved": true,
+  "sourceCoordinatesPreserved": true,
+  "files": [
+    "app/domain/task.ts",
+    "app/test/task.create.test.ts"
+  ],
+  "transcriptSha256": "b4f5d11fbf1978eae4557891faad0cb0ebfc79bb88b93e01f6af5e4cd450e979"
+}

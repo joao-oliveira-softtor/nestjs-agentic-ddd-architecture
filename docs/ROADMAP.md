@@ -17,7 +17,7 @@ A spec histórica chamou as extensões futuras de v0.1. Para evitar confusão co
 | Plano 7 — Primeiro adapter real de LlmPort              | [#7](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/7) | Base v0.1.0 |
 | Plano 8 — Demonstração CLI com LLM real e aprovação     | [#8](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/8) | #7          |
 
-Prioridade sugerida: refinar o Plano 5 primeiro, seguido pelo benchmark do Plano 6. Os Planos 7–8 formam outra frente: primeiro o adapter, depois a experiência de operação por CLI.
+O Plano 5 tem [spec](superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [plano de execução](superpowers/plans/2026-10-08-v0-05-agent-skills.md) versionados. O próximo trabalho é o benchmark do Plano 6. Os Planos 7–8 formam outra frente: primeiro o adapter, depois a experiência de operação por CLI.
 
 ## Backlog — Extensões e distribuição
 
