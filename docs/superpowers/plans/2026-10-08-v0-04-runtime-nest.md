@@ -7,7 +7,7 @@
 **Stack:** Bun, TypeScript, Zod, Nest e testes `bun:test`.
 
 Spec: [v0 §§9–10, aceite 2 e 3](../specs/2026-10-06-agentic-ddd-v0-design.md).
-Pré-condição: plano 3 implementado. Este plano descreve o próximo marco, sem implementar runtime nesta entrega.
+Pré-condição: plano 3 implementado. Execução concluída; decisões e evidências registradas abaixo.
 
 ## Base real e limites de imports
 
@@ -46,11 +46,11 @@ Executar typecheck, lint, bun test, build, compile --check, verify 0001 e verify
 
 Para cada entrega acima:
 
-- [ ] Escrever os testes dos cenários descritos.
-- [ ] Rodar o arquivo de testes e confirmar RED por comportamento ausente.
-- [ ] Implementar o contrato nos arquivos indicados.
-- [ ] Rodar testes relevantes, typecheck e lint; confirmar GREEN.
-- [ ] Criar commit da entrega com testes e documentação pertinente.
+- [x] Escrever os testes dos cenários descritos.
+- [x] Rodar o arquivo de testes e confirmar RED por comportamento ausente.
+- [x] Implementar o contrato nos arquivos indicados.
+- [x] Rodar testes relevantes, typecheck e lint; confirmar GREEN.
+- [x] Criar commit da entrega com testes e documentação pertinente.
 
 Aceite final esperado: `bun test` sem falhas; `bun run agentic verify 0001` = `done`; `bun run agentic verify 0002` = `needs-human`; cobertura do operator passa pelo FakeLlm e pela composição Nest.
 
@@ -83,4 +83,4 @@ Revisão independente: dois P2 reproduzidos e corrigidos com RED→GREEN. (1) pu
 
 Aceite integrado encontrou a fixture do plano 3 importando OrdersModule sem resolver Nest. A fixture temporária agora compartilha node_modules via symlink; seus E2E usam root/modules do próprio agentic.config.ts, em vez do layout fixo do checkout. As quatro ondas continuam verificadas com execução real do operator na última onda, sem testes iniciais nem evidência fabricada.
 
-Correções revisadas independentemente, sem novos findings. Suíte final: 348 testes, zero falhas, 14 snapshots intactos; typecheck, lint, build e compile --check aprovados. A fixture completa também passou isoladamente (45 assertions). Verificações explícitas dos changes em execução antes da publicação.
+Correções revisadas independentemente, sem novos findings. Suíte final: 348 testes, zero falhas, 14 snapshots intactos; typecheck, lint, build e compile --check aprovados. A fixture completa também passou isoladamente (45 assertions). Verificações explícitas concluídas: verify 0001 = done (G1–G7 passed); verify 0002 = needs-human (somente G6, criterion:0002/revisao-de-copy). Todos os cinco itens implementados, testados, documentados e commitados.
