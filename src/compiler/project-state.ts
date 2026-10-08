@@ -59,6 +59,7 @@ export function statusFromEvidence(
 export async function collectStatus(
   context: StateContext,
   staticMode = false,
+  allowEmptySuite = false,
 ): Promise<ProjectStatus> {
   const config = context.project.config;
   if (staticMode) {
@@ -71,7 +72,8 @@ export async function collectStatus(
     );
   }
   const evidence = await runTests(config.verify.test, config.root);
-  if (evidence.collectionError) throw new Error(evidence.collectionError);
+  if (evidence.collectionError && !(allowEmptySuite && evidence.emptySuite))
+    throw new Error(evidence.collectionError);
   return statusFromEvidence(context, evidence);
 }
 
@@ -85,7 +87,7 @@ export async function status(options: StatusOptions): Promise<ProjectStatus> {
       : context.proposals.find((p) => p.id === options.change);
   if (options.change !== undefined && !proposal)
     throw new Error(`proposta ${options.change} não encontrada`);
-  const report = await collectStatus(context, options.static);
+  const report = await collectStatus(context, options.static, true);
   return proposal ? selectChange(report, context.project.ir, proposal) : report;
 }
 export async function next(

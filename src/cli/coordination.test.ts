@@ -211,3 +211,50 @@ test('status e verifyItem recusam JUnit parcial por erro de coleta', async () =>
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('projeto sem testes permite status, next e packet, mas não certifica done', async () => {
+  const { dir, run } = await queryFixture();
+  try {
+    await rm(join(dir, 'app.test.ts'));
+    const config = await readFile(join(dir, 'agentic.config.ts'), 'utf8');
+    await writeFile(
+      join(dir, 'agentic.config.ts'),
+      config.replace("'bun', 'test', 'app.test.ts'", "'bun', 'test'"),
+    );
+    const original = await readFile(join(dir, 'app/thing.ts'), 'utf8');
+    await writeFile(
+      join(dir, 'app/thing.ts'),
+      `import { notImplemented } from '@agentic-ddd/core';\n` +
+        original.replace('return new Thing();', 'return notImplemented();'),
+    );
+    const declared = run('status', '--json');
+    expect(declared.code).toBe(0);
+    expect(JSON.parse(declared.stdout).items[0].state).toBe('declared');
+    const next = run('next', '--json');
+    expect(next.code).toBe(0);
+    expect(JSON.parse(next.stdout).waves).toEqual([['entity:Thing']]);
+    const packet = run('packet', 'entity:Thing');
+    expect(packet.code).toBe(0);
+    const hash = /specHash: `([a-f0-9]{64})`/.exec(packet.stdout)![1]!;
+    await writeFile(join(dir, 'app/thing.ts'), original);
+    expect(JSON.parse(run('status', '--json').stdout).items[0].state).toBe(
+      'implemented',
+    );
+    expect(
+      run('verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json')
+        .code,
+    ).toBe(1);
+    await writeFile(
+      join(dir, 'app/thing.ts'),
+      original.replace(
+        / @AgentMethod[\s\S]*? static create\(\) \{ return new Thing\(\); \}/,
+        '',
+      ),
+    );
+    const emptyObligations = run('status', '--json');
+    expect(emptyObligations.code).toBe(0);
+    expect(JSON.parse(emptyObligations.stdout).items[0].state).toBe('covered');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

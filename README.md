@@ -91,6 +91,8 @@ Os estados são `declared`, `implemented` (faltam testes), `covered` (falha/skip
 
 O pacote protege item, regras, contratos referenciados e critérios aplicáveis com SHA-256. Alterar corpo ou localização preserva o hash; alterar uma declaração relevante o invalida. O executor altera apenas o corpo do item e testes. A verificação individual exige dependências concluídas, corpo implementado, hash preservado, cobertura passando e typecheck. Falhas de testes sem relação com o item não o reprovam; coleta JUnit ausente impede certificar conclusão.
 
+Projetos ainda sem testes podem consultar `status`, `next` e `packet` para iniciar a implementação. A ausência de testes não certifica `done`; erros de importação ou coleta JUnit incompleta continuam impedindo consultas dinâmicas e verificação.
+
 Todos os comandos aceitam `--config`. Consultas retornam 0 mesmo com trabalho pendente; uso inválido retorna 2, análise/verificação falha retorna 1. O operator usa cobertura declarativa de allowlist e aprovação neste marco; a execução com `FakeLlm` será entregue no plano 4.
 
 ## Estrutura

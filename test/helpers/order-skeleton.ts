@@ -96,10 +96,6 @@ export async function orderSkeleton() {
   await cp(join(ROOT, 'examples/orders'), join(dir, 'app'), {
     recursive: true,
   });
-  await writeFile(
-    join(dir, 'app/test/declarations.test.ts'),
-    `import { test, expect } from 'bun:test'; import { Order } from '../domain/order'; test('declaração carregada', () => expect(Order.name).toBe('Order'));`,
-  );
   await mkdir(join(dir, 'node_modules'));
   // Absolute paths let each new Bun process load the framework and schemas.
   await writeFile(

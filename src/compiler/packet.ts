@@ -72,7 +72,7 @@ export function renderPacket(
 
 export async function packet(options: PacketOptions): Promise<string> {
   const context = await stateContext(options.configPath);
-  const item = (await collectStatus(context)).items.find(
+  const item = (await collectStatus(context, false, true)).items.find(
     (i) => i.id === options.item,
   );
   if (!item) throw new Error(`work item ${options.item} não encontrado`);

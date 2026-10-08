@@ -16,6 +16,7 @@ export interface TestCaseResult {
 }
 
 export interface TestRun {
+  readonly emptySuite?: boolean;
   readonly collectionError?: string;
   readonly exitCode: number;
   readonly cases: TestCaseResult[];
@@ -99,10 +100,16 @@ export async function runTests(
     const incomplete =
       /(?:^|\n)# Unhandled error between tests\b/.test(stderr) ||
       (exitCode !== 0 && !cases.some((c) => c.status === 'failed'));
+    const emptySuite =
+      cases.length === 0 &&
+      !/(?:^|\n)# Unhandled error between tests\b/.test(stderr) &&
+      (/(?:^|\n)No tests found!/.test(stderr) ||
+        /(?:^|\n)Ran 0 tests across \d+ files\./.test(stderr));
     return {
       exitCode,
       cases,
-      ...(!valid || incomplete
+      ...(emptySuite ? { emptySuite: true } : {}),
+      ...(!valid || incomplete || emptySuite
         ? {
             collectionError:
               'coleta JUnit ausente, inválida ou incompleta; não é possível verificar conclusão',

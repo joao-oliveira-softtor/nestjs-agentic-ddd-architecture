@@ -32,6 +32,8 @@ Cada entrega: teste RED, implementação GREEN, commit. Aceite final: bun run ty
 - [x] Fixture Order com cópias temporárias, subprocessos, tsc real, RED→GREEN por onda, gerados estáveis e hash protegendo decorators.
 - [x] Ajuda, README, convenções regeneradas e plano 4 sobre a base real.
 
-Aceite final: **315 testes, 0 falhas, 14 snapshots**; typecheck, lint, build e compile --check aprovados; verify 0001 = done; verify 0002 = needs-human (só G6 pendente). Revisão independente realizada; corrigidas coleta JUnit parcial (inclusive erro de import com outra assertion falhando), normalização de critérios no packet e evidência estática. Teste negativo de typecheck verifica que só I5 reprova.
+Aceite final: **316 testes, 0 falhas, 14 snapshots**; typecheck, lint, build e compile --check aprovados; verify 0001 = done; verify 0002 = needs-human (só G6 pendente). Revisão independente realizada; corrigidas coleta JUnit parcial (inclusive erro de import com outra assertion falhando), normalização de critérios no packet e evidência estática. Teste negativo de typecheck verifica que só I5 reprova.
+
+Revisão local da PR identificou consultas falhando em projetos ainda sem testes. `status`, `next` e `packet` agora aceitam uma suíte explicitamente vazia, preservando a ausência de evidência para `done` e a recusa de coleta parcial. A fixture Order começa sem testes registrados; a regressão da CLI também cobre diretório sem arquivos de teste.
 
 Decisões de execução: branch local no checkout compartilhado; representação canônica antecipada para publicar specHash nos estados; CLI de change inválido sai 2 conforme o contrato aprovado. O leitor estático requer imports de teste do Bun e diagnostica declarações parametrizadas não resolvidas.
