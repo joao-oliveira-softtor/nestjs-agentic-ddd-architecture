@@ -1,0 +1,61 @@
+{
+  "configuration": "cursor-codex-medium",
+  "dataset": "evals/skills/orders.yaml",
+  "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+  "id": "onde-criar-use-case",
+  "audience": "dev",
+  "question": "Em que caminho e com qual decorator crio o use-case refund_order?",
+  "expect": {
+    "type": "exact",
+    "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+  },
+  "answer": null,
+  "verdict": "not_run",
+  "reason": "cancelled",
+  "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d",
+  "execution": {
+    "transport": "cancelled",
+    "finalText": null,
+    "exitCode": 143,
+    "signal": "SIGTERM",
+    "sessionId": {
+      "status": "available",
+      "value": "05cc45c8-4e6c-46c6-aded-86a86664d29d",
+      "source": "cursor.init.session_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "Codex 5.3 Medium",
+      "source": "cursor.init.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 10454.132420000009,
+    "evidence": [
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json"
+    ],
+    "diagnostic": "cancelled"
+  }
+}

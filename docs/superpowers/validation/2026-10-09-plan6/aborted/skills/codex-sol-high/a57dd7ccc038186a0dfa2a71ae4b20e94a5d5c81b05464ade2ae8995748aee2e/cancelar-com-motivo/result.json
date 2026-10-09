@@ -1,0 +1,72 @@
+{
+  "configuration": "codex-sol-high",
+  "dataset": "evals/skills/orders.yaml",
+  "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+  "id": "cancelar-com-motivo",
+  "audience": "runtime",
+  "question": "O cliente pediu para cancelar o pedido 7f3c porque desistiu. Qual tool e quais argumentos?",
+  "expect": {
+    "type": "tool_call",
+    "name": "cancel_order",
+    "input": {
+      "order_id": "7f3c",
+      "reason": "desistiu"
+    }
+  },
+  "answer": {
+    "type": "exact",
+    "value": "Não consegui ler os arquivos de contexto porque a ferramenta de leitura falhou. Sem esses arquivos, não posso determinar a tool e os argumentos corretos para cancelar o pedido 7f3c."
+  },
+  "verdict": "incorrect",
+  "reason": null,
+  "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"type\":\"exact\",\"value\":\"Não consegui ler os arquivos de contexto porque a ferramenta de leitura falhou. Sem esses arquivos, não posso determinar a tool e os argumentos corretos para cancelar o pedido 7f3c.\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "01a11f00-5b9a-7353-a142-fa581c25ef0a",
+      "source": "codex.thread.started.thread_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "gpt-6.1-sol",
+      "source": "codex.rollout.turn_context.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "available",
+        "value": 28821,
+        "source": "codex.turn.completed.usage.input_tokens"
+      },
+      "cachedInputTokens": {
+        "status": "available",
+        "value": 26496,
+        "source": "codex.turn.completed.usage.cached_input_tokens"
+      },
+      "outputTokens": {
+        "status": "available",
+        "value": 187,
+        "source": "codex.turn.completed.usage.output_tokens"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 13279.980264999998,
+    "evidence": [
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json",
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/model-metadata.json"
+    ],
+    "diagnostic": null
+  }
+}

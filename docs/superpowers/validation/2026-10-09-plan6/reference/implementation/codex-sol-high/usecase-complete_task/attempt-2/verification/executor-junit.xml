@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="8" assertions="55" failures="0" skipped="0" time="0.079387003">
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="2" assertions="18" failures="0" skipped="0" time="0.075005983" hostname="softtords">
+    <testcase name="[covers: method:Task.complete] conclui tarefa pending e registra TaskCompleted preservando eventos anteriores" classname="" time="0.000235" file="app/test/method-Task-complete.test.ts" line="7" assertions="9" />
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui uma vez e rejeita repetição com TASK_ALREADY_COMPLETED sem novo evento" classname="" time="0.000096" file="app/test/method-Task-complete.test.ts" line="24" assertions="9" />
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="13" failures="0" skipped="0" time="0.00045263" hostname="softtords">
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou compostos somente de espaços" classname="" time="0.000071" file="app/test/entity-Task.test.ts" line="7" assertions="6" />
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pending com título normalizado e registra TaskCreated" classname="" time="0.000089" file="app/test/entity-Task.test.ts" line="24" assertions="7" />
+  </testsuite>
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="4" assertions="24" failures="0" skipped="0" time="0.002129783" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1 persistida, salva completed antes de publicar TaskCompleted e retorna o contrato" classname="" time="0.000384" file="app/test/usecase-complete_task.test.ts" line="10" assertions="10" />
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id ausente com TASK_NOT_FOUND sem salvar nem publicar" classname="" time="0.000102" file="app/test/usecase-complete_task.test.ts" line="52" assertions="4" />
+    <testcase name="[covers: usecase:complete_task] rejeita nova conclusão sem salvar ou publicar novamente" classname="" time="0.000155" file="app/test/usecase-complete_task.test.ts" line="83" assertions="7" />
+    <testcase name="[covers: usecase:complete_task] propaga falha de persistência sem publicar os eventos" classname="" time="0.000094" file="app/test/usecase-complete_task.test.ts" line="119" assertions="3" />
+  </testsuite>
+</testsuites>

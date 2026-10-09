@@ -1,0 +1,68 @@
+{
+  "configuration": "codex-sol-high",
+  "dataset": "evals/skills/orders.yaml",
+  "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+  "id": "onde-criar-use-case",
+  "audience": "dev",
+  "question": "Em que caminho e com qual decorator crio o use-case refund_order?",
+  "expect": {
+    "type": "exact",
+    "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+  },
+  "answer": {
+    "type": "exact",
+    "value": "Crie em examples/orders/application, com o decorator @AgentUseCase de @agentic-ddd/decorators, declarando uses."
+  },
+  "verdict": "incorrect",
+  "reason": null,
+  "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"type\":\"exact\",\"value\":\"Crie em examples/orders/application, com o decorator @AgentUseCase de @agentic-ddd/decorators, declarando uses.\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "01a11f00-f4cc-7bd2-bd0e-f734d55066ff",
+      "source": "codex.thread.started.thread_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "gpt-6.1-sol",
+      "source": "codex.rollout.turn_context.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "available",
+        "value": 31246,
+        "source": "codex.turn.completed.usage.input_tokens"
+      },
+      "cachedInputTokens": {
+        "status": "available",
+        "value": 27648,
+        "source": "codex.turn.completed.usage.cached_input_tokens"
+      },
+      "outputTokens": {
+        "status": "available",
+        "value": 366,
+        "source": "codex.turn.completed.usage.output_tokens"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 13755.501315000001,
+    "evidence": [
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json",
+      "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/model-metadata.json"
+    ],
+    "diagnostic": null
+  }
+}

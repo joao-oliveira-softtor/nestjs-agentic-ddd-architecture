@@ -1,0 +1,8 @@
+
+.eval-reference/behavior.test.ts:
+(pass) conclui, emite e rejeita repetição [0.29ms]
+
+ 1 pass
+ 0 fail
+ 5 expect() calls
+Ran 1 test across 1 file. [56.00ms]

@@ -1,0 +1,15 @@
+
+app/test/method-Task-complete.test.ts:
+(pass) Task.complete > [covers: criterion:0001/conclusao, method:Task.complete] conclui pending, registra TaskCompleted e rejeita repeticao [0.27ms]
+
+app/test/entity-Task.test.ts:
+(pass) Task > [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita titulo vazio ou so com espacos [0.07ms]
+(pass) Task > [covers: criterion:0001/criacao, method:Task.create] cria pending, normaliza titulo e registra TaskCreated [0.05ms]
+
+app/test/usecase-complete_task.test.ts:
+(pass) complete_task use-case > [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND [0.29ms]
+
+ 4 pass
+ 0 fail
+ 23 expect() calls
+Ran 4 tests across 3 files. [80.00ms]

@@ -1,0 +1,9 @@
+
+.eval-reference/behavior.test.ts:
+(pass) cria tarefa normalizada e registra evento [0.21ms]
+(pass) rejeita título vazio ou só espaços [0.08ms]
+
+ 2 pass
+ 0 fail
+ 5 expect() calls
+Ran 2 tests across 1 file. [57.00ms]
