@@ -1,0 +1,8 @@
+import type { TaskRepository } from '../domain/task.repository';
+import type { Task } from '../domain/task';
+
+export class InMemoryTaskRepository implements TaskRepository {
+  readonly #tasks = new Map<string, Task>();
+  async findById(id: string): Promise<Task | null> { return this.#tasks.get(id) ?? null; }
+  async save(task: Task): Promise<void> { this.#tasks.set(task.id, task); }
+}

@@ -1,0 +1,6 @@
+import { Operator } from '@agentic-ddd/decorators';
+import { CreateTask } from '../application/create-task';
+import { CompleteTask } from '../application/complete-task';
+
+@Operator({ name: 'task-operator', description: 'Cria e conclui tarefas conforme pedido do usuário.', instructions: 'Use as tools para criar e concluir tarefas. Identifique a tarefa pelo id e responda em português.', useCases: [CreateTask, CompleteTask] })
+export class TaskOperator {}

@@ -1,0 +1,17 @@
+{
+  "target": "codex",
+  "item": "entity:Task",
+  "version": "codex-cli 0.161.0",
+  "model": "gpt-6.1-sol (effort high)",
+  "session": "01a11da9-d0f0-7971-a4a8-8ff99c38cfd5",
+  "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c",
+  "verifyExit": 0,
+  "compileCheckExit": 0,
+  "contractPreserved": true,
+  "sourceCoordinatesPreserved": true,
+  "files": [
+    "app/domain/task.ts",
+    "app/test/task-create.test.ts"
+  ],
+  "transcriptSha256": "6f4bff28535a669ab486aba8b2c413349d6256f93bb27bf6f49e941a14b759d6"
+}

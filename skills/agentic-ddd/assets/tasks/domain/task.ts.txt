@@ -1,0 +1,47 @@
+import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';
+import { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';
+import { TaskCreated, TaskCompleted } from './task.events';
+
+@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })
+@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })
+export class Task extends AggregateRoot<string> {
+  #status: 'pending' | 'completed' = 'pending';
+  private constructor(id: string, readonly title: string) { super(id); }
+  get status(): 'pending' | 'completed' { return this.#status; }
+
+  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })
+  static create(id: string, title: string): Task {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+
+  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })
+  complete(): void {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+}

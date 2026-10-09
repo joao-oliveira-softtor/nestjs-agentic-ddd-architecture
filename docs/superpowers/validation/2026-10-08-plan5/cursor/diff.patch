@@ -1,0 +1,59 @@
+diff --git a/app/domain/task.ts b/app/domain/task.ts
+index 8c9b7cc..024925d 100644
+--- a/app/domain/task.ts
++++ b/app/domain/task.ts
+@@ -14,7 +14,7 @@ export class Task extends AggregateRoot<string> {
+-    return notImplemented();
+-
+-
+-
+-
+-
+-
++    const normalizedTitle = title.trim();
++    if (normalizedTitle.length === 0) {
++      throw new DomainError('TASK_TITLE_REQUIRED', 'Task title is required.');
++    }
++    const task = new Task(id, normalizedTitle);
++    task.record(new TaskCreated({ taskId: id, title: normalizedTitle }));
++    return task;
+diff --git a/app/test/task.create.test.ts b/app/test/task.create.test.ts
+new file mode 100644
+index 0000000..b4a6db9
+--- /dev/null
++++ b/app/test/task.create.test.ts
+@@ -0,0 +1,34 @@
++import { describe, expect, test } from 'bun:test';
++import { DomainError } from '@agentic-ddd/core';
++import { covers } from '@agentic-ddd/testing';
++import { Task } from '../domain/task';
++import { TaskCreated } from '../domain/task.events';
++
++describe('Task.create', () => {
++  test(covers(['invariant:Task/titulo-obrigatorio', 'criterion:0001/titulo-invalido'], 'rejeita titulo vazio ou apenas espacos com TASK_TITLE_REQUIRED'), () => {
++    expect(() => Task.create('t1', '')).toThrow(DomainError);
++    try {
++      Task.create('t1', '   ');
++      throw new Error('Expected DomainError to be thrown.');
++    } catch (error) {
++      expect(error).toBeInstanceOf(DomainError);
++      expect((error as DomainError).code).toBe('TASK_TITLE_REQUIRED');
++    }
++  });
++
++  test(covers(['method:Task.create', 'criterion:0001/criacao'], 'cria pending, normaliza extremidades e registra TaskCreated'), () => {
++    const task = Task.create('t1', '  Comprar leite  ');
++
++    expect(task.id).toBe('t1');
++    expect(task.title).toBe('Comprar leite');
++    expect(task.status).toBe('pending');
++
++    const events = task.pullEvents();
++    expect(events).toHaveLength(1);
++    expect(events[0]).toBeInstanceOf(TaskCreated);
++    expect((events[0] as TaskCreated).payload).toEqual({
++      taskId: 't1',
++      title: 'Comprar leite',
++    });
++  });
++});

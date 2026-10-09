@@ -169,6 +169,23 @@ Projetos ainda sem testes podem consultar `status`, `next` e `packet` para inici
 
 Todos os comandos aceitam `--config`. Consultas retornam 0 mesmo com trabalho pendente; uso inválido retorna 2, análise/verificação falha retorna 1. A cobertura do operator executa os use-cases via `FakeLlm` e a composição Nest, incluindo aprovação negada e concedida.
 
+## Skill e agentes de desenvolvimento
+
+A skill autoral [agentic-ddd](skills/agentic-ddd/SKILL.md) orienta autoria e coordenação por gerente/executor. Consulte também a skill gerada do módulo para suas regras e caminhos.
+
+```bash
+bun install --frozen-lockfile
+bun run skills:install                              # projeto, Cursor/Codex/Claude
+bun run skills:install --root /caminho/do/projeto --target codex
+bun run skills:install --scope user --target all     # global explícito
+bun run skills:install --check                      # verifica sem escrever
+bun run skills:example --root /tmp/agentic-tasks     # destino inexistente
+```
+
+O instalador cria links para a mesma fonte e agentes nativos `agentic-ddd-manager`/`agentic-ddd-executor`, com modelo herdado. Verifica conflitos antes de escrever, preserva instalações idênticas e não altera configurações/permissões globais. A instalação global depende da permanência do checkout. Veja [instalação](skills/agentic-ddd/references/installation.md) e [tutorial completo](skills/agentic-ddd/references/tutorial.md).
+
+O gerente prepara proposta/contratos e despacha um item por vez; o executor altera só corpo atribuído e testes, verificando com o hash original do packet. O gerente revisa o diff, repete a verificação e encerra com `verify NNNN`. O tutorial tasks começa sem testes e com corpos pendentes, usando aliases para este checkout e typecheck real. [Spec do Plano 5](docs/superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [validação com smokes reais](docs/superpowers/validation/2026-10-08-plan5.md).
+
 ## Estrutura
 
 | Caminho           | Conteúdo                                                                               |
@@ -187,7 +204,7 @@ Todos os comandos aceitam `--config`. Consultas retornam 0 mesmo com trabalho pe
 
 - **v0** (implementado, ver [`docs/superpowers/plans`](docs/superpowers/plans/2026-10-06-v0-00-index.md)): compilador de documentação → lock, changes e `verify` → estado do projeto e coordenação de agentes → runtime do operator e integração Nest.
 - **v0.1.0**: primeira release da base acima.
-- **v0.2.0 — proposta**: skill do framework e agentes gerente/executor, avaliações reais, adapter LLM e demonstração CLI.
+- **v0.2.0 — em desenvolvimento**: skill do framework e agentes gerente/executor implementados; runner de avaliações, adapter LLM e demonstração CLI acompanhados como próximos planos.
 - **Backlog**: `reactsTo`, contratos gerados, canal HTTP, propostas paralelas e distribuição npm. Veja [issues, dependências e critérios de aceite](docs/ROADMAP.md).
 
 Design: [`docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md`](docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md) · Decisões: [`docs/adr/ADR-0001.md`](docs/adr/ADR-0001.md)
