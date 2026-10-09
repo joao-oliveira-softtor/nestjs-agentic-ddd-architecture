@@ -26,8 +26,10 @@ export function createScriptedAdapter(
     async probe() {
       return {
         id: 'scripted',
-        version: '1',
-        executableSha256: sha256('agentic-ddd-scripted-v1'),
+        version: `scripted-v1 / Bun ${Bun.version}`,
+        executableSha256: sha256(
+          new Uint8Array(await Bun.file(process.execPath).arrayBuffer()),
+        ),
       };
     },
     async run(request, options): Promise<AdapterResult> {
@@ -57,6 +59,7 @@ export function createScriptedAdapter(
         action.argv ?? [process.execPath, '-e', code],
         {
           network: false,
+          framework: request.mode === 'implementation',
           extraReadOnly: await protectedWorkspacePaths(
             workspace,
             TASK_ITEMS.filter((i) => i.id === request.id).flatMap((i) => [
@@ -78,7 +81,10 @@ export function createScriptedAdapter(
       );
       return {
         ...common,
-        ...result,
+        exitCode: result.exitCode,
+        signal: result.signal,
+        durationMs: result.durationMs,
+        evidence: result.evidence,
         transport:
           result.transport === 'finished' && result.exitCode !== 0
             ? 'infra_error'

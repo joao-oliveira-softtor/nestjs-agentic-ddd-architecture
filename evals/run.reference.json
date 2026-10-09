@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "sourceRef": "HEAD",
+  "skillDatasets": [
+    {
+      "path": "evals/skills/orders.yaml",
+      "contextRoots": {
+        "dev": ["AGENTS.md", ".agents/skills/orders-dev"],
+        "runtime": [".agentic/runtime/order-operator"]
+      }
+    }
+  ],
+  "benchmark": "tasks",
+  "configurations": [
+    {
+      "id": "codex-sol-high",
+      "adapter": "codex-cli",
+      "model": "gpt-6.1-sol",
+      "parameters": {
+        "reasoningEffort": "high"
+      },
+      "authentication": "local-login"
+    },
+    {
+      "id": "cursor-codex-medium",
+      "adapter": "cursor-cli",
+      "model": "gpt-5.3-codex",
+      "parameters": {},
+      "authentication": "local-login"
+    }
+  ],
+  "budget": {
+    "maxInvocations": 30,
+    "skillTimeoutMs": 120000,
+    "implementationTimeoutMs": 600000,
+    "totalTimeoutMs": 5400000,
+    "maxCorrectionsPerItem": 1,
+    "repetitions": 1,
+    "concurrency": 1
+  }
+}

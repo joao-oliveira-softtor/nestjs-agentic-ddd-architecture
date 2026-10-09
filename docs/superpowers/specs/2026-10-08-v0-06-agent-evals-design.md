@@ -256,3 +256,7 @@ Publicar uma comparação real e seus artefatos revisados em `docs/superpowers/v
 Dependências: Plano 5 concluído; Bun/dependências do checkout; Linux/WSL com bubblewrap para execução isolada; CLI e credenciais externas para referência. Planos 7–8 não são dependências.
 
 Na preparação desta spec passaram 12 testes direcionados (`test/evals.test.ts` e `test/architecture.test.ts`) e compile --check. Isso valida a base consultada, não é resultado do runner futuro. Nenhuma chamada de inferência foi feita nesta sessão.
+
+## Refinamento de execução aprovado — 2026-10-09
+
+O usuário aprovou autenticação pelos logins locais em homes isolados, pois as variáveis de API estavam ausentes. Cada configuração aceita `authentication: "api-key" | "local-login"`; ausência conserva `api-key`, sem fallback. A referência explicita `local-login`. Copiar somente os campos de autenticação de `~/.codex/auth.json` ou `~/.config/cursor/auth.json` para uma nova sessão privada (diretórios 0700, arquivo 0600), sem configurações/hooks/MCP/plugins. Remover a cópia após colher metadados, sem alterar o arquivo original nem sincronizar refresh de volta. Registrar o modo no manifesto e sanear os valores das credenciais também nos patches e relatórios antes dos hashes. Essa alteração não muda o orçamento operacional de 30 sessões/90 minutos nem autoriza estimativas de custo.

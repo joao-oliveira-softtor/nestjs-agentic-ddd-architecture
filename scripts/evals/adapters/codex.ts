@@ -50,7 +50,6 @@ export function codexArgv(
 }
 export function parseCodexTranscript(process: ProcessResult): AdapterResult {
   const result = processResult(process);
-  if (result.transport !== 'finished') return result;
   try {
     let terminal = false;
     for (const event of events(process.stdout)) {
@@ -83,10 +82,11 @@ export function parseCodexTranscript(process: ProcessResult): AdapterResult {
     if (!terminal || result.finalText === null)
       throw Error('missing terminal or final assistant');
   } catch (error) {
-    result.transport = 'infra_error';
+    if (result.transport === 'finished') result.transport = 'infra_error';
     result.finalText = null;
-    result.diagnostic = `codex_transport: ${String(error)}`;
+    result.diagnostic ??= `codex_transport: ${String(error)}`;
   }
+  if (result.transport !== 'finished') result.finalText = null;
   return result;
 }
 async function collectModel(

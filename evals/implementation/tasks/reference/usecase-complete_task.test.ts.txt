@@ -1,14 +1,19 @@
-import { expect, test } from 'bun:test';
+import { expect, spyOn, test } from 'bun:test';
 import { createTestContext } from '@agentic-ddd/testing';
 import { CompleteTask } from '__WORKSPACE__/app/application/complete-task';
 import { Task } from '__WORKSPACE__/app/domain/task';
 import { InMemoryTaskRepository } from '__WORKSPACE__/app/infrastructure/in-memory-task.repository';
 test('conclui, persiste, publica e rejeita id ausente', async () => {
   const repo = new InMemoryTaskRepository(); const task = Task.create('oracle-17', 'Revisar'); task.pullEvents(); await repo.save(task);
+  const save = spyOn(repo, 'save');
   const ctx = createTestContext(); const uc = new CompleteTask(repo);
   expect(await uc.execute({task_id: 'oracle-17'}, ctx)).toEqual({task_id: 'oracle-17', status: 'completed'});
   expect((await repo.findById('oracle-17'))?.status).toBe('completed');
+  expect(save).toHaveBeenCalledTimes(1);
+  expect(save.mock.calls[0]?.[0].id).toBe('oracle-17');
+  expect(save.mock.calls[0]?.[0].status).toBe('completed');
   expect(ctx.published.map(e => [e.name, e.payload])).toEqual([['TaskCompleted', {taskId: 'oracle-17'}]]);
   await expect(uc.execute({task_id: 'missing'}, ctx)).rejects.toMatchObject({code: 'TASK_NOT_FOUND'});
   expect(ctx.published).toHaveLength(1);
+  expect(save).toHaveBeenCalledTimes(1);
 });

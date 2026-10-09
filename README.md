@@ -186,6 +186,32 @@ O instalador cria links para a mesma fonte e agentes nativos `agentic-ddd-manage
 
 O gerente prepara proposta/contratos e despacha um item por vez; o executor altera só corpo atribuído e testes, verificando com o hash original do packet. O gerente revisa o diff, repete a verificação e encerra com `verify NNNN`. O tutorial tasks começa sem testes e com corpos pendentes, usando aliases para este checkout e typecheck real. [Spec do Plano 5](docs/superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [validação com smokes reais](docs/superpowers/validation/2026-10-08-plan5.md).
 
+## Avaliações de agentes
+
+O runner em `scripts/evals` avalia as cinco perguntas das skills orders e os cinco itens do tutorial tasks. Compara `exact`/`tool_call` deterministicamente, congela o hash original dos packets e exige auditoria das edições, verify, cobertura do executor e testes de comportamento privados. O tutorial é criado em cópias privadas; o checkout de origem deve estar limpo.
+
+Requisitos: Linux/WSL, Bun, Git, `setsid`, `tar` e bubblewrap com namespaces disponíveis. Fonte, dependências e contexto ficam somente leitura no sandbox; o executor escreve no corpo/teste atribuídos. O verificador não recebe credenciais nem rede. O diretório de saída precisa ser externo à origem e inexistente, inclusive quando há links simbólicos nos ancestrais.
+
+```bash
+# Roteiro sintético offline, sem solução implementada ou inferência:
+bun run evals --config evals/run.offline.json --out /tmp/agentic-evals-offline
+
+# Referência real opt-in, com logins locais dos CLIs já disponíveis:
+bun run evals --config evals/run.reference.json --out /tmp/agentic-evals-reference --real
+```
+
+O roteiro offline produz respostas sintéticas e bloqueios de implementação; seu resultado não mede um modelo real. Os testes offline usam processos falsos e soluções exclusivas dos testes para exercitar sucesso e falhas. O CI executa esses testes sem CLIs reais ou credenciais de provedor.
+
+A referência fixa Codex `gpt-6.1-sol/high` e Cursor `gpt-5.3-codex`, com 30 sessões, perguntas de até 120 segundos, implementação de até 600 segundos, prazo global de 90 minutos e uma correção por item. Esses limites são operacionais: invocações internas do provedor não contam como novas sessões do runner; não há teto monetário estimado. Streams somados são limitados a 8 MiB por processo e o cancelamento dá 2 segundos antes do encerramento forçado.
+
+Cada sessão tem home/configuração privados. Os adapters usam [eventos JSONL do Codex](https://learn.chatgpt.com/docs/non-interactive-mode) e [mensagens completas do Cursor](https://cursor.com/docs/cli/reference/output-format), sem extrair respostas de prosa. Modelo solicitado e observado são registrados separadamente; revisão, tokens e custos sem evidência ficam explicitamente indisponíveis.
+
+A autenticação é explícita por configuração: `authentication: "local-login"` copia apenas `~/.codex/auth.json` ou `~/.config/cursor/auth.json` para o home temporário, com permissões privadas e remoção ao terminar; não copia configurações nem altera o login original. `authentication: "api-key"` (também o padrão quando omitido) exige `CODEX_API_KEY` ou `CURSOR_API_KEY` externo. Não há fallback entre modos. A referência usa os logins locais, conforme aprovado nesta sessão; credenciais nunca entram no manifesto.
+
+A saída contém `report.json` (schema 1, resultados e métricas), `report.md` derivado desse JSON e `artifact-manifest.json` com SHA-256 dos bytes preservados. O manifest não inclui o próprio hash. Acurácia, cobertura, conclusão inicial/final e concordância informam denominadores; κ usa correção binária e fica indisponível quando degenerado. Hashes ainda não coletados por cancelamento/preflight são `null`, com motivo no registro; hashes de tentativas despachadas nunca são substituídos. Logs são saneados antes de persistir e homes/dependências não são publicados.
+
+Exits: `0` para avaliação concluída, inclusive erros do agente; `1` para infraestrutura, orçamento ou SIGTERM; `2` para argumentos/manifesto/opt-in inválidos; `130` para SIGINT. Falha antes de preparar a origem preserva um diagnóstico `run-failure.json` quando a saída já foi reservada, com métricas indisponíveis. Especificação e plano: [Plano 6](docs/superpowers/specs/2026-10-08-v0-06-agent-evals-design.md).
+
 ## Estrutura
 
 | Caminho           | Conteúdo                                                                               |

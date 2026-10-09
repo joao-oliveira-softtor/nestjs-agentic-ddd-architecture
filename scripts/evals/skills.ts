@@ -71,7 +71,7 @@ export async function buildSkillContext(
     await visit(root);
   }
   const files = [...selected]
-    .sort(([a], [b]) => a.localeCompare(b, 'en'))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([path, content]) => ({ path, content }));
   if (!files.length) throw Error('Empty context');
   const root = await mkdtemp(join(source.root, 'context-'));
@@ -170,6 +170,7 @@ export async function evaluateSkills(
           execution: null,
         };
         results.push(result);
+        options.onCase?.(result);
         if (
           options.signal.aborted ||
           options.control?.stopReason() ||
@@ -187,6 +188,7 @@ export async function evaluateSkills(
           options.outDir,
           'skills',
           configuration.id,
+          sha256(datasetEntry.path),
           entry.id,
         );
         const prompt = `Leia os arquivos de contexto desta sessão: ${context.files.map((f) => f.path).join(', ')}.\nResponda somente um objeto JSON, sem cercas nem prosa. Formatos: {"type":"exact","value":"texto"} ou {"type":"tool_call","name":"nome","input":{}}. Preserve a resposta literal solicitada. Não execute tools de negócio. Use somente a sessão principal, sem delegação ou subagentes.\nPergunta: ${entry.question}`;

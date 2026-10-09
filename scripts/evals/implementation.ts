@@ -26,7 +26,7 @@ import type {
 } from './contracts';
 import { emptyUsage, unavailable } from './contracts';
 import { createAttemptWorkspace, disposeWorkspace } from './isolation';
-import { TASK_ITEMS, auditSubmission, treeHash } from './audit';
+import { TASK_ITEMS, auditSubmission, treeHash, readTree } from './audit';
 import { cliArgv, requireFinished, workspaceCommand } from './commands';
 import { parseImplementationReply } from './judge';
 import { verifySubmission } from './reference';
@@ -133,6 +133,15 @@ export async function prepareTasksBaseline(
     );
     if (!proposal.includes('status: applied'))
       throw Error('Tutorial proposal not archived');
+    await mkdir(join(options.outDir, 'preparation'), { recursive: true });
+    await writeFile(
+      join(options.outDir, 'preparation/baseline-tree.json'),
+      JSON.stringify(
+        { hash: await treeHash(root), entries: [...(await readTree(root))] },
+        null,
+        2,
+      ) + '\n',
+    );
     return root;
   } finally {
     await disposeWorkspace(workspace);
@@ -209,6 +218,7 @@ export async function evaluateImplementation(
       finalVerification: null,
     };
     results.push(result);
+    options.onBenchmark?.(result);
     const done = new Set<string>();
     const terminal = new Set<string>();
     let queryIndex = 0;
@@ -278,7 +288,7 @@ export async function evaluateImplementation(
       const handoff: ItemHandoff = {
         item: eligible,
         packet,
-        specHash: item.specHash,
+        specHash: item.specHash!,
         configPath: join(baseline, 'agentic.config.ts'),
         testFile: assignment.test,
         criteria: assignment.criteria.map((id) => {
@@ -318,7 +328,7 @@ export async function evaluateImplementation(
         await mkdir(evidenceDir, { recursive: true });
         const previous = item.attempts.at(-1);
         const prompt =
-          `Packet:\n${packet}\nEnd packet\nRoot atual: ${workspace.root}; configuração atual: ${workspace.configPath}. Use esses paths no lugar de paths temporários do packet; conserve o specHash original ${item.specHash}.\nEdite somente ${assignment.file ? `${assignment.file} ${assignment.className}.${assignment.method} (somente interior do corpo, mesma quantidade de linhas)` : 'nenhum corpo'} e o novo teste ${assignment.test}. Preserve imports, contratos, decorators, outros corpos, testes existentes, configurações, propostas e gerados.\nCritérios adicionais arquivados: ${JSON.stringify(handoff.criteria.map((c) => ({ ...c, id: `criterion:0001/${c.id}` })))}. Cubra-os com covers do executor.\nLeia .agents/skills/agentic-ddd/SKILL.md e referências de executor pertinentes. Use só a sessão principal, sem delegação ou subagentes. Resposta final: somente {"status":"done|blocked|failed","summary":"texto"}, com um dos três valores de status, sem prosa ou cercas.` +
+          `Packet:\n${packet}\nEnd packet\nRoot atual: ${workspace.root}; configuração atual: ${workspace.configPath}. Use esses paths no lugar de paths temporários do packet; conserve o specHash original ${item.specHash}.\nEdite somente ${assignment.file ? `${assignment.file} ${assignment.className}.${assignment.method} (somente interior do corpo, mesma quantidade de linhas)` : 'nenhum corpo'} e o novo teste ${assignment.test}. Preserve imports, contratos, decorators, outros corpos, testes existentes, configurações, propostas e gerados.\nCritérios adicionais arquivados: ${JSON.stringify(handoff.criteria.map((c) => ({ ...c, id: `criterion:0001/${c.id}` })))}. Cubra-os com covers do executor.\nLeia .agents/skills/agentic-ddd/SKILL.md e referências de executor pertinentes. Use só a sessão principal, sem delegação ou subagentes. Resposta final: somente JSON, por exemplo {"status":"done","summary":"texto"}; status deve ser done, blocked ou failed, sem prosa ou cercas.` +
           (previous
             ? `\nCorrection: aplique uma nova submissão a partir deste baseline; nenhuma edição anterior foi reaplicada. Patch anterior: ${previous.audit?.patch ?? 'unavailable'}. Findings: ${JSON.stringify(previous.audit?.findings.length ? previous.audit.findings : (previous.verification?.findings ?? [previous.reason]))}`
             : '');
@@ -339,6 +349,7 @@ export async function evaluateImplementation(
           reason: null,
         };
         item.attempts.push(attempt);
+        const agentStarted = performance.now();
         try {
           attempt.execution = await adapter.run(
             {
@@ -389,8 +400,16 @@ export async function evaluateImplementation(
                 },
               );
               attempt.accepted = attempt.verification.ok;
+              if (
+                attempt.verification.commands.some(
+                  (c) => c.result.transport === 'infra_error',
+                )
+              ) {
+                infra = true;
+                attempt.reason = 'verifier_infrastructure_failed';
+              }
               if (!attempt.accepted)
-                attempt.reason = 'independent_verification_failed';
+                attempt.reason ??= 'independent_verification_failed';
             } else if (!attempt.reason)
               attempt.reason = `declared_${attempt.reply?.status ?? 'malformed'}`;
             if (attempt.accepted) {
@@ -410,7 +429,10 @@ export async function evaluateImplementation(
             }
           }
         } catch (error) {
-          attempt.execution = syntheticFailure(String(error));
+          if (attempt.execution.diagnostic === 'not_dispatched') {
+            attempt.execution = syntheticFailure(String(error));
+            attempt.execution.durationMs = performance.now() - agentStarted;
+          }
           attempt.reason = String(error);
           infra = true;
         } finally {

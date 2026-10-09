@@ -269,6 +269,7 @@ export async function reserveOutput(
 }
 export interface SandboxOptions {
   network: boolean;
+  framework?: boolean;
   homeDir?: string;
   extraReadOnly?: readonly string[];
   extraWritable?: readonly string[];
@@ -340,7 +341,8 @@ export async function sandboxCommand(
     if (await lstat(path).catch(() => null)) args.push('--ro-bind', path, path);
   const bun = await realpath(process.execPath);
   args.push('--ro-bind', bun, '/tools/bun');
-  args.push('--ro-bind', workspace.frameworkRoot, workspace.frameworkRoot);
+  if (options.framework !== false)
+    args.push('--ro-bind', workspace.frameworkRoot, workspace.frameworkRoot);
   args.push(
     workspace.mode === 'skills' ? '--ro-bind' : '--bind',
     workspace.root,

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { EvalMetrics } from './report';
 import type {
   ItemVerifyReport,
   TestRun,
@@ -85,6 +86,7 @@ export const manifestSchema = z
         z.strictObject({
           id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
           adapter: z.enum(['scripted', 'codex-cli', 'cursor-cli']),
+          authentication: z.enum(['api-key', 'local-login']).optional(),
           model: z
             .string()
             .min(1)
@@ -274,14 +276,14 @@ export interface ItemAttempt {
 }
 export interface ItemResult {
   item: string;
-  specHash: string;
+  specHash: string | null;
   state: 'accepted' | 'failed' | 'blocked' | 'infra_error' | 'not_run';
   reason: string | null;
   attempts: ItemAttempt[];
 }
 export interface BenchmarkResult {
   configuration: string;
-  baselineHash: string;
+  baselineHash: string | null;
   items: ItemResult[];
   finalVerification: {
     report: VerifyReport | null;
@@ -300,6 +302,8 @@ export interface RunOptions {
   real: boolean;
   signal: AbortSignal;
   control?: RunControl;
+  onCase?: (result: CaseResult) => void;
+  onBenchmark?: (result: BenchmarkResult) => void;
 }
 export interface Artifact {
   path: string;
@@ -330,4 +334,6 @@ export interface EvalReport {
   cases: CaseResult[];
   benchmarks: BenchmarkResult[];
   artifacts: Artifact[];
+  metrics?: EvalMetrics;
+  redaction?: { applied: boolean; artifacts: string[]; marker: '[REDACTED]' };
 }

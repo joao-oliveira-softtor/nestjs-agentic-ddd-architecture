@@ -27,6 +27,19 @@ const read = (name: string) =>
   Bun.file(
     join(import.meta.dir, 'fixtures/evals/transcripts', name + '.ndjson'),
   ).text();
+test('failed processes retain native measurements without accepting the final answer', async () => {
+  const codex = parseCodexTranscript(result(await read('codex-success'), 1));
+  expect(codex.transport).toBe('infra_error');
+  expect(codex.finalText).toBeNull();
+  expect(codex.usage.inputTokens.status).toBe('available');
+  const cursor = parseCursorTranscript({
+    ...result(await read('cursor-success')),
+    transport: 'timeout',
+  });
+  expect(cursor.transport).toBe('timeout');
+  expect(cursor.finalText).toBeNull();
+  expect(cursor.observedModel.status).toBe('available');
+});
 test('Codex final assistant independent from progress, native tokens preserved, model/cost unavailable', async () => {
   const parsed = parseCodexTranscript(result(await read('codex-success')));
   expect(parsed.transport).toBe('finished');
@@ -159,70 +172,122 @@ test('complete native adapters execute only offline stub CLIs in private homes a
     'skills',
   );
   try {
-    for (const kind of ['codex', 'cursor'] as const) {
-      const executable = join(root, kind);
-      const transcript = await read(kind + '-success');
-      const variable = kind === 'codex' ? 'CODEX_API_KEY' : 'CURSOR_API_KEY';
-      const secret = 'offline-secret-never-publish';
-      const script =
-        `#!/bin/sh\nif [ "$1" = '--version' ]; then echo 'offline-stub-1'; exit 0; fi\nprintf '{"type":"offline_env","home":"%s","key":"%s"}\\n' "$HOME" "$${variable}"\ncat <<'SYNTHETIC_TRANSCRIPT'\n${transcript}SYNTHETIC_TRANSCRIPT\n` +
-        (kind === 'codex'
-          ? `mkdir -p "$CODEX_HOME/sessions"\ncat > "$CODEX_HOME/sessions/offline.jsonl" <<'SYNTHETIC_MODEL'\n{"type":"session_meta","payload":{"id":"offline-codex-session"}}\n{"type":"turn_context","payload":{"model":"actually-observed"}}\nSYNTHETIC_MODEL\n`
-          : '');
-      await writeFile(executable, script);
-      await chmod(executable, 0o700);
-      const options = {
-        executable,
-        credentials: { [variable]: secret },
-        probeEvidenceDir: join(root, kind + '-probe'),
-      };
-      const configuration: EvalConfiguration = {
-        id: kind,
-        adapter: kind === 'codex' ? 'codex-cli' : 'cursor-cli',
-        model: 'explicit-requested-model',
-        parameters: {},
-      };
-      const adapter =
-        kind === 'codex'
-          ? createCodexAdapter(configuration, options)
-          : createCursorAdapter(configuration, options);
-      expect((await adapter.probe()).version).toBe('offline-stub-1');
-      const evidenceDir = join(root, kind + '-run');
-      const observed = await adapter.run(
-        {
-          id: 'case',
-          mode: 'skills',
-          cwd: workspace.root,
-          prompt: 'question',
-          timeoutMs: 2000,
-          evidenceDir,
-        },
-        { signal: new AbortController().signal },
-      );
-      expect(observed.transport).toBe('finished');
-      expect(observed.finalText).toBe('{"type":"exact","value":"sim"}');
-      expect(observed.observedModel).toEqual({
-        status: 'available',
-        value:
-          kind === 'codex' ? 'actually-observed' : 'Observed model display',
-        source:
+    for (const authentication of ['api-key', 'local-login'] as const)
+      for (const kind of ['codex', 'cursor'] as const) {
+        const executable = join(root, kind);
+        const transcript = await read(kind + '-success');
+        const variable = kind === 'codex' ? 'CODEX_API_KEY' : 'CURSOR_API_KEY';
+        const secret = 'offline-secret-never-publish';
+        const loginFile = join(root, `${kind}-auth.json`);
+        const loginBytes = JSON.stringify(
           kind === 'codex'
-            ? 'codex.rollout.turn_context.model'
-            : 'cursor.init.model',
-      });
-      const stdout = await readFile(join(evidenceDir, 'stdout.log'), 'utf8');
-      expect(stdout).toContain('"home":"/home/eval"');
-      expect(stdout).toContain('[REDACTED]');
-      expect(stdout).not.toContain(secret);
-      expect(
-        await readFile(join(evidenceDir, 'process.json'), 'utf8'),
-      ).not.toContain(secret);
-      expect(
-        (await readdir(join(workspace.root, '..'))).some((name) =>
-          name.startsWith('session-home-'),
-        ),
-      ).toBe(false);
-    }
+            ? {
+                auth_mode: 'chatgpt',
+                tokens: { access_token: secret, refresh_token: secret },
+                last_refresh: '2026-10-09T00:00:00Z',
+              }
+            : { accessToken: secret, refreshToken: secret },
+        );
+        await writeFile(loginFile, loginBytes, { mode: 0o600 });
+        const authPath =
+          kind === 'codex'
+            ? '$CODEX_HOME/auth.json'
+            : '$HOME/.config/cursor/auth.json';
+        const script =
+          `#!/bin/sh\nif [ "$1" = '--version' ]; then echo 'offline-stub-1'; exit 0; fi\nif [ -e '${join(fixture.source.frameworkRoot, 'src/core/index.ts')}' ]; then exit 23; fi\nprintf '{"type":"offline_env","home":"%s","key":"%s"}\\n' "$HOME" "$${variable}"\ncat <<'SYNTHETIC_TRANSCRIPT'\n${transcript}SYNTHETIC_TRANSCRIPT\n` +
+          (authentication === 'local-login'
+            ? `test -f "${authPath}" || exit 24\ncat "${authPath}" >&2\n`
+            : '') +
+          (kind === 'codex'
+            ? `mkdir -p "$CODEX_HOME/sessions"\ncat > "$CODEX_HOME/sessions/offline.jsonl" <<'SYNTHETIC_MODEL'\n{"type":"session_meta","payload":{"id":"offline-codex-session"}}\n{"type":"turn_context","payload":{"model":"actually-observed"}}\nSYNTHETIC_MODEL\n`
+            : '');
+        await writeFile(executable, script);
+        await chmod(executable, 0o700);
+        const options = {
+          executable,
+          credentials: { [variable]: secret },
+          localLoginFile: loginFile,
+          probeEvidenceDir: join(root, kind + '-probe'),
+        };
+        const configuration: EvalConfiguration = {
+          id: kind,
+          adapter: kind === 'codex' ? 'codex-cli' : 'cursor-cli',
+          model: 'explicit-requested-model',
+          parameters: {},
+          authentication,
+        };
+        const adapter =
+          kind === 'codex'
+            ? createCodexAdapter(configuration, options)
+            : createCursorAdapter(configuration, options);
+        expect((await adapter.probe()).version).toBe('offline-stub-1');
+        const evidenceDir = join(root, kind + '-run');
+        const observed = await adapter.run(
+          {
+            id: 'case',
+            mode: 'skills',
+            cwd: workspace.root,
+            prompt: 'question',
+            timeoutMs: 2000,
+            evidenceDir,
+          },
+          { signal: new AbortController().signal },
+        );
+        expect(observed.transport).toBe('finished');
+        if (authentication === 'api-key') {
+          const missing = (
+            kind === 'codex' ? createCodexAdapter : createCursorAdapter
+          )(configuration, { ...options, credentials: { [variable]: '' } });
+          const rejected = await missing.run(
+            {
+              id: 'missing',
+              mode: 'skills',
+              cwd: workspace.root,
+              prompt: 'must not dispatch',
+              timeoutMs: 2000,
+              evidenceDir: join(root, 'must-not-exist'),
+            },
+            { signal: new AbortController().signal },
+          );
+          expect(rejected.transport).toBe('infra_error');
+          expect(rejected.evidence).toEqual([]);
+          expect(
+            await Bun.file(join(root, 'must-not-exist/process.json')).exists(),
+          ).toBe(false);
+        }
+        expect(observed.finalText).toBe('{"type":"exact","value":"sim"}');
+        expect(observed.observedModel).toEqual({
+          status: 'available',
+          value:
+            kind === 'codex' ? 'actually-observed' : 'Observed model display',
+          source:
+            kind === 'codex'
+              ? 'codex.rollout.turn_context.model'
+              : 'cursor.init.model',
+        });
+        const stdout = await readFile(join(evidenceDir, 'stdout.log'), 'utf8');
+        expect(stdout).toContain('"home":"/home/eval"');
+        if (authentication === 'api-key')
+          expect(stdout).toContain('[REDACTED]');
+        expect(stdout).not.toContain(secret);
+        expect(
+          await readFile(join(evidenceDir, 'process.json'), 'utf8'),
+        ).not.toContain(secret);
+        if (authentication === 'local-login') {
+          const stderr = await readFile(
+            join(evidenceDir, 'stderr.log'),
+            'utf8',
+          );
+          expect(stderr).toContain('[REDACTED]');
+          expect(stderr).not.toContain(secret);
+          expect(await readFile(loginFile, 'utf8')).toBe(loginBytes);
+        }
+        expect(
+          (await readdir(join(workspace.root, '..'))).some((name) =>
+            name.startsWith('session-home-'),
+          ),
+        ).toBe(false);
+      }
   } finally {
     await disposeWorkspace(workspace);
     await fixture.cleanup();

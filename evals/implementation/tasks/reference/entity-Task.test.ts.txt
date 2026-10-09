@@ -8,6 +8,9 @@ test('cria tarefa normalizada e registra evento', () => {
   expect(task.pullEvents()).toEqual([]);
 });
 test('rejeita título vazio ou só espaços', () => {
-  for (const title of ['', '   ']) expect(() => Task.create('oracle-17', title)).toThrow('Título obrigatório.');
-  try { Task.create('oracle-17', ''); } catch (e) { expect((e as {code: string}).code).toBe('TASK_TITLE_REQUIRED'); }
+  for (const title of ['', '   ']) {
+    let error: unknown;
+    try { Task.create('oracle-17', title); } catch (caught) { error = caught; }
+    expect(error).toMatchObject({ code: 'TASK_TITLE_REQUIRED' });
+  }
 });

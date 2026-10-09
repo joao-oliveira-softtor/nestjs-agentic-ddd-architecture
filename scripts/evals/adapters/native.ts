@@ -7,7 +7,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import type {
   AdapterInfo,
   AdapterRequest,
@@ -32,16 +32,13 @@ export function object(value: unknown): Record<string, unknown> | null {
     ? (value as Record<string, unknown>)
     : null;
 }
-export function events(stdout: string): Record<string, unknown>[] {
-  return stdout
-    .split('\n')
-    .filter((line) => line.trim())
-    .map((line) => {
-      const event = object(JSON.parse(line));
-      if (!event || typeof event.type !== 'string')
-        throw Error('invalid native event');
-      return event;
-    });
+export function* events(stdout: string): Generator<Record<string, unknown>> {
+  for (const line of stdout.split('\n').filter((line) => line.trim())) {
+    const event = object(JSON.parse(line));
+    if (!event || typeof event.type !== 'string')
+      throw Error('invalid native event');
+    yield event;
+  }
 }
 export function nativeUsage(value: unknown, source: string): Usage {
   const usage = object(value);
@@ -82,6 +79,8 @@ export interface NativeAdapterOptions {
   credentials?: Readonly<Record<string, string>>;
   probeEvidenceDir?: string;
   probeSignal?: AbortSignal;
+  localLoginFile?: string;
+  onSecrets?: (secrets: readonly string[]) => void;
 }
 interface NativeDefinition {
   command: 'codex' | 'cursor-agent';
@@ -147,10 +146,11 @@ export function createNativeAdapter(
       }
     },
     async run(request, runOptions) {
+      const local = configuration.authentication === 'local-login';
       const key =
         options.credentials?.[definition.credential] ??
         process.env[definition.credential];
-      if (!key)
+      if (!local && !key)
         return {
           ...processResult({
             transport: 'infra_error',
@@ -170,6 +170,56 @@ export function createNativeAdapter(
       const home = await mkdtemp(join(dirname(request.cwd), 'session-home-'));
       await mkdir(join(home, '.codex'));
       try {
+        const secrets: string[] = [];
+        if (local) {
+          const relative =
+            definition.command === 'codex'
+              ? '.codex/auth.json'
+              : '.config/cursor/auth.json';
+          let original: unknown;
+          try {
+            original = JSON.parse(
+              await readFile(
+                options.localLoginFile ?? join(homedir(), relative),
+                'utf8',
+              ),
+            );
+          } catch {
+            throw Error('Local login file is unavailable or malformed');
+          }
+          const auth = object(original);
+          if (!auth) throw Error('Invalid local login file');
+          const names =
+            definition.command === 'codex'
+              ? ['auth_mode', 'OPENAI_API_KEY', 'tokens', 'last_refresh']
+              : ['accessToken', 'refreshToken'];
+          const selected = Object.fromEntries(
+            names
+              .filter((name) => name in auth)
+              .map((name) => [name, auth[name]]),
+          );
+          function collect(value: unknown): void {
+            if (typeof value === 'string' && value) secrets.push(value);
+            else if (value && typeof value === 'object')
+              Object.values(value).forEach(collect);
+          }
+          if (definition.command === 'codex') {
+            collect(selected.tokens);
+            collect(selected.OPENAI_API_KEY);
+          } else {
+            collect(selected.accessToken);
+            collect(selected.refreshToken);
+          }
+          if (!secrets.length)
+            throw Error('Local login file contains no credentials');
+          const target = join(home, relative);
+          await mkdir(dirname(target), { recursive: true, mode: 0o700 });
+          await writeFile(target, JSON.stringify(selected), {
+            mode: 0o600,
+            flag: 'wx',
+          });
+        } else secrets.push(key!);
+        options.onSecrets?.(secrets);
         const assignment = TASK_ITEMS.find((i) => i.id === request.id);
         const protectedPaths = await protectedWorkspacePaths(
           workspace,
@@ -182,6 +232,7 @@ export function createNativeAdapter(
           definition.argv(path, configuration, request),
           {
             network: true,
+            framework: request.mode === 'implementation',
             homeDir: home,
             extraReadOnly: [
               definition.bundle ? dirname(path) : path,
@@ -198,16 +249,16 @@ export function createNativeAdapter(
               CODEX_HOME: '/home/eval/.codex',
               PATH: '/tools:/usr/bin:/bin',
               NO_COLOR: '1',
-              [definition.credential]: key,
+              ...(!local ? { [definition.credential]: key! } : {}),
             },
             timeoutMs: request.timeoutMs,
             evidenceDir: request.evidenceDir,
-            secrets: [key],
+            secrets,
           },
           runOptions,
         );
         const result = definition.parse(execution);
-        await definition.collect?.(home, result, request.evidenceDir, [key]);
+        await definition.collect?.(home, result, request.evidenceDir, secrets);
         await writeFile(
           join(request.evidenceDir, 'adapter.json'),
           JSON.stringify(result, null, 2) + '\n',

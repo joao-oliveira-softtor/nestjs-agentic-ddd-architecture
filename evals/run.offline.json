@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "sourceRef": "HEAD",
+  "skillDatasets": [
+    {
+      "path": "evals/skills/orders.yaml",
+      "contextRoots": {
+        "dev": ["AGENTS.md", ".agents/skills/orders-dev"],
+        "runtime": [".agentic/runtime/order-operator"]
+      }
+    }
+  ],
+  "benchmark": "tasks",
+  "configurations": [
+    {
+      "id": "offline",
+      "adapter": "scripted",
+      "model": "scripted-fixture",
+      "parameters": {}
+    }
+  ],
+  "budget": {
+    "maxInvocations": 15,
+    "skillTimeoutMs": 2000,
+    "implementationTimeoutMs": 10000,
+    "totalTimeoutMs": 120000,
+    "maxCorrectionsPerItem": 1,
+    "repetitions": 1,
+    "concurrency": 1
+  }
+}

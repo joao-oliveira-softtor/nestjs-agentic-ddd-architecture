@@ -83,7 +83,8 @@ test('complete scripted benchmark independently accepts all five frozen packets 
   );
   expect(benchmark.finalVerification?.report?.status).toBe('done');
   for (const item of benchmark.items) {
-    expect(item.attempts[0]?.handoff.specHash).toBe(item.specHash);
+    expect(item.specHash).not.toBeNull();
+    expect(item.attempts[0]?.handoff.specHash).toBe(item.specHash!);
     expect(
       item.attempts[0]?.verification?.referenceTests?.cases.length,
     ).toBeGreaterThan(0);
@@ -285,3 +286,47 @@ test('infrastructure gets no correction and preserves unstarted items', async ()
   );
   expect(result.finalVerification).toBeNull();
 }, 30000);
+
+test('private oracle detects omitted save even when shared in-memory references make executor tests pass', async () => {
+  let omit = true;
+  const adapter = createScriptedAdapter(
+    Array.from({ length: 6 }, () => ({
+      finalText: '{"status":"done","summary":"offline persistence fixture"}',
+      before: async (
+        req: import('../scripts/evals/contracts').AdapterRequest,
+      ) => {
+        await completeItem(req.cwd, req.id);
+        if (req.id === 'usecase:complete_task' && omit) {
+          omit = false;
+          const path = join(req.cwd, 'app/application/complete-task.ts');
+          await writeFile(
+            path,
+            (await readFile(path, 'utf8')).replace(
+              'await this.tasks.save(task);',
+              '/* omitted persistence */',
+            ),
+          );
+        }
+      },
+    })),
+  );
+  const benchmark = (
+    await evaluateImplementation(
+      evalManifest,
+      fixture.source,
+      new Map([['scripted', adapter]]),
+      {
+        outDir: join(out, 'persistence-oracle'),
+        real: false,
+        signal: new AbortController().signal,
+      },
+    )
+  )[0]!;
+  const item = benchmark.items.find((i) => i.item === 'usecase:complete_task')!;
+  expect(item.attempts).toHaveLength(2);
+  expect(item.attempts[0]?.verification?.itemReport?.status).toBe('done');
+  expect(item.attempts[0]?.verification?.executorTests?.exitCode).toBe(0);
+  expect(item.attempts[0]?.accepted).toBe(false);
+  expect(item.attempts[1]?.accepted).toBe(true);
+  expect(benchmark.finalVerification?.report?.status).toBe('done');
+}, 120000);

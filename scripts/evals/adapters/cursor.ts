@@ -42,7 +42,6 @@ export function cursorArgv(
 }
 export function parseCursorTranscript(process: ProcessResult): AdapterResult {
   const result = processResult(process);
-  if (result.transport !== 'finished') return result;
   try {
     let terminal = false;
     for (const event of events(process.stdout)) {
@@ -56,12 +55,7 @@ export function parseCursorTranscript(process: ProcessResult): AdapterResult {
           );
       }
       if (event.type === 'assistant') {
-        if (
-          terminal ||
-          event.timestamp_ms !== undefined ||
-          event.model_call_id !== undefined
-        )
-          throw Error('partial or post-terminal assistant');
+        if (terminal) throw Error('post-terminal assistant');
         const message = object(event.message);
         if (message?.role !== 'assistant' || !Array.isArray(message.content))
           throw Error('invalid complete assistant');
@@ -93,10 +87,11 @@ export function parseCursorTranscript(process: ProcessResult): AdapterResult {
     if (!terminal || result.finalText === null)
       throw Error('missing terminal or complete assistant');
   } catch (error) {
-    result.transport = 'infra_error';
+    if (result.transport === 'finished') result.transport = 'infra_error';
     result.finalText = null;
-    result.diagnostic = `cursor_transport: ${String(error)}`;
+    result.diagnostic ??= `cursor_transport: ${String(error)}`;
   }
+  if (result.transport !== 'finished') result.finalText = null;
   return result;
 }
 export function createCursorAdapter(
