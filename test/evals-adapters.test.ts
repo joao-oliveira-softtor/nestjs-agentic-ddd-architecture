@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import {
   parseCodexTranscript,
   codexArgv,
+  collectCodexModel,
 } from '../scripts/evals/adapters/codex';
 import {
   parseCursorTranscript,
@@ -27,6 +28,41 @@ const read = (name: string) =>
   Bun.file(
     join(import.meta.dir, 'fixtures/evals/transcripts', name + '.ndjson'),
   ).text();
+
+test('Codex metadata refuses oversized sparse files and host links without accepting their model claims', async () => {
+  const { mkdtemp, mkdir, writeFile, open, symlink, rm } =
+    await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const home = await mkdtemp(join(tmpdir(), 'eval-codex-metadata-'));
+  const outside = await mkdtemp(join(tmpdir(), 'eval-codex-host-'));
+  try {
+    const sessions = join(home, '.codex/sessions');
+    await mkdir(sessions, { recursive: true });
+    const bytes =
+      '{"type":"session_meta","payload":{"id":"offline-codex-session"}}\n{"type":"turn_context","payload":{"model":"host-model-must-not-be-read"}}\n';
+    const file = join(sessions, 'unsafe.jsonl');
+    await writeFile(file, bytes);
+    const sparse = await open(file, 'r+');
+    await sparse.truncate(2 * 1024 * 1024);
+    await sparse.close();
+    let observed = parseCodexTranscript(result(await read('codex-success')));
+    await collectCodexModel(home, observed, home, []);
+    expect(observed.observedModel.status).toBe('unavailable');
+    await rm(file);
+    const host = join(outside, 'host.jsonl');
+    await writeFile(host, bytes);
+    await symlink(host, file);
+    observed = parseCodexTranscript(result(await read('codex-success')));
+    await collectCodexModel(home, observed, home, []);
+    expect(observed.observedModel.status).toBe('unavailable');
+    expect(await Bun.file(join(home, 'model-metadata.json')).exists()).toBe(
+      false,
+    );
+  } finally {
+    await rm(home, { recursive: true, force: true });
+    await rm(outside, { recursive: true, force: true });
+  }
+});
 test('failed processes retain native measurements without accepting the final answer', async () => {
   const codex = parseCodexTranscript(result(await read('codex-success'), 1));
   expect(codex.transport).toBe('infra_error');

@@ -3,20 +3,24 @@ import { resolve } from 'node:path';
 import { manifestSchema } from './contracts';
 import { runEvaluation } from './run';
 const usage =
-  'Uso: bun run evals --config <manifest.json> --out <diretório externo inexistente> [--real]';
+  'Uso: bun run evals --config <manifest.json> --out <diretório externo inexistente> [--real --trusted-source]';
 export async function main(
   argv: readonly string[],
   dependencies: { run?: typeof runEvaluation } = {},
 ): Promise<number> {
   let config: string | undefined,
     out: string | undefined,
-    real = false;
+    real = false,
+    trustedSource = false;
   try {
     for (let i = 0; i < argv.length; i++) {
       const arg = argv[i];
       if (arg === '--real') {
         if (real) throw Error('Duplicate --real');
         real = true;
+      } else if (arg === '--trusted-source') {
+        if (trustedSource) throw Error('Duplicate --trusted-source');
+        trustedSource = true;
       } else if (arg === '--config' || arg === '--out') {
         const value = argv[++i];
         if (!value || value.startsWith('--')) throw Error('Missing flag value');
@@ -38,6 +42,13 @@ export async function main(
     );
     if (!real && manifest.configurations.some((c) => c.adapter !== 'scripted'))
       throw Error('Adapters reais exigem --real');
+    if (
+      !trustedSource &&
+      manifest.configurations.some((c) => c.adapter !== 'scripted')
+    )
+      throw Error(
+        'Adapters reais exigem --trusted-source: ferramentas nativas podem acessar credenciais e a rede do host; use somente fonte/datasets confiáveis',
+      );
     const controller = new AbortController();
     let interrupted = false;
     const sigint = () => {
@@ -51,6 +62,7 @@ export async function main(
       const report = await (dependencies.run ?? runEvaluation)(manifest, {
         outDir: resolve(out),
         real,
+        trustedSource,
         signal: controller.signal,
       });
       console.log(

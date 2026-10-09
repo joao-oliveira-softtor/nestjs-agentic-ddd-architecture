@@ -302,6 +302,7 @@ export interface RunControl {
 export interface RunOptions {
   outDir: string;
   real: boolean;
+  trustedSource?: boolean;
   signal: AbortSignal;
   control?: RunControl;
   onCase?: (result: CaseResult) => void;
@@ -332,6 +333,11 @@ export interface EvalReport {
     originBefore: string;
     originAfter: Measured<string>;
     adapters: Record<string, AdapterInfo>;
+    nativeToolAccess?: {
+      sourceTrustAcknowledged: true;
+      credentials: 'accessible';
+      network: 'host';
+    };
   };
   cases: CaseResult[];
   benchmarks: BenchmarkResult[];

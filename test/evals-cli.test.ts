@@ -87,6 +87,50 @@ test('CLI rejects invalid args, missing budget and real profiles without opt-in 
     expect(
       await main(['--config', config, '--out', join(root, 'report')]),
     ).toBe(2);
+    let dispatched = 0;
+    expect(
+      await main(
+        ['--config', config, '--out', join(root, 'report'), '--real'],
+        {
+          run: async () => {
+            dispatched++;
+            throw Error('must not dispatch');
+          },
+        },
+      ),
+    ).toBe(2);
+    expect(dispatched).toBe(0);
+    const { runEvaluation } = await import('../scripts/evals/run');
+    const rejected = await runEvaluation(
+      JSON.parse(await Bun.file(config).text()),
+      {
+        real: true,
+        outDir: join(root, 'report'),
+        signal: new AbortController().signal,
+      },
+    ).catch((error: unknown) => error);
+    expect(rejected).toBeInstanceOf(Error);
+    expect(String(rejected)).toContain('trusted');
+    expect(
+      await main(
+        [
+          '--config',
+          config,
+          '--out',
+          join(root, 'report'),
+          '--real',
+          '--trusted-source',
+        ],
+        {
+          run: async (_manifest, options) => {
+            expect(options.trustedSource).toBe(true);
+            dispatched++;
+            throw Error('offline dispatch seam');
+          },
+        },
+      ),
+    ).toBe(1);
+    expect(dispatched).toBe(1);
     expect(await Bun.file(join(root, 'report/report.json')).exists()).toBe(
       false,
     );

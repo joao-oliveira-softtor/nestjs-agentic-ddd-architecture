@@ -101,11 +101,16 @@ export async function runEvaluation(
   options: EvaluationOptions,
 ): Promise<EvalReport> {
   const manifest = manifestSchema.parse(input);
+  const native = manifest.configurations.some((c) => c.adapter !== 'scripted');
   if (
     !options.real &&
     manifest.configurations.some((c) => c.adapter !== 'scripted')
   )
     throw Error('Real adapters require --real');
+  if (native && !options.trustedSource)
+    throw Error(
+      'Real adapters require explicit trusted source acknowledgement; native tools can access credentials and host network',
+    );
   const startedAt = new Date().toISOString(),
     started = performance.now();
   const sourceRoot = resolve(options.sourceRoot ?? process.cwd());
@@ -144,6 +149,15 @@ export async function runEvaluation(
         originBefore: source.fingerprint,
         originAfter: unavailable('not_checked'),
         adapters: {},
+        ...(native
+          ? {
+              nativeToolAccess: {
+                sourceTrustAcknowledged: true as const,
+                credentials: 'accessible' as const,
+                network: 'host' as const,
+              },
+            }
+          : {}),
       },
       cases: [],
       benchmarks: manifest.configurations.map((c) => ({

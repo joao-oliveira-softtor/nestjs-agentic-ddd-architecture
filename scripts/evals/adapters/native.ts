@@ -1,13 +1,11 @@
 import {
   mkdir,
-  open,
   mkdtemp,
   readFile,
   realpath,
   rm,
   writeFile,
 } from 'node:fs/promises';
-import { constants } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { homedir, tmpdir } from 'node:os';
 import type {
@@ -25,9 +23,9 @@ import {
   protectedWorkspacePaths,
   sandboxCommand,
   sha256,
-  within,
 } from '../isolation';
 import { runProcess } from '../process';
+import { readPrivateFile } from '../private-files';
 import { TASK_ITEMS } from '../audit';
 
 export function object(value: unknown): Record<string, unknown> | null {
@@ -287,25 +285,17 @@ export function createNativeAdapter(
             secrets,
             collectSecrets: async () => {
               try {
-                const parent = await realpath(
-                  dirname(join(home, relativeAuth)),
+                const auth = object(
+                  JSON.parse(
+                    await readPrivateFile(
+                      home,
+                      join(home, relativeAuth),
+                      1024 * 1024,
+                    ),
+                  ),
                 );
-                if (!within(home, parent))
-                  throw Error('Unsafe private auth parent');
-                const file = await open(
-                  join(parent, 'auth.json'),
-                  constants.O_RDONLY | constants.O_NOFOLLOW,
-                );
-                try {
-                  const stat = await file.stat();
-                  if (!stat.isFile() || stat.size > 1024 * 1024)
-                    throw Error('Unsafe private auth file');
-                  const auth = object(JSON.parse(await file.readFile('utf8')));
-                  if (!auth) throw Error('Invalid private auth');
-                  collectAuth(auth);
-                } finally {
-                  await file.close();
-                }
+                if (!auth) throw Error('Invalid private auth');
+                collectAuth(auth);
               } catch (error) {
                 if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
                   throw error;

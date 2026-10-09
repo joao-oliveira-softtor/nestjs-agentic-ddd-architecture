@@ -12,6 +12,8 @@ import type {
 import { createAttemptWorkspace, disposeWorkspace } from './isolation';
 import { workspaceCommand, cliArgv } from './commands';
 import { TASK_ITEMS, readTree } from './audit';
+import { readPrivateFile } from './private-files';
+import { OUTPUT_LIMIT_BYTES } from './process';
 
 function tests(command: CommandEvidence, xml: string): TestRun {
   const cases = parseJUnit(xml);
@@ -115,7 +117,11 @@ export async function verifySubmission(
       '--reporter=junit',
       `--reporter-outfile=${junit}`,
     ]);
-    const xml = await readFile(junit, 'utf8').catch(() => '');
+    const xml = await readPrivateFile(
+      workspace.root,
+      junit,
+      OUTPUT_LIMIT_BYTES,
+    ).catch(() => '');
     await writeFile(join(evidenceDir, 'executor-junit.xml'), xml);
     evidence.executorTests = tests(executor, xml);
     if (
@@ -164,7 +170,11 @@ export async function verifySubmission(
       ],
       [referenceDir],
     );
-    const oracleXml = await readFile(oracleJunit, 'utf8').catch(() => '');
+    const oracleXml = await readPrivateFile(
+      workspace.root,
+      oracleJunit,
+      OUTPUT_LIMIT_BYTES,
+    ).catch(() => '');
     await writeFile(join(evidenceDir, 'reference-junit.xml'), oracleXml);
     evidence.referenceTests = tests(oracle, oracleXml);
     if (

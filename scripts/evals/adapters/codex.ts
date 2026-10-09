@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { lstat, opendir, realpath, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type {
   AdapterRequest,
@@ -7,7 +7,9 @@ import type {
   EvalConfiguration,
   ProcessResult,
 } from '../contracts';
-import { available } from '../contracts';
+import { available, unavailable } from '../contracts';
+import { readPrivateFile } from '../private-files';
+import { within } from '../isolation';
 import {
   createNativeAdapter,
   events,
@@ -92,7 +94,7 @@ export function parseCodexTranscript(process: ProcessResult): AdapterResult {
   if (result.transport !== 'finished') result.finalText = null;
   return result;
 }
-async function collectModel(
+export async function collectCodexModel(
   home: string,
   result: AdapterResult,
   evidenceDir: string,
@@ -100,61 +102,99 @@ async function collectModel(
 ): Promise<void> {
   if (result.sessionId.status !== 'available') return;
   const sessionId = result.sessionId.value;
-  const root = join(home, '.codex');
-  for await (const path of new Bun.Glob('sessions/**/*.jsonl').scan({
-    cwd: root,
-    onlyFiles: true,
-  })) {
-    const records = (await readFile(join(root, path), 'utf8'))
-      .split('\n')
-      .filter(Boolean)
-      .flatMap((line) => {
-        try {
-          return [object(JSON.parse(line))];
-        } catch {
-          return [];
+  const limit = 1024 * 1024;
+  let total = 0;
+  async function* files() {
+    const boundary = await realpath(home);
+    const stack = [join(home, '.codex/sessions')];
+    let entries = 0;
+    while (stack.length) {
+      const path = stack.pop()!;
+      const stat = await lstat(path).catch((error: NodeJS.ErrnoException) => {
+        if (error.code === 'ENOENT') return null;
+        throw error;
+      });
+      if (!stat) continue;
+      if (!stat.isDirectory() || !within(boundary, await realpath(path)))
+        throw Error('Unsafe session directory');
+      const directory = await opendir(path);
+      try {
+        let entry;
+        while ((entry = await directory.read())) {
+          if (++entries > 64) throw Error('Session entry limit');
+          if (entry.isDirectory()) stack.push(join(path, entry.name));
+          else if (entry.name.endsWith('.jsonl')) yield join(path, entry.name);
         }
-      })
-      .filter((record) => record !== null);
-    if (
-      !records.some(
-        (record) =>
-          record.type === 'session_meta' &&
-          object(record.payload)?.id === sessionId,
-      )
-    )
-      continue;
-    const model = records
-      .filter((record) => record.type === 'turn_context')
-      .map((record) => object(record.payload)?.model)
-      .filter(
-        (value): value is string =>
-          typeof value === 'string' && value.length > 0,
-      )
-      .at(-1);
-    if (model) {
-      result.observedModel = available(
-        secrets.reduce(
-          (value, secret) => value.replaceAll(secret, '[REDACTED]'),
-          model,
-        ),
-        'codex.rollout.turn_context.model',
-      );
-      const evidence = join(evidenceDir, 'model-metadata.json');
-      await writeFile(
-        evidence,
-        JSON.stringify(
-          {
-            sessionId: result.sessionId,
-            observedModel: result.observedModel,
-            modelRevision: result.modelRevision,
-          },
-          null,
-          2,
-        ) + '\n',
-      );
-      result.evidence.push(evidence);
+      } finally {
+        await directory.close();
+      }
     }
+  }
+  try {
+    for await (const path of files()) {
+      const remaining = 8 * limit - total;
+      if (remaining <= 0) throw Error('Session aggregate limit');
+      const text = await readPrivateFile(
+        home,
+        path,
+        Math.min(limit, remaining),
+      );
+      total += Buffer.byteLength(text);
+      if (total > 8 * limit) throw Error('Session aggregate limit');
+      const records = text
+        .split('\n')
+        .filter(Boolean)
+        .flatMap((line) => {
+          try {
+            return [object(JSON.parse(line))];
+          } catch {
+            return [];
+          }
+        })
+        .filter((record) => record !== null);
+      if (
+        !records.some(
+          (record) =>
+            record.type === 'session_meta' &&
+            object(record.payload)?.id === sessionId,
+        )
+      )
+        continue;
+      const model = records
+        .filter((record) => record.type === 'turn_context')
+        .map((record) => object(record.payload)?.model)
+        .filter(
+          (value): value is string =>
+            typeof value === 'string' && value.length > 0,
+        )
+        .at(-1);
+      if (model) {
+        result.observedModel = available(
+          secrets.reduce(
+            (value, secret) => value.replaceAll(secret, '[REDACTED]'),
+            model,
+          ),
+          'codex.rollout.turn_context.model',
+        );
+        const evidence = join(evidenceDir, 'model-metadata.json');
+        await writeFile(
+          evidence,
+          JSON.stringify(
+            {
+              sessionId: result.sessionId,
+              observedModel: result.observedModel,
+              modelRevision: result.modelRevision,
+            },
+            null,
+            2,
+          ) + '\n',
+        );
+        result.evidence.push(evidence);
+        return;
+      }
+    }
+  } catch {
+    result.observedModel = unavailable('unsafe_or_oversized_session_metadata');
   }
 }
 export function createCodexAdapter(
@@ -170,7 +210,7 @@ export function createCodexAdapter(
       companions: ['codex-code-mode-host'],
       argv: codexArgv,
       parse: parseCodexTranscript,
-      collect: collectModel,
+      collect: collectCodexModel,
     },
     options,
   );

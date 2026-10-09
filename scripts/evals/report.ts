@@ -266,6 +266,11 @@ export function renderMarkdown(report: EvalReport): string {
     `Modalidade: **${report.mode}**. Estado: **${report.status}**.`,
     '',
     `Fonte: ${report.provenance.sourceCommit}; runner: ${report.provenance.runnerCommit}. Bun ${report.provenance.bun}, ${escape(report.provenance.platform)}.`,
+    ...(report.provenance.nativeToolAccess
+      ? [
+          'Fonte confiável reconhecida explicitamente. Ferramentas dos CLIs nativos têm acesso às credenciais e à rede do host; o verificador permanece sem credenciais/rede.',
+        ]
+      : []),
     `Dataset/manifesto identificados por SHA-256. Manifesto: ${report.manifestSha256}.`,
     `Início: ${report.startedAt}; fim: ${report.finishedAt}; duração: ${report.durationMs.toFixed(0)} ms.`,
     `Sessões: ${report.invocations}/${report.manifest.budget.maxInvocations}. Teto global: ${report.manifest.budget.totalTimeoutMs} ms.`,

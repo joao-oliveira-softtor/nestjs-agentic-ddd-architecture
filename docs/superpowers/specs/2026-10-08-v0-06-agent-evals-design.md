@@ -24,7 +24,7 @@ Adapters iniciais: **scripted, Codex CLI e Cursor CLI**. Claude continua adiado.
 Entrada separada da CLI do framework:
 
 ```bash
-bun run evals --config evals/run.reference.json --out /tmp/agentic-evals-reference --real
+bun run evals --config evals/run.reference.json --out /tmp/agentic-evals-reference --real --trusted-source
 ```
 
 Sem `--real`, apenas adapters scripted podem executar. Um manifesto real sem opt-in falha antes de iniciar qualquer CLI real. O runner não instala CLIs, efetua login nem altera configuração global.
@@ -260,3 +260,11 @@ Na preparação desta spec passaram 12 testes direcionados (`test/evals.test.ts`
 ## Refinamento de execução aprovado — 2026-10-09
 
 O usuário aprovou autenticação pelos logins locais em homes isolados, pois as variáveis de API estavam ausentes. Cada configuração aceita `authentication: "api-key" | "local-login"`; ausência conserva `api-key`, sem fallback. A referência explicita `local-login`. Copiar somente os campos de autenticação de `~/.codex/auth.json` ou `~/.config/cursor/auth.json` para uma nova sessão privada (diretórios 0700, arquivo 0600), sem configurações/hooks/MCP/plugins. Remover a cópia após colher metadados, sem alterar o arquivo original nem sincronizar refresh de volta. Registrar o modo no manifesto e sanear os valores das credenciais também nos patches e relatórios antes dos hashes. Essa alteração não muda o orçamento operacional de 30 sessões/90 minutos nem autoriza estimativas de custo.
+
+## Fronteira dos CLIs nativos esclarecida pela revisão — 2026-10-09
+
+Os adapters iniciais servem somente fonte/skills/packets/datasets confiáveis. O CLI exige reconhecimento explícito `--trusted-source` junto de `--real`; a API do runner exige `trustedSource: true`, antes de preparar arquivos ou iniciar autenticação/processos. Ferramentas nativas compartilham credenciais e rede do host com o CLI. Bubblewrap protege o checkout e oculta homes globais, sem separar autenticação das ferramentas nem impedir exfiltração via rede diante de prompt injection. O reconhecimento não detecta conteúdo malicioso. Um broker com ferramentas sem rede/credenciais requer redesenhar os adapters; Planos 7–8 não entram nesta entrega.
+
+Novos relatórios reais registram essa fronteira em `provenance.nativeToolAccess`, com sourceTrustAcknowledged=true, credentials=accessible e network=host, também descrita no Markdown. O campo é opcional para compatibilidade com evidências históricas; ausência em relatórios antigos não certifica reconhecimento ou isolamento de credenciais. Verificação independente permanece sem rede/credenciais.
+
+JUnit pós-processo é lido somente por descritor O_NOFOLLOW/O_NONBLOCK, após validar arquivo regular, ancestrais privados e limite de 8 MiB; a leitura também tem limite de bytes, sem confiar apenas em stat. Metadados opcionais de sessão Codex têm limite de 1 MiB por arquivo, 64 entradas e 8 MiB agregados, sem seguir links/dirs externos. Rejeição de JUnit impede certificação; metadados inseguros/excessivos ficam explicitamente indisponíveis. A referência original continua associada ao runner observado, sem alteração retroativa ou novo run pago.

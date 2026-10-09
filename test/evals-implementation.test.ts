@@ -287,6 +287,53 @@ test('infrastructure gets no correction and preserves unstarted items', async ()
   expect(result.finalVerification).toBeNull();
 }, 30000);
 
+test('submitted tests cannot disclose host files through either JUnit output symlink', async () => {
+  const { createAttemptWorkspace, disposeWorkspace } =
+    await import('../scripts/evals/isolation');
+  const { verifySubmission } = await import('../scripts/evals/reference');
+  const workspace = await createAttemptWorkspace(
+    fixture.source,
+    baseline,
+    'implementation',
+  );
+  const host = join(out, 'host-only.txt');
+  const marker = 'offline-host-bytes-must-never-be-published';
+  await writeFile(host, marker);
+  try {
+    await completeItem(workspace.root, IDS[0]!);
+    await writeFile(
+      join(workspace.root, 'app/test/entity-Task.test.ts'),
+      `import {symlinkSync,unlinkSync} from 'node:fs'; for (const name of ['.executor-junit.xml','.reference-junit.xml']) {try {unlinkSync(name)} catch {} symlinkSync(${JSON.stringify(host)},name)} process.exit(0);\n`,
+    );
+    const status = JSON.parse(
+      await readFile(join(out, 'preparation/status/stdout.log'), 'utf8'),
+    ) as { items: { id: string; specHash: string }[] };
+    const evidence = join(out, 'unsafe-junit');
+    const verified = await verifySubmission(
+      fixture.source,
+      workspace,
+      {
+        item: IDS[0]!,
+        packet: 'frozen',
+        specHash: status.items.find((i) => i.id === IDS[0])!.specHash,
+        configPath: workspace.configPath,
+        testFile: 'app/test/entity-Task.test.ts',
+        criteria: [],
+      },
+      { signal: new AbortController().signal, outDir: evidence },
+    );
+    expect(verified.ok).toBe(false);
+    for (const name of ['executor-junit.xml', 'reference-junit.xml'])
+      expect(await readFile(join(evidence, name), 'utf8')).not.toContain(
+        marker,
+      );
+    expect(verified.executorTests?.collectionError).toBeDefined();
+    expect(verified.referenceTests?.collectionError).toBeDefined();
+  } finally {
+    await disposeWorkspace(workspace);
+  }
+}, 30000);
+
 test('private oracle detects omitted save even when shared in-memory references make executor tests pass', async () => {
   let omit = true;
   const adapter = createScriptedAdapter(

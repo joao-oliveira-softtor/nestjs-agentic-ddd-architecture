@@ -248,6 +248,13 @@ export const reportSchema = z.strictObject({
     bun: z.string(),
     originBefore: hash,
     originAfter: measured(hash),
+    nativeToolAccess: z
+      .strictObject({
+        sourceTrustAcknowledged: z.literal(true),
+        credentials: z.literal('accessible'),
+        network: z.literal('host'),
+      })
+      .optional(),
     adapters: z.record(
       z.string(),
       z.strictObject({
