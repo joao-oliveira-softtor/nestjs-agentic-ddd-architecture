@@ -1,11 +1,13 @@
 import {
   mkdir,
+  open,
   mkdtemp,
   readFile,
   realpath,
   rm,
   writeFile,
 } from 'node:fs/promises';
+import { constants } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { homedir, tmpdir } from 'node:os';
 import type {
@@ -23,6 +25,7 @@ import {
   protectedWorkspacePaths,
   sandboxCommand,
   sha256,
+  within,
 } from '../isolation';
 import { runProcess } from '../process';
 import { TASK_ITEMS } from '../audit';
@@ -193,18 +196,32 @@ export function createNativeAdapter(
       const workspace = getWorkspace(request.cwd);
       const home = await mkdtemp(join(dirname(request.cwd), 'session-home-'));
       await mkdir(join(home, '.codex'));
+      const relativeAuth =
+        definition.command === 'codex'
+          ? '.codex/auth.json'
+          : '.config/cursor/auth.json';
+      const secrets: string[] = [];
+      function collect(value: unknown): void {
+        if (typeof value === 'string' && value) secrets.push(value);
+        else if (value && typeof value === 'object')
+          Object.values(value).forEach(collect);
+      }
+      function collectAuth(auth: Record<string, unknown>): void {
+        if (definition.command === 'codex') {
+          collect(auth.tokens);
+          collect(auth.OPENAI_API_KEY);
+        } else {
+          collect(auth.accessToken);
+          collect(auth.refreshToken);
+        }
+      }
       try {
-        const secrets: string[] = [];
         if (local) {
-          const relative =
-            definition.command === 'codex'
-              ? '.codex/auth.json'
-              : '.config/cursor/auth.json';
           let original: unknown;
           try {
             original = JSON.parse(
               await readFile(
-                options.localLoginFile ?? join(homedir(), relative),
+                options.localLoginFile ?? join(homedir(), relativeAuth),
                 'utf8',
               ),
             );
@@ -222,21 +239,10 @@ export function createNativeAdapter(
               .filter((name) => name in auth)
               .map((name) => [name, auth[name]]),
           );
-          function collect(value: unknown): void {
-            if (typeof value === 'string' && value) secrets.push(value);
-            else if (value && typeof value === 'object')
-              Object.values(value).forEach(collect);
-          }
-          if (definition.command === 'codex') {
-            collect(selected.tokens);
-            collect(selected.OPENAI_API_KEY);
-          } else {
-            collect(selected.accessToken);
-            collect(selected.refreshToken);
-          }
+          collectAuth(selected);
           if (!secrets.length)
             throw Error('Local login file contains no credentials');
-          const target = join(home, relative);
+          const target = join(home, relativeAuth);
           await mkdir(dirname(target), { recursive: true, mode: 0o700 });
           await writeFile(target, JSON.stringify(selected), {
             mode: 0o600,
@@ -279,6 +285,34 @@ export function createNativeAdapter(
             timeoutMs: request.timeoutMs,
             evidenceDir: request.evidenceDir,
             secrets,
+            collectSecrets: async () => {
+              try {
+                const parent = await realpath(
+                  dirname(join(home, relativeAuth)),
+                );
+                if (!within(home, parent))
+                  throw Error('Unsafe private auth parent');
+                const file = await open(
+                  join(parent, 'auth.json'),
+                  constants.O_RDONLY | constants.O_NOFOLLOW,
+                );
+                try {
+                  const stat = await file.stat();
+                  if (!stat.isFile() || stat.size > 1024 * 1024)
+                    throw Error('Unsafe private auth file');
+                  const auth = object(JSON.parse(await file.readFile('utf8')));
+                  if (!auth) throw Error('Invalid private auth');
+                  collectAuth(auth);
+                } finally {
+                  await file.close();
+                }
+              } catch (error) {
+                if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
+                  throw error;
+              }
+              options.onSecrets?.(secrets);
+              return secrets;
+            },
           },
           runOptions,
         );

@@ -87,7 +87,7 @@ const itemReport = z.strictObject({
   status: z.enum(['done', 'failed']),
   gates: z.array(gate),
 });
-const changeReport = z.strictObject({
+export const changeReportSchema = z.strictObject({
   change: z.string(),
   title: z.string(),
   status: z.enum(['done', 'needs-human', 'failed']),
@@ -159,7 +159,7 @@ const benchmark = z.strictObject({
   baselineHash: hash.nullable(),
   items: z.array(item).length(5),
   finalVerification: z
-    .strictObject({ report: changeReport.nullable(), command })
+    .strictObject({ report: changeReportSchema.nullable(), command })
     .nullable(),
 });
 const cases = z.strictObject({

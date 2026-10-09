@@ -14,6 +14,7 @@ import type {
   Proposal,
 } from '@agentic-ddd/compiler';
 import { parseProposal } from '@agentic-ddd/compiler';
+import { parseFinalReport } from './final-verification';
 import type {
   AdapterResult,
   BenchmarkResult,
@@ -328,7 +329,7 @@ export async function evaluateImplementation(
         await mkdir(evidenceDir, { recursive: true });
         const previous = item.attempts.at(-1);
         const prompt =
-          `Packet:\n${packet}\nEnd packet\nRoot atual: ${workspace.root}; configuração atual: ${workspace.configPath}. Use esses paths no lugar de paths temporários do packet; conserve o specHash original ${item.specHash}.\nEdite somente ${assignment.file ? `${assignment.file} ${assignment.className}.${assignment.method} (somente interior do corpo, mesma quantidade de linhas)` : 'nenhum corpo'} e o novo teste ${assignment.test}. Preserve imports, contratos, decorators, outros corpos, testes existentes, configurações, propostas e gerados.\nCritérios adicionais arquivados: ${JSON.stringify(handoff.criteria.map((c) => ({ ...c, id: `criterion:0001/${c.id}` })))}. Cubra-os com covers do executor.\nLeia .agents/skills/agentic-ddd/SKILL.md e referências de executor pertinentes. Use só a sessão principal, sem delegação ou subagentes. Resposta final: somente JSON, por exemplo {"status":"done","summary":"texto"}; status deve ser done, blocked ou failed, sem prosa ou cercas.` +
+          `Packet:\n${packet}\nEnd packet\nRoot atual: ${workspace.root}; configuração atual: ${workspace.configPath}. Use esses paths no lugar de paths temporários do packet; conserve o specHash original ${item.specHash}.\nEdite somente ${assignment.file ? `${assignment.file} ${assignment.className}.${assignment.method} (somente interior do corpo, mesma quantidade de linhas)` : 'nenhum corpo'} e o novo teste ${assignment.test}. Preserve imports, contratos, decorators, outros corpos, testes existentes, configurações, propostas e gerados.\nCritérios adicionais arquivados: ${JSON.stringify(handoff.criteria.map((c) => ({ ...c, id: `criterion:0001/${c.id}` })))}. Cubra-os com covers do executor.\nLeia .agents/skills/agentic-ddd/SKILL.md e referências de executor pertinentes. Use só a sessão principal, sem delegação ou subagentes. Neste benchmark, este protocolo de resposta final substitui o handoff normal da skill/referência de executor. Resposta final: objeto JSON com exatamente duas propriedades, status e summary; sem propriedades adicionais. Exemplo {"status":"done","summary":"texto"}; status deve ser done, blocked ou failed, sem prosa ou cercas.` +
           (previous
             ? `\nCorrection: aplique uma nova submissão a partir deste baseline; nenhuma edição anterior foi reaplicada. Patch anterior: ${previous.audit?.patch ?? 'unavailable'}. Findings: ${JSON.stringify(previous.audit?.findings.length ? previous.audit.findings : (previous.verification?.findings ?? [previous.reason]))}`
             : '');
@@ -498,9 +499,7 @@ export async function evaluateImplementation(
         let report: BenchmarkResult['finalVerification'] = null;
         try {
           report = {
-            report: JSON.parse(command.result.stdout) as NonNullable<
-              BenchmarkResult['finalVerification']
-            >['report'],
+            report: parseFinalReport(JSON.parse(command.result.stdout)),
             command,
           };
         } catch {

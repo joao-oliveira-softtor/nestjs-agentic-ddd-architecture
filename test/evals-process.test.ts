@@ -59,6 +59,63 @@ test('missing executable is infrastructure and leaves evidence', async () => {
   expect(result.diagnostic).toContain('spawn');
   expect(result.evidence.length).toBe(3);
 });
+
+test('late credential collection precedes evidence persistence on success, timeout and cancellation; failure withholds streams and argv', async () => {
+  for (const mode of [
+    'success',
+    'timeout',
+    'cancelled',
+    'collector-error',
+  ] as const) {
+    const root = await mkdtemp(join(tmpdir(), 'eval-late-secret-'));
+    roots.push(root);
+    const secret = 'offline-late-rotated-credential';
+    const controller = new AbortController();
+    let calls = 0;
+    const timer =
+      mode === 'cancelled'
+        ? setTimeout(() => controller.abort(), 100)
+        : undefined;
+    try {
+      const result = await runProcess(
+        {
+          argv: [
+            process.execPath,
+            '-e',
+            `console.error('${secret}');${mode === 'timeout' || mode === 'cancelled' ? 'setInterval(()=>{},1000)' : ''}`,
+          ],
+          cwd: root,
+          env: {},
+          timeoutMs: mode === 'timeout' ? 100 : 3000,
+          evidenceDir: join(root, 'evidence'),
+          collectSecrets: async () => {
+            calls++;
+            if (mode === 'collector-error')
+              throw Error('private auth unavailable');
+            return [secret];
+          },
+        },
+        { signal: controller.signal },
+      );
+      expect(calls).toBe(1);
+      expect(result.transport).toBe(
+        mode === 'success'
+          ? 'finished'
+          : mode === 'collector-error'
+            ? 'infra_error'
+            : mode,
+      );
+      for (const path of result.evidence)
+        expect(await readFile(path, 'utf8')).not.toContain(secret);
+      if (mode === 'collector-error') {
+        expect(result.stderr).toBe('');
+        expect(result.diagnostic).toContain('streams withheld');
+      } else expect(result.stderr).toContain('[REDACTED]');
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+});
 test('timeout and cancellation terminate resistant descendant processes', async () => {
   const root = await mkdtemp(join(tmpdir(), 'eval-descendants-'));
   roots.push(root);

@@ -10,14 +10,14 @@ A spec histórica chamou as extensões futuras de v0.1. Para evitar confusão co
 
 [Milestone](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/milestone/1). Objetivo: desenvolver e operar um domínio com agentes reais, medindo resultados contra os contratos do framework. As issues são propostas a refinar; cada implementação exige spec/plano sobre o código real. Não há prazo prometido.
 
-| Próximo plano                                           | Issue                                                                                   | Dependência |
+| Plano                                                   | Issue                                                                                   | Dependência |
 | ------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------- |
 | Plano 5 — Skill do framework e agentes gerente/executor | [#5](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/5) | Base v0.1.0 |
 | Plano 6 — Runner de avaliações com agentes reais        | [#6](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/6) | #5          |
 | Plano 7 — Primeiro adapter real de LlmPort              | [#7](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/7) | Base v0.1.0 |
 | Plano 8 — Demonstração CLI com LLM real e aprovação     | [#8](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/8) | #7          |
 
-O Plano 5 tem [spec](superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [plano de execução](superpowers/plans/2026-10-08-v0-05-agent-skills.md) versionados. O próximo trabalho é o benchmark do Plano 6. Os Planos 7–8 formam outra frente: primeiro o adapter, depois a experiência de operação por CLI.
+O Plano 5 tem [spec](superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [plano de execução](superpowers/plans/2026-10-08-v0-05-agent-skills.md) versionados. O Plano 6 tem [spec](superpowers/specs/2026-10-08-v0-06-agent-evals-design.md), [plano](superpowers/plans/2026-10-08-v0-06-agent-evals.md) e [referência real com limitações de orçamento e protocolo](superpowers/validation/2026-10-09-plan6.md); sua implementação é integrada pela [PR #16](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/16). Os Planos 7–8 formam outra frente: primeiro o adapter, depois a experiência de operação por CLI.
 
 ## Backlog — Extensões e distribuição
 

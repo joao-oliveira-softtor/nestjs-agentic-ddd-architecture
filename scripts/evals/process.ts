@@ -21,8 +21,10 @@ export async function runProcess(
   let bytes = 0;
   let child: ReturnType<typeof Bun.spawn> | undefined;
   let stopping: Promise<void> | undefined;
+  const secrets = [...(request.secrets ?? [])];
+  let streamsWithheld = false;
   const redact = (value: string) =>
-    (request.secrets ?? [])
+    secrets
       .filter(Boolean)
       .reduce((text, secret) => text.replaceAll(secret, '[REDACTED]'), value);
   const killGroup = (sig: NodeJS.Signals | 0) => {
@@ -128,8 +130,19 @@ export async function runProcess(
     signal.removeEventListener('abort', abort);
     await cleanup();
   }
-  const stdout = redact(Buffer.concat(chunks[0]!).toString('utf8'));
-  const stderr = redact(Buffer.concat(chunks[1]!).toString('utf8'));
+  try {
+    secrets.push(...((await request.collectSecrets?.()) ?? []));
+  } catch {
+    transport = 'infra_error';
+    diagnostic = 'credential_collection_failed; streams withheld';
+    streamsWithheld = true;
+  }
+  const stdout = streamsWithheld
+    ? ''
+    : redact(Buffer.concat(chunks[0]!).toString('utf8'));
+  const stderr = streamsWithheld
+    ? ''
+    : redact(Buffer.concat(chunks[1]!).toString('utf8'));
   const durationMs = performance.now() - started;
   await mkdir(request.evidenceDir, { recursive: true });
   const evidence = ['stdout.log', 'stderr.log', 'process.json'].map((name) =>
@@ -141,7 +154,9 @@ export async function runProcess(
     evidence[2]!,
     JSON.stringify(
       {
-        argv: request.argv.map(redact),
+        argv: streamsWithheld
+          ? ['[WITHHELD: credential collection failed]']
+          : request.argv.map(redact),
         cwd: request.cwd,
         transport,
         exitCode,
@@ -149,6 +164,7 @@ export async function runProcess(
         durationMs,
         diagnostic,
         outputBytes: bytes,
+        streamsWithheld,
         redacted:
           stdout !== Buffer.concat(chunks[0]!).toString('utf8') ||
           stderr !== Buffer.concat(chunks[1]!).toString('utf8'),

@@ -189,6 +189,7 @@ export interface ProcessRequest {
   timeoutMs: number;
   evidenceDir: string;
   secrets?: readonly string[];
+  collectSecrets?: () => Promise<readonly string[]>;
 }
 export interface ProcessResult {
   transport: AdapterResult['transport'];

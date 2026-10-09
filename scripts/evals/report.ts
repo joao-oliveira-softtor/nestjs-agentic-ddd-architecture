@@ -11,6 +11,7 @@ import { available, unavailable } from './contracts';
 import { judge } from './judge';
 import { sha256, within } from './isolation';
 import { reportSchema } from './report-schema';
+import { finalVerificationState } from './final-verification';
 
 export interface Rate {
   numerator: number;
@@ -138,12 +139,19 @@ export function computeMetrics(report: EvalReport) {
       (n, i) => n + Math.max(0, i.attempts.length - 1),
       0,
     ),
-    completion: b.finalVerification?.report
-      ? available(
-          b.finalVerification.report.status,
-          'independent_verify_change',
-        )
-      : unavailable<string>('verification_unavailable'),
+    completion:
+      ['verified', 'behavior_failed'].includes(
+        finalVerificationState(b.finalVerification),
+      ) && b.finalVerification?.report
+        ? available(
+            b.finalVerification.report.status,
+            'independent_verify_change',
+          )
+        : unavailable<string>(
+            finalVerificationState(b.finalVerification) === 'infra_error'
+              ? 'final_verification_infrastructure'
+              : 'verification_unavailable',
+          ),
     agentDurationMs: b.items.reduce(
       (n, i) => n + i.attempts.reduce((m, a) => m + a.execution.durationMs, 0),
       0,

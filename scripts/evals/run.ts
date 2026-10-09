@@ -25,6 +25,23 @@ import { createScriptedAdapter } from './adapters/scripted';
 import { createCodexAdapter } from './adapters/codex';
 import { createCursorAdapter } from './adapters/cursor';
 import { writeReport } from './report';
+import { finalVerificationState } from './final-verification';
+
+export function classifyRunStatus(
+  report: EvalReport,
+  stop: ReturnType<RunControl['stopReason']>,
+): EvalReport['status'] {
+  if (stop) return stop;
+  if (report.status !== 'completed') return report.status;
+  return report.cases.some((c) => c.verdict === 'infra_error') ||
+    report.benchmarks.some(
+      (b) =>
+        b.items.some((i) => i.state === 'infra_error') ||
+        finalVerificationState(b.finalVerification) === 'infra_error',
+    )
+    ? 'infra_error'
+    : 'completed';
+}
 
 export function createRunControl(
   budget: RunManifest['budget'],
@@ -296,14 +313,7 @@ export async function runEvaluation(
                 (report.status === 'infra_error'
                   ? 'run_infrastructure_failed'
                   : i.reason);
-        if (
-          report.status === 'completed' &&
-          (report.cases.some((c) => c.verdict === 'infra_error') ||
-            report.benchmarks.some((b) =>
-              b.items.some((i) => i.state === 'infra_error'),
-            ))
-        )
-          report.status = 'infra_error';
+        report.status = classifyRunStatus(report, stop);
         try {
           const after = await fingerprintOrigin(source.originRoot);
           report.provenance.originAfter = available(

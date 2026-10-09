@@ -98,6 +98,79 @@ test('accuracy denominators include malformed/timeout but exclude infrastructure
       .accuracy.value.status,
   ).toBe('unavailable');
 });
+
+test('final done requires a matching complete report and successful process; infrastructure cannot leave run completed', async () => {
+  const { classifyRunStatus } = await import('../scripts/evals/run');
+  const report = reportFixture([]);
+  const gates = Array.from({ length: 7 }, (_, i) => ({
+    id: `G${i + 1}`,
+    name: 'offline gate',
+    status: 'passed',
+    findings: [],
+    warnings: [],
+  }));
+  report.benchmarks = [
+    {
+      configuration: 'scripted',
+      baselineHash: 'a'.repeat(64),
+      items: [],
+      finalVerification: {
+        report: {
+          change: '0001',
+          title: 'Tasks',
+          status: 'done',
+          gates,
+        } as import('@agentic-ddd/compiler').VerifyReport,
+        command: {
+          name: 'verify-change',
+          argv: [],
+          result: {
+            transport: 'infra_error',
+            exitCode: 1,
+            signal: null,
+            stdout: '',
+            stderr: '',
+            durationMs: 1,
+            evidence: [],
+            diagnostic: 'offline spawn failure',
+          },
+        },
+      },
+    },
+  ];
+  expect(computeMetrics(report).benchmarks[0]?.completion.status).toBe(
+    'unavailable',
+  );
+  expect(classifyRunStatus(report, null)).toBe('infra_error');
+  const final = report.benchmarks[0]!.finalVerification!;
+  final.command.result.transport = 'finished';
+  expect(computeMetrics(report).benchmarks[0]?.completion.status).toBe(
+    'unavailable',
+  );
+  final.command.result.exitCode = 0;
+  expect(computeMetrics(report).benchmarks[0]?.completion.status).toBe(
+    'available',
+  );
+  expect(classifyRunStatus(report, null)).toBe('completed');
+  final.report = { ...final.report!, change: 'other' };
+  expect(classifyRunStatus(report, null)).toBe('infra_error');
+  final.report = {
+    ...final.report!,
+    change: '0001',
+    status: 'failed',
+    gates: final.report!.gates.map((g, i) =>
+      i === 0 ? { ...g, status: 'failed' } : g,
+    ),
+  };
+  final.command.result.exitCode = 1;
+  expect(classifyRunStatus(report, null)).toBe('completed');
+  expect(computeMetrics(report).benchmarks[0]?.completion).toMatchObject({
+    status: 'available',
+    value: 'failed',
+  });
+  final.report = null;
+  expect(classifyRunStatus(report, null)).toBe('infra_error');
+});
 test('agreement counts identical wrong answers separately from correctness; Fleiss kappa uses binary complete rows', () => {
   const ratings = [
     ['correct', 'correct'],

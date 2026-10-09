@@ -204,6 +204,7 @@ test('complete native adapters execute only offline stub CLIs in private homes a
         const transcript = await read(kind + '-success');
         const variable = kind === 'codex' ? 'CODEX_API_KEY' : 'CURSOR_API_KEY';
         const secret = 'offline-secret-never-publish';
+        const rotated = 'offline-rotated-secret-never-publish';
         const loginFile = join(root, `${kind}-auth.json`);
         const loginBytes = JSON.stringify(
           kind === 'codex'
@@ -225,14 +226,17 @@ test('complete native adapters execute only offline stub CLIs in private homes a
             ? `"${join(binaryRoot, 'codex-code-mode-host')}" >&2 || exit 25\n`
             : '') +
           (authentication === 'local-login'
-            ? `test -f "${authPath}" || exit 24\ncat "${authPath}" >&2\n`
+            ? `test -f "${authPath}" || exit 24\ncat "${authPath}" >&2\nprintf '%s' '${JSON.stringify(kind === 'codex' ? { tokens: { access_token: rotated, refresh_token: rotated } } : { accessToken: rotated, refreshToken: rotated })}' > "${authPath}"\nprintf '%s' '${rotated}' >&2\n`
             : '') +
           (kind === 'codex'
             ? `mkdir -p "$CODEX_HOME/sessions"\ncat > "$CODEX_HOME/sessions/offline.jsonl" <<'SYNTHETIC_MODEL'\n{"type":"session_meta","payload":{"id":"offline-codex-session"}}\n{"type":"turn_context","payload":{"model":"actually-observed"}}\nSYNTHETIC_MODEL\n`
             : '');
         await writeFile(executable, script);
         await chmod(executable, 0o700);
+        const registered = new Set<string>();
         const options = {
+          onSecrets: (values: readonly string[]) =>
+            values.forEach((value) => registered.add(value)),
           executable,
           credentials: { [variable]: secret },
           localLoginFile: loginFile,
@@ -309,6 +313,29 @@ test('complete native adapters execute only offline stub CLIs in private homes a
           );
           expect(stderr).toContain('[REDACTED]');
           expect(stderr).not.toContain(secret);
+          expect(stderr).not.toContain(rotated);
+          expect(registered.has(rotated)).toBe(true);
+          expect(await readFile(loginFile, 'utf8')).toBe(loginBytes);
+          await writeFile(
+            executable,
+            script + `\nln -sf '${loginFile}' "${authPath}"\n`,
+          );
+          const unsafe = (
+            kind === 'codex' ? createCodexAdapter : createCursorAdapter
+          )(configuration, options);
+          const rejected = await unsafe.run(
+            {
+              id: 'unsafe-auth-link',
+              mode: 'skills',
+              cwd: workspace.root,
+              prompt: 'offline fixture',
+              timeoutMs: 2000,
+              evidenceDir: join(root, kind + '-unsafe-auth'),
+            },
+            { signal: new AbortController().signal },
+          );
+          expect(rejected.transport).toBe('infra_error');
+          expect(rejected.diagnostic).toContain('streams withheld');
           expect(await readFile(loginFile, 'utf8')).toBe(loginBytes);
         }
         expect(
