@@ -8,6 +8,7 @@ import {
   readlink,
   realpath,
   rm,
+  symlink,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -159,6 +160,11 @@ export async function prepareSource(
       recursive: true,
       dereference: true,
     });
+    await symlink(
+      join(frameworkRoot, 'node_modules'),
+      join(snapshotRoot, 'node_modules'),
+      'dir',
+    );
     return {
       originRoot,
       commit,
@@ -192,7 +198,11 @@ export async function createAttemptWorkspace(
   }
   try {
     await check(baseline);
-    await cp(baseline, root, { recursive: true, dereference: false });
+    await cp(baseline, root, {
+      recursive: true,
+      dereference: false,
+      verbatimSymlinks: true,
+    });
   } catch (error) {
     await rm(root, { recursive: true, force: true });
     throw error;
