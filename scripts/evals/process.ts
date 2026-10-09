@@ -100,7 +100,7 @@ export async function runProcess(
               chunks[index]!.push(chunk);
               bytes += chunk.byteLength;
             }
-            if (value.byteLength > remaining)
+            if (value.byteLength >= remaining)
               stop('infra_error', 'output_limit');
           }
         } finally {

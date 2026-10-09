@@ -157,3 +157,20 @@ test('successful parent cannot leave a background child holding its pipes', asyn
   expect(result.transport).toBe('finished');
   expect(result.exitCode).toBe(0);
 });
+
+test('reaching the combined output cap is infrastructure; one byte below remains complete', async () => {
+  for (const size of [OUTPUT_LIMIT_BYTES - 1, OUTPUT_LIMIT_BYTES]) {
+    const result = await run(
+      `await Bun.write(Bun.stdout, Buffer.alloc(${Math.floor(size / 2)}, 120)); await Bun.write(Bun.stderr, Buffer.alloc(${size - Math.floor(size / 2)}, 121));`,
+    );
+    expect(
+      Buffer.byteLength(result.stdout) + Buffer.byteLength(result.stderr),
+    ).toBe(size);
+    expect(result.transport).toBe(
+      size === OUTPUT_LIMIT_BYTES ? 'infra_error' : 'finished',
+    );
+    expect(result.diagnostic).toBe(
+      size === OUTPUT_LIMIT_BYTES ? 'output_limit' : null,
+    );
+  }
+});
