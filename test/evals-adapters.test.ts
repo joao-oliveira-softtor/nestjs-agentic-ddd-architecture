@@ -40,6 +40,23 @@ test('failed processes retain native measurements without accepting the final an
   expect(cursor.finalText).toBeNull();
   expect(cursor.observedModel.status).toBe('available');
 });
+test('Codex native tool host startup errors are infrastructure even with a final assistant answer', async () => {
+  const transcript =
+    JSON.stringify({
+      type: 'item.completed',
+      item: {
+        type: 'error',
+        message:
+          'Code Mode is unavailable because host executable was not found',
+      },
+    }) +
+    '\n' +
+    (await read('codex-success'));
+  const parsed = parseCodexTranscript(result(transcript));
+  expect(parsed.transport).toBe('infra_error');
+  expect(parsed.finalText).toBeNull();
+  expect(parsed.usage.inputTokens.status).toBe('available');
+});
 test('Codex final assistant independent from progress, native tokens preserved, model/cost unavailable', async () => {
   const parsed = parseCodexTranscript(result(await read('codex-success')));
   expect(parsed.transport).toBe('finished');
@@ -174,7 +191,16 @@ test('complete native adapters execute only offline stub CLIs in private homes a
   try {
     for (const authentication of ['api-key', 'local-login'] as const)
       for (const kind of ['codex', 'cursor'] as const) {
-        const executable = join(root, kind);
+        const binaryRoot = join(root, kind + '-bin');
+        await mkdir(binaryRoot, { recursive: true });
+        const executable = join(binaryRoot, kind);
+        if (kind === 'codex') {
+          await writeFile(
+            join(binaryRoot, 'codex-code-mode-host'),
+            '#!/bin/sh\necho offline-code-host\n',
+            { mode: 0o700 },
+          );
+        }
         const transcript = await read(kind + '-success');
         const variable = kind === 'codex' ? 'CODEX_API_KEY' : 'CURSOR_API_KEY';
         const secret = 'offline-secret-never-publish';
@@ -195,6 +221,9 @@ test('complete native adapters execute only offline stub CLIs in private homes a
             : '$HOME/.config/cursor/auth.json';
         const script =
           `#!/bin/sh\nif [ "$1" = '--version' ]; then echo 'offline-stub-1'; exit 0; fi\nif [ -e '${join(fixture.source.frameworkRoot, 'src/core/index.ts')}' ]; then exit 23; fi\nprintf '{"type":"offline_env","home":"%s","key":"%s"}\\n' "$HOME" "$${variable}"\ncat <<'SYNTHETIC_TRANSCRIPT'\n${transcript}SYNTHETIC_TRANSCRIPT\n` +
+          (kind === 'codex'
+            ? `"${join(binaryRoot, 'codex-code-mode-host')}" >&2 || exit 25\n`
+            : '') +
           (authentication === 'local-login'
             ? `test -f "${authPath}" || exit 24\ncat "${authPath}" >&2\n`
             : '') +

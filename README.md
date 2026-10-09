@@ -192,6 +192,8 @@ O runner em `scripts/evals` avalia as cinco perguntas das skills orders e os cin
 
 Requisitos: Linux/WSL, Bun, Git, `setsid`, `tar` e bubblewrap com namespaces disponíveis. Fonte, dependências e contexto ficam somente leitura no sandbox; o executor escreve no corpo/teste atribuídos. O verificador não recebe credenciais nem rede. O diretório de saída precisa ser externo à origem e inexistente, inclusive quando há links simbólicos nos ancestrais.
 
+O adapter Codex requer o executável auxiliar `codex-code-mode-host` da mesma instalação. O probe verifica os executáveis; o sandbox monta ambos somente leitura e o relatório registra seus hashes. Falhas nativas de inicialização das ferramentas contam como infraestrutura, mesmo se o agente emitir uma resposta final.
+
 ```bash
 # Roteiro sintético offline, sem solução implementada ou inferência:
 bun run evals --config evals/run.offline.json --out /tmp/agentic-evals-offline

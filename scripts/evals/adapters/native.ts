@@ -86,6 +86,7 @@ interface NativeDefinition {
   command: 'codex' | 'cursor-agent';
   credential: 'CODEX_API_KEY' | 'CURSOR_API_KEY';
   bundle: boolean;
+  companions?: readonly string[];
   argv(
     executable: string,
     configuration: EvalConfiguration,
@@ -106,6 +107,7 @@ export function createNativeAdapter(
 ): EvalAdapter {
   let executable: string | null = null;
   let info: AdapterInfo | null = null;
+  let companions: { name: string; path: string; sha256: string }[] = [];
   async function resolveExecutable() {
     if (!executable) {
       const found = options.executable ?? Bun.which(definition.command);
@@ -117,6 +119,16 @@ export function createNativeAdapter(
   return {
     async probe() {
       const path = await resolveExecutable();
+      companions = await Promise.all(
+        (definition.companions ?? []).map(async (name) => {
+          const companion = await realpath(join(dirname(path), name));
+          return {
+            name,
+            path: companion,
+            sha256: sha256(await readFile(companion)),
+          };
+        }),
+      );
       const root = await mkdtemp(join(tmpdir(), 'eval-probe-'));
       try {
         const command = await runProcess(
@@ -139,6 +151,14 @@ export function createNativeAdapter(
           id: configuration.adapter,
           version: command.stdout.trim(),
           executableSha256: sha256(await readFile(path)),
+          ...(companions.length
+            ? {
+                companions: companions.map(({ name, sha256 }) => ({
+                  name,
+                  sha256,
+                })),
+              }
+            : {}),
         };
         return info;
       } finally {
@@ -166,6 +186,10 @@ export function createNativeAdapter(
       const path = await resolveExecutable();
       if (info && sha256(await readFile(path)) !== info.executableSha256)
         throw Error('CLI executable changed after probe');
+      if (!info) await this.probe();
+      for (const companion of companions)
+        if (sha256(await readFile(companion.path)) !== companion.sha256)
+          throw Error('CLI companion changed after probe');
       const workspace = getWorkspace(request.cwd);
       const home = await mkdtemp(join(dirname(request.cwd), 'session-home-'));
       await mkdir(join(home, '.codex'));
@@ -236,6 +260,7 @@ export function createNativeAdapter(
             homeDir: home,
             extraReadOnly: [
               definition.bundle ? dirname(path) : path,
+              ...companions.map((c) => c.path),
               ...protectedPaths,
             ],
           },

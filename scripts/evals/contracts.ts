@@ -160,6 +160,7 @@ export interface AdapterInfo {
   id: AdapterId;
   version: string;
   executableSha256: string;
+  companions?: { name: string; sha256: string }[];
 }
 export interface AdapterResult {
   transport: 'finished' | 'timeout' | 'cancelled' | 'infra_error';

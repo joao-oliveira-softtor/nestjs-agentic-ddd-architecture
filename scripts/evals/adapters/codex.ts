@@ -52,9 +52,10 @@ export function parseCodexTranscript(process: ProcessResult): AdapterResult {
   const result = processResult(process);
   try {
     let terminal = false;
+    let nativeFailure = false;
     for (const event of events(process.stdout)) {
       if (event.type === 'turn.failed' || event.type === 'error')
-        throw Error('native turn failed');
+        nativeFailure = true;
       if (
         event.type === 'thread.started' &&
         typeof event.thread_id === 'string'
@@ -65,6 +66,7 @@ export function parseCodexTranscript(process: ProcessResult): AdapterResult {
         );
       if (event.type === 'item.completed') {
         const item = object(event.item);
+        if (item?.type === 'error') nativeFailure = true;
         if (item?.type === 'agent_message') {
           if (terminal || typeof item.text !== 'string')
             throw Error('inconsistent final message');
@@ -81,6 +83,7 @@ export function parseCodexTranscript(process: ProcessResult): AdapterResult {
     }
     if (!terminal || result.finalText === null)
       throw Error('missing terminal or final assistant');
+    if (nativeFailure) throw Error('native turn or tool host failed');
   } catch (error) {
     if (result.transport === 'finished') result.transport = 'infra_error';
     result.finalText = null;
@@ -164,6 +167,7 @@ export function createCodexAdapter(
       command: 'codex',
       credential: 'CODEX_API_KEY',
       bundle: false,
+      companions: ['codex-code-mode-host'],
       argv: codexArgv,
       parse: parseCodexTranscript,
       collect: collectModel,
