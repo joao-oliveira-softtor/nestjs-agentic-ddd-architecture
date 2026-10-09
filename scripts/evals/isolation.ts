@@ -123,6 +123,12 @@ export async function prepareSource(
 ): Promise<PreparedSource> {
   const originRoot = await realpath(sourceRoot);
   if (
+    ['/usr', '/bin', '/lib', '/lib64', '/etc', '/proc', '/dev'].some(
+      (root) => within(root, originRoot) || within(originRoot, root),
+    )
+  )
+    throw Error('Origin overlaps sandbox system mounts');
+  if (
     git(originRoot, ['status', '--porcelain', '--untracked-files=normal'])
       .length
   )
@@ -184,25 +190,31 @@ export async function createAttemptWorkspace(
   baseline: string,
   mode: AdapterRequest['mode'],
 ): Promise<AttemptWorkspace> {
-  const root = await mkdtemp(join(source.root, 'attempt-'));
+  const parent = await mkdtemp(join(source.root, 'attempt-'));
+  const root = join(parent, 'workspace');
+  await mkdir(root);
   // Links in a prepared tutorial may reach only the private readonly framework.
-  async function check(directory: string) {
+  async function check(directory: string, allowedRoot: string) {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       const path = join(directory, entry.name);
       if (entry.isSymbolicLink()) {
         const target = await realpath(path);
-        if (!within(baseline, target) && !within(source.frameworkRoot, target))
+        if (
+          !within(allowedRoot, target) &&
+          !within(source.frameworkRoot, target)
+        )
           throw Error(`Unsafe workspace link: ${path}`);
-      } else if (entry.isDirectory()) await check(path);
+      } else if (entry.isDirectory()) await check(path, allowedRoot);
     }
   }
   try {
-    await check(baseline);
+    await check(baseline, baseline);
     await cp(baseline, root, {
       recursive: true,
       dereference: false,
       verbatimSymlinks: true,
     });
+    await check(root, root);
   } catch (error) {
     await rm(root, { recursive: true, force: true });
     throw error;
@@ -259,6 +271,30 @@ export interface SandboxOptions {
   network: boolean;
   extraReadOnly?: readonly string[];
   extraWritable?: readonly string[];
+}
+export async function protectedWorkspacePaths(
+  workspace: AttemptWorkspace,
+  writableFiles: readonly string[],
+): Promise<string[]> {
+  if (workspace.mode === 'skills') return [];
+  const paths: string[] = [];
+  async function visit(directory: string) {
+    for (const entry of await readdir(join(workspace.root, directory), {
+      withFileTypes: true,
+    })) {
+      const path = directory ? `${directory}/${entry.name}` : entry.name;
+      if (entry.isSymbolicLink()) continue; // Prepared links target readonly mounts.
+      if (writableFiles.includes(path)) continue;
+      if (
+        entry.isDirectory() &&
+        writableFiles.some((file) => file.startsWith(path + '/'))
+      )
+        await visit(path);
+      else paths.push(join(workspace.root, path));
+    }
+  }
+  await visit('');
+  return paths;
 }
 /** Minimal root: no host checkout, home, runner artifacts or host sockets are mounted. */
 export async function sandboxCommand(

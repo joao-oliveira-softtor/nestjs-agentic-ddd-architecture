@@ -1,7 +1,13 @@
 import type { AdapterRequest, AdapterResult, EvalAdapter } from '../contracts';
 import { available, emptyUsage, unavailable } from '../contracts';
 import { runProcess } from '../process';
-import { getWorkspace, sandboxCommand, sha256 } from '../isolation';
+import {
+  getWorkspace,
+  sandboxCommand,
+  sha256,
+  protectedWorkspacePaths,
+} from '../isolation';
+import { TASK_ITEMS } from '../audit';
 
 export interface ScriptedAction {
   finalText?: string;
@@ -49,7 +55,16 @@ export function createScriptedAdapter(
       const argv = await sandboxCommand(
         workspace,
         action.argv ?? [process.execPath, '-e', code],
-        { network: false },
+        {
+          network: false,
+          extraReadOnly: await protectedWorkspacePaths(
+            workspace,
+            TASK_ITEMS.filter((i) => i.id === request.id).flatMap((i) => [
+              i.test,
+              ...(i.file ? [i.file] : []),
+            ]),
+          ),
+        },
       );
       const result = await runProcess(
         {

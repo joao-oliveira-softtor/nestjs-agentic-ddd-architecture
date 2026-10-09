@@ -1,0 +1,10 @@
+import { expect, test } from 'bun:test';
+import { Task } from '__WORKSPACE__/app/domain/task';
+test('conclui, emite e rejeita repetição', () => {
+  const task = Task.create('oracle-17', 'Revisar'); task.pullEvents(); task.complete();
+  expect(task.status).toBe('completed');
+  expect(task.pullEvents().map(e => [e.name, e.payload])).toEqual([['TaskCompleted', { taskId: 'oracle-17' }]]);
+  expect(() => task.complete()).toThrow('Tarefa já concluída.');
+  try { task.complete(); } catch (e) { expect((e as {code: string}).code).toBe('TASK_ALREADY_COMPLETED'); }
+  expect(task.pullEvents()).toEqual([]);
+});
