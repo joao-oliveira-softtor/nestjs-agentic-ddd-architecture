@@ -1,0 +1,5 @@
+{"type":"thread.started","thread_id":"offline-codex-session","extra":"future-field"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"type":"agent_message","text":"Vou analisar o contexto."}}
+{"type":"item.completed","item":{"type":"agent_message","text":"{\"type\":\"exact\",\"value\":\"sim\"}"}}
+{"type":"turn.completed","usage":{"input_tokens":240,"cached_input_tokens":0,"output_tokens":12,"new_field":1}}

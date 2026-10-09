@@ -269,6 +269,7 @@ export async function reserveOutput(
 }
 export interface SandboxOptions {
   network: boolean;
+  homeDir?: string;
   extraReadOnly?: readonly string[];
   extraWritable?: readonly string[];
 }
@@ -321,6 +322,10 @@ export async function sandboxCommand(
     '/dev',
     '--tmpfs',
     '/tmp',
+    '--tmpfs',
+    '/home',
+    '--dir',
+    '/home/eval',
     '--dir',
     '/etc',
   );
@@ -349,11 +354,9 @@ export async function sandboxCommand(
     const physical = await realpath(path);
     args.push('--bind', physical, physical);
   }
+  if (options.homeDir)
+    args.push('--bind', await realpath(options.homeDir), '/home/eval');
   args.push(
-    '--tmpfs',
-    '/home',
-    '--dir',
-    '/home/eval',
     '--setenv',
     'HOME',
     '/home/eval',

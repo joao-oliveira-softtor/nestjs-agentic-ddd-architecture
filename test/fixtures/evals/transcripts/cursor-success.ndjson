@@ -1,0 +1,5 @@
+{"type":"system","subtype":"init","model":"Observed model display","session_id":"offline-cursor-session","new_field":true}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Vou analisar o contexto."}]},"session_id":"offline-cursor-session"}
+{"type":"tool_call","subtype":"completed","new_tool_field":true}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"{\"type\":\"exact\",\"value\":\"sim\"}"}]},"session_id":"offline-cursor-session"}
+{"type":"result","subtype":"success","is_error":false,"result":"Vou analisar o contexto.{\"type\":\"exact\",\"value\":\"sim\"}","session_id":"offline-cursor-session"}
