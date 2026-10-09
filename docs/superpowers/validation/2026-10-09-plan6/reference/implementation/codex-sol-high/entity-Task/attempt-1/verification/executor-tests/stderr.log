@@ -1,0 +1,9 @@
+
+app/test/entity-Task.test.ts:
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou compostos somente de espaços [0.10ms]
+(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa pending com título normalizado e registra TaskCreated [0.25ms]
+
+ 2 pass
+ 0 fail
+ 13 expect() calls
+Ran 2 tests across 1 file. [75.00ms]

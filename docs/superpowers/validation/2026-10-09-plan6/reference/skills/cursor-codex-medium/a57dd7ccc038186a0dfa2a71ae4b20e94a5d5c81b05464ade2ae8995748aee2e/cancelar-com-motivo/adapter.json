@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"type\":\"tool_call\",\"name\":\"cancel_order\",\"input\":{\"order_id\":\"7f3c\",\"reason\":\"desistiu\"}}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "e915a012-ecfd-4b53-a706-405ba85913c1",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 16164.444545999999,
+  "evidence": [
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json"
+  ],
+  "diagnostic": null
+}

@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado apenas o corpo de `Task.create` em `app/domain/task.ts` (mantendo estrutura do esqueleto), com normalização de título via `trim`, validação de vazio com `DomainError` código `TASK_TITLE_REQUIRED`, criação em estado `pending` e registro de evento `TaskCreated`. Criado `app/test/entity-Task.test.ts` com `covers` para `invariant:Task/titulo-obrigatorio`, `method:Task.create` e critérios `criterion:0001/titulo-invalido` e `criterion:0001/criacao`, cobrindo rejeição de título inválido e criação com título normalizado + evento. Verificação executada com hash original e config atual: `bun run agentic verify --item entity:Task --spec-hash e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c --config /tmp/agentic-eval-5FI6Md/attempt-bPc1Pb/workspace/agentic.config.ts --json` => status `done` com gates I1-I5 `passed`.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "c4cd1d66-6dc0-43dd-888b-abe6acc0dc43",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 99210.25701199996,
+  "evidence": [
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/entity-Task/attempt-1/stdout.log",
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/entity-Task/attempt-1/stderr.log",
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/entity-Task/attempt-1/process.json"
+  ],
+  "diagnostic": null
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="1" assertions="5" failures="0" skipped="0" time="0.057667872">
+  <testsuite name=".eval-reference/behavior.test.ts" file=".eval-reference/behavior.test.ts" tests="1" assertions="5" failures="0" skipped="0" time="0.05600263" hostname="softtords">
+    <testcase name="conclui, emite e rejeita repetição" classname="" time="0.000296" file=".eval-reference/behavior.test.ts" line="3" assertions="5" />
+  </testsuite>
+</testsuites>

@@ -1,0 +1,49 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"CreateTask.execute implementado, preservando as 14 linhas do corpo. Novo teste cobre criação, persistência, publicação, duplicidade e falhas, incluindo criterion:0001/persistencia-criacao.\",\"item\":\"usecase:create_task\",\"specHash\":\"daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6\",\"files\":[\"app/application/create-task.ts\",\"app/test/usecase-create_task.test.ts\"],\"verification\":{\"command\":\"bun run agentic verify --item usecase:create_task --spec-hash daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6 --config /tmp/agentic-eval-5FI6Md/attempt-Exa7qy/workspace/agentic.config.ts --json\",\"exitCode\":0,\"gates\":\"I1–I5 passed\",\"findings\":[]}}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "01a11f14-dda4-7020-b06f-9623945984e8",
+    "source": "codex.thread.started.thread_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "gpt-6.1-sol",
+    "source": "codex.rollout.turn_context.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 157797,
+      "source": "codex.turn.completed.usage.input_tokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 137984,
+      "source": "codex.turn.completed.usage.cached_input_tokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 3251,
+      "source": "codex.turn.completed.usage.output_tokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 88536.26192100003,
+  "evidence": [
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/codex-sol-high/usecase-create_task/attempt-1/stdout.log",
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/codex-sol-high/usecase-create_task/attempt-1/stderr.log",
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/codex-sol-high/usecase-create_task/attempt-1/process.json",
+    "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/codex-sol-high/usecase-create_task/attempt-1/model-metadata.json"
+  ],
+  "diagnostic": null
+}

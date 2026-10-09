@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="4" assertions="31" failures="0" skipped="0" time="0.077213215">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="13" failures="0" skipped="0" time="0.075069187" hostname="softtords">
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou compostos somente de espaços" classname="" time="0.000111" file="app/test/entity-Task.test.ts" line="7" assertions="6" />
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pending com título normalizado e registra TaskCreated" classname="" time="0.000185" file="app/test/entity-Task.test.ts" line="24" assertions="7" />
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="2" assertions="18" failures="0" skipped="0" time="0.000427022" hostname="softtords">
+    <testcase name="[covers: method:Task.complete] conclui tarefa pending e registra TaskCompleted preservando eventos anteriores" classname="" time="0.000086" file="app/test/method-Task-complete.test.ts" line="7" assertions="9" />
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui uma vez e rejeita repetição com TASK_ALREADY_COMPLETED sem novo evento" classname="" time="0.000074" file="app/test/method-Task-complete.test.ts" line="24" assertions="9" />
+  </testsuite>
+</testsuites>

@@ -1,0 +1,500 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": "adapters/codex-sol-high/probe/process.json",
+      "sha256": "47b90ec76c5c1787cbb5ff1984902d0ec6fcbbbbe7849618bd02c38a319cca84",
+      "bytes": 334
+    },
+    {
+      "path": "adapters/codex-sol-high/probe/stderr.log",
+      "sha256": "2f1f67e2e14a1ff709af35b1b77ba247c3378a318df83aabf4d42248ac4a0ca5",
+      "bytes": 192
+    },
+    {
+      "path": "adapters/codex-sol-high/probe/stdout.log",
+      "sha256": "5d4c1112975bb88dbccfdca34b664979b2fffe4c1bdf61ae7f3faccd10d4a051",
+      "bytes": 18
+    },
+    {
+      "path": "adapters/cursor-codex-medium/probe/process.json",
+      "sha256": "46dc40b7b9a7d0e8845040fd4496c1e44c96c8192f7383fcb41352c468311a14",
+      "bytes": 320
+    },
+    {
+      "path": "adapters/cursor-codex-medium/probe/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "adapters/cursor-codex-medium/probe/stdout.log",
+      "sha256": "59af10e3e2483f58e970517d139e48c0484a78405767fb44578594ff0a03115a",
+      "bytes": 19
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/adapter.json",
+      "sha256": "0a77ef87912b17cd2a0fedf63bdc8aa5c3d893101bc46db8d60224f62cc0f9ab",
+      "bytes": 1970
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/model-metadata.json",
+      "sha256": "a10355953afd3041ce63c8752e8726c98b222de4ac226ea928d72f3f68b269df",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json",
+      "sha256": "7cbff3d6168e99342f729ae41fbe0f1f94be2b01906d1fabcc6579489bfd828b",
+      "bytes": 2828
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/prompt.txt",
+      "sha256": "36208a08dbe3ced5a2b9f393b5b62bbc8ddddda3c1b1530cd9137ecca83a6b14",
+      "bytes": 593
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/result.json",
+      "sha256": "7ae42740a4d2df3c295291561f4363ee86276ed37f79f9afeb9cd243fd3a4eba",
+      "bytes": 2928
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+      "sha256": "8675563fc3b74b592fb23541f53aedbad9f60b781a075050b625917944286760",
+      "bytes": 285
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+      "sha256": "4ba8d9f71c1bf155d14ddbfd993347c0b0efaaad301d7273f132d051cdc56502",
+      "bytes": 941
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/adapter.json",
+      "sha256": "f43655e3afc475bfad68f561e413eb74a9ebaa58982b9c79d71f62a6bf660f9d",
+      "bytes": 1906
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/model-metadata.json",
+      "sha256": "901edfdad48e9a2379f278c9d5b72f2868ac6f9838c551823ae99d79e5acac75",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/process.json",
+      "sha256": "9579d320bdec9250b978c2734b561306d86f2215ee2f304de24ce454e0d36963",
+      "bytes": 2804
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/prompt.txt",
+      "sha256": "4056e1d6a931bdaf19add132d7c87380aee39be034fe3b651926e55de45070bc",
+      "bytes": 569
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/result.json",
+      "sha256": "435077e289ebbed559c43d52058a4b2d607517e9992ca312b04d19582ea48617",
+      "bytes": 2674
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stderr.log",
+      "sha256": "02483ac5794b5607b481cc0a45dac0d6c8a8ca97b27a6565d3b8f03650e6058c",
+      "bytes": 565
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stdout.log",
+      "sha256": "d20b6d350a4dff93e2c8606ee403f8ad2da4536b4882d2b75453f180f6d05f1f",
+      "bytes": 858
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/adapter.json",
+      "sha256": "e56c6acdf63ebbc8e77dd8497cdf8295e969ca3327b7a306c8197e011804222c",
+      "bytes": 1784
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/model-metadata.json",
+      "sha256": "476d97405e4ad27087de43c05c57d5a0604106f06cec367e1023b5dab9894b52",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/process.json",
+      "sha256": "537abc74f2beccdf3a3daf29506f42d61b977167c084db9e9d51560997adcb68",
+      "bytes": 2830
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/prompt.txt",
+      "sha256": "f565c33b129e2951e65125b99b76500f44d80c755b514ba62452213089661431",
+      "bytes": 602
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/result.json",
+      "sha256": "8d9912e5db332ef15e9c3b66060b184cb800c72df6ef6d3aad4d50d192269240",
+      "bytes": 2443
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stderr.log",
+      "sha256": "c2acbe6db90579cfbf15bf3d2c67844c7a8c565a25758b8fcb65886aa72cb7d3",
+      "bytes": 565
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stdout.log",
+      "sha256": "5b494d61682603d23d0eeed4fe408c9cff230c2c3d7038fc1eec2b9c0e822f69",
+      "bytes": 762
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/adapter.json",
+      "sha256": "e1fc6fb7b1d7cf4078a00ea67de745b5f5f59bce74f6b2c2e42b4c6c9627200e",
+      "bytes": 1954
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/model-metadata.json",
+      "sha256": "c3fbbae83251d8686dd939e85eb8bfaaf638f366b0084d5ea85409ca3df90fa9",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/process.json",
+      "sha256": "d953072d2ec2645a70fca4dc6c589bf5fc1b748df00743c3d4a24bf89444ed7a",
+      "bytes": 2795
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/prompt.txt",
+      "sha256": "b0572734b86a780895655d474c3859e07585dad009f13eeac5661b3609458ea7",
+      "bytes": 560
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/result.json",
+      "sha256": "9325767b9d678dc97e6f4b05fa665c3f58e428123b3b334da782593049c3303c",
+      "bytes": 2845
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stderr.log",
+      "sha256": "56d134a2a3654d4ac3eac423c29960ceda8c1fb06bbb885d9178dbba67c31200",
+      "bytes": 285
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stdout.log",
+      "sha256": "5c303e608ea69d9e78684363468c901dbe8a60f820a6f5df151003a743b81554",
+      "bytes": 938
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/adapter.json",
+      "sha256": "6d1d8ba6de325d42499ecbf42b3ea3b4c5fe05b85e31fa42e70da18f288de979",
+      "bytes": 1898
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/model-metadata.json",
+      "sha256": "a31f8d0f321f621af81862e2df6291b2724b10b6a4fbbc924c3e08bb6af70204",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json",
+      "sha256": "e03331234734308b2cb8d74c007adc971125a05a6989c3d7fd96010c7d3d5e97",
+      "bytes": 2840
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/prompt.txt",
+      "sha256": "056e96e3b229d4238a9d70cd98b7beae71643ee8ff5c484a008c9a55b252a158",
+      "bytes": 605
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/result.json",
+      "sha256": "6625abb1d7af3f630c2d4202ac1b1d433172825afe208369d56ea502ed59c7ff",
+      "bytes": 2722
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+      "sha256": "c08db674ae99b48df6320054d39dfb0d09fefc851215f50cb94e5a404407cb3f",
+      "bytes": 565
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+      "sha256": "341f50407f72b2dced6253bac9fc9df895ed4c4d6869d4fc911ddb405985b881",
+      "bytes": 1229
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/adapter.json",
+      "sha256": "a6bb4dae63799c6b2618c8c81c3a86b6b1853a598fd81110ce4ec67e090e7ada",
+      "bytes": 1524
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json",
+      "sha256": "b00da8cddb5ca784233fb30d42fcbfa74e063de17e238b93414efa4f6f7fe434",
+      "bytes": 2613
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/prompt.txt",
+      "sha256": "36208a08dbe3ced5a2b9f393b5b62bbc8ddddda3c1b1530cd9137ecca83a6b14",
+      "bytes": 593
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/result.json",
+      "sha256": "96fb6f5da33fdb0bfcdd3f7394bb61f5e1ef56c25c104ced3131e9e93cae129d",
+      "bytes": 2384
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+      "sha256": "53cf5f60679589430a460e3de97a2346dd58e2c50d19344a57c67119700243db",
+      "bytes": 14470
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/adapter.json",
+      "sha256": "796d819ff786fe9da3f46f268d6366d7e2ecb82ad35c2d95813160277e4f06fa",
+      "bytes": 1475
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/process.json",
+      "sha256": "ad5944518c248aa041e45e7c098aada0bb5195aa2a97502ab04b12e3fc9ff8b2",
+      "bytes": 2595
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/prompt.txt",
+      "sha256": "4056e1d6a931bdaf19add132d7c87380aee39be034fe3b651926e55de45070bc",
+      "bytes": 569
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/result.json",
+      "sha256": "8a4cb985f1d95a301104afdac6605b8fe62c7ee2104a1f1b217c676debfb3c87",
+      "bytes": 2142
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stdout.log",
+      "sha256": "e8c86a44d2beb420028b8f63183bb71d3069eab9e2907216f82319de1f2e7385",
+      "bytes": 14200
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/adapter.json",
+      "sha256": "bcc314baf12a2fa32cae010ddcf0a5c25c81d48b893a9e8c6151778ad75226da",
+      "bytes": 1461
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/process.json",
+      "sha256": "fe91cd6be27f4db59193a38833863724c8c699ecf8572b07a27b2d3dfbcde2c8",
+      "bytes": 2628
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/prompt.txt",
+      "sha256": "f565c33b129e2951e65125b99b76500f44d80c755b514ba62452213089661431",
+      "bytes": 602
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/result.json",
+      "sha256": "90559182dbd2bd84ed80aca7d27df3a43b37c0176e1a6a24fcf82f36fa804b78",
+      "bytes": 2117
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stdout.log",
+      "sha256": "4cf8791750d616b096de89d24d2ebf9cb36cc33503b7958128c826e66c77b30c",
+      "bytes": 28145
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/adapter.json",
+      "sha256": "e596c84c6b7119b057f9439073621b98cce1d7e6a77302ad408c663d8c667113",
+      "bytes": 1498
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/process.json",
+      "sha256": "1e0c66477902c17359d0326c42b26c5bc898b8fe7e3e90fd49c5067b1ba8284c",
+      "bytes": 2586
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/prompt.txt",
+      "sha256": "b0572734b86a780895655d474c3859e07585dad009f13eeac5661b3609458ea7",
+      "bytes": 560
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/result.json",
+      "sha256": "ba80bf67e3d9ec7947069ad9ee1a99a6fc44722694e1936aa901ce4ad3bcee16",
+      "bytes": 2268
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stdout.log",
+      "sha256": "ea919fdc64761f2a6c62aa4fca33a6cf0fabd6d145a3abc9294cda927a01dc64",
+      "bytes": 14134
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/adapter.json",
+      "sha256": "0542daa5cf4e0aaa58b5675652b8748d762f52f22510bce86d23a30f69f8d02d",
+      "bytes": 1437
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json",
+      "sha256": "2088f0b79577c1131555071dd1a2b3a540273bb76d76b6b20a2c06d1e78bdcd3",
+      "bytes": 2644
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/prompt.txt",
+      "sha256": "056e96e3b229d4238a9d70cd98b7beae71643ee8ff5c484a008c9a55b252a158",
+      "bytes": 605
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/result.json",
+      "sha256": "9573485a86108941c33d08a1b84101ec6646b7efd738a0a09613318ac46b4c1b",
+      "bytes": 2114
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+      "sha256": "8e05f8cda8930a2157db5d248793f453dc25d4eb72b1a0550fd49051eb64aed5",
+      "bytes": 979
+    },
+    {
+      "path": "skills/preflight/process.json",
+      "sha256": "6bc0f5f72f6bb0ebb56779ce0ba00bef5fb3c112cbad23718a8842d40753ee09",
+      "bytes": 1645
+    },
+    {
+      "path": "skills/preflight/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/preflight/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "startup/preparation/baseline-tree.json",
+      "sha256": "2a1537a332fb4962cd47833189410db1cbbb7f4da3bc98dc98802312e36fb3e0",
+      "bytes": 48170
+    },
+    {
+      "path": "startup/preparation/compile/process.json",
+      "sha256": "6375f5883ab1a74bff9ca72d581596ad404099baef049755acb6de8173161822",
+      "bytes": 1703
+    },
+    {
+      "path": "startup/preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "startup/preparation/compile-check/process.json",
+      "sha256": "d7387a56b568c924a54bd054d32ffb387cc0ff995c56946912be2f10522f09bb",
+      "bytes": 1720
+    },
+    {
+      "path": "startup/preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "startup/preparation/create-tutorial/process.json",
+      "sha256": "d5eda460e6c03c593eb4a51e846121711cdc7e50eff531d31c39e24a9aedaa20",
+      "bytes": 1631
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stdout.log",
+      "sha256": "ccecace25e15bb028bbf26cc8bbbf51e5eafa04951436eaf50da5cc45eb68407",
+      "bytes": 96
+    },
+    {
+      "path": "startup/preparation/status/process.json",
+      "sha256": "7a55080d7640bbc3f02ce30abf5ee995834f24d55e9ca88bf4ef32bfc2f70914",
+      "bytes": 1721
+    },
+    {
+      "path": "startup/preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "startup/preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "report.json",
+      "sha256": "994b0f654593bf9e9e490bc7e6e9909dfb74f43c351ff61609480f7eee01245e",
+      "bytes": 63016
+    },
+    {
+      "path": "report.md",
+      "sha256": "4eb912cb21e8589bdfa1fc7a66f7b464fc5dd3214c400d231d09785f4f0c1370",
+      "bytes": 4959
+    }
+  ]
+}

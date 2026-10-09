@@ -1,0 +1,45 @@
+{
+  "transport": "cancelled",
+  "finalText": null,
+  "exitCode": 143,
+  "signal": "SIGTERM",
+  "sessionId": {
+    "status": "available",
+    "value": "05cc45c8-4e6c-46c6-aded-86a86664d29d",
+    "source": "cursor.init.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 10454.132420000009,
+  "evidence": [
+    "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+    "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+    "/tmp/agentic-plan6-reference-2026-10-09-7761216/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json"
+  ],
+  "diagnostic": "cancelled"
+}

@@ -1,0 +1,95 @@
+Packet:
+# Identificação
+
+- ID: `entity:Task`
+- Camada: domain
+- Módulo: tasks
+- source: `app/domain/task.ts:5`
+- Estado: declared
+- specHash: `e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c`
+- Dependências: —
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "declaration": {
+    "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+    "id": "entity:Task",
+    "invariants": [
+      {
+        "id": "invariant:Task/titulo-obrigatorio",
+        "on": null,
+        "text": "Toda tarefa precisa de título não vazio."
+      }
+    ],
+    "methods": [
+      {
+        "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+        "emits": [
+          "event:TaskCreated"
+        ],
+        "id": "method:Task.create",
+        "name": "create",
+        "static": true,
+        "transition": null
+      }
+    ],
+    "module": "tasks",
+    "name": "Task",
+    "states": [
+      "pending",
+      "completed"
+    ]
+  }
+}
+```
+
+## Obrigações de teste
+
+- `invariant:Task/titulo-obrigatorio` — teste com `covers`.
+- `method:Task.create` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item entity:Task --spec-hash e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c --config /tmp/agentic-eval-5FI6Md/attempt-W4pH9W/workspace/agentic.config.ts --json
+```
+
+End packet
+Root atual: /tmp/agentic-eval-5FI6Md/attempt-bPc1Pb/workspace; configuração atual: /tmp/agentic-eval-5FI6Md/attempt-bPc1Pb/workspace/agentic.config.ts. Use esses paths no lugar de paths temporários do packet; conserve o specHash original e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c.
+Edite somente app/domain/task.ts Task.create (somente interior do corpo, mesma quantidade de linhas) e o novo teste app/test/entity-Task.test.ts. Preserve imports, contratos, decorators, outros corpos, testes existentes, configurações, propostas e gerados.
+Critérios adicionais arquivados: [{"id":"criterion:0001/titulo-invalido","given":"um título vazio ou com apenas espaços","when":"criar uma tarefa","then":"rejeita com TASK_TITLE_REQUIRED"},{"id":"criterion:0001/criacao","given":"id t1 e título com espaços nas extremidades","when":"criar a tarefa","then":"fica pending, normaliza o título e registra TaskCreated"}]. Cubra-os com covers do executor.
+Leia .agents/skills/agentic-ddd/SKILL.md e referências de executor pertinentes. Use só a sessão principal, sem delegação ou subagentes. Resposta final: somente JSON, por exemplo {"status":"done","summary":"texto"}; status deve ser done, blocked ou failed, sem prosa ou cercas.

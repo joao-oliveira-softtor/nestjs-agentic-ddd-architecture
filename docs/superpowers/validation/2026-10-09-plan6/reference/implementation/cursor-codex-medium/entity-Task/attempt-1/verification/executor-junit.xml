@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="2" assertions="10" failures="0" skipped="0" time="0.074292475">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="10" failures="0" skipped="0" time="0.072577531" hostname="softtords">
+    <testsuite name="Task" file="app/test/entity-Task.test.ts" line="7" tests="2" assertions="10" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita titulo vazio ou so com espacos" classname="Task" time="0.000267" file="app/test/entity-Task.test.ts" line="8" assertions="4" />
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria pending, normaliza titulo e registra TaskCreated" classname="Task" time="0.000176" file="app/test/entity-Task.test.ts" line="20" assertions="6" />
+    </testsuite>
+  </testsuite>
+</testsuites>

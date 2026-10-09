@@ -1,0 +1,81 @@
+{
+  "number": 1,
+  "handoff": {
+    "item": "usecase:create_task",
+    "packet": "# Identificação\n\n- ID: `usecase:create_task`\n- Camada: application\n- Módulo: tasks\n- source: `app/application/create-task.ts:13`\n- Estado: declared\n- specHash: `daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6`\n- Dependências: `entity:Task`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n      \"emits\": [\n        \"event:TaskCreated\"\n      ],\n      \"entity\": {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      },\n      \"id\": \"method:Task.create\",\n      \"invariants\": [],\n      \"name\": \"create\",\n      \"static\": true,\n      \"transition\": null\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.\",\n    \"emits\": [\n      \"event:TaskCreated\"\n    ],\n    \"id\": \"usecase:create_task\",\n    \"inputSchema\": {\n      \"properties\": {\n        \"task_id\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        },\n        \"title\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"title\"\n      ],\n      \"type\": \"object\"\n    },\n    \"module\": \"tasks\",\n    \"name\": \"create_task\",\n    \"outputSchema\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"status\": {\n          \"const\": \"pending\",\n          \"type\": \"string\"\n        },\n        \"task_id\": {\n          \"type\": \"string\"\n        },\n        \"title\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"title\",\n        \"status\"\n      ],\n      \"type\": \"object\"\n    },\n    \"uses\": [\n      \"method:Task.create\"\n    ],\n    \"whenNotToUse\": \"Para concluir tarefa existente.\",\n    \"whenToUse\": \"Quando o usuário deseja criar uma tarefa.\"\n  }\n}\n```\n\n## Obrigações de teste\n\n- `usecase:create_task` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item usecase:create_task --spec-hash daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6 --config /tmp/agentic-eval-5FI6Md/attempt-4VSM5d/workspace/agentic.config.ts --json\n```\n",
+    "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6",
+    "configPath": "/tmp/agentic-eval-5FI6Md/accepted-ez6LLK/tasks/agentic.config.ts",
+    "testFile": "app/test/usecase-create_task.test.ts",
+    "criteria": [
+      {
+        "id": "persistencia-criacao",
+        "given": "repositório vazio e id t1",
+        "when": "executar create_task e repetir o mesmo id",
+        "then": "salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS"
+      }
+    ]
+  },
+  "baselineHash": "b3c07f8e46ff417ceccf29429ccaa7ce6c4459dba4f7864deea4d7a948eb58a6",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"status\":\"done\",\"summary\":\"CreateTask.execute implementado, preservando as 14 linhas do corpo. Novo teste cobre criação, persistência, publicação, duplicidade e falhas, incluindo criterion:0001/persistencia-criacao.\",\"item\":\"usecase:create_task\",\"specHash\":\"daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6\",\"files\":[\"app/application/create-task.ts\",\"app/test/usecase-create_task.test.ts\"],\"verification\":{\"command\":\"bun run agentic verify --item usecase:create_task --spec-hash daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6 --config /tmp/agentic-eval-5FI6Md/attempt-Exa7qy/workspace/agentic.config.ts --json\",\"exitCode\":0,\"gates\":\"I1–I5 passed\",\"findings\":[]}}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "01a11f14-dda4-7020-b06f-9623945984e8",
+      "source": "codex.thread.started.thread_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "gpt-6.1-sol",
+      "source": "codex.rollout.turn_context.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "available",
+        "value": 157797,
+        "source": "codex.turn.completed.usage.input_tokens"
+      },
+      "cachedInputTokens": {
+        "status": "available",
+        "value": 137984,
+        "source": "codex.turn.completed.usage.cached_input_tokens"
+      },
+      "outputTokens": {
+        "status": "available",
+        "value": 3251,
+        "source": "codex.turn.completed.usage.output_tokens"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 88536.26192100003,
+    "evidence": [
+      "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/codex-sol-high/usecase-create_task/attempt-1/stdout.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/codex-sol-high/usecase-create_task/attempt-1/stderr.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/codex-sol-high/usecase-create_task/attempt-1/process.json",
+      "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/codex-sol-high/usecase-create_task/attempt-1/model-metadata.json"
+    ],
+    "diagnostic": null
+  },
+  "reply": null,
+  "audit": {
+    "ok": true,
+    "findings": [],
+    "changedFiles": [
+      "app/application/create-task.ts",
+      "app/test/usecase-create_task.test.ts"
+    ],
+    "patch": "[\n  {\n    \"path\": \"app/application/create-task.ts\",\n    \"before\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"9bba8436aba10556da636d97fa5096b7a612f2e2ce1b6793c49114a69af187af\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { Task } from '../domain/task';\\nimport { TaskCreated } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });\\nexport const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });\\nexport type CreateTaskInput = z.infer<typeof createTaskInput>;\\nexport type CreateTaskOutput = z.infer<typeof createTaskOutput>;\\n\\n@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })\\nexport class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    },\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"2289fb0caddf130451a2529e5bdeda1b5bbd7bda8649db6cb18b7d60b9fa0748\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { Task } from '../domain/task';\\nimport { TaskCreated } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });\\nexport const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });\\nexport type CreateTaskInput = z.infer<typeof createTaskInput>;\\nexport type CreateTaskOutput = z.infer<typeof createTaskOutput>;\\n\\n@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })\\nexport class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {\\n    const existing = await this.tasks.findById(input.task_id);\\n    if (existing) {\\n      throw new DomainError('TASK_ALREADY_EXISTS', 'A tarefa já existe.');\\n    }\\n    const task = Task.create(input.task_id, input.title);\\n    await this.tasks.save(task);\\n    await ctx.publish(task.pullEvents());\\n    return { task_id: task.id, title: task.title, status: 'pending' };\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    }\n  },\n  {\n    \"path\": \"app/test/usecase-create_task.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"888f0aab2a565f8bf96131c34ae17895769a9f9ae742b0a0153605d3d7a04831\",\n      \"content\": \"import { expect, test } from 'bun:test';\\nimport { DomainError, type UseCaseContext } from '@agentic-ddd/core';\\nimport { covers, createTestContext } from '@agentic-ddd/testing';\\nimport { CreateTask, createTaskOutput } from '../application/create-task';\\nimport { TaskCreated } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\\n\\ntest(covers([\\n  'usecase:create_task',\\n  'criterion:0001/persistencia-criacao',\\n], 'salva t1 pending antes de publicar TaskCreated e rejeita repetição sem efeitos adicionais'), async () => {\\n  const persisted = new InMemoryTaskRepository();\\n  expect(await persisted.findById('t1')).toBeNull();\\n  const steps: string[] = [];\\n  const tasks: TaskRepository = {\\n    async findById(id) {\\n      steps.push(`load:${id}`);\\n      return persisted.findById(id);\\n    },\\n    async save(task) {\\n      await persisted.save(task);\\n      steps.push('saved');\\n    },\\n  };\\n  const context = createTestContext();\\n  const ctx: UseCaseContext = {\\n    ...context,\\n    async publish(events) {\\n      expect(steps).toEqual(['load:t1', 'saved']);\\n      const saved = await persisted.findById('t1');\\n      expect(saved?.title).toBe('Minha  tarefa');\\n      expect(saved?.status).toBe('pending');\\n      await context.publish(events);\\n      steps.push('published');\\n    },\\n  };\\n  const useCase = new CreateTask(tasks);\\n\\n  const output = await useCase.execute({ task_id: 't1', title: ' \\\\tMinha  tarefa\\\\n ' }, ctx);\\n\\n  expect(output).toEqual({ task_id: 't1', title: 'Minha  tarefa', status: 'pending' });\\n  expect(createTaskOutput.parse(output)).toEqual(output);\\n  expect(steps).toEqual(['load:t1', 'saved', 'published']);\\n  expect(context.published).toHaveLength(1);\\n  expect(context.published[0]).toBeInstanceOf(TaskCreated);\\n  expect(context.published[0]!.payload).toEqual({ taskId: 't1', title: 'Minha  tarefa' });\\n  const saved = await persisted.findById('t1');\\n  expect(saved?.pullEvents()).toEqual([]);\\n\\n  const repetition = useCase.execute({ task_id: 't1', title: 'Outro título' }, ctx);\\n\\n  await expect(repetition).rejects.toBeInstanceOf(DomainError);\\n  await expect(repetition).rejects.toMatchObject({ code: 'TASK_ALREADY_EXISTS' });\\n  expect(steps).toEqual(['load:t1', 'saved', 'published', 'load:t1']);\\n  expect(await persisted.findById('t1')).toBe(saved);\\n  expect(saved?.title).toBe('Minha  tarefa');\\n  expect(saved?.status).toBe('pending');\\n  expect(context.published).toHaveLength(1);\\n});\\n\\ntest(covers(['usecase:create_task'], 'rejeita título composto de espaços sem salvar ou publicar'), async () => {\\n  let saves = 0;\\n  const tasks: TaskRepository = {\\n    async findById() { return null; },\\n    async save() { saves += 1; },\\n  };\\n  const context = createTestContext();\\n\\n  const execution = new CreateTask(tasks).execute({ task_id: 't1', title: ' \\\\t\\\\n ' }, context);\\n\\n  await expect(execution).rejects.toBeInstanceOf(DomainError);\\n  await expect(execution).rejects.toMatchObject({ code: 'TASK_TITLE_REQUIRED' });\\n  expect(saves).toBe(0);\\n  expect(context.published).toEqual([]);\\n});\\n\\ntest(covers(['usecase:create_task'], 'propaga falha de consulta sem salvar ou publicar'), async () => {\\n  const failure = new Error('Falha ao consultar');\\n  let saves = 0;\\n  const tasks: TaskRepository = {\\n    async findById() { throw failure; },\\n    async save() { saves += 1; },\\n  };\\n  const context = createTestContext();\\n\\n  await expect(new CreateTask(tasks).execute({ task_id: 't1', title: 'Tarefa' }, context)).rejects.toBe(failure);\\n\\n  expect(saves).toBe(0);\\n  expect(context.published).toEqual([]);\\n});\\n\\ntest(covers(['usecase:create_task'], 'propaga falha de persistência sem publicar TaskCreated'), async () => {\\n  const failure = new Error('Falha ao salvar');\\n  const tasks: TaskRepository = {\\n    async findById() { return null; },\\n    async save() { throw failure; },\\n  };\\n  const context = createTestContext();\\n\\n  await expect(new CreateTask(tasks).execute({ task_id: 't1', title: 'Tarefa' }, context)).rejects.toBe(failure);\\n\\n  expect(context.published).toEqual([]);\\n});\\n\"\n    }\n  }\n]"
+  },
+  "verification": null,
+  "accepted": false,
+  "reason": "invalid_implementation_reply"
+}

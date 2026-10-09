@@ -10,15 +10,23 @@ permissions:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    # ubuntu-latest rejected the bubblewrap uid map; keep the required probe.
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
       - run: bun install --frozen-lockfile
+      - name: Install and probe offline isolation runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y bubblewrap
+          bwrap --version
+          bwrap --ro-bind / / --unshare-pid --unshare-ipc --die-with-parent -- /bin/true
       - run: bun run typecheck
       - run: bun run lint
       - run: bun test
       - run: bun run build
       - run: bun run agentic compile --check
+      - run: bun run skills:install --check

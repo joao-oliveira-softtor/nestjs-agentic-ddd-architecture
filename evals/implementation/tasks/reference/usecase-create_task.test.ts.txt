@@ -1,0 +1,13 @@
+import { expect, test } from 'bun:test';
+import { createTestContext } from '@agentic-ddd/testing';
+import { CreateTask } from '__WORKSPACE__/app/application/create-task';
+import { InMemoryTaskRepository } from '__WORKSPACE__/app/infrastructure/in-memory-task.repository';
+test('persiste, publica e rejeita duplicado', async () => {
+  const repo = new InMemoryTaskRepository(); const ctx = createTestContext(); const uc = new CreateTask(repo);
+  expect(await uc.execute({task_id: 'oracle-17', title: ' Revisar '}, ctx)).toEqual({task_id: 'oracle-17', title: 'Revisar', status: 'pending'});
+  expect((await repo.findById('oracle-17'))?.title).toBe('Revisar');
+  expect(ctx.published.map(e => [e.name, e.payload])).toEqual([['TaskCreated', {taskId: 'oracle-17', title: 'Revisar'}]]);
+  expect(ctx.published[0]?.correlationId).toBe(ctx.correlationId);
+  await expect(uc.execute({task_id: 'oracle-17', title: 'Outra'}, ctx)).rejects.toMatchObject({code: 'TASK_ALREADY_EXISTS'});
+  expect(ctx.published).toHaveLength(1);
+});

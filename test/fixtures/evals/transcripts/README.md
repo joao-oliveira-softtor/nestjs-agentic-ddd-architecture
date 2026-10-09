@@ -1,0 +1,1 @@
+Transcripts synthetic and sanitized, authored for offline tests; no inference was executed. Native field shapes follow Codex `exec --json` and Cursor's documented full-message `stream-json`. They do not constitute real evaluation evidence.

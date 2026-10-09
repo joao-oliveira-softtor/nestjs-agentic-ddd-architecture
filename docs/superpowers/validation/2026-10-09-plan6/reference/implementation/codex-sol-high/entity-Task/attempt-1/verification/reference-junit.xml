@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="2" assertions="5" failures="0" skipped="0" time="0.05814792">
+  <testsuite name=".eval-reference/behavior.test.ts" file=".eval-reference/behavior.test.ts" tests="2" assertions="5" failures="0" skipped="0" time="0.056469997" hostname="softtords">
+    <testcase name="cria tarefa normalizada e registra evento" classname="" time="0.00022" file=".eval-reference/behavior.test.ts" line="3" assertions="3" />
+    <testcase name="rejeita título vazio ou só espaços" classname="" time="0.00008" file=".eval-reference/behavior.test.ts" line="10" assertions="2" />
+  </testsuite>
+</testsuites>

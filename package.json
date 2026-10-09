@@ -19,7 +19,8 @@
     "test:cov": "bun test --coverage",
     "agentic": "bun src/cli/main.ts",
     "skills:install": "bun scripts/install-skills.ts",
-    "skills:example": "bun scripts/create-skills-example.ts"
+    "skills:example": "bun scripts/create-skills-example.ts",
+    "evals": "bun scripts/evals/main.ts"
   },
   "dependencies": {
     "@nestbun/platform": "^0.1.2",

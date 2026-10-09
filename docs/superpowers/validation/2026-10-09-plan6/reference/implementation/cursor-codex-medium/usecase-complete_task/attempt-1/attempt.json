@@ -1,0 +1,285 @@
+{
+  "number": 1,
+  "handoff": {
+    "item": "usecase:complete_task",
+    "packet": "# Identificação\n\n- ID: `usecase:complete_task`\n- Camada: application\n- Módulo: tasks\n- source: `app/application/complete-task.ts:12`\n- Estado: declared\n- specHash: `c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d`\n- Dependências: `method:Task.complete`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi concluída.\",\n      \"id\": \"event:TaskCompleted\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCompleted\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.\",\n      \"emits\": [\n        \"event:TaskCompleted\"\n      ],\n      \"entity\": {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      },\n      \"id\": \"method:Task.complete\",\n      \"invariants\": [],\n      \"name\": \"complete\",\n      \"static\": false,\n      \"transition\": {\n        \"from\": [\n          \"pending\"\n        ],\n        \"to\": \"completed\"\n      }\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.\",\n    \"emits\": [\n      \"event:TaskCompleted\"\n    ],\n    \"id\": \"usecase:complete_task\",\n    \"inputSchema\": {\n      \"properties\": {\n        \"task_id\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\"\n      ],\n      \"type\": \"object\"\n    },\n    \"module\": \"tasks\",\n    \"name\": \"complete_task\",\n    \"outputSchema\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"status\": {\n          \"const\": \"completed\",\n          \"type\": \"string\"\n        },\n        \"task_id\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"status\"\n      ],\n      \"type\": \"object\"\n    },\n    \"uses\": [\n      \"method:Task.complete\"\n    ],\n    \"whenNotToUse\": \"Para criar uma nova tarefa.\",\n    \"whenToUse\": \"Quando o usuário terminou uma tarefa.\"\n  }\n}\n```\n\n## Obrigações de teste\n\n- `usecase:complete_task` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item usecase:complete_task --spec-hash c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d --config /tmp/agentic-eval-5FI6Md/attempt-25TXl4/workspace/agentic.config.ts --json\n```\n",
+    "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d",
+    "configPath": "/tmp/agentic-eval-5FI6Md/accepted-hSuRq0/tasks/agentic.config.ts",
+    "testFile": "app/test/usecase-complete_task.test.ts",
+    "criteria": [
+      {
+        "id": "persistencia-conclusao",
+        "given": "tarefa t1 persistida e um id inexistente",
+        "when": "executar complete_task",
+        "then": "salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND"
+      }
+    ]
+  },
+  "baselineHash": "fdedf9b0251d6f337a93e5b1dd191cb547ea50437206754c3a5e6b5af21eb001",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"status\":\"done\",\"summary\":\"Implementado o corpo de `CompleteTask.execute` em `app/application/complete-task.ts` com fluxo de busca por id, erro `TASK_NOT_FOUND` quando ausente, conclusão via `Task.complete`, persistência e publicação de eventos, retornando `{ task_id, status: 'completed' }`. Adicionado `app/test/usecase-complete_task.test.ts` com `covers(['usecase:complete_task','criterion:0001/persistencia-conclusao'])`, cobrindo conclusão persistida/publicação de `TaskCompleted` e rejeição de id inexistente. Verificação executada com hash original e config atual: status `done` (I1-I5 passed).\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "c8489c13-ada1-4c6c-94d2-13183d9cd0b1",
+      "source": "cursor.result.session_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "Codex 5.3 Medium",
+      "source": "cursor.init.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 91636.64840399998,
+    "evidence": [
+      "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/stdout.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/stderr.log",
+      "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/process.json"
+    ],
+    "diagnostic": null
+  },
+  "reply": {
+    "status": "done",
+    "summary": "Implementado o corpo de `CompleteTask.execute` em `app/application/complete-task.ts` com fluxo de busca por id, erro `TASK_NOT_FOUND` quando ausente, conclusão via `Task.complete`, persistência e publicação de eventos, retornando `{ task_id, status: 'completed' }`. Adicionado `app/test/usecase-complete_task.test.ts` com `covers(['usecase:complete_task','criterion:0001/persistencia-conclusao'])`, cobrindo conclusão persistida/publicação de `TaskCompleted` e rejeição de id inexistente. Verificação executada com hash original e config atual: status `done` (I1-I5 passed)."
+  },
+  "audit": {
+    "ok": true,
+    "findings": [],
+    "changedFiles": [
+      "app/application/complete-task.ts",
+      "app/test/usecase-complete_task.test.ts"
+    ],
+    "patch": "[\n  {\n    \"path\": \"app/application/complete-task.ts\",\n    \"before\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"97b9b46b9218c7d0a7f318deab69481eee561173f47059bf4c530f8137c10b99\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { TaskCompleted } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const completeTaskInput = z.object({ task_id: z.string().min(1) });\\nexport const completeTaskOutput = z.object({ task_id: z.string(), status: z.literal('completed') });\\nexport type CompleteTaskInput = z.infer<typeof completeTaskInput>;\\nexport type CompleteTaskOutput = z.infer<typeof completeTaskOutput>;\\n\\n@AgentUseCase({ name: 'complete_task', description: 'Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.', whenToUse: 'Quando o usuário terminou uma tarefa.', whenNotToUse: 'Para criar uma nova tarefa.', input: completeTaskInput, output: completeTaskOutput, uses: ['method:Task.complete'], emits: [TaskCompleted] })\\nexport class CompleteTask implements UseCase<CompleteTaskInput, CompleteTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CompleteTaskInput, ctx: UseCaseContext): Promise<CompleteTaskOutput> {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    },\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"a0b10f8b655bf2bf9548c42108bea2cd8d6414e3f28e25e1b46858774ec60e23\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { TaskCompleted } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const completeTaskInput = z.object({ task_id: z.string().min(1) });\\nexport const completeTaskOutput = z.object({ task_id: z.string(), status: z.literal('completed') });\\nexport type CompleteTaskInput = z.infer<typeof completeTaskInput>;\\nexport type CompleteTaskOutput = z.infer<typeof completeTaskOutput>;\\n\\n@AgentUseCase({ name: 'complete_task', description: 'Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.', whenToUse: 'Quando o usuário terminou uma tarefa.', whenNotToUse: 'Para criar uma nova tarefa.', input: completeTaskInput, output: completeTaskOutput, uses: ['method:Task.complete'], emits: [TaskCompleted] })\\nexport class CompleteTask implements UseCase<CompleteTaskInput, CompleteTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CompleteTaskInput, ctx: UseCaseContext): Promise<CompleteTaskOutput> {\\n    const task = await this.tasks.findById(input.task_id); if (!task) throw new DomainError('TASK_NOT_FOUND', 'Task not found'); task.complete(); await this.tasks.save(task); await ctx.publish(task.pullEvents()); return { task_id: task.id, status: 'completed' };\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    }\n  },\n  {\n    \"path\": \"app/test/usecase-complete_task.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"5948c194c0798a6a831f2ff8d4b8f78bec0a61001e78644939c3e93a89582020\",\n      \"content\": \"import { describe, expect, it } from 'bun:test';\\nimport { DomainError } from '@agentic-ddd/core';\\nimport { covers } from '@agentic-ddd/testing';\\nimport { CompleteTask } from '../application/complete-task';\\nimport { Task } from '../domain/task';\\nimport { TaskCompleted } from '../domain/task.events';\\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\\n\\ndescribe('complete_task use-case', () => {\\n  it(covers(['usecase:complete_task', 'criterion:0001/persistencia-conclusao'], 'salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND'), async () => {\\n    const tasks = new InMemoryTaskRepository();\\n    const seeded = Task.create('t1', 'tarefa');\\n    seeded.pullEvents();\\n    await tasks.save(seeded);\\n    const published: unknown[] = [];\\n    const useCase = new CompleteTask(tasks);\\n    const ctx = { correlationId: 'c1', causationId: 'c1', publish: async (events: readonly unknown[]) => { published.push(...events); } };\\n\\n    const output = await useCase.execute({ task_id: 't1' }, ctx);\\n    expect(output).toEqual({ task_id: 't1', status: 'completed' });\\n    const saved = await tasks.findById('t1');\\n    expect(saved?.status).toBe('completed');\\n    expect(published).toHaveLength(1);\\n    expect(published[0]).toBeInstanceOf(TaskCompleted);\\n    expect((published[0] as TaskCompleted).payload).toEqual({ taskId: 't1' });\\n\\n    try {\\n      await useCase.execute({ task_id: 'missing' }, ctx);\\n      throw new Error('expected DomainError');\\n    } catch (error) {\\n      expect(error).toBeInstanceOf(DomainError);\\n      expect((error as DomainError).code).toBe('TASK_NOT_FOUND');\\n    }\\n  });\\n});\\n\"\n    }\n  }\n]"
+  },
+  "verification": {
+    "ok": true,
+    "findings": [],
+    "commands": [
+      {
+        "name": "verify-item",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-5FI6Md/framework/src/cli/main.ts",
+          "verify",
+          "--item",
+          "usecase:complete_task",
+          "--spec-hash",
+          "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d",
+          "--json",
+          "--config",
+          "/tmp/agentic-eval-5FI6Md/attempt-e9EGP2/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "{\n  \"item\": \"usecase:complete_task\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+          "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item usecase:complete_task — done\n",
+          "durationMs": 2275.2095549999503,
+          "evidence": [
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/verify-item/stdout.log",
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/verify-item/stderr.log",
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/verify-item/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "executor-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-5FI6Md/attempt-e9EGP2/workspace/.executor-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\napp/test/method-Task-complete.test.ts:\n(pass) Task.complete > [covers: criterion:0001/conclusao, method:Task.complete] conclui pending, registra TaskCompleted e rejeita repeticao [0.27ms]\n\napp/test/entity-Task.test.ts:\n(pass) Task > [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita titulo vazio ou so com espacos [0.07ms]\n(pass) Task > [covers: criterion:0001/criacao, method:Task.create] cria pending, normaliza titulo e registra TaskCreated [0.05ms]\n\napp/test/usecase-complete_task.test.ts:\n(pass) complete_task use-case > [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND [0.29ms]\n\n 4 pass\n 0 fail\n 23 expect() calls\nRan 4 tests across 3 files. [80.00ms]\n",
+          "durationMs": 108.20600099989679,
+          "evidence": [
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/executor-tests/stdout.log",
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/executor-tests/stderr.log",
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/executor-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "reference-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "/tmp/agentic-eval-5FI6Md/attempt-e9EGP2/workspace/.eval-reference/behavior.test.ts",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-5FI6Md/attempt-e9EGP2/workspace/.reference-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) conclui, persiste, publica e rejeita id ausente [0.57ms]\n\n 1 pass\n 0 fail\n 9 expect() calls\nRan 1 test across 1 file. [76.00ms]\n",
+          "durationMs": 104.37469199998304,
+          "evidence": [
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/reference-tests/stdout.log",
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/reference-tests/stderr.log",
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/reference-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "compile-check",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-5FI6Md/framework/src/cli/main.ts",
+          "compile",
+          "--check",
+          "--config",
+          "/tmp/agentic-eval-5FI6Md/attempt-e9EGP2/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+          "stderr": "",
+          "durationMs": 398.23025099991355,
+          "evidence": [
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/compile-check/stdout.log",
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/compile-check/stderr.log",
+            "/tmp/agentic-plan6-reference-2026-10-09-873ea8c/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/verification/compile-check/process.json"
+          ],
+          "diagnostic": null
+        }
+      }
+    ],
+    "itemReport": {
+      "item": "usecase:complete_task",
+      "status": "done",
+      "gates": [
+        {
+          "id": "I1",
+          "name": "Dependências",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I2",
+          "name": "Implementação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I3",
+          "name": "Especificação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I4",
+          "name": "Obrigações",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I5",
+          "name": "Typecheck",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        }
+      ]
+    },
+    "executorTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "[covers: criterion:0001/conclusao, method:Task.complete] conclui pending, registra TaskCompleted e rejeita repeticao",
+          "file": "app/test/method-Task-complete.test.ts",
+          "line": 8,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/conclusao",
+            "method:Task.complete"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita titulo vazio ou so com espacos",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 8,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/titulo-invalido",
+            "invariant:Task/titulo-obrigatorio",
+            "method:Task.create"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/criacao, method:Task.create] cria pending, normaliza titulo e registra TaskCreated",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 20,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/criacao",
+            "method:Task.create"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND",
+          "file": "app/test/usecase-complete_task.test.ts",
+          "line": 10,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/persistencia-conclusao",
+            "usecase:complete_task"
+          ]
+        }
+      ]
+    },
+    "referenceTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "conclui, persiste, publica e rejeita id ausente",
+          "file": ".eval-reference/behavior.test.ts",
+          "line": 6,
+          "status": "passed",
+          "covers": []
+        }
+      ]
+    }
+  },
+  "accepted": true,
+  "reason": null
+}
