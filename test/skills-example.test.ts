@@ -1,5 +1,13 @@
 import { afterEach, expect, test } from 'bun:test';
-import { lstat, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  lstat,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -26,10 +34,12 @@ function run(root: string, ...args: string[]) {
     stderr: p.stderr.toString(),
   };
 }
-async function create() {
+async function create(symlinkedAncestor = false) {
   const base = await mkdtemp(join(tmpdir(), 'agentic-tutorial-'));
   dirs.push(base);
-  const root = join(base, 'tasks');
+  const alias = join(base, 'alias');
+  if (symlinkedAncestor) await symlink(base, alias, 'dir');
+  const root = join(symlinkedAncestor ? alias : base, 'tasks');
   const p = Bun.spawnSync(
     ['bun', join(ROOT, 'scripts/create-skills-example.ts'), '--root', root],
     { stdout: 'pipe', stderr: 'pipe' },
@@ -59,6 +69,17 @@ async function outputs(root: string) {
     ),
   );
 }
+
+test('example cria tutorial completo sob ancestral simbólico', async () => {
+  const root = await create(true);
+  for (const folder of ['.agents', '.claude'])
+    expect(await realpath(join(root, folder, 'skills/agentic-ddd'))).toBe(
+      join(ROOT, 'skills/agentic-ddd'),
+    );
+  const physicalRoot = await realpath(root);
+  expect(run(physicalRoot, 'compile')).toMatchObject({ code: 0 });
+  expect(run(physicalRoot, 'compile', '--check')).toMatchObject({ code: 0 });
+});
 
 test('example recusa destino existente e opções inválidas sem alterar arquivos', async () => {
   const root = await create();

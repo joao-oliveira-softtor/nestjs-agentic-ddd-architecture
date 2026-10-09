@@ -74,7 +74,7 @@ async function info(path: string) {
   }
 }
 
-/** Preflight every artifact and ancestor before writing anything. Identical installs are untouched. */
+/** Preflight every artifact and parent beneath root before writing. Identical installs are untouched. */
 export async function installSkills(
   options: InstallOptions,
 ): Promise<string[]> {
@@ -84,13 +84,16 @@ export async function installSkills(
   const missing: Artifact[] = [];
   const conflicts: string[] = [];
   for (const artifact of plan) {
-    for (let parent = dirname(artifact.path); ; parent = dirname(parent)) {
+    for (
+      let parent = dirname(artifact.path);
+      parent !== root;
+      parent = dirname(parent)
+    ) {
       const stat = await info(parent);
       if (stat && !stat.isDirectory())
         conflicts.push(
           `${parent}: pai não é diretório (links não são substituídos)`,
         );
-      if (parent === dirname(parent)) break;
     }
     const stat = await info(artifact.path).catch(
       (error: NodeJS.ErrnoException) => {
@@ -105,8 +108,10 @@ export async function installSkills(
     const matches =
       'link' in artifact
         ? stat.isSymbolicLink() &&
-          resolve(dirname(artifact.path), await readlink(artifact.path)) ===
-            artifact.link &&
+          resolve(
+            await realpath(dirname(artifact.path)),
+            await readlink(artifact.path),
+          ) === artifact.link &&
           (await realpath(artifact.path)) === (await realpath(SKILL_SOURCE))
         : stat.isFile() &&
           (await readFile(artifact.path, 'utf8')) === artifact.content;
@@ -124,7 +129,7 @@ export async function installSkills(
     await mkdir(dirname(artifact.path), { recursive: true });
     if ('link' in artifact)
       await symlink(
-        relative(dirname(artifact.path), artifact.link),
+        relative(await realpath(dirname(artifact.path)), artifact.link),
         artifact.path,
         'dir',
       );

@@ -94,6 +94,35 @@ for (const target of ['cursor', 'codex', 'claude'])
       ).toBeNull();
   });
 
+for (const scope of ['project', 'user'])
+  for (const location of ['root', 'ancestor'])
+    test(`instala ${scope} com link na ${location} e preserva links válidos ao reinstalar`, async () => {
+      const base = await workspace();
+      const physical = join(base, 'nested/physical');
+      await mkdir(physical, { recursive: true });
+      const alias = join(base, 'alias');
+      await symlink(physical, alias, 'dir');
+      const root = location === 'root' ? alias : join(alias, 'project');
+      expect(install(root, '--scope', scope)).toMatchObject({ code: 0 });
+      for (const folder of ['.agents', '.claude'])
+        expect(await realpath(join(root, folder, 'skills/agentic-ddd'))).toBe(
+          join(ROOT, 'skills/agentic-ddd'),
+        );
+      expect(install(root, '--scope', scope)).toMatchObject({ code: 0 });
+      expect(install(root, '--scope', scope, '--check')).toMatchObject({
+        code: 0,
+      });
+    });
+
+test('recusa pais simbólicos dentro da raiz sem escrever fora dela', async () => {
+  const root = await workspace();
+  const outside = await workspace();
+  await symlink(outside, join(root, '.claude'), 'dir');
+  expect(install(root).code).toBe(1);
+  expect(await lstat(join(root, '.agents')).catch(() => null)).toBeNull();
+  expect(await lstat(join(outside, 'agents')).catch(() => null)).toBeNull();
+});
+
 test('preflight recusa arquivo alheio sem instalar parcialmente; check não altera conflito', async () => {
   const root = await workspace();
   await mkdir(join(root, '.claude/agents'), { recursive: true });
