@@ -200,7 +200,13 @@ export async function verifySubmission(
       compile.result.exitCode !== 0
     )
       evidence.findings.push('Generated files / compile --check diverged');
-    const finalTree = await readTree(workspace.root);
+    let finalTree: Awaited<ReturnType<typeof readTree>>;
+    try {
+      finalTree = await readTree(workspace.root);
+    } catch (error) {
+      evidence.findings.push(`Unsafe verifier workspace: ${String(error)}`);
+      return evidence;
+    }
     for (const path of new Set([...originalTree.keys(), ...finalTree.keys()])) {
       if (
         path === '.executor-junit.xml' ||

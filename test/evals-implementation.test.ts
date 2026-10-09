@@ -56,6 +56,47 @@ test('audit permits selected body and test while preserving source coordinates a
   await completeItem(root, IDS[1]!);
   expect((await auditSubmission(baseline, root, IDS[0]!)).ok).toBe(false);
 });
+
+test('audit rejects oversized sparse files, excessive entries and aggregate content before retaining a patch', async () => {
+  const { mkdir, open } = await import('node:fs/promises');
+  const root = join(fixture.source.root, 'audit-resource-limits');
+  await cp(baseline, root, { recursive: true, verbatimSymlinks: true });
+  await mkdir(join(root, 'app/test'), { recursive: true });
+  const large = join(root, 'app/test/entity-Task.test.ts');
+  const file = await open(large, 'w');
+  await file.truncate(512 * 1024);
+  await file.close();
+  let audited = await auditSubmission(baseline, root, IDS[0]!);
+  expect(audited.ok).toBe(false);
+  expect(audited.findings.join()).toContain('limit');
+  expect(audited.patch).toBe('[]');
+  await rm(large);
+  for (let i = 0; i < 1025; i++)
+    await writeFile(join(root, 'app/test', `entry-${i}`), '');
+  audited = await auditSubmission(baseline, root, IDS[0]!);
+  expect(audited.findings.join()).toContain('entry limit');
+  expect(audited.patch).toBe('[]');
+  await rm(join(root, 'app/test'), { recursive: true });
+  await mkdir(join(root, 'app/test'));
+  for (let i = 0; i < 17; i++)
+    await writeFile(
+      join(root, 'app/test', `file-${i}`),
+      Buffer.alloc(256 * 1024),
+    );
+  audited = await auditSubmission(baseline, root, IDS[0]!);
+  expect(audited.findings.join()).toContain('aggregate limit');
+  expect(audited.patch).toBe('[]');
+  await rm(join(root, 'app/test'), { recursive: true });
+  await mkdir(join(root, 'app/test'));
+  for (let i = 0; i < 6; i++)
+    await writeFile(
+      join(root, 'app/test', `escaped-${i}`),
+      Buffer.alloc(256 * 1024),
+    );
+  audited = await auditSubmission(baseline, root, IDS[0]!);
+  expect(audited.findings.join()).toContain('patch limit');
+  expect(audited.patch).toBe('[]');
+});
 test('complete scripted benchmark independently accepts all five frozen packets and change done', async () => {
   const adapter = createScriptedAdapter(
     IDS.map(() => ({
@@ -301,6 +342,10 @@ test('submitted tests cannot disclose host files through either JUnit output sym
   await writeFile(host, marker);
   try {
     await completeItem(workspace.root, IDS[0]!);
+    const original = await readFile(
+      join(workspace.root, 'app/test/entity-Task.test.ts'),
+      'utf8',
+    );
     await writeFile(
       join(workspace.root, 'app/test/entity-Task.test.ts'),
       `import {symlinkSync,unlinkSync} from 'node:fs'; for (const name of ['.executor-junit.xml','.reference-junit.xml']) {try {unlinkSync(name)} catch {} symlinkSync(${JSON.stringify(host)},name)} process.exit(0);\n`,
@@ -329,6 +374,29 @@ test('submitted tests cannot disclose host files through either JUnit output sym
       );
     expect(verified.executorTests?.collectionError).toBeDefined();
     expect(verified.referenceTests?.collectionError).toBeDefined();
+    await writeFile(
+      join(workspace.root, 'app/test/entity-Task.test.ts'),
+      original +
+        '\nawait Bun.write("app/test/oversized.bin", Buffer.alloc(512 * 1024));\n',
+    );
+    const resource = await verifySubmission(
+      fixture.source,
+      workspace,
+      {
+        item: IDS[0]!,
+        packet: 'frozen',
+        specHash: status.items.find((i) => i.id === IDS[0])!.specHash,
+        configPath: workspace.configPath,
+        testFile: 'app/test/entity-Task.test.ts',
+        criteria: [],
+      },
+      {
+        signal: new AbortController().signal,
+        outDir: join(out, 'unsafe-verifier-tree'),
+      },
+    );
+    expect(resource.ok).toBe(false);
+    expect(resource.findings.join()).toContain('Unsafe verifier workspace');
   } finally {
     await disposeWorkspace(workspace);
   }

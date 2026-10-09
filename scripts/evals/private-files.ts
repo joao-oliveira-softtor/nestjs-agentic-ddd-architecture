@@ -4,11 +4,11 @@ import { basename, dirname, join } from 'node:path';
 import { within } from './isolation';
 
 /** Read only a regular, bounded file in the private tree after its processes stop. */
-export async function readPrivateFile(
+export async function readPrivateBytes(
   root: string,
   path: string,
   limit: number,
-): Promise<string> {
+): Promise<Buffer> {
   const boundary = await realpath(root);
   const parent = await realpath(dirname(path));
   if (!within(boundary, parent)) throw Error('Private file escapes boundary');
@@ -29,8 +29,16 @@ export async function readPrivateFile(
       count += next.bytesRead;
     }
     if (count > limit) throw Error('Private file exceeds limit');
-    return bytes.subarray(0, count).toString('utf8');
+    return bytes.subarray(0, count);
   } finally {
     await file.close();
   }
+}
+
+export async function readPrivateFile(
+  root: string,
+  path: string,
+  limit: number,
+): Promise<string> {
+  return (await readPrivateBytes(root, path, limit)).toString('utf8');
 }

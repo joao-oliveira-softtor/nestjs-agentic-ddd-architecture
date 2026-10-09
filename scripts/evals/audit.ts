@@ -1,8 +1,14 @@
-import { lstat, readFile, readdir, readlink } from 'node:fs/promises';
+import { lstat, opendir, readlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import ts from 'typescript';
 import type { AuditReport } from './contracts';
 import { sha256 } from './isolation';
+import { readPrivateBytes } from './private-files';
+
+export const AUDIT_FILE_LIMIT_BYTES = 256 * 1024;
+export const AUDIT_TREE_LIMIT_BYTES = 4 * 1024 * 1024;
+export const AUDIT_ENTRY_LIMIT = 1024;
+export const AUDIT_PATCH_LIMIT_BYTES = 8 * 1024 * 1024;
 
 export const TASK_ITEMS = [
   {
@@ -54,8 +60,22 @@ export interface TreeEntry {
 }
 export async function readTree(root: string): Promise<Map<string, TreeEntry>> {
   const tree = new Map<string, TreeEntry>();
+  let entries = 0,
+    totalBytes = 0;
   async function visit(directory: string) {
-    for (const name of (await readdir(join(root, directory))).sort()) {
+    const handle = await opendir(join(root, directory));
+    const names: string[] = [];
+    try {
+      let entry;
+      while ((entry = await handle.read())) {
+        if (++entries > AUDIT_ENTRY_LIMIT)
+          throw Error('Submission entry limit');
+        names.push(entry.name);
+      }
+    } finally {
+      await handle.close();
+    }
+    for (const name of names.sort()) {
       const path = directory ? `${directory}/${name}` : name;
       const full = join(root, path);
       const stat = await lstat(full);
@@ -66,10 +86,24 @@ export async function readTree(root: string): Promise<Map<string, TreeEntry>> {
           : 'file';
       if (kind === 'file' && !stat.isFile())
         throw Error(`Unsupported file type: ${path}`);
+      if (kind === 'file' && stat.size > AUDIT_FILE_LIMIT_BYTES)
+        throw Error('Submission per-file limit');
+      if (kind === 'file' && stat.size > AUDIT_TREE_LIMIT_BYTES - totalBytes)
+        throw Error('Submission aggregate limit');
       const bytes =
         kind === 'file'
-          ? await readFile(full)
+          ? await readPrivateBytes(
+              root,
+              full,
+              Math.min(
+                AUDIT_FILE_LIMIT_BYTES,
+                AUDIT_TREE_LIMIT_BYTES - totalBytes,
+              ),
+            )
           : Buffer.from(kind === 'link' ? await readlink(full) : '');
+      totalBytes += bytes.byteLength;
+      if (totalBytes > AUDIT_TREE_LIMIT_BYTES)
+        throw Error('Submission aggregate limit');
       tree.set(path, {
         kind,
         mode: stat.mode,
@@ -154,7 +188,8 @@ export async function auditSubmission(
   }
   const findings: string[] = [];
   const changedFiles: string[] = [];
-  const changes: unknown[] = [];
+  const changes: string[] = [];
+  let patchBytes = 4;
   for (const path of [
     ...new Set([...baseline.keys(), ...submission.keys()]),
   ].sort()) {
@@ -167,7 +202,20 @@ export async function auditSubmission(
     )
       continue;
     changedFiles.push(path);
-    changes.push({ path, before: before ?? null, after: after ?? null });
+    const change = JSON.stringify(
+      { path, before: before ?? null, after: after ?? null },
+      null,
+      2,
+    ).replace(/^/gm, '  ');
+    patchBytes += Buffer.byteLength(change) + (changes.length ? 2 : 0);
+    if (patchBytes > AUDIT_PATCH_LIMIT_BYTES)
+      return {
+        ok: false,
+        findings: [...findings, 'Submission patch limit'],
+        changedFiles,
+        patch: '[]',
+      };
+    changes.push(change);
     if (path === 'app/test' && !before && after?.kind === 'directory') continue;
     if (
       path === assignment.test &&
@@ -217,6 +265,6 @@ export async function auditSubmission(
     ok: findings.length === 0,
     findings,
     changedFiles,
-    patch: JSON.stringify(changes, null, 2),
+    patch: changes.length ? `[\n${changes.join(',\n')}\n]` : '[]',
   };
 }
