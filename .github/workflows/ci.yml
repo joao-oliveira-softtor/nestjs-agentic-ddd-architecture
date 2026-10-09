@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    # ubuntu-latest rejected the bubblewrap uid map; keep the required probe.
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
