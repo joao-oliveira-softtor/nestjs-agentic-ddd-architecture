@@ -1,0 +1,49 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Task.complete implementado com TaskCompleted, estado completed e erro TASK_ALREADY_COMPLETED na repetição. Novo teste cobre o método e criterion:0001/conclusao. Verificação com specHash original retornou done, código 0, todos os gates aprovados. Apenas os arquivos autorizados foram alterados, preservando a quantidade de linhas do corpo.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "01a12620-2db1-72a1-8f88-20d9fe831517",
+    "source": "codex.thread.started.thread_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "gpt-6.1-sol",
+    "source": "codex.rollout.turn_context.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 145998,
+      "source": "codex.turn.completed.usage.input_tokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 114304,
+      "source": "codex.turn.completed.usage.cached_input_tokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 2073,
+      "source": "codex.turn.completed.usage.output_tokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 63642.91319200001,
+  "evidence": [
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high/implementation/codex-sol-high/method-Task-complete/attempt-1/stdout.log",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high/implementation/codex-sol-high/method-Task-complete/attempt-1/stderr.log",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high/implementation/codex-sol-high/method-Task-complete/attempt-1/process.json",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high/implementation/codex-sol-high/method-Task-complete/attempt-1/model-metadata.json"
+  ],
+  "diagnostic": null
+}

@@ -1,0 +1,27 @@
+
+app/test/usecase-create_task.test.ts:
+(pass) [covers: criterion:0001/persistencia-criacao, usecase:create_task] salva t1 pendente, publica TaskCreated e rejeita repetição com TASK_ALREADY_EXISTS [0.67ms]
+(pass) [covers: usecase:create_task] rejeita título em branco sem salvar ou publicar [0.11ms]
+(pass) [covers: usecase:create_task] propaga falha ao salvar sem publicar TaskCreated [0.14ms]
+
+app/test/usecase-complete_task.test.ts:
+(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1, salva completed e publica TaskCompleted após salvar [0.51ms]
+(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id inexistente com TASK_NOT_FOUND sem salvar ou publicar [0.16ms]
+(pass) [covers: usecase:complete_task] rejeita conclusão repetida sem salvar ou publicar novamente [0.13ms]
+(pass) [covers: usecase:complete_task] propaga falha de persistência sem publicar eventos [0.11ms]
+
+app/test/method-Task-complete.test.ts:
+(pass) [covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pendente, registra TaskCompleted e rejeita repetição [0.08ms]
+
+app/test/entity-Task.test.ts:
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou compostos apenas por espaços [0.07ms]
+(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente com título normalizado e registra TaskCreated [0.04ms]
+
+app/test/operator-task-operator.test.ts:
+(pass) [covers: criterion:0001/tools, operator:task-operator] executa somente create_task e complete_task, conclui a tarefa e publica os dois eventos [7.02ms]
+(pass) [covers: operator:task-operator] rejeita tool fora da lista e entrada inválida sem salvar ou publicar [1.28ms]
+
+ 12 pass
+ 0 fail
+ 104 expect() calls
+Ran 12 tests across 5 files. [95.00ms]

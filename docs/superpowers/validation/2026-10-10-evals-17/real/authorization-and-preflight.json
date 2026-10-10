@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-10T14:00:46.657Z",
+  "authorization": {
+    "source": "user reply sim to two issue-17 runs",
+    "configurations": 2,
+    "maxSessionsPerConfiguration": 15,
+    "maxTotalSessions": 30,
+    "maxMinutesPerConfiguration": 45,
+    "maxTotalMinutes": 90,
+    "issue20Authorized": false
+  },
+  "sourceCommit": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425",
+  "runnerCommit": "e0e0c2369a321a574c01cd1f491e15e50f3699cc",
+  "originFingerprint": "ce48623159e042acdccef0a1f1ba2bbbf44af99870558f9ce1bb198e903b766f",
+  "manifests": [
+    {
+      "path": "evals/run.certify.codex-sol-high.json",
+      "sha256": "111428bc02bd9b07556f094a96a71a61a480ef716840b255dd00f52bc4f472c2",
+      "configuration": {
+        "id": "codex-sol-high",
+        "adapter": "codex-cli",
+        "authentication": "local-login",
+        "model": "gpt-6.1-sol",
+        "parameters": {
+          "reasoningEffort": "high"
+        }
+      }
+    },
+    {
+      "path": "evals/run.certify.cursor-codex-medium.json",
+      "sha256": "1016856e3a2b1dcc189aedffdb5d49ad02623e196abeb63a1da538b2406a2b49",
+      "configuration": {
+        "id": "cursor-codex-medium",
+        "adapter": "cursor-cli",
+        "authentication": "local-login",
+        "model": "gpt-5.3-codex",
+        "parameters": {}
+      }
+    }
+  ],
+  "control": {
+    "status": "passed",
+    "invocations": 10,
+    "questions": 5,
+    "acceptedPackets": 5,
+    "changeVerification": "done",
+    "artifactsChecked": 223
+  },
+  "isolationProbe": "passed",
+  "authentication": "existing local-login; no credentials in this record"
+}

@@ -25,9 +25,9 @@ Sequência: #17 → #18 e #19 → #20; retomar Planos 7–8 após as campanhas. 
 
 | Issue | Entrega | Estado |
 | --- | --- | --- |
-| [#17](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/17) | Dois manifestos de certificação, SHA fixo, 15 sessões/45 min cada | Preparada; inferência e certificação pendentes |
-| [#18](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/18) | Dataset adicional com 20 casos e julgamento offline estrito | Verificada offline; integração e #17 pendentes |
-| [#19](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/19) | 25 regressões no percurso completo e oráculos com múltiplos valores | Verificada offline; integração e #17 pendentes |
+| [#17](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/17) | Dois manifestos de certificação, SHA fixo, 15 sessões/45 min cada | Certificada: ambos 5/5 packets e verify done; [evidências](superpowers/validation/2026-10-10-evals-17/real/README.md) |
+| [#18](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/18) | Dataset adicional com 20 casos e julgamento offline estrito | Verificada offline; integração pendente |
+| [#19](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/19) | 25 regressões no percurso completo e oráculos com múltiplos valores | Verificada offline; integração pendente |
 | [#20](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/20) | Agregador offline e seis posições de campanha | Agregador verificado; runs reais pendentes |
 
 O ciclo preserva o dataset original e a referência real anterior. Manifestos de campanha usam 25 perguntas e cinco packets por run. O orçamento proposto de 35 sessões/45 min por run (210 sessões/270 min no total) requer autorização separada; nenhuma campanha é iniciada automaticamente.

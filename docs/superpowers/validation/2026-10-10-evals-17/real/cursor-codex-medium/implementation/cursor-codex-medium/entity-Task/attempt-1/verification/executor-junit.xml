@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="2" assertions="8" failures="0" skipped="0" time="0.085689373">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="8" failures="0" skipped="0" time="0.083855118" hostname="softtords">
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] Task.create rejeita titulo vazio" classname="" time="0.000131" file="app/test/entity-Task.test.ts" line="7" assertions="3" />
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] Task.create normaliza titulo e registra TaskCreated" classname="" time="0.000341" file="app/test/entity-Task.test.ts" line="20" assertions="5" />
+  </testsuite>
+</testsuites>

@@ -1,0 +1,1879 @@
+{
+  "schemaVersion": 1,
+  "sourceCommits": {
+    "certification": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425",
+    "campaign": "dc9a25d133fa71975dfd77713e00ea653a273a82"
+  },
+  "artifacts": [
+    {
+      "path": "docs/ROADMAP.md",
+      "sha256": "66388f4b9f483aca87ad4b26ca9746218a45a96158c411cd8aaccc7f7e2c2cde",
+      "bytes": 5613
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-10-evals-17-certificacao-tasks.md",
+      "sha256": "169e8907bfa1367b07061017997795abbc88a43f478c9ecd6d373d78a7be4f9d",
+      "bytes": 572
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-10-evals-18-dataset-compreensao.md",
+      "sha256": "f50015b5ca6d54b2fc2a02eaa98173f4ec9a79275d44ea244928ce830f6467d2",
+      "bytes": 597
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-10-evals-19-regressoes-run.md",
+      "sha256": "b4dc3bd34bb02d9bca7ec803a2800982e332ad73596c83ea87320fc9a9fd8a4f",
+      "bytes": 577
+    },
+    {
+      "path": "docs/superpowers/plans/2026-10-10-evals-20-agregacao-campanhas.md",
+      "sha256": "67369559d9f54f323884eafaaa73113a919fe52a3f106f8044b8f2bfbfb50112",
+      "bytes": 667
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-10-evals-17-certificacao-tasks.md",
+      "sha256": "a07f55ee38aa941ab73fec3fddd464a15ba2267a925b6249133d140b2a376637",
+      "bytes": 680
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-10-evals-18-dataset-compreensao.md",
+      "sha256": "5f87229f49f6e2b9721596f258a29b848522bba0db30f6e6a04b7b18e7b59bd6",
+      "bytes": 576
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-10-evals-19-regressoes-run.md",
+      "sha256": "03f72390acc414cb4fc929d0a1214c2cb4cf8ff051524b9841dcd3495d020004",
+      "bytes": 720
+    },
+    {
+      "path": "docs/superpowers/specs/2026-10-10-evals-20-agregacao-campanhas.md",
+      "sha256": "e46a674d528e48f898da81213e2851d66e7ef57a42624532984b3f65e641f755",
+      "bytes": 804
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/control.ts.txt",
+      "sha256": "9b82388dc7e0b7f83ce92bdedf0c8d0c4869d337d32961ef9cfa71eca8863ff2",
+      "bytes": 1877
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/preflight.json",
+      "sha256": "56da0b0732f36569f3c2c6d1c2cc2b5592b950f70624bb9f87eb71f57a70efec",
+      "bytes": 2955
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control.log.txt",
+      "sha256": "51c289278442c8f68cef62c714e5e7a6823efca7e22a241b6166682f05e6904c",
+      "bytes": 194
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/artifact-manifest.json",
+      "sha256": "e442879955acff65cb3032d2abad48a6040cc633ee2bf99973410b9a9c6fff8d",
+      "bytes": 47459
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/initial-status/process.json",
+      "sha256": "5a9c7f35a802e3f515cf911c150b61e8d07d723663e597b889ef3397d3ac7f4e",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/initial-status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/initial-status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/attempt.json",
+      "sha256": "7c6ccb3b5d57491ece0a99dea79969f6b551960052b3f7c4125c033cb435e60e",
+      "bytes": 18372
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/handoff.json",
+      "sha256": "6345404446c14cff2b8fdc06a36d22b427d9604b3ea977fe5ae247073cb80f55",
+      "bytes": 3003
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/process.json",
+      "sha256": "88b3946e73a900852cda13fbaf33e7f772db6af139e2d06dc51bd18356d1e074",
+      "bytes": 4438
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/prompt.txt",
+      "sha256": "34e45718a6131d73db6bd97e5020fc752a9112c69b49780fa76e081053714f8e",
+      "bytes": 3604
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/submission.json",
+      "sha256": "354430a84fd6a019e7a6e486ad22d16ce54044dc8525ecd1471887e9be9bd17c",
+      "bytes": 4425
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/compile-check/process.json",
+      "sha256": "17748c7a6b5e9fef241f9b846e0648d1bc7c5264e246658206fed5985a3fa516",
+      "bytes": 1745
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/executor-junit.xml",
+      "sha256": "93316b33d430ff564be03650662913451dab65eacbd2d22f594aec639f20d30c",
+      "bytes": 778
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "eb465432d523c409dc0abb5290f9139484d071605a03b9e15a2cae499b09f095",
+      "bytes": 1700
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "2fc6d365001d7afb9622c30cdf57401614f052d3923753af72c2beeb9c3e94fe",
+      "bytes": 345
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/reference-junit.xml",
+      "sha256": "46e8ff6c26f5f526ee7cccba95d6f7d82504ce817b92f8955e4d4c89974e25cb",
+      "bytes": 982
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "244b5e5cb9b287ac2588e505622fadf18508fd7d967980be2e6d8e7538b109e3",
+      "bytes": 1954
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "e770110e3b1c30e9a6a71c86a76d431681a4e9a6dfddafe3859c61885fbe3d7e",
+      "bytes": 332
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/verify-item/process.json",
+      "sha256": "370dada514d11588678e9499c117d2d13b5461c7a699acd2dd40ccc7cbc441f2",
+      "bytes": 1862
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "717f87a62d03fb04d52fe306896d8b22f233a6bc9820a13348b955fada6631b6",
+      "bytes": 163
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/entity-Task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "ca40d866891a5e9be3558a9ee6d4a37966d231c075cfc2839e61163fe36a2d79",
+      "bytes": 719
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/attempt.json",
+      "sha256": "a20f026d715fef446449d47fa06a4f5d36cc616a6cf3541847868541b7019048",
+      "bytes": 19078
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/handoff.json",
+      "sha256": "213f820d4cfeedcd77682a174167be51b1b1786f2508c99de71fbaacbb0f0346",
+      "bytes": 3755
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/process.json",
+      "sha256": "5fecff9d3671c69ec8891b904fb5127dd1ee04b0ca2d4963311aa8e23336d18a",
+      "bytes": 4628
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/prompt.txt",
+      "sha256": "69393be2f866e0e95a74890ec63ed8e60fcd9117dc5b69147d76c9ce9b49dac1",
+      "bytes": 4275
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/submission.json",
+      "sha256": "146f55cc31396a1eb2a304acc051eaa6702c7f8ab4012228d16b6b200edc80b3",
+      "bytes": 4295
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/compile-check/process.json",
+      "sha256": "915f7838bd769bf272b31a15fb673d6741387788216902baf65d12479b80cb73",
+      "bytes": 1745
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-junit.xml",
+      "sha256": "5f15f05cb2d9c6210c02518e04284ef43bbd4d9883d30709c8c1ef31a147b1f8",
+      "bytes": 1203
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-tests/process.json",
+      "sha256": "643913bc4ac0609d2ab054325d7a183b82d65531d6557f4d2e324fd57eac7015",
+      "bytes": 1700
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "324e8b4c46f18b37f00226ae148de8a910a5ff6023b0c7ff4dc85bcb4d1770df",
+      "bytes": 497
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-junit.xml",
+      "sha256": "3ae81783c5de46a752276cf4565b3d03ad982ba29b8eecb8bc202fe6df142944",
+      "bytes": 660
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-tests/process.json",
+      "sha256": "d3e95642f37f83e0fe05382db35ec2dbb0ba10934bb5218da912919a4de3cf9a",
+      "bytes": 1954
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "1fd2e2f1a07291e586f7abb03ef2c36d573686b61e95042bf728f8f6d9e87ca9",
+      "bytes": 214
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/verify-item/process.json",
+      "sha256": "852da6b89654c596b0eef8029287ec7da150464e15fcc413f101f78077459c3d",
+      "bytes": 1877
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "932b6b6e279448fba63acc82ac0af5f975755570cdb1b83122a232d83d06067c",
+      "bytes": 172
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/method-Task-complete/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "a52a132ca17be8b0ca7662766ceee15909324603ec337a21c77d3ee118dca36e",
+      "bytes": 728
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/attempt.json",
+      "sha256": "2e646273cbd5fd9cdf9a2753dd0adb54c550b26c35928f895fbd4bdef38e7b3c",
+      "bytes": 23012
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/handoff.json",
+      "sha256": "e54384e7df23f9603d2874bc3ca3f78af9db82020fba573fa5dfec95e27c07c9",
+      "bytes": 8278
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/process.json",
+      "sha256": "3a7fb5bf9612d0605698d98a6eb21991954a7a1692542300896fbdac56a27973",
+      "bytes": 5027
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/prompt.txt",
+      "sha256": "7a124b49dffee4c395965cf80dcb063c3423ba3b45473dd2a156baffcc266688",
+      "bytes": 8264
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/submission.json",
+      "sha256": "ead7606d26d8f679dd8b2709d6e360e1618f03f77573fec02a4913b8e5a288c7",
+      "bytes": 2145
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/compile-check/process.json",
+      "sha256": "288a63c62df7f9f17938d956263e64c4ccc73ebb1eb701fd007f9f40fa420a22",
+      "bytes": 1745
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-junit.xml",
+      "sha256": "74fd117364419af4715d21a1f5414376967b9c66c60995287c7e06a2a197bd06",
+      "bytes": 2530
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-tests/process.json",
+      "sha256": "1aad33def4f7f320fb96a82ba3fbc788e59a5456ce38c5871265dcca8fd13b99",
+      "bytes": 1701
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "2fa1485dd95edc6b518954a26563eca80b85d8e78343b72b54beebe4180139d7",
+      "bytes": 993
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-junit.xml",
+      "sha256": "9d0c5c16afef73456c8c36becb595d63501b2e3d8fb435da50b77470a67cb68d",
+      "bytes": 681
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-tests/process.json",
+      "sha256": "cab51bcc73fd521aef3ab4d0c6b9a37340d562db84b4283f45fa372882f6d4e8",
+      "bytes": 1954
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "562423b039fc45599a9c563d87726e7c351595f74c816bd7ad68b2eb9a62f60e",
+      "bytes": 236
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/verify-item/process.json",
+      "sha256": "58c55ad4ad174f6b350f2752c914a3bc9d36134a49d6808d994f3ddbb23aaf8c",
+      "bytes": 1879
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "cf6be3c3b71013d42a521ae4ba42a2e55980759e2abc9cbf8252b02b79509a86",
+      "bytes": 174
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/operator-task-operator/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "f9ca5cde986b80b435edfa0b633f494ad6004583fd7d04ef3b4931c14c607588",
+      "bytes": 730
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-entity-Task/process.json",
+      "sha256": "b57e4f5c42f732276ffa979f13d418ab39a0cae67937496c567ca0943e9b79ee",
+      "bytes": 1746
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-entity-Task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-entity-Task/stdout.log",
+      "sha256": "b1449f29e48618fe0bc1138a3e5b38e6ed5497fc10cf82250ee3f3d93dc76bdc",
+      "bytes": 2146
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-method-Task-complete/process.json",
+      "sha256": "4edfe5fb02ea603515dfd543ba2e9d83272b130c7ba51a44aeb208949b0ec857",
+      "bytes": 1762
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-method-Task-complete/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-method-Task-complete/stdout.log",
+      "sha256": "f5b75463ef4d063f6e30dbb769141a976719b37841207f81b2ea3792e25b98ae",
+      "bytes": 2935
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-operator-task-operator/process.json",
+      "sha256": "fcf4155e152560ade12e49dd7a7a251a5d8a871c3ec6bce50119be0833210844",
+      "bytes": 1764
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-operator-task-operator/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-operator-task-operator/stdout.log",
+      "sha256": "21656418075eaa7d95c8f2b0ad1bab75c72403c34f5add91b689829c5c7ed879",
+      "bytes": 6972
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-usecase-complete_task/process.json",
+      "sha256": "28b2c4b5b3cef5f1e3b65e35ef79602b65a1e1e5ce11b2b54a6e21df20bac295",
+      "bytes": 1763
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-usecase-complete_task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-usecase-complete_task/stdout.log",
+      "sha256": "8b7021963ca43a3b2cb7b4de81f30cbdb7c714f5c48a10ae36dc85c7c585d784",
+      "bytes": 4010
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-usecase-create_task/process.json",
+      "sha256": "5d83d874c4ca156b3a4a640ec05829784821d23865c2037737e5ef5613794cd2",
+      "bytes": 1761
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-usecase-create_task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/packet-usecase-create_task/stdout.log",
+      "sha256": "40937dfb86b0d907d0c6ea1d0f043a405cbb9cd42a731edb88a0c21cebfc0f3d",
+      "bytes": 3678
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-0/next/process.json",
+      "sha256": "3aab09881f508a090eb366afa86696f7280cd7c8e39633e5c68b7087fc8adfa6",
+      "bytes": 1773
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-0/next/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-0/next/stdout.log",
+      "sha256": "cce0416411f98295fbbe81ec9575170bc5e4551731d1608c578487395658c043",
+      "bytes": 347
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-0/status/process.json",
+      "sha256": "b57beb82f815e69ece6d279e859fb2b27d134459ab7b73154479f6583fcdaa78",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-0/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-0/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-1/next/process.json",
+      "sha256": "cc4ab478f43f2b59eeca0ca9da060f1ba2d6fce98f0039f133a1ac9eecd82ab1",
+      "bytes": 1773
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-1/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-1/next/stdout.log",
+      "sha256": "81e40eb53da28081a00b1ce05d8e1c409b3463968a8bbbb978f9de3970bab4e5",
+      "bytes": 219
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-1/status/process.json",
+      "sha256": "8c8ea8e280db2429225d4cecd623743e72758f707701754845987485f1917b2e",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-1/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-1/status/stdout.log",
+      "sha256": "1c3d41a34edccaca304d4fb861b5728f58e9204c2989f214270ecb5f44224986",
+      "bytes": 2863
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-2/next/process.json",
+      "sha256": "6c32b15f48e11cb4301586d59d76c1414ae53414852156c284c54d23852686f5",
+      "bytes": 1773
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-2/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-2/next/stdout.log",
+      "sha256": "5dfef10222ed61dbf80b2931a02bbcfbf1c00fba26701cbf82aa373dee3122db",
+      "bytes": 177
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-2/status/process.json",
+      "sha256": "01a4cb9badde97cc0c40f92f11b6142bd7a2c63b7b3399fe772cb25ff0aa1afc",
+      "bytes": 1741
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-2/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-2/status/stdout.log",
+      "sha256": "16623fd2bda3dd35258478027e7522fc33fbcd502715d777f83d02ba0236034f",
+      "bytes": 2780
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-3/next/process.json",
+      "sha256": "b43cf7b93f6baa903e6918f49a05cd52401c9f22242e2192080bc2fe3c9ca9bd",
+      "bytes": 1773
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-3/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-3/next/stdout.log",
+      "sha256": "2d0bbf64e14bc6a5a59fa283df9364b35d4e650547b4dc5034061fff26a93151",
+      "bytes": 146
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-3/status/process.json",
+      "sha256": "2f2cb30886009f22a6926a839313d01e90eeab921325e87b7fc79a44e46a22b6",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-3/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-3/status/stdout.log",
+      "sha256": "207a605dcc5c5b855d614e31510dfe7afd6c2963caa19e9903ecf91ff2b312ea",
+      "bytes": 2700
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-4/next/process.json",
+      "sha256": "d1db3c6c7f72148ebc19f221d016582bc76ad28b4a0e6821012ef53841841bf9",
+      "bytes": 1773
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-4/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-4/next/stdout.log",
+      "sha256": "cb83a89c5ced6620172e3707b56652c71b2a48828f3e02e2615212118bed8b9c",
+      "bytes": 105
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-4/status/process.json",
+      "sha256": "aa85e542914e7fc3eb8d5decf453fd49e6f4d65d1b79a1c72183c3f11ca0f99a",
+      "bytes": 1747
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-4/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-4/status/stdout.log",
+      "sha256": "9bf3c1011f900e19cb6122978ba24d25edcf2081b99ef5291277b59a562b2dc5",
+      "bytes": 2622
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-5/next/process.json",
+      "sha256": "cd3897910acf0c8dee7b3a9698c50ff429ae9f407611f07adcc0bdd440a6661a",
+      "bytes": 1772
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-5/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-5/next/stdout.log",
+      "sha256": "7ff710317c2edbc437dc8efd872fd05db715d42145a74a4a9bc733bf3d5c01ce",
+      "bytes": 59
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-5/status/process.json",
+      "sha256": "8a0360394d00b14540f66e8d6e8cebb38ac22206c4a330fbb8c58abc3640b06d",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-5/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/query-5/status/stdout.log",
+      "sha256": "bcb8107ef35bec82a14ed19700652b5809008d2cf5c8033b1675080af7bfdf7c",
+      "bytes": 2568
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/attempt.json",
+      "sha256": "99d815c78fafc1352395d07f2f50871f876a964628cd973be2ef723158ea7289",
+      "bytes": 21108
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/handoff.json",
+      "sha256": "be6fe93fcf5d08e8f1a30fe065b18b12eee28b74f0f6828f621dd660651affa9",
+      "bytes": 4971
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/process.json",
+      "sha256": "37aec13c3ddeaa7f95483c508ba7885598c792103a99c47c444630e494e08b3e",
+      "bytes": 4643
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/prompt.txt",
+      "sha256": "8470c20074da11e419359ed48ac0c6d7ae4a502ed16626f5c748227b1dba8eb5",
+      "bytes": 5384
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/submission.json",
+      "sha256": "fe3a58efb3a0081ac9341da1eeb10716502464c677d0f17c0da1750abcb80211",
+      "bytes": 4486
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/compile-check/process.json",
+      "sha256": "2cb74e31045ce88b65ff9842fe73c88e099a91e28fdf1bf17a45cf7375e750ae",
+      "bytes": 1745
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-junit.xml",
+      "sha256": "29b7a94f43c3d89b31b9f90f098c655302cd213736203cf13e0cf2fb41794544",
+      "bytes": 1657
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "39d26455b7dcffd910e09d2feeedaa6b1114f93888ef3c0dd217c45a7b823d61",
+      "bytes": 1700
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "f225164535bcc0e66e97cd9e0ca5f70701a483139fffca963d5adfa41b5f1798",
+      "bytes": 673
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-junit.xml",
+      "sha256": "1fd3c6223b1e58d6a7588f01dd5687cbbf611d060f6b69861283edaa4ccbcad1",
+      "bytes": 682
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "66b1ad3636c649e65f68841d9ccbc4030b7306a00182012b413714615013ab18",
+      "bytes": 1954
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "0b9a7b64ea7e9aa8248cb7fed48c1cd7db71b41296b53e1227edecd76d2e3444",
+      "bytes": 237
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/verify-item/process.json",
+      "sha256": "18100d3b0bb3a362ddfdd632a5a10f2c9d90fc677439792b461efa1fb7efb7c4",
+      "bytes": 1878
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "1421da5ce68b1dcb8aa02403c6040f60632ab390ad0795de1f8b48d08248e3eb",
+      "bytes": 173
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-complete_task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "aa4b1361eb87f5a163999c8f40562c7e1feab3442b971356f0fe9028ea993285",
+      "bytes": 729
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/attempt.json",
+      "sha256": "5264fe40ef795d909144df4b7ab65975c3fce3342640a14363b2db5122bd549a",
+      "bytes": 21329
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/handoff.json",
+      "sha256": "fbea0cf6d6ef78bbb8e7c3d4bcdfe84331a644d004ef42bd88493183425a5602",
+      "bytes": 4607
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/process.json",
+      "sha256": "65973326521973f6efacd25ad52aade5c4cb115ab394ddfb50526bc2a5c94609",
+      "bytes": 4856
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/prompt.txt",
+      "sha256": "a5a5c8aa377f53163a53bbc1334f5a69dc9b5735b06f7afe532c805bfe5267a9",
+      "bytes": 5058
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/submission.json",
+      "sha256": "3571b6ccadc781f613f254921a33c37bc1cbf327f8a09af7f75b18ab58cc4393",
+      "bytes": 4614
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/compile-check/process.json",
+      "sha256": "355e6eafe2f541c196408345d0adf447e46a0fa3e66b0a4996d0bfb89f5dcd77",
+      "bytes": 1745
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-junit.xml",
+      "sha256": "a5dba749d40e6c54da56bacc78ab84fef2ab95785c3ba5421e8182dd6072f272",
+      "bytes": 2087
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "a78a521fff01d71a999a8237c5a21a063e4c817dc04dd6155b637d4143d71c20",
+      "bytes": 1700
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "8fe6176ebb0d857c27ffc1f75255ecc96ba962d6b9007608c5fa303115debb18",
+      "bytes": 833
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-junit.xml",
+      "sha256": "f124b6356bb3f5a92bf72a9da3f344f35182b0721e156178e728ea5b2736eb2b",
+      "bytes": 664
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "65e1af8f021d53bb7a00dc46315e04705e7ef468092cbff1f7fb5484a50c0fa9",
+      "bytes": 1953
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "87c0f1157a46653442e1150a5a0c9f3d2a9de60df9adc5f0fba13cb9bbb43908",
+      "bytes": 217
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/verify-item/process.json",
+      "sha256": "0720e8cdc82eb0b37ba2bd980a2b3b9b5f8ae2b750163155b29053240cbce3e7",
+      "bytes": 1877
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "8d04f4cc8e7a6094b8f20ea882579236fecb08a7c849d0756e31af71e9eabd8f",
+      "bytes": 171
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/usecase-create_task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "50e807ab3870ddc5599ede5ed1c862a5181977a16fe6f07861a2303f36951723",
+      "bytes": 727
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/verify-change/process.json",
+      "sha256": "d6a099dc7dbd2c041070954f944980ea165c877a92f2a1c5889ea7dfba811758",
+      "bytes": 1760
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/verify-change/stderr.log",
+      "sha256": "1e4eee259595ae3edc363e9df3a59ec7edd6a56d958ce2e6f1be15193f670551",
+      "bytes": 168
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/implementation/scripted-control/verify-change/stdout.log",
+      "sha256": "68af3716a3fa68f257891601638ef27ce25976df4d6844d7be5510178edb5bb3",
+      "bytes": 975
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/baseline-tree.json",
+      "sha256": "59f3826d4d4a0b10e6eac38c11c7fa9db7bd72f8d63cb95c55ecb17fe3d693ae",
+      "bytes": 48170
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/compile-check/process.json",
+      "sha256": "9853567dd74e7414934401a4dffc14a12e6a9107fb87496e94e7a0782c83f07b",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/compile/process.json",
+      "sha256": "26a719f9e1bda4a668a019fa0aabd67fe6b687af1b6589865523260c18f03758",
+      "bytes": 1730
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/create-tutorial/process.json",
+      "sha256": "6e9dace906bfc763e5ef90d009f89d614d4440edced37214a1a0d890342f48e5",
+      "bytes": 1658
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/create-tutorial/stdout.log",
+      "sha256": "cd5e5667edcd2a5194d2ece808c6cb0a6078c4eb56332dc4595fd441beab8bf8",
+      "bytes": 96
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/status/process.json",
+      "sha256": "ada950bb7955b58c51dcebccb7ab497dc0fce56fdf43731ca070e335ddcf71b7",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/report.json",
+      "sha256": "cc8edc6439791be5e277f2552eea49d975ea49573846a715bff8ae93426ca916",
+      "bytes": 187373
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/report.md",
+      "sha256": "e2d4ad35a9cf4bde0477ac5b5231de0f0383e91a8ee887da35e3331e7dc420a4",
+      "bytes": 3126
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/preflight/process.json",
+      "sha256": "146960f4cea5752947b586ed1651711d696058ee42fa4dee716b6699b77c490c",
+      "bytes": 1672
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/preflight/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/preflight/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json",
+      "sha256": "cb188c34b3f521e8108d0493053f347049abeb2457a2c19e076b2de281868322",
+      "bytes": 1721
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/prompt.txt",
+      "sha256": "36208a08dbe3ced5a2b9f393b5b62bbc8ddddda3c1b1530cd9137ecca83a6b14",
+      "bytes": 593
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/result.json",
+      "sha256": "5056daaab99136014f0da21d5a80a50ae2e6eda998f08b53972cc41b726f26c1",
+      "bytes": 2328
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+      "sha256": "32d69f0c858168fa71e5859bf839cd864483d11032905215e180f6e872e16631",
+      "bytes": 90
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/process.json",
+      "sha256": "3777016d76d6d6c9e9ae4bae7fb833283b52ad7b9e3fd7e5a7ac447420953e0c",
+      "bytes": 1631
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/prompt.txt",
+      "sha256": "4056e1d6a931bdaf19add132d7c87380aee39be034fe3b651926e55de45070bc",
+      "bytes": 569
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/result.json",
+      "sha256": "8cbf3bbad9ebeccee2fe5ead00eedb69237c9ca804f8805c1e86266b9ab191f1",
+      "bytes": 2080
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stdout.log",
+      "sha256": "d6ac565f1a5aff62155b8a889e1acbffdb4cdde372525af4b55d6f61b2296bfd",
+      "bytes": 30
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/process.json",
+      "sha256": "6e1fdd23c2c74fb4aee7dcaf0cf6bca376f9032e4c56813cbdbab026d9279bc5",
+      "bytes": 1632
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/prompt.txt",
+      "sha256": "f565c33b129e2951e65125b99b76500f44d80c755b514ba62452213089661431",
+      "bytes": 602
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/result.json",
+      "sha256": "d998d7bc87814551058c8145bf522db689f46eb3f0eb00e8f3e62deb028c1e75",
+      "bytes": 2055
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stdout.log",
+      "sha256": "77f07defa43dba76d698c0ebfa86ae1841770f9b0631ff4f46139c61595dd158",
+      "bytes": 31
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/process.json",
+      "sha256": "b47612585ea89a9509aeeee8721b6215138a4c6d6a7db00e08190ec24254b278",
+      "bytes": 1690
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/prompt.txt",
+      "sha256": "b0572734b86a780895655d474c3859e07585dad009f13eeac5661b3609458ea7",
+      "bytes": 560
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/result.json",
+      "sha256": "959eb734d48ade347e15114154b61d86791065a629aa076252c9b44b0e6a651d",
+      "bytes": 2206
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stdout.log",
+      "sha256": "429e181652bdbcec78ea77938cc0ddb6997505659c84d715a152d343162cf7dd",
+      "bytes": 71
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json",
+      "sha256": "6c8eb6e02838199b0e6587a03e136ff7989e123cd19ad6b6156321ff6bc0d271",
+      "bytes": 1684
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/prompt.txt",
+      "sha256": "056e96e3b229d4238a9d70cd98b7beae71643ee8ff5c484a008c9a55b252a158",
+      "bytes": 605
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/result.json",
+      "sha256": "8da5c18940f137d5e400dae9046f554574ec7e524282a8b9829ec44c7c96acf4",
+      "bytes": 2216
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+      "sha256": "c15d81e26da086f1e8f6e037f1ab89d4a8e9dea50127debe9c9acc40690375ee",
+      "bytes": 84
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/baseline-tree.json",
+      "sha256": "59f3826d4d4a0b10e6eac38c11c7fa9db7bd72f8d63cb95c55ecb17fe3d693ae",
+      "bytes": 48170
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/compile-check/process.json",
+      "sha256": "7ca7437896ed4ded88c443ad1df29b098d757e1afea300067652c5512f612e0d",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/compile/process.json",
+      "sha256": "f378b43bce80c917402374dbf6a8a509eea83f25e35ead673854d974fe58e9c7",
+      "bytes": 1730
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/create-tutorial/process.json",
+      "sha256": "0d662cf6c32de1612e15fda174739a60a4a596e656447f6745e06af4483fc0d7",
+      "bytes": 1658
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/create-tutorial/stdout.log",
+      "sha256": "e3f9090eb2ce4936494c9233ac6d1e648d154195ffe4e672f4c9716be83cafdd",
+      "bytes": 96
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/status/process.json",
+      "sha256": "7047a7f2b1cf01feeedc359d78edd2b54dda26bc90667a4c846022ab97554f6c",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-control/startup/preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/artifact-manifest.json",
+      "sha256": "3512728e177efc07aee702594ae1130f065cdf2ec65fa4acac065a8f4c2f4433",
+      "bytes": 19674
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/initial-status/process.json",
+      "sha256": "1aebf905b9149580f92d05bcc3f0d87ab27ca3cdadf525b0dd811d7e08914868",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/initial-status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/initial-status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-1/attempt.json",
+      "sha256": "18711b991d221e2e97e0592f6529aa6670b9c88071778158a646ac297fc0a829",
+      "bytes": 4788
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-1/handoff.json",
+      "sha256": "6a9d72804d89bd4ceba1965183969ea1ddf540b98689be59560c1a0ad992b70c",
+      "bytes": 3003
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-1/process.json",
+      "sha256": "f5c49cd7876d2c1437abb61b41fd72f40be3a8876b582637dbe31c9c9bedbf37",
+      "bytes": 4457
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-1/prompt.txt",
+      "sha256": "3db23c107b06039aa21c27c4f1cb83fac80a66513c576373f305b7923fed6336",
+      "bytes": 3604
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-1/stdout.log",
+      "sha256": "d189a9082fdfdbde2cabc8ee73f97efb2cdbdc5a163b72f270bd349ffb72045d",
+      "bytes": 73
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-1/submission.json",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "bytes": 2
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-2/attempt.json",
+      "sha256": "63ff1bfdd8802bf5e6a0fe28f4049be776a21fa53fbcc05e476d1cdfc83fd3b6",
+      "bytes": 4788
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-2/handoff.json",
+      "sha256": "6a9d72804d89bd4ceba1965183969ea1ddf540b98689be59560c1a0ad992b70c",
+      "bytes": 3003
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-2/process.json",
+      "sha256": "52d801ba87796ab5e6b4a926255dc6c413c3b66d77dc7dfacb4f4035637d4827",
+      "bytes": 4457
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-2/prompt.txt",
+      "sha256": "5a26546047001e71c4ac5fd4a5dc9b6fbb0bd5a68de20828d0bdcbf836cdb3c3",
+      "bytes": 3762
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-2/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-2/stdout.log",
+      "sha256": "d189a9082fdfdbde2cabc8ee73f97efb2cdbdc5a163b72f270bd349ffb72045d",
+      "bytes": 73
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/entity-Task/attempt-2/submission.json",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "bytes": 2
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/packet-entity-Task/process.json",
+      "sha256": "2fda3390ce967c9bca4bbd4d0fc7f2bf0c0b9126861ed941bd9cefc84e9226d8",
+      "bytes": 1753
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/packet-entity-Task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/packet-entity-Task/stdout.log",
+      "sha256": "930d96ea71cf628c0a5878ef61cfc7436c9508bbd300c6bd28c42ab2bc2354f8",
+      "bytes": 2146
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-0/next/process.json",
+      "sha256": "9c13a56392b67f6b35d2b92c2908b099c10e3caeaa03913c34a6ded9e1411306",
+      "bytes": 1773
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-0/next/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-0/next/stdout.log",
+      "sha256": "cce0416411f98295fbbe81ec9575170bc5e4551731d1608c578487395658c043",
+      "bytes": 347
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-0/status/process.json",
+      "sha256": "132eb4f301fe1673db1518ae0c92949d3be2fa9cc5911d4fb862159d7cebe96d",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-0/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-0/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-1/next/process.json",
+      "sha256": "8c311589a288d343b8432a725aca712c22a7281f2a8a926acde0b0f25374e8e9",
+      "bytes": 1773
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-1/next/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-1/next/stdout.log",
+      "sha256": "cce0416411f98295fbbe81ec9575170bc5e4551731d1608c578487395658c043",
+      "bytes": 347
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-1/status/process.json",
+      "sha256": "2b1a75288202a29f9abb3d5ecccf35de3acb75afebae6e801969d5a1058f4c72",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-1/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/query-1/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/verify-change/process.json",
+      "sha256": "1f90206b798c869d9ef8a027bc4f4ee0d7856a917ebb90f09a3dca0e553e5d33",
+      "bytes": 1754
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/verify-change/stderr.log",
+      "sha256": "05dfefb3674dfa29a7adc7b7959c5f91861dfdaec3e4075b7608c2f0edd0fa6e",
+      "bytes": 3073
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/implementation/scripted-control/verify-change/stdout.log",
+      "sha256": "d51d94522e95058506f351bfe4b12d4be761f60c29561b77979637ecc21d6859",
+      "bytes": 5419
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/baseline-tree.json",
+      "sha256": "a14a4660c82005546a55aed3f1731996adf9d4027c86cd7a8b4e4116ce259eae",
+      "bytes": 48170
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/compile-check/process.json",
+      "sha256": "2666e7f6d7a89190f94629146123de69d02f071e24fdff90040f7835df798fdb",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/compile/process.json",
+      "sha256": "cf0eb24f8fed210ac23f2db96cc739095158c1a82dae1d5e65b292baf2f573d0",
+      "bytes": 1730
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/create-tutorial/process.json",
+      "sha256": "728b6ed6061b2056287b0d3a45ab2b7cd690b21f46c6f92922d0097bff11ee7a",
+      "bytes": 1659
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/create-tutorial/stdout.log",
+      "sha256": "46b13ce956c28d4513434817ae62545939d974eca91e824a4592944f452504d3",
+      "bytes": 96
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/status/process.json",
+      "sha256": "5fdd668bca3aba7c132ba5d1da58a2e3dce614678e813946f85aaa470babe59c",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/report.json",
+      "sha256": "d0a34fcc9eaddb556b9f93d6c11adf83725fd633919cae6da8e5b8bc6f566ada",
+      "bytes": 66641
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/report.md",
+      "sha256": "12279ccdb4b63b1a6d594c39d49b3079b15e82bfc90b4ee4fb5942d2357cac1d",
+      "bytes": 3228
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/preflight/process.json",
+      "sha256": "b6e9626f61635b35d799850c9f0c1870d8a8e765eb500847ba42627d8d96359f",
+      "bytes": 1672
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/preflight/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/preflight/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json",
+      "sha256": "833923fc3215e944aa351d274a3edc34df4ccdc99d89d6d8b6cc5a9af1bbb822",
+      "bytes": 1652
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/prompt.txt",
+      "sha256": "36208a08dbe3ced5a2b9f393b5b62bbc8ddddda3c1b1530cd9137ecca83a6b14",
+      "bytes": 593
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/result.json",
+      "sha256": "0b8536e22bcba35cbd7c623b8c9b52ecde538b39a0b7b037607987597b37d783",
+      "bytes": 2186
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+      "sha256": "ffbd711d73da9e0800b3747da792c33fc7f9a4fb4f75e8cacfe97dc7a20ee0fd",
+      "bytes": 52
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/process.json",
+      "sha256": "125d1f7fbd3aabe84fb035e639fca3d107dd8569efd9b9ff04d51003a46d8565",
+      "bytes": 1652
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/prompt.txt",
+      "sha256": "4056e1d6a931bdaf19add132d7c87380aee39be034fe3b651926e55de45070bc",
+      "bytes": 569
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/result.json",
+      "sha256": "f165fc448b9a078dcff9276d46b932b8d7eb0d50fb17e6661fdf2d24031fd451",
+      "bytes": 2095
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stdout.log",
+      "sha256": "ffbd711d73da9e0800b3747da792c33fc7f9a4fb4f75e8cacfe97dc7a20ee0fd",
+      "bytes": 52
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/process.json",
+      "sha256": "975bc6111d548fa2218b2f72a3ec450f0412395ba0d5db1cc59b8702e1d3a9d4",
+      "bytes": 1653
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/prompt.txt",
+      "sha256": "f565c33b129e2951e65125b99b76500f44d80c755b514ba62452213089661431",
+      "bytes": 602
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/result.json",
+      "sha256": "e85ed1bd9c9ceecaf6d9592feae7a6dcb6dcffd5039a53f568ff45ffc4d16e0c",
+      "bytes": 2069
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stdout.log",
+      "sha256": "ffbd711d73da9e0800b3747da792c33fc7f9a4fb4f75e8cacfe97dc7a20ee0fd",
+      "bytes": 52
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/process.json",
+      "sha256": "37a91423f9f72d1f9fda911ce4c5fe69ca6af51c3c2cca3514bd9839070a7793",
+      "bytes": 1653
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/prompt.txt",
+      "sha256": "b0572734b86a780895655d474c3859e07585dad009f13eeac5661b3609458ea7",
+      "bytes": 560
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/result.json",
+      "sha256": "aac75e956928d43a5203ae41d8e495b584d631f85d1959eea3848cc53e24af6f",
+      "bytes": 2115
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stdout.log",
+      "sha256": "ffbd711d73da9e0800b3747da792c33fc7f9a4fb4f75e8cacfe97dc7a20ee0fd",
+      "bytes": 52
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json",
+      "sha256": "ada557bf14517c3a550d0866ab76b7a563b4a1d9bf302db00e37624434a48298",
+      "bytes": 1653
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/prompt.txt",
+      "sha256": "056e96e3b229d4238a9d70cd98b7beae71643ee8ff5c484a008c9a55b252a158",
+      "bytes": 605
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/result.json",
+      "sha256": "453fa3bdeea37c820512fb777b5fa82d8a5930d6941d607407b34d73b668574e",
+      "bytes": 2125
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+      "sha256": "ffbd711d73da9e0800b3747da792c33fc7f9a4fb4f75e8cacfe97dc7a20ee0fd",
+      "bytes": 52
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/baseline-tree.json",
+      "sha256": "a14a4660c82005546a55aed3f1731996adf9d4027c86cd7a8b4e4116ce259eae",
+      "bytes": 48170
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/compile-check/process.json",
+      "sha256": "6a5bf74d97890cfbed0bcbec6d761319c1b85bed8954e400b540bdd6e1222f87",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/compile/process.json",
+      "sha256": "66be325905be447d2fcab3d07ad7ed2a95bf33af1ce42d3642af294a7996294a",
+      "bytes": 1730
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/create-tutorial/process.json",
+      "sha256": "6496114f9ef8b140ac45d1835423a067653f8d4f6a01733bceb57291a80147bc",
+      "bytes": 1658
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/create-tutorial/stdout.log",
+      "sha256": "84c0b17b1edcdd1188203754331a3c46dd6f1cc582e75dabef7b206ef8a03cd7",
+      "bytes": 96
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/status/process.json",
+      "sha256": "fb35144ba4e2097fb0da8e6f96505c2fb512b4617445a81935c22f1a72a7920f",
+      "bytes": 1748
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-17/scripted-setup-error/startup/preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-18/datasets.json",
+      "sha256": "36272ef0bc8137b43e1fa65a5f135d992725547c69684e574c79a9f5a5300e79",
+      "bytes": 2778
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-18/green.log.txt",
+      "sha256": "cbc340e298e41bafdaaceb9abffd528ccba1812d8bd0e143ed69a2841fe87a7c",
+      "bytes": 434
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-18/red.log.txt",
+      "sha256": "a19bb36eb4eabcf654b708a27bd7e44216f8182c96a5bbda41e3f7c9d8823468",
+      "bytes": 3564
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-19/green.log.txt",
+      "sha256": "1ccff4d924d4edbfb13bcf0a6c892121f6a5288c8acaa14e52bc354996603d8b",
+      "bytes": 2294
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-19/initial-fixture-errors.log.txt",
+      "sha256": "86d7cd2b0e1fc6ac370f4bb6d689eae500dc038b51592382309a6d441ad5144d",
+      "bytes": 3558
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-19/red.log.txt",
+      "sha256": "ca2daab7c58cc099165516b7b66c5daaffa9a89fb9aeb9faef1befd747c96752",
+      "bytes": 1907
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-20/aggregate-command.log.txt",
+      "sha256": "2d99c0c186123c83c0696af5f75f56cee1eeb3d891c3be058eb067e995f03c03",
+      "bytes": 128
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-20/campaign-preflight.log.txt",
+      "sha256": "fde48ca7cbd218497a73f2f7ea5cdde3bf411c9d86c72a1e737290ec7c0d8142",
+      "bytes": 157
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-20/green.log.txt",
+      "sha256": "636c53b149422999f084a81cc3571a870bd7095bc6cffda38a3e99d265a0ddef",
+      "bytes": 1068
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-20/missing-metrics.log.txt",
+      "sha256": "e91fe4a5524dd145b9a57de8587be868bf03f8c3e16b69eb28bc31f0be82b80f",
+      "bytes": 239
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-20/planned/aggregate.json",
+      "sha256": "5383a1edff8b2f9714a437370c4f39d85e478abfea2408223d9e48acb0d79632",
+      "bytes": 4907
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-20/planned/aggregate.md",
+      "sha256": "9ece4db736dedada9e3b6e8e3645a637046128f8d39af1cd7c6bd9ac33bfe282",
+      "bytes": 2269
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-20/planned/artifact-manifest.json",
+      "sha256": "4c38ded553283dff5430af8e3bc8883b94f54f4e4d515d7bab88e0092515f141",
+      "bytes": 342
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-20/review-green.log.txt",
+      "sha256": "922e95a25c03c4925382a6b118d51f048fb70d0bda20b925fd69cfb856b5c258",
+      "bytes": 1080
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-20/review-red.log.txt",
+      "sha256": "124d5fd78919cd892223da3be5314f2e1e6d037a0a607593ebbb706cc4c5c084",
+      "bytes": 3558
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-checks.log.txt",
+      "sha256": "4e3a99842f501ac1e88609b24242d312a2129e613543299845e4092e3c11d20f",
+      "bytes": 45067
+    },
+    {
+      "path": "docs/superpowers/validation/2026-10-10-evals-cycle.md",
+      "sha256": "083339781e2d8e6466217fe8ef7cf7ea4c05df307346727655d41c39f1e809fd",
+      "bytes": 7977
+    },
+    {
+      "path": "evals/campaigns/cycle-20/index.json",
+      "sha256": "f96d14eb9d12fad4fee1ecc2ff28a653c8779ec1b6d07a2f67a3ac8997799e3a",
+      "bytes": 2560
+    },
+    {
+      "path": "evals/campaigns/cycle-20/manifests/codex-sol-high-r1.json",
+      "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e",
+      "bytes": 1096
+    },
+    {
+      "path": "evals/campaigns/cycle-20/manifests/codex-sol-high-r2.json",
+      "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e",
+      "bytes": 1096
+    },
+    {
+      "path": "evals/campaigns/cycle-20/manifests/codex-sol-high-r3.json",
+      "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e",
+      "bytes": 1096
+    },
+    {
+      "path": "evals/campaigns/cycle-20/manifests/cursor-codex-medium-r1.json",
+      "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331",
+      "bytes": 1063
+    },
+    {
+      "path": "evals/campaigns/cycle-20/manifests/cursor-codex-medium-r2.json",
+      "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331",
+      "bytes": 1063
+    },
+    {
+      "path": "evals/campaigns/cycle-20/manifests/cursor-codex-medium-r3.json",
+      "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331",
+      "bytes": 1063
+    },
+    {
+      "path": "evals/implementation/tasks/reference/entity-Task.test.ts.txt",
+      "sha256": "ee21d61267dbe98f7a5be48b90d9e11c7d6cd3ea872a2962416a7de805bdf0a8",
+      "bytes": 877
+    },
+    {
+      "path": "evals/implementation/tasks/reference/method-Task-complete.test.ts.txt",
+      "sha256": "c6034795a98fd649937714ff072a79298c4435427d3fbec577a78603011ca89a",
+      "bytes": 674
+    },
+    {
+      "path": "evals/implementation/tasks/reference/operator-task-operator.test.ts.txt",
+      "sha256": "79be97002f4beb59ac86c513e477da375aeca01b69c04d2a9dd780b5780f58cf",
+      "bytes": 1967
+    },
+    {
+      "path": "evals/implementation/tasks/reference/usecase-complete_task.test.ts.txt",
+      "sha256": "4c281dd72143ea08e11a6b179d27a4adabc4f7bb429c1268673cee0e0a820051",
+      "bytes": 1343
+    },
+    {
+      "path": "evals/implementation/tasks/reference/usecase-create_task.test.ts.txt",
+      "sha256": "63edd0642c38bebc144ce3c777cece14d2d892e0ea12aea97807bba46e2ffc30",
+      "bytes": 1354
+    },
+    {
+      "path": "evals/run.certify.codex-sol-high.json",
+      "sha256": "111428bc02bd9b07556f094a96a71a61a480ef716840b255dd00f52bc4f472c2",
+      "bytes": 836
+    },
+    {
+      "path": "evals/run.certify.cursor-codex-medium.json",
+      "sha256": "1016856e3a2b1dcc189aedffdb5d49ad02623e196abeb63a1da538b2406a2b49",
+      "bytes": 803
+    },
+    {
+      "path": "evals/run.reference.json",
+      "sha256": "b38feca54f53c5c97d638714db149602c1aaddc6489b7d0a44b6b2b504927612",
+      "bytes": 923
+    },
+    {
+      "path": "evals/skills/orders.extended.yaml",
+      "sha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+      "bytes": 5060
+    },
+    {
+      "path": "evals/skills/orders.yaml",
+      "sha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "bytes": 1158
+    },
+    {
+      "path": "package.json",
+      "sha256": "4163faaf9b06e28482a0223e8c0d4fc4ba680f4a4edc8f4aa579f9d32cb5b83c",
+      "bytes": 1801
+    },
+    {
+      "path": "scripts/evals/aggregate.ts",
+      "sha256": "dc5639b20be815b86f773341cfcc118fee91ee407486d801136fae022157b62b",
+      "bytes": 24546
+    },
+    {
+      "path": "scripts/evals/run.ts",
+      "sha256": "cf50be7f9a212bdeace3d6900f4d675dde240c72901260c3a4fce521a5d7d875",
+      "bytes": 12373
+    },
+    {
+      "path": "test/evals-aggregate.test.ts",
+      "sha256": "c74e15f308f5b9c0e528182aafa6d6d9253a2266e0884604e6b73a2840f0b41f",
+      "bytes": 18169
+    },
+    {
+      "path": "test/evals-extended.test.ts",
+      "sha256": "320cf02d649ad2bd3c50de5d0193267caf1a434ad55cd03326674495cde65459",
+      "bytes": 7313
+    },
+    {
+      "path": "test/evals-run.test.ts",
+      "sha256": "7cc9b24d966caee6ab73a5f60561be2d140eabe3681dd1640524a788863e2f72",
+      "bytes": 13157
+    },
+    {
+      "path": "test/helpers/evals.ts",
+      "sha256": "fb4d3655f81d5ac8096cfcc60a82bfe73ad95e19344a16bd62be0380176fd73e",
+      "bytes": 2649
+    }
+  ]
+}

@@ -11,3 +11,5 @@ As suítes de implementação, runEvaluation, dataset adicional e agregação n�
 Ruling: evitar campanhas independentes dentro da coleta de qualidade do domínio — elas têm execução obrigatória no CI principal e não declaram covers de orders. Se essa distinção fosse aplicada incorretamente, poderia omitir testes relevantes; a regressão exige execução de todos os testes de domínio com covers e a suíte completa verifica a execução dos benchmarks no nível principal.
 
 A certificação real da #17 foi executada antes deste ajuste, com fonte e runner fixos preservados nos relatórios. Nenhuma sessão real adicional foi iniciada.
+
+[Verificação local completa](full-checks.log.txt): 456 testes em 57 arquivos, zero falhas, 14 snapshots e 2410 assertions; typecheck, lint, build, compile --check e skills:install --check aprovados. [CI remoto aprovado](ci-green.json), com [log integral](ci-green.log.txt), no commit 01bc637351f82dbcff371fa2b5e62249e65a4d38. A publicação seguinte acrescenta somente documentos e evidências.

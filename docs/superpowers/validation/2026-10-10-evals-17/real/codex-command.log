@@ -1,0 +1,2 @@
+$ bun scripts/evals/main.ts --config evals/run.certify.codex-sol-high.json --out "/tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high" --real --trusted-source
+Avaliação completed; relatório: /tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high/report.md

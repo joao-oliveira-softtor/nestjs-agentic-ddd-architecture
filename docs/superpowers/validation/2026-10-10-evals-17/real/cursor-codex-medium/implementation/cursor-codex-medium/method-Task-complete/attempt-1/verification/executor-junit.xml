@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="3" assertions="15" failures="0" skipped="0" time="0.086198795">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="8" failures="0" skipped="0" time="0.084189994" hostname="softtords">
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] Task.create rejeita titulo vazio" classname="" time="0.000115" file="app/test/entity-Task.test.ts" line="7" assertions="3" />
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] Task.create normaliza titulo e registra TaskCreated" classname="" time="0.000171" file="app/test/entity-Task.test.ts" line="20" assertions="5" />
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="7" failures="0" skipped="0" time="0.000352945" hostname="softtords">
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] Task.complete conclui tarefa e bloqueia repeticao" classname="" time="0.000118" file="app/test/method-Task-complete.test.ts" line="7" assertions="7" />
+  </testsuite>
+</testsuites>

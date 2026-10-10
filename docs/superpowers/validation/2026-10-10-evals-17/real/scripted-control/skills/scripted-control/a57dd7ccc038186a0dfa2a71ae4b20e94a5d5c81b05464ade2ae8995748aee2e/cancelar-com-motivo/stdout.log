@@ -1,0 +1,1 @@
+{"type":"tool_call","name":"cancel_order","input":{"order_id":"7f3c","reason":"desistiu"}}

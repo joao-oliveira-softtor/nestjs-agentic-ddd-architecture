@@ -1,0 +1,64 @@
+{
+  "configuration": "scripted-control",
+  "dataset": "evals/skills/orders.yaml",
+  "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+  "id": "confirmar-cancelado",
+  "audience": "dev",
+  "question": "Um pedido cancelled pode ser confirmado? Responda sim ou não.",
+  "expect": {
+    "type": "exact",
+    "value": "não"
+  },
+  "answer": {
+    "type": "exact",
+    "value": "não"
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d",
+  "execution": {
+    "sessionId": {
+      "status": "available",
+      "value": "scripted-4",
+      "source": "scripted_fixture"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "scripted",
+      "source": "scripted_fixture"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "synthetic"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 35.938733999999386,
+    "evidence": [
+      "/tmp/agentic-evals-17-real-20261010-CxAASz/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stdout.log",
+      "/tmp/agentic-evals-17-real-20261010-CxAASz/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stderr.log",
+      "/tmp/agentic-evals-17-real-20261010-CxAASz/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/process.json"
+    ],
+    "transport": "finished",
+    "finalText": "{\"type\":\"exact\",\"value\":\"não\"}",
+    "diagnostic": null
+  }
+}

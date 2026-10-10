@@ -1,0 +1,349 @@
+{
+  "schemaVersion": 1,
+  "realRuns": 2,
+  "realInvocations": 20,
+  "summaries": [
+    {
+      "configuration": "codex-sol-high",
+      "status": "completed",
+      "certified": true,
+      "sourceCommit": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425",
+      "runnerCommit": "e0e0c2369a321a574c01cd1f491e15e50f3699cc",
+      "originFingerprint": "ce48623159e042acdccef0a1f1ba2bbbf44af99870558f9ce1bb198e903b766f",
+      "sourceUnchanged": true,
+      "adapter": {
+        "id": "codex-cli",
+        "version": "codex-cli 0.162.1",
+        "executableSha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+        "companions": [
+          {
+            "name": "codex-code-mode-host",
+            "sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+          }
+        ]
+      },
+      "requestedConfiguration": {
+        "id": "codex-sol-high",
+        "adapter": "codex-cli",
+        "model": "gpt-6.1-sol",
+        "parameters": {
+          "reasoningEffort": "high"
+        },
+        "authentication": "local-login"
+      },
+      "observedModels": [
+        "gpt-6.1-sol"
+      ],
+      "modelRevisions": [
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        }
+      ],
+      "questions": {
+        "correct": 4,
+        "total": 5,
+        "results": [
+          {
+            "id": "confirmar-pedido",
+            "verdict": "correct",
+            "reason": null
+          },
+          {
+            "id": "cancelar-com-motivo",
+            "verdict": "correct",
+            "reason": null
+          },
+          {
+            "id": "cancelar-exige-aprovacao",
+            "verdict": "correct",
+            "reason": null
+          },
+          {
+            "id": "confirmar-cancelado",
+            "verdict": "correct",
+            "reason": null
+          },
+          {
+            "id": "onde-criar-use-case",
+            "verdict": "incorrect",
+            "reason": null
+          }
+        ]
+      },
+      "initialAccepted": 5,
+      "finalAccepted": 5,
+      "items": [
+        {
+          "id": "entity:Task",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "id": "method:Task.complete",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "id": "usecase:create_task",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "id": "usecase:complete_task",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "id": "operator:task-operator",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        }
+      ],
+      "changeVerification": "done",
+      "invocations": 10,
+      "corrections": 0,
+      "durationMs": 496224.838632,
+      "artifactsChecked": 246,
+      "reportSha256": "731547e8c3d2c0218b28549407824fd214d2f7fa91467b1122fc56ace4faffe2"
+    },
+    {
+      "configuration": "cursor-codex-medium",
+      "status": "completed",
+      "certified": true,
+      "sourceCommit": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425",
+      "runnerCommit": "e0e0c2369a321a574c01cd1f491e15e50f3699cc",
+      "originFingerprint": "ce48623159e042acdccef0a1f1ba2bbbf44af99870558f9ce1bb198e903b766f",
+      "sourceUnchanged": true,
+      "adapter": {
+        "id": "cursor-cli",
+        "version": "2026.10.01-e373342",
+        "executableSha256": "2ccc9a8e167797641448b5e5c936f006ba137a2555f117f38c5eb76a5238a233"
+      },
+      "requestedConfiguration": {
+        "id": "cursor-codex-medium",
+        "adapter": "cursor-cli",
+        "model": "gpt-5.3-codex",
+        "parameters": {},
+        "authentication": "local-login"
+      },
+      "observedModels": [
+        "Codex 5.3 Medium"
+      ],
+      "modelRevisions": [
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        {
+          "status": "unavailable",
+          "reason": "not_reported"
+        }
+      ],
+      "questions": {
+        "correct": 3,
+        "total": 5,
+        "results": [
+          {
+            "id": "confirmar-pedido",
+            "verdict": "correct",
+            "reason": null
+          },
+          {
+            "id": "cancelar-com-motivo",
+            "verdict": "incorrect",
+            "reason": null
+          },
+          {
+            "id": "cancelar-exige-aprovacao",
+            "verdict": "correct",
+            "reason": null
+          },
+          {
+            "id": "confirmar-cancelado",
+            "verdict": "correct",
+            "reason": null
+          },
+          {
+            "id": "onde-criar-use-case",
+            "verdict": "incorrect",
+            "reason": null
+          }
+        ]
+      },
+      "initialAccepted": 5,
+      "finalAccepted": 5,
+      "items": [
+        {
+          "id": "entity:Task",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "id": "method:Task.complete",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "id": "usecase:create_task",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "id": "usecase:complete_task",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "id": "operator:task-operator",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        }
+      ],
+      "changeVerification": "done",
+      "invocations": 10,
+      "corrections": 0,
+      "durationMs": 441626.19648299995,
+      "artifactsChecked": 236,
+      "reportSha256": "6740c5a2e331738a272f28702b7b3c8a117d5df396e9171ea86bb04c26767c78"
+    }
+  ]
+}
