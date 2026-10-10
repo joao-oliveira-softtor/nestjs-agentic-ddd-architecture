@@ -1,0 +1,67 @@
+bun test v1.4.2 (744846f84)
+
+test/evals-extended.test.ts:
+1 | import { readFile } from 'node:fs/promises';
+2 | import { datasetSchema, type EvalCase } from './contracts';
+3 | 
+4 | export async function loadDataset(path: string): Promise<readonly EvalCase[]> {
+5 |   return datasetSchema.parse(Bun.YAML.parse(await readFile(path, 'utf8')));
+                                                      ^
+ENOENT: no such file or directory, open '/tmp/agentic-eval-qKic64/snapshot/evals/skills/orders.extended.yaml'
+    path: "/tmp/agentic-eval-qKic64/snapshot/evals/skills/orders.extended.yaml",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at async loadDataset (/tmp/agentic-evals-cycle-17-20/scripts/evals/dataset.ts:5:51)
+      at async <anonymous> (/tmp/agentic-evals-cycle-17-20/test/evals-extended.test.ts:24:23)
+(fail) 20 literal cases agree with declarations, full nested schemas and documented rules [0.94ms]
+1 | import { readFile } from 'node:fs/promises';
+2 | import { datasetSchema, type EvalCase } from './contracts';
+3 | 
+4 | export async function loadDataset(path: string): Promise<readonly EvalCase[]> {
+5 |   return datasetSchema.parse(Bun.YAML.parse(await readFile(path, 'utf8')));
+                                                      ^
+ENOENT: no such file or directory, open '/tmp/agentic-eval-qKic64/snapshot/evals/skills/orders.extended.yaml'
+    path: "/tmp/agentic-eval-qKic64/snapshot/evals/skills/orders.extended.yaml",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at async loadDataset (/tmp/agentic-evals-cycle-17-20/scripts/evals/dataset.ts:5:51)
+      at async <anonymous> (/tmp/agentic-evals-cycle-17-20/test/evals-extended.test.ts:79:23)
+(fail) all 20 cases judged correct in isolated sessions without dataset or expectations [0.30ms]
+1 | import { readFile } from 'node:fs/promises';
+2 | import { datasetSchema, type EvalCase } from './contracts';
+3 | 
+4 | export async function loadDataset(path: string): Promise<readonly EvalCase[]> {
+5 |   return datasetSchema.parse(Bun.YAML.parse(await readFile(path, 'utf8')));
+                                                      ^
+ENOENT: no such file or directory, open '/tmp/agentic-eval-qKic64/snapshot/evals/skills/orders.extended.yaml'
+    path: "/tmp/agentic-eval-qKic64/snapshot/evals/skills/orders.extended.yaml",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at async loadDataset (/tmp/agentic-evals-cycle-17-20/scripts/evals/dataset.ts:5:51)
+      at async <anonymous> (/tmp/agentic-evals-cycle-17-20/test/evals-extended.test.ts:79:23)
+(fail) all 20 cases judged incorrect in isolated sessions without dataset or expectations [0.16ms]
+1 | import { readFile } from 'node:fs/promises';
+2 | import { datasetSchema, type EvalCase } from './contracts';
+3 | 
+4 | export async function loadDataset(path: string): Promise<readonly EvalCase[]> {
+5 |   return datasetSchema.parse(Bun.YAML.parse(await readFile(path, 'utf8')));
+                                                      ^
+ENOENT: no such file or directory, open '/tmp/agentic-eval-qKic64/snapshot/evals/skills/orders.extended.yaml'
+    path: "/tmp/agentic-eval-qKic64/snapshot/evals/skills/orders.extended.yaml",
+ syscall: "open",
+   errno: -2,
+    code: "ENOENT"
+
+      at async loadDataset (/tmp/agentic-evals-cycle-17-20/scripts/evals/dataset.ts:5:51)
+      at async <anonymous> (/tmp/agentic-evals-cycle-17-20/test/evals-extended.test.ts:79:23)
+(fail) all 20 cases judged malformed in isolated sessions without dataset or expectations [0.14ms]
+
+ 0 pass
+ 4 fail
+Ran 4 tests across 1 file. [6.88s]

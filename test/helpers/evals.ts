@@ -1,6 +1,6 @@
-import { mkdtemp, rm, symlink } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { prepareSource, disposeSource } from '../../scripts/evals/isolation';
 import type {
   PreparedSource,
@@ -38,7 +38,7 @@ export const evalManifest: RunManifest = {
     concurrency: 1,
   },
 };
-export async function frozenSource(): Promise<{
+export async function frozenSource(overlays: readonly string[] = []): Promise<{
   source: PreparedSource;
   cleanup(): Promise<void>;
 }> {
@@ -53,6 +53,34 @@ export async function frozenSource(): Promise<{
     join(root, 'origin'),
   ]);
   if (cloned.exitCode !== 0) throw Error(cloned.stderr.toString());
+  // Tests can freeze new dataset files before the main checkout commits them.
+  // Only the private clone is staged and committed; the source stays untouched.
+  for (const path of overlays) {
+    const destination = join(root, 'origin', path);
+    await mkdir(dirname(destination), { recursive: true });
+    await cp(join(repository, path), destination);
+  }
+  if (overlays.length) {
+    for (const args of [
+      ['add', '--', ...overlays],
+      [
+        '-c',
+        'user.name=Eval fixture',
+        '-c',
+        'user.email=eval@example.invalid',
+        'commit',
+        '--quiet',
+        '--allow-empty',
+        '-m',
+        'Freeze evaluation fixture',
+      ],
+    ]) {
+      const result = Bun.spawnSync(['git', ...args], {
+        cwd: join(root, 'origin'),
+      });
+      if (result.exitCode !== 0) throw Error(result.stderr.toString());
+    }
+  }
   await symlink(
     join(repository, 'node_modules'),
     join(root, 'origin/node_modules'),
