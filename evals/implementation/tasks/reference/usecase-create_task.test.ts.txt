@@ -1,13 +1,20 @@
-import { expect, test } from 'bun:test';
+import { expect, spyOn, test } from 'bun:test';
 import { createTestContext } from '@agentic-ddd/testing';
 import { CreateTask } from '__WORKSPACE__/app/application/create-task';
 import { InMemoryTaskRepository } from '__WORKSPACE__/app/infrastructure/in-memory-task.repository';
+for (const [id, title] of [['oracle-a-29', 'Auditar café'], ['oracle-b-83', 'Separar caixas']] as const) {
 test('persiste, publica e rejeita duplicado', async () => {
-  const repo = new InMemoryTaskRepository(); const ctx = createTestContext(); const uc = new CreateTask(repo);
-  expect(await uc.execute({task_id: 'oracle-17', title: ' Revisar '}, ctx)).toEqual({task_id: 'oracle-17', title: 'Revisar', status: 'pending'});
-  expect((await repo.findById('oracle-17'))?.title).toBe('Revisar');
-  expect(ctx.published.map(e => [e.name, e.payload])).toEqual([['TaskCreated', {taskId: 'oracle-17', title: 'Revisar'}]]);
+  const repo = new InMemoryTaskRepository(); const save = spyOn(repo, 'save'); const ctx = createTestContext(); const uc = new CreateTask(repo);
+  expect(await uc.execute({task_id: id, title: ` ${title} `}, ctx)).toEqual({task_id: id, title: title, status: 'pending'});
+  expect((await repo.findById(id))?.title).toBe(title);
+  expect(save).toHaveBeenCalledTimes(1);
+  expect(save.mock.calls[0]?.[0].id).toBe(id);
+  expect(save.mock.calls[0]?.[0].title).toBe(title);
+  expect(save.mock.calls[0]?.[0].status).toBe('pending');
+  expect(ctx.published.map(e => [e.name, e.payload])).toEqual([['TaskCreated', {taskId: id, title: title}]]);
   expect(ctx.published[0]?.correlationId).toBe(ctx.correlationId);
-  await expect(uc.execute({task_id: 'oracle-17', title: 'Outra'}, ctx)).rejects.toMatchObject({code: 'TASK_ALREADY_EXISTS'});
+  await expect(uc.execute({task_id: id, title: 'Outra'}, ctx)).rejects.toMatchObject({code: 'TASK_ALREADY_EXISTS'});
   expect(ctx.published).toHaveLength(1);
+  expect(save).toHaveBeenCalledTimes(1);
 });
+}

@@ -217,6 +217,7 @@ export async function runEvaluation(
         );
         if (index < 0) throw Error('Unexpected case');
         report!.cases[index] = result;
+        options.onCase?.(result);
       },
       onBenchmark: (result) => {
         const index = report!.benchmarks.findIndex(
@@ -224,6 +225,7 @@ export async function runEvaluation(
         );
         if (index < 0) throw Error('Unexpected configuration');
         report!.benchmarks[index] = result;
+        options.onBenchmark?.(result);
       },
     };
     if (!control.stopReason()) {
