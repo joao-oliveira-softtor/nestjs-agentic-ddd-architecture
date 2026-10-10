@@ -28,5 +28,7 @@ jobs:
       - run: bun run lint
       - run: bun test
       - run: bun run build
+      - name: Validate packed framework in an isolated consumer
+        run: bun run test:package
       - run: bun run agentic compile --check
       - run: bun run skills:install --check

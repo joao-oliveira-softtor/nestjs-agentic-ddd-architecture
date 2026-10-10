@@ -27,7 +27,7 @@ test('AppModule compõe o runtime e os use-cases de orders', async () => {
 
 test('build preserva localização das declarações e inicializa com BunAdapter', async () => {
   const root = resolve(import.meta.dir, '..');
-  const build = Bun.spawn(['bun', 'run', 'build'], {
+  const build = Bun.spawn(['bun', 'run', 'build:app'], {
     cwd: root,
     stdout: 'pipe',
     stderr: 'pipe',

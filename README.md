@@ -2,6 +2,8 @@
 
 Primeira release: [v0.1.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.1.0). [Demonstração reproduzível](docs/releases/0.1.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
 
+Uso em aplicações externas: [distribuição por tarball, exports públicos e compatibilidade](docs/distribution.md). O nome do pacote é provisório; publicação npm permanece bloqueada.
+
 Framework open-source sobre **NestJS + DDD** em que:
 
 - **use-cases são tools** que um agente de IA pode chamar;
@@ -179,7 +181,7 @@ bun run skills:install                              # projeto, Cursor/Codex/Clau
 bun run skills:install --root /caminho/do/projeto --target codex
 bun run skills:install --scope user --target all     # global explícito
 bun run skills:install --check                      # verifica sem escrever
-bun run skills:example --root /tmp/agentic-tasks     # destino inexistente
+bun run skills:example --root ./scratch/agentic-tasks     # destino inexistente
 ```
 
 O instalador cria links para a mesma fonte e agentes nativos `agentic-ddd-manager`/`agentic-ddd-executor`, com modelo herdado. Verifica conflitos antes de escrever, preserva instalações idênticas e não altera configurações/permissões globais. A instalação global depende da permanência do checkout. Veja [instalação](skills/agentic-ddd/references/installation.md) e [tutorial completo](skills/agentic-ddd/references/tutorial.md).
@@ -196,10 +198,10 @@ O adapter Codex requer o executável auxiliar `codex-code-mode-host` da mesma in
 
 ```bash
 # Roteiro sintético offline, sem solução implementada ou inferência:
-bun run evals --config evals/run.offline.json --out /tmp/agentic-evals-offline
+bun run evals --config evals/run.offline.json --out ./scratch/agentic-evals-offline
 
 # Referência real opt-in, com logins locais dos CLIs já disponíveis:
-bun run evals --config evals/run.reference.json --out /tmp/agentic-evals-reference --real --trusted-source
+bun run evals --config evals/run.reference.json --out ./scratch/agentic-evals-reference --real --trusted-source
 ```
 
 O roteiro offline produz respostas sintéticas e bloqueios de implementação; seu resultado não mede um modelo real. Os testes offline usam processos falsos e soluções exclusivas dos testes para exercitar sucesso e falhas. O CI executa esses testes sem CLIs reais ou credenciais de provedor.

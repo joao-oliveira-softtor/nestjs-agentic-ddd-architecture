@@ -12,11 +12,11 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "./src",
     "skipLibCheck": true,
     "strict": true,
     "strictPropertyInitialization": false,
-    "noEmit": true,
+    "noEmit": false,
     "types": ["bun"],
     "paths": {
       "@agentic-ddd/core": ["./src/core/index.ts"],
@@ -25,7 +25,25 @@
       "@agentic-ddd/testing": ["./src/testing/index.ts"],
       "@agentic-ddd/runtime": ["./src/runtime/index.ts"],
       "@agentic-ddd/nestjs": ["./src/nestjs/index.ts"]
-    }
+    },
+    "inlineSources": true,
+    "declarationMap": true
   },
-  "exclude": ["node_modules", "dist", "test/fixtures/package-consumer"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.test.ts",
+    "src/**/__fixtures__/**",
+    "src/**/__snapshots__/**"
+  ],
+  "include": [
+    "src/core/**/*.ts",
+    "src/decorators/**/*.ts",
+    "src/compiler/**/*.ts",
+    "src/contracts/**/*.ts",
+    "src/runtime/**/*.ts",
+    "src/nestjs/**/*.ts",
+    "src/testing/**/*.ts",
+    "src/cli/**/*.ts"
+  ]
 }
