@@ -13,7 +13,7 @@ Branch: feat/evals-cycle-17-20. Origem inicial: 0cbd74bcdaf662f1eb07afc613b3b89b
 - #17: manifestos fixos preparados; certificação real pendente.
 - #18: critérios demonstrados offline; integração e dependência #17 pendentes.
 - #19: critérios demonstrados offline; integração e dependência #17 pendentes.
-- #20: agregador verificado offline; seis posições em preparação; campanhas reais pendentes.
+- #20: agregador verificado offline; seis posições registradas; campanhas reais pendentes.
 
 ## Entregas offline
 
@@ -33,12 +33,15 @@ Branch: feat/evals-cycle-17-20. Origem inicial: 0cbd74bcdaf662f1eb07afc613b3b89b
 
 ## Evidências e verificação
 
+- [Manifesto SHA-256](2026-10-10-evals-evidence-manifest.json) dos datasets, configurações, contratos de avaliação, specs/planos e todas as evidências publicadas neste ciclo; o próprio manifesto não inclui seu hash.
 - [Checks completos](2026-10-10-evals-checks.log.txt): 455 testes em 56 arquivos, zero falhas, 14 snapshots e 2404 assertions. Typecheck, lint, build, compile --check e skills:install --check concluídos com exit 0. O exemplo mantém verify 0001 = done e verify 0002 = needs-human.
 - #17: [preflight](2026-10-10-evals-17/preflight.json), [controle scripted JSON](2026-10-10-evals-17/scripted-control/report.json), [Markdown](2026-10-10-evals-17/scripted-control/report.md) e [hashes de todos os artefatos](2026-10-10-evals-17/scripted-control/artifact-manifest.json). Cinco perguntas corretas, cinco packets aceitos e verify 0001 done; 10 sessões scripted, nenhuma inferência real. Fingerprints da origem iguais antes/depois. Para reproduzir, copie [control.ts.txt](2026-10-10-evals-17/control.ts.txt) para /tmp/control-script.ts; da raiz de um checkout limpo, execute `bun /tmp/control-script.ts <diretório-externo-novo>`.
 - O primeiro controle manual registrou a fixture sob a chave do adapter em vez do ID da configuração. O runner usou o scripted padrão, que deixa itens bloqueados. [Relatório inicial preservado](2026-10-10-evals-17/scripted-setup-error/report.json); a chave foi corrigida na fixture, sem mudar instruções/gates, e o controle foi executado em novo diretório.
 - #18: [hashes/dados](2026-10-10-evals-18/datasets.json), [RED](2026-10-10-evals-18/red.log.txt) e [GREEN](2026-10-10-evals-18/green.log.txt). Quatro testes exercitam os 20 casos e validam o original byte-idêntico.
 - #19: [RED](2026-10-10-evals-19/red.log.txt) e [GREEN](2026-10-10-evals-19/green.log.txt), 25 testes. A primeira execução completa teve duas expectativas erradas nas fixtures ([log](2026-10-10-evals-19/initial-fixture-errors.log.txt)): executável ausente dentro do sandbox gera process_nonzero; o timeout final precisa permitir as duas leituras de status/next anteriores. As expectativas foram corrigidas e os 25 testes passaram na suíte completa.
 - #20: [reproduções da revisão](2026-10-10-evals-20/review-red.log.txt) e [GREEN](2026-10-10-evals-20/green.log.txt), nove testes; ausência de métricas derivadas também é exercitada.
+- Campanha #20: [índice de seis posições](../../../evals/campaigns/cycle-20/index.json), [preflight](2026-10-10-evals-20/campaign-preflight.log.txt), [JSON agregado](2026-10-10-evals-20/planned/aggregate.json) e [Markdown](2026-10-10-evals-20/planned/aggregate.md). Fonte comum: dc9a25d133fa71975dfd77713e00ea653a273a82, congelada em checkout limpo contendo o dataset e os oráculos ampliados. Todos os manifestos preservam modelos/parâmetros/autenticação/contextos da referência; 25 perguntas/cinco packets, repetitions 1, 35 sessões/45 minutos. Seis posições not_run com motivo inference_budget_not_authorized; acurácia/uso indisponíveis, cobertura 0/150 e zero certificações observadas. Duas saídas independentes do CLI são byte-idênticas (JSON, Markdown e manifesto de hashes).
+- Reprodução da agregação, sem inferência: `bun run evals:aggregate --campaign evals/campaigns/cycle-20/index.json --out <diretório-novo>`.
 - APIs públicas, orders, dataset original e artefatos históricos não tiveram alterações. Specs e planos próprios estão versionados desde d6ef40b, antes do código.
 
 ## Inferência real

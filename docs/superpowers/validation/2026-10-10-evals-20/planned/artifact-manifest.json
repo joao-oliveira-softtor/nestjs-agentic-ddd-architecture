@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": "aggregate.json",
+      "sha256": "5383a1edff8b2f9714a437370c4f39d85e478abfea2408223d9e48acb0d79632",
+      "bytes": 4907
+    },
+    {
+      "path": "aggregate.md",
+      "sha256": "9ece4db736dedada9e3b6e8e3645a637046128f8d39af1cd7c6bd9ac33bfe282",
+      "bytes": 2269
+    }
+  ]
+}
