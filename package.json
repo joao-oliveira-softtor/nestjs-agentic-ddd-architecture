@@ -20,7 +20,8 @@
     "agentic": "bun src/cli/main.ts",
     "skills:install": "bun scripts/install-skills.ts",
     "skills:example": "bun scripts/create-skills-example.ts",
-    "evals": "bun scripts/evals/main.ts"
+    "evals": "bun scripts/evals/main.ts",
+    "evals:aggregate": "bun scripts/evals/aggregate.ts"
   },
   "dependencies": {
     "@nestbun/platform": "^0.1.2",

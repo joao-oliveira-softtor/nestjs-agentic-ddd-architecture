@@ -1,0 +1,123 @@
+bun test v1.4.2 (744846f84)
+
+test/evals-aggregate.test.ts:
+417 |   await mutate(f, r => {
+418 |     const b=r.benchmarks[0]!;
+419 |     b.finalVerification!.command.result.transport='finished';
+420 |     b.items[0]!.attempts[0]!.verification!.commands[0]!.result.transport='infra_error';
+421 |   });
+422 |   expect((await aggregateCampaign(f.path)).configurations[0]).toMatchObject({infrastructureFailures:1,behaviorFailures:0});
+                                                                    ^
+error: expect(received).toMatchObject(expected)
+
+  {
+-   "behaviorFailures": 0,
+-   "infrastructureFailures": 1,
++   "accuracy": {
++     "denominator": 15,
++     "numerator": 15,
++     "value": {
++       "source": "evidence_counts",
++       "status": "available",
++       "value": 1,
++     },
++   },
++   "behaviorFailures": 1,
++   "budgetExhaustedRuns": 3,
++   "certification": {
++     "denominator": 3,
++     "numerator": 0,
++     "value": {
++       "source": "evidence_counts",
++       "status": "available",
++       "value": 0,
++     },
++   },
++   "certifiedRuns": 0,
++   "configuration": "codex-sol-high",
++   "correctCases": 15,
++   "corrections": 0,
++   "coverage": {
++     "denominator": 15,
++     "numerator": 15,
++     "value": {
++       "source": "evidence_counts",
++       "status": "available",
++       "value": 1,
++     },
++   },
++   "evaluableCases": 15,
++   "executedRuns": 3,
++   "final": {
++     "denominator": 15,
++     "numerator": 4,
++     "value": {
++       "source": "evidence_counts",
++       "status": "available",
++       "value": 0.26666666666666666,
++     },
++   },
++   "finalItems": 4,
++   "infrastructureFailures": 0,
++   "initial": {
++     "denominator": 15,
++     "numerator": 4,
++     "value": {
++       "source": "evidence_counts",
++       "status": "available",
++       "value": 0.26666666666666666,
++     },
++   },
++   "initialItems": 4,
++   "notRun": [],
++   "notRunCases": 0,
++   "plannedCases": 15,
++   "plannedItems": 15,
++   "plannedRuns": 3,
++   "protocolFailures": 0,
++   "timeouts": 0,
++   "usage": {
++     "cachedInputTokens": {
++       "reason": "incomplete_measurements",
++       "status": "unavailable",
++     },
++     "cost": {
++       "reason": "incomplete_or_incompatible_costs",
++       "status": "unavailable",
++     },
++     "inputTokens": {
++       "reason": "incomplete_measurements",
++       "status": "unavailable",
++     },
++     "outputTokens": {
++       "reason": "incomplete_measurements",
++       "status": "unavailable",
++     },
++   },
+  }
+
+- Expected  - 2
++ Received  + 81
+
+      at <anonymous> (/tmp/agentic-evals-cycle-17-20/test/evals-aggregate.test.ts:422:63)
+(fail) item completion and certification derive from executed gates and both test suites [2429.70ms]
+431 | test('rejects evidence references even when missing files are also removed from hash ledger',async()=>{
+432 |   const f=await campaign();
+433 |   await mutate(f, r=>{
+434 |     r.cases[0]!.execution!.evidence.push('missing-process.json');
+435 |   });
+436 |   await expect(aggregateCampaign(f.path)).rejects.toThrow('Missing referenced evidence');
+                                                        ^
+error: expect(received).rejects.toThrow(expected)
+
+Expected promise that rejects
+Received promise that resolved: Promise { <resolved> }
+
+      at <anonymous> (/tmp/agentic-evals-cycle-17-20/test/evals-aggregate.test.ts:436:51)
+(fail) rejects evidence references even when missing files are also removed from hash ledger [852.10ms]
+
+ 0 pass
+ 6 filtered out
+ 2 fail
+ 5 expect() calls
+Ran 2 tests across 1 file. [3.54s]
