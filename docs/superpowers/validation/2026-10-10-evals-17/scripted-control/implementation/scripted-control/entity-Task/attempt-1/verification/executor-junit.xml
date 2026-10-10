@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="2" assertions="6" failures="0" skipped="0" time="0.105064835">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="6" failures="0" skipped="0" time="0.103188835" hostname="softtords">
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento" classname="" time="0.000303" file="app/test/entity-Task.test.ts" line="4" assertions="3" />
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços" classname="" time="0.000137" file="app/test/entity-Task.test.ts" line="11" assertions="3" />
+  </testsuite>
+</testsuites>

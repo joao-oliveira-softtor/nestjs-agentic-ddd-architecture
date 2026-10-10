@@ -19,6 +19,19 @@ A spec histórica chamou as extensões futuras de v0.1. Para evitar confusão co
 
 O Plano 5 tem [spec](superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [plano de execução](superpowers/plans/2026-10-08-v0-05-agent-skills.md) versionados. O Plano 6 tem [spec](superpowers/specs/2026-10-08-v0-06-agent-evals-design.md), [plano](superpowers/plans/2026-10-08-v0-06-agent-evals.md) e [referência real com limitações de orçamento e protocolo](superpowers/validation/2026-10-09-plan6.md); sua implementação é integrada pela [PR #16](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/16). Os Planos 7–8 formam outra frente: primeiro o adapter, depois a experiência de operação por CLI.
 
+## Ciclo de avaliações #17–#20
+
+Sequência: #17 → #18 e #19 → #20; retomar Planos 7–8 após as campanhas. [Registro e critérios](superpowers/validation/2026-10-10-evals-cycle.md).
+
+| Issue | Entrega | Estado |
+| --- | --- | --- |
+| [#17](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/17) | Dois manifestos de certificação, SHA fixo, 15 sessões/45 min cada | Preparada; inferência e certificação pendentes |
+| [#18](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/18) | Dataset adicional com 20 casos e julgamento offline estrito | Verificada offline; integração e #17 pendentes |
+| [#19](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/19) | 25 regressões no percurso completo e oráculos com múltiplos valores | Verificada offline; integração e #17 pendentes |
+| [#20](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/20) | Agregador offline e seis posições de campanha | Agregador verificado; runs reais pendentes |
+
+O ciclo preserva o dataset original e a referência real anterior. Manifestos de campanha usam 25 perguntas e cinco packets por run. O orçamento proposto de 35 sessões/45 min por run (210 sessões/270 min no total) requer autorização separada; nenhuma campanha é iniciada automaticamente.
+
 ## Backlog — Extensões e distribuição
 
 [Milestone](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/milestone/2). Sem versão ou prazo comprometidos.
