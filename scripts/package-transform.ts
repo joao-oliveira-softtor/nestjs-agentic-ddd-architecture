@@ -96,6 +96,19 @@ export function packageTransform<T extends ts.Node>(
           ),
           node,
         );
+      if (
+        (ts.isTemplateHead(node) ||
+          ts.isTemplateMiddle(node) ||
+          ts.isTemplateTail(node)) &&
+        textOf(node.text) !== node.text
+      ) {
+        const rewritten = ts.isTemplateHead(node)
+          ? context.factory.createTemplateHead(textOf(node.text))
+          : ts.isTemplateMiddle(node)
+            ? context.factory.createTemplateMiddle(textOf(node.text))
+            : context.factory.createTemplateTail(textOf(node.text));
+        return ts.setTextRange(ts.setOriginalNode(rewritten, node), node);
+      }
       return ts.visitEachChild(node, visit, context);
     };
     return (node) => ts.visitNode(node, visit) as T;

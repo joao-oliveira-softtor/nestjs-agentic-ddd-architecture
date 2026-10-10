@@ -123,6 +123,7 @@ try {
   assert(agents.includes(`${pkg.name}/decorators`));
   assert(!agents.includes('@agentic-ddd/'));
   assert(agents.includes('bun run agentic-ddd status'));
+  assert(!/\bbun run agentic\b(?!-ddd)/.test(agents));
   await run(['bun', 'run', 'agentic-ddd', 'status', '--static']);
   console.log(
     `Package smoke passed (source + bundle, IR ${source.hash}, ${source.source}).`,

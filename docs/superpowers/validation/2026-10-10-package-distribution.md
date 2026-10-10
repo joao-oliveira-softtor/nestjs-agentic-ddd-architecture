@@ -7,7 +7,7 @@ Data: 2026-10-10. Base: main 0cbd74b (inclui os planos 5/6 posteriores à releas
 - `bun install --frozen-lockfile`: aprovado.
 - `bun run typecheck`, `bun run lint`, `bun run build`: aprovados.
 - `bun run agentic compile --check` e `bun run skills:install --check`: aprovados; domínio e gerados de orders preservados.
-- Testes focados finais de app, metadados, transformação e auditoria: 8 aprovados, 0 falhas. Incluem inicialização do exemplo com BunAdapter e teste executável do bloqueio de publicação.
+- Testes focados finais de app, metadados, transformação e auditoria: 9 aprovados, 0 falhas. Incluem inicialização do exemplo com BunAdapter e teste executável do bloqueio de publicação.
 - `bun run test:package`: aprovado. npm pack constrói o pacote, audita os 310 arquivos reais do tarball e npm instala em consumidor temporário fora do checkout, sem NODE_PATH e sem tsconfig paths.
 - Consumidor compila todas as fronteiras e raiz em NodeNext e bundler, com skipLibCheck false. Private import de dist rejeitado por exports.
 - CLI instalada gera e verifica skills a partir de proposta inicial do consumidor. Instruções geradas referenciam imports públicos e comando `bun run agentic-ddd`, que é executado no smoke.
@@ -17,7 +17,7 @@ Data: 2026-10-10. Base: main 0cbd74b (inclui os planos 5/6 posteriores à releas
 
 ## Suíte completa e ambiente
 
-Baseline: 400 aprovados, 9 falhas, 14 snapshots. Execução completa após a implementação: **403 aprovados, 9 falhas, 14 snapshots** (412 testes, 55 arquivos). Dois testes adicionais finais (transformação e gate executável) também passaram na execução focada acima.
+Baseline: 400 aprovados, 9 falhas, 14 snapshots. Execução completa após a implementação: **403 aprovados, 9 falhas, 14 snapshots** (412 testes, 55 arquivos). Três testes adicionais finais (transformação, templates interpolados e gate executável) também passaram na execução focada acima.
 
 As mesmas 9 falhas já aparecem no baseline, provocadas por `bwrap: Creating new namespace failed: Operation not permitted`; os gates de verify propagam a falha da suíte. Não enfraquecemos o isolamento nem marcamos esses casos como aprovados:
 
