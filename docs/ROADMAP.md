@@ -6,7 +6,7 @@ Primeira release GitHub dos quatro planos do marco interno v0: compilador, chang
 
 A spec histórica chamou as extensões futuras de v0.1. Para evitar confusão com a primeira release pública v0.1.0, os próximos trabalhos passam a ser acompanhados pelas versões e milestones desta página, sem reescrever o histórico de decisões.
 
-## v0.2.0 — Validação com agentes reais
+## Frente de validação com agentes reais
 
 [Milestone](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/milestone/1). Objetivo: desenvolver e operar um domínio com agentes reais, medindo resultados contra os contratos do framework. As issues são propostas a refinar; cada implementação exige spec/plano sobre o código real. Não há prazo prometido.
 
@@ -26,11 +26,15 @@ Sequência: #17 → #18 e #19 → #20; retomar Planos 7–8 após as campanhas. 
 | Issue | Entrega | Estado |
 | --- | --- | --- |
 | [#17](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/17) | Dois manifestos de certificação, SHA fixo, 15 sessões/45 min cada | Certificada: ambos 5/5 packets e verify done; [evidências](superpowers/validation/2026-10-10-evals-17/real/README.md) |
-| [#18](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/18) | Dataset adicional com 20 casos e julgamento offline estrito | Verificada offline; integração pendente |
-| [#19](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/19) | 25 regressões no percurso completo e oráculos com múltiplos valores | Verificada offline; integração pendente |
-| [#20](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/20) | Agregador offline e seis posições de campanha | Agregador verificado; runs reais pendentes |
+| [#18](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/18) | Dataset adicional com 20 casos e julgamento offline estrito | Concluída; incluída na v0.3.0 |
+| [#19](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/19) | 25 regressões no percurso completo e oráculos com múltiplos valores | Concluída; incluída na v0.3.0 |
+| [#20](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/20) | Agregador offline e seis posições de campanha | Seis runs e agregado reproduzível; [evidências](superpowers/validation/2026-10-10-evals-20/real/README.md) |
 
-O ciclo preserva o dataset original e a referência real anterior. Manifestos de campanha usam 25 perguntas e cinco packets por run. O orçamento proposto de 35 sessões/45 min por run (210 sessões/270 min no total) requer autorização separada; nenhuma campanha é iniciada automaticamente.
+O ciclo preserva o dataset original e a referência real anterior. Manifestos de campanha usam 25 perguntas e cinco packets por run. O orçamento de 35 sessões/45 min por run foi autorizado separadamente. Seis runs consumiram 184 sessões/76,8 minutos: Codex 3/3 e Cursor 2/3 certificações, com o resultado parcial preservado. Novas inferências exigem orçamento próprio.
+
+## v0.3.0 — Avaliações certificadas e ampliadas
+
+[Release](releases/0.3.0.md): Planos 5–6 e ciclo #17–#20, preservando framework público, orders e referências históricas. #17 certificou ambos os agentes; #18/#19 ampliaram compreensão e regressões; #20 registrou seis runs e comparação descritiva. Os Planos 7–8 permanecem próximos trabalhos.
 
 ## Backlog — Extensões e distribuição
 

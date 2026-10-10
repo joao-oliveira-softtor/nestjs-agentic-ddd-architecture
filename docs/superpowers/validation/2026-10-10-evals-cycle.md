@@ -5,15 +5,15 @@ Branch: feat/evals-cycle-17-20. Origem inicial: 0cbd74bcdaf662f1eb07afc613b3b89b
 ## Decisões
 
 - A preparação offline de #18–#20 ocorreu enquanto #17 aguardava autorização de inferência. Após a resposta `sim` do usuário, os dois runs da #17 foram executados sequencialmente e certificados.
-- O orçamento do plano era proposto; a autorização recebida cobre apenas #17, até 30 sessões/90 minutos. #20 continua exigindo autorização própria.
+- O orçamento do plano era proposto; a autorização inicial cobriu #17, até 30 sessões/90 minutos. Após a resposta `autorizo`, #20 recebeu seu próprio limite de 210 sessões/270 minutos, sem runs adicionais.
 - Specs/planos de cada issue versionados antes da implementação.
 
 ## Critérios
 
 - #17: ambas as configurações com cinco packets aceitos na primeira tentativa e verify 0001 done; evidências reais publicadas.
-- #18: critérios demonstrados offline; dependência #17 satisfeita, integração pendente.
-- #19: critérios demonstrados offline; dependência #17 satisfeita, integração pendente.
-- #20: agregador verificado offline; seis posições registradas; campanhas reais pendentes.
+- #18: critérios demonstrados offline; dependência #17 satisfeita; entrega incluída na release v0.3.0.
+- #19: critérios demonstrados offline; dependência #17 satisfeita; entrega incluída na release v0.3.0.
+- #20: seis runs independentes executados, agregação reproduzível e resultados parciais preservados; entrega incluída na release v0.3.0.
 
 ## Entregas offline
 
@@ -42,7 +42,7 @@ Branch: feat/evals-cycle-17-20. Origem inicial: 0cbd74bcdaf662f1eb07afc613b3b89b
 - #18: [hashes/dados](2026-10-10-evals-18/datasets.json), [RED](2026-10-10-evals-18/red.log.txt) e [GREEN](2026-10-10-evals-18/green.log.txt). Quatro testes exercitam os 20 casos e validam o original byte-idêntico.
 - #19: [RED](2026-10-10-evals-19/red.log.txt) e [GREEN](2026-10-10-evals-19/green.log.txt), 25 testes. A primeira execução completa teve duas expectativas erradas nas fixtures ([log](2026-10-10-evals-19/initial-fixture-errors.log.txt)): executável ausente dentro do sandbox gera process_nonzero; o timeout final precisa permitir as duas leituras de status/next anteriores. As expectativas foram corrigidas e os 25 testes passaram na suíte completa.
 - #20: [reproduções da revisão](2026-10-10-evals-20/review-red.log.txt) e [GREEN](2026-10-10-evals-20/green.log.txt), nove testes; ausência de métricas derivadas também é exercitada.
-- Campanha #20: [índice de seis posições](../../../evals/campaigns/cycle-20/index.json), [preflight](2026-10-10-evals-20/campaign-preflight.log.txt), [JSON agregado](2026-10-10-evals-20/planned/aggregate.json) e [Markdown](2026-10-10-evals-20/planned/aggregate.md). Fonte comum: dc9a25d133fa71975dfd77713e00ea653a273a82, congelada em checkout limpo contendo o dataset e os oráculos ampliados. Todos os manifestos preservam modelos/parâmetros/autenticação/contextos da referência; 25 perguntas/cinco packets, repetitions 1, 35 sessões/45 minutos. Seis posições not_run com motivo inference_budget_not_authorized; acurácia/uso indisponíveis, cobertura 0/150 e zero certificações observadas. Duas saídas independentes do CLI são byte-idênticas (JSON, Markdown e manifesto de hashes).
+- Campanha #20: [índice de seis posições](../../../evals/campaigns/cycle-20/index.json), [preflight](2026-10-10-evals-20/campaign-preflight.log.txt), [JSON agregado](2026-10-10-evals-20/planned/aggregate.json) e [Markdown](2026-10-10-evals-20/planned/aggregate.md). Fonte comum: dc9a25d133fa71975dfd77713e00ea653a273a82, congelada em checkout limpo contendo o dataset e os oráculos ampliados. Todos os manifestos preservam modelos/parâmetros/autenticação/contextos da referência; 25 perguntas/cinco packets, repetitions 1, 35 sessões/45 minutos. Estado inicial preservado: seis posições not_run com motivo inference_budget_not_authorized; acurácia/uso indisponíveis, cobertura 0/150 e zero certificações observadas. Duas saídas independentes do CLI são byte-idênticas (JSON, Markdown e manifesto de hashes).
 - Reprodução da agregação, sem inferência: `bun run evals:aggregate --campaign evals/campaigns/cycle-20/index.json --out <diretório-novo>`.
 - APIs públicas, orders, dataset original e artefatos históricos não tiveram alterações. Specs e planos próprios estão versionados desde d6ef40b, antes do código.
 
@@ -50,4 +50,4 @@ Branch: feat/evals-cycle-17-20. Origem inicial: 0cbd74bcdaf662f1eb07afc613b3b89b
 
 [Certificação #17 e evidências completas](2026-10-10-evals-17/real/README.md): Codex 4/5 e Cursor 3/5 nas perguntas; ambos com cinco packets aceitos inicialmente/finalmente e verify 0001 done independente. 20 sessões reais, cerca de 15,6 minutos, zero correções. Fonte/runner comuns e fingerprint da origem iguais antes/depois nos dois runs. Os três julgamentos literais incorretos foram reproduzidos offline sem alterar instruções/expectativas. Todos os hashes e schemas dos relatórios foram conferidos antes da publicação.
 
-#20 permanece com seis posições não executadas e exige autorização própria (até 210 sessões/270 minutos). Seus inputs serão diferentes; os runs da #17 não preenchem posições da campanha #20. Sem repetição automática, reparo manual ou relaxamento de gates.
+[Campanha #20 concluída](2026-10-10-evals-20/real/README.md): seis runs, 150/150 perguntas executadas; Codex 72/75 e 3/3 certificações, Cursor 70/75 e 2/3. O run parcial foi preservado com causa observável e dependente bloqueado. 184 sessões/76,8 minutos dentro do limite autorizado. Hashes/fingerprints conferidos; falhas reproduzidas offline. Agregados canônicos byte-idênticos em duas saídas. Os inputs da #17 são diferentes e não preenchem posições da #20. Sem repetição automática, reparo manual ou relaxamento de gates.

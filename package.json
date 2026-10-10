@@ -1,6 +1,6 @@
 {
   "name": "nestjs-agentic-ddd-architecture",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Framework NestJS + DDD em que use-cases são tools, operators (agentes de IA) substituem controllers e um compilador gera skills e AGENTS.md a partir do domínio decorado.",
   "author": "",
   "private": true,
