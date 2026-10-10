@@ -1,0 +1,31 @@
+
+app/test/usecase-create_task.test.ts:
+(pass) [covers: criterion:0001/persistencia-criacao, usecase:create_task] cria e salva t1 antes de publicar TaskCreated, retorna pending e rejeita o mesmo id [3.76ms]
+(pass) [covers: usecase:create_task] rejeita título vazio após normalização sem salvar nem publicar [0.14ms]
+(pass) [covers: usecase:create_task] propaga falha de consulta sem salvar nem publicar [0.14ms]
+(pass) [covers: usecase:create_task] propaga falha de persistência sem publicar [0.12ms]
+(pass) [covers: usecase:create_task] aguarda publicação e propaga sua falha após salvar [0.12ms]
+
+app/test/usecase-complete_task.test.ts:
+(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1, salva completed antes de publicar TaskCompleted e retorna o contrato [0.41ms]
+(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id inexistente com TASK_NOT_FOUND sem salvar nem publicar [0.12ms]
+(pass) [covers: usecase:complete_task] rejeita conclusão repetida sem salvar nem publicar novamente [0.13ms]
+(pass) [covers: usecase:complete_task] propaga falha de persistência sem publicar os eventos [0.12ms]
+(pass) [covers: usecase:complete_task] aguarda publicação e propaga sua falha após salvar [0.13ms]
+
+app/test/method-Task-complete.test.ts:
+(pass) [covers: method:Task.complete] conclui uma tarefa pending e registra TaskCompleted com seu id [0.06ms]
+(pass) [covers: criterion:0001/conclusao, method:Task.complete] rejeita repetição com TASK_ALREADY_COMPLETED e preserva estado e evento registrado [0.09ms]
+
+app/test/entity-Task.test.ts:
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou com apenas espaços com TASK_TITLE_REQUIRED [0.13ms]
+(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente, normaliza as extremidades e registra TaskCreated [0.05ms]
+
+app/test/operator-task-operator.test.ts:
+(pass) [covers: criterion:0001/tools, operator:task-operator] cria e conclui uma tarefa pelas duas tools e publica TaskCreated e TaskCompleted [7.70ms]
+(pass) [covers: operator:task-operator] rejeita tool fora das duas permitidas sem criar tarefa nem publicar eventos [1.46ms]
+
+ 16 pass
+ 0 fail
+ 139 expect() calls
+Ran 16 tests across 5 files. [118.00ms]

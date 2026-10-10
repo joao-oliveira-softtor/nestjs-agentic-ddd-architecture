@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "incorrectOrMalformed": 8,
+  "results": [
+    {
+      "run": "codex-sol-high-r1",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "onde-criar-use-case",
+      "expected": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "finalText": "{\"type\":\"exact\",\"value\":\"Crie em examples/orders/application/refund-order.ts com @AgentUseCase de @agentic-ddd/decorators, declarando name: 'refund_order', description, whenToUse, input, output e uses (obrigatório); emits é opcional.\"}",
+      "recordedVerdict": "incorrect",
+      "replayedVerdict": "incorrect"
+    },
+    {
+      "run": "codex-sol-high-r2",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "onde-criar-use-case",
+      "expected": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "finalText": "{\"type\":\"exact\",\"value\":\"Crie em examples/orders/application/refund-order.ts com @AgentUseCase de @agentic-ddd/decorators, declarando name: 'refund_order', description, whenToUse, input, output e uses (obrigatório); emits é opcional.\"}",
+      "recordedVerdict": "incorrect",
+      "replayedVerdict": "incorrect"
+    },
+    {
+      "run": "codex-sol-high-r3",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "onde-criar-use-case",
+      "expected": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "finalText": "{\"type\":\"exact\",\"value\":\"Crie em examples/orders/application/refund-order.ts, com @AgentUseCase de @agentic-ddd/decorators, declarando name: 'refund_order', description, whenToUse, input, output e uses (obrigatório); emits é opcional.\"}",
+      "recordedVerdict": "incorrect",
+      "replayedVerdict": "incorrect"
+    },
+    {
+      "run": "cursor-codex-medium-r1",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "confirmar-pedido",
+      "expected": {
+        "type": "tool_call",
+        "name": "confirm_order",
+        "input": {
+          "order_id": "7f3c"
+        }
+      },
+      "finalText": "{\"type\":\"exact\",\"value\":\"confirm_order com {\\\"order_id\\\":\\\"7f3c\\\"}\"}",
+      "recordedVerdict": "incorrect",
+      "replayedVerdict": "incorrect"
+    },
+    {
+      "run": "cursor-codex-medium-r1",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "onde-criar-use-case",
+      "expected": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "finalText": "{\"type\":\"exact\",\"value\":\"No módulo `orders`, crie em `examples/orders/application/refund-order.ts` (padrão `<nome>.ts`) e declare com o decorator `@AgentUseCase(...)` de `@agentic-ddd/decorators`.\"}",
+      "recordedVerdict": "incorrect",
+      "replayedVerdict": "incorrect"
+    },
+    {
+      "run": "cursor-codex-medium-r2",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "cancelar-com-motivo",
+      "expected": {
+        "type": "tool_call",
+        "name": "cancel_order",
+        "input": {
+          "order_id": "7f3c",
+          "reason": "desistiu"
+        }
+      },
+      "finalText": "{\"type\":\"tool_call\",\"name\":\"cancel_order\",\"input\":{\"order_id\":\"7f3c\",\"reason\":\"cliente desistiu\"}}",
+      "recordedVerdict": "incorrect",
+      "replayedVerdict": "incorrect"
+    },
+    {
+      "run": "cursor-codex-medium-r2",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "onde-criar-use-case",
+      "expected": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "finalText": "{\"type\":\"exact\",\"value\":\"Crie em `examples/orders/application/refund-order.ts` usando o decorator `@AgentUseCase(...)` de `@agentic-ddd/decorators`.\"}",
+      "recordedVerdict": "incorrect",
+      "replayedVerdict": "incorrect"
+    },
+    {
+      "run": "cursor-codex-medium-r3",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "onde-criar-use-case",
+      "expected": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "finalText": "{\"type\":\"exact\",\"value\":\"No módulo `orders`, crie em `examples/orders/application/refund-order.ts` (padrão `<nome>.ts` em `application`) e declare com o decorator `@AgentUseCase(...)` de `@agentic-ddd/decorators`.\"}",
+      "recordedVerdict": "incorrect",
+      "replayedVerdict": "incorrect"
+    }
+  ]
+}

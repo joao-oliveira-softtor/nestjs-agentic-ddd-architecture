@@ -1,0 +1,21 @@
+
+app/test/usecase-create_task.test.ts:
+(pass) create_task > [covers: criterion:0001/persistencia-criacao, usecase:create_task] salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS [0.49ms]
+
+app/test/usecase-complete_task.test.ts:
+(pass) complete_task > [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND [0.29ms]
+
+app/test/method-Task-complete.test.ts:
+(pass) Task.complete > [covers: criterion:0001/conclusao, method:Task.complete] conclui pending, registra TaskCompleted e rejeita repeticao [0.07ms]
+
+app/test/entity-Task.test.ts:
+(pass) Task.create > [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita titulo vazio ou com espacos [0.04ms]
+(pass) Task.create > [covers: criterion:0001/criacao, method:Task.create] cria pending, normaliza titulo e registra TaskCreated [0.04ms]
+
+app/test/operator-task-operator.test.ts:
+(pass) task-operator > [covers: criterion:0001/tools, operator:task-operator] usa somente create_task e complete_task e publica os dois eventos no fluxo create->complete [6.86ms]
+
+ 6 pass
+ 0 fail
+ 42 expect() calls
+Ran 6 tests across 5 files. [96.00ms]

@@ -1,0 +1,16 @@
+{
+  "sessionId": {
+    "status": "available",
+    "value": "01a12762-3dfa-7e60-b673-89e1cd530e61",
+    "source": "codex.thread.started.thread_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "gpt-6.1-sol",
+    "source": "codex.rollout.turn_context.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  }
+}

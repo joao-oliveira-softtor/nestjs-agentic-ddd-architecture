@@ -1,0 +1,64 @@
+{
+  "configuration": "scripted-control",
+  "dataset": "evals/skills/orders.extended.yaml",
+  "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+  "id": "dev-positive-uses",
+  "audience": "dev",
+  "question": "Um novo use-case chama Order.confirm. Qual ID deve constar no array uses de @AgentUseCase? Responda somente o ID completo.",
+  "expect": {
+    "type": "exact",
+    "value": "method:Order.confirm"
+  },
+  "answer": {
+    "type": "exact",
+    "value": "method:Order.confirm"
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d",
+  "execution": {
+    "sessionId": {
+      "status": "available",
+      "value": "scripted-8",
+      "source": "scripted_fixture"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "scripted",
+      "source": "scripted_fixture"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "synthetic"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 39.40096099999937,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/scripted-control/skills/scripted-control/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/scripted-control/skills/scripted-control/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/scripted-control/skills/scripted-control/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/process.json"
+    ],
+    "transport": "finished",
+    "finalText": "{\"type\":\"exact\",\"value\":\"method:Order.confirm\"}",
+    "diagnostic": null
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "/home/jvtuta/.local/share/cursor-agent/versions/2026.10.01-e373342/cursor-agent",
+    "--version"
+  ],
+  "cwd": "/tmp/eval-probe-bAK5CO",
+  "transport": "finished",
+  "exitCode": 0,
+  "signal": null,
+  "durationMs": 631.4509039999994,
+  "diagnostic": null,
+  "outputBytes": 19,
+  "streamsWithheld": false,
+  "redacted": false
+}

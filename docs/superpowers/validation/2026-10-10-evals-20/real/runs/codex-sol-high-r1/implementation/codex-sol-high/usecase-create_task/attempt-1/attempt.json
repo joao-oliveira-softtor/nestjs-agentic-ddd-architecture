@@ -1,0 +1,352 @@
+{
+  "number": 1,
+  "handoff": {
+    "item": "usecase:create_task",
+    "packet": "# Identificação\n\n- ID: `usecase:create_task`\n- Camada: application\n- Módulo: tasks\n- source: `app/application/create-task.ts:13`\n- Estado: declared\n- specHash: `daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6`\n- Dependências: `entity:Task`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n      \"emits\": [\n        \"event:TaskCreated\"\n      ],\n      \"entity\": {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      },\n      \"id\": \"method:Task.create\",\n      \"invariants\": [],\n      \"name\": \"create\",\n      \"static\": true,\n      \"transition\": null\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.\",\n    \"emits\": [\n      \"event:TaskCreated\"\n    ],\n    \"id\": \"usecase:create_task\",\n    \"inputSchema\": {\n      \"properties\": {\n        \"task_id\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        },\n        \"title\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"title\"\n      ],\n      \"type\": \"object\"\n    },\n    \"module\": \"tasks\",\n    \"name\": \"create_task\",\n    \"outputSchema\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"status\": {\n          \"const\": \"pending\",\n          \"type\": \"string\"\n        },\n        \"task_id\": {\n          \"type\": \"string\"\n        },\n        \"title\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"title\",\n        \"status\"\n      ],\n      \"type\": \"object\"\n    },\n    \"uses\": [\n      \"method:Task.create\"\n    ],\n    \"whenNotToUse\": \"Para concluir tarefa existente.\",\n    \"whenToUse\": \"Quando o usuário deseja criar uma tarefa.\"\n  }\n}\n```\n\n## Obrigações de teste\n\n- `usecase:create_task` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item usecase:create_task --spec-hash daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6 --config /tmp/agentic-eval-HipMo7/attempt-xmXbdj/workspace/agentic.config.ts --json\n```\n",
+    "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6",
+    "configPath": "/tmp/agentic-eval-HipMo7/accepted-wiemgg/tasks/agentic.config.ts",
+    "testFile": "app/test/usecase-create_task.test.ts",
+    "criteria": [
+      {
+        "id": "persistencia-criacao",
+        "given": "repositório vazio e id t1",
+        "when": "executar create_task e repetir o mesmo id",
+        "then": "salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS"
+      }
+    ]
+  },
+  "baselineHash": "93e49ffbcca9e38af61fe6d307cc26eadf2ca124ec175b1a310c7037ff15a366",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"status\":\"done\",\"summary\":\"CreateTask.execute implementado preservando as 14 linhas do corpo. Novo teste cobre criação, persistência, TaskCreated, duplicidade, título inválido e falha ao salvar. Verificação com specHash original retornou done, código 0 e todos os gates aprovados. Somente os dois arquivos autorizados foram alterados.\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "01a12767-79fa-7070-b3c4-0c6559779150",
+      "source": "codex.thread.started.thread_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "gpt-6.1-sol",
+      "source": "codex.rollout.turn_context.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "available",
+        "value": 219152,
+        "source": "codex.turn.completed.usage.input_tokens"
+      },
+      "cachedInputTokens": {
+        "status": "available",
+        "value": 201088,
+        "source": "codex.turn.completed.usage.cached_input_tokens"
+      },
+      "outputTokens": {
+        "status": "available",
+        "value": 3182,
+        "source": "codex.turn.completed.usage.output_tokens"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 73127.30800399999,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/process.json",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/model-metadata.json"
+    ],
+    "diagnostic": null
+  },
+  "reply": {
+    "status": "done",
+    "summary": "CreateTask.execute implementado preservando as 14 linhas do corpo. Novo teste cobre criação, persistência, TaskCreated, duplicidade, título inválido e falha ao salvar. Verificação com specHash original retornou done, código 0 e todos os gates aprovados. Somente os dois arquivos autorizados foram alterados."
+  },
+  "audit": {
+    "ok": true,
+    "findings": [],
+    "changedFiles": [
+      "app/application/create-task.ts",
+      "app/test/usecase-create_task.test.ts"
+    ],
+    "patch": "[\n  {\n    \"path\": \"app/application/create-task.ts\",\n    \"before\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"9bba8436aba10556da636d97fa5096b7a612f2e2ce1b6793c49114a69af187af\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { Task } from '../domain/task';\\nimport { TaskCreated } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });\\nexport const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });\\nexport type CreateTaskInput = z.infer<typeof createTaskInput>;\\nexport type CreateTaskOutput = z.infer<typeof createTaskOutput>;\\n\\n@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })\\nexport class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    },\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"7bc62731a38f91b37881b9d3456a17f5cbd31496a58d56eeba3a0d87f8013e77\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { Task } from '../domain/task';\\nimport { TaskCreated } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });\\nexport const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });\\nexport type CreateTaskInput = z.infer<typeof createTaskInput>;\\nexport type CreateTaskOutput = z.infer<typeof createTaskOutput>;\\n\\n@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })\\nexport class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {\\n    const existing = await this.tasks.findById(input.task_id);\\n    if (existing) throw new DomainError('TASK_ALREADY_EXISTS', 'A tarefa já existe.');\\n    const task = Task.create(input.task_id, input.title);\\n    await this.tasks.save(task);\\n    await ctx.publish(task.pullEvents());\\n    return { task_id: task.id, title: task.title, status: 'pending' };\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    }\n  },\n  {\n    \"path\": \"app/test/usecase-create_task.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"1ab46c0ec273d60bdbd91384c15c3270ebca42b7318d8705bcc8c3443f06e584\",\n      \"content\": \"import { expect, test } from 'bun:test';\\nimport { DomainError, type UseCaseContext } from '@agentic-ddd/core';\\nimport { covers, createTestContext } from '@agentic-ddd/testing';\\nimport { CreateTask, createTaskOutput } from '../application/create-task';\\nimport { TaskCreated } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\\n\\nfunction setup() {\\n  const storage = new InMemoryTaskRepository();\\n  const calls: string[] = [];\\n  const repository: TaskRepository = {\\n    async findById(id) {\\n      calls.push(`load:${id}`);\\n      return storage.findById(id);\\n    },\\n    async save(task) {\\n      await storage.save(task);\\n      calls.push(`save:${task.id}`);\\n    },\\n  };\\n  const ctx = createTestContext({ correlationId: 'correlation-1', causationId: 'causation-1' });\\n  return { storage, calls, repository, ctx };\\n}\\n\\ntest(covers([\\n  'usecase:create_task',\\n  'criterion:0001/persistencia-criacao',\\n], 'salva t1 pendente, publica TaskCreated e rejeita repetição com TASK_ALREADY_EXISTS'), async () => {\\n  const fixture = setup();\\n  const ctx: UseCaseContext = {\\n    ...fixture.ctx,\\n    async publish(events) {\\n      expect(fixture.calls).toEqual(['load:t1', 'save:t1']);\\n      const stored = await fixture.storage.findById('t1');\\n      expect(stored?.title).toBe('Minha  tarefa');\\n      expect(stored?.status).toBe('pending');\\n      await fixture.ctx.publish(events);\\n      fixture.calls.push('publish');\\n    },\\n  };\\n  const useCase = new CreateTask(fixture.repository);\\n  expect(await fixture.storage.findById('t1')).toBeNull();\\n\\n  const output = await useCase.execute({ task_id: 't1', title: ' \\\\tMinha  tarefa\\\\n ' }, ctx);\\n\\n  expect(output).toEqual({ task_id: 't1', title: 'Minha  tarefa', status: 'pending' });\\n  expect(createTaskOutput.parse(output)).toEqual(output);\\n  expect(fixture.calls).toEqual(['load:t1', 'save:t1', 'publish']);\\n  expect(fixture.ctx.published).toHaveLength(1);\\n  expect(fixture.ctx.published[0]).toBeInstanceOf(TaskCreated);\\n  expect(fixture.ctx.published[0]?.payload).toEqual({ taskId: 't1', title: 'Minha  tarefa' });\\n  expect(fixture.ctx.published[0]?.correlationId).toBe(ctx.correlationId);\\n  expect(fixture.ctx.published[0]?.causationId).toBe(ctx.causationId);\\n  const stored = await fixture.storage.findById('t1');\\n  expect(stored?.pullEvents()).toEqual([]);\\n\\n  const repetition = useCase.execute({ task_id: 't1', title: 'Outro título' }, ctx);\\n\\n  await expect(repetition).rejects.toBeInstanceOf(DomainError);\\n  await expect(repetition).rejects.toHaveProperty('code', 'TASK_ALREADY_EXISTS');\\n  expect(fixture.calls).toEqual(['load:t1', 'save:t1', 'publish', 'load:t1']);\\n  expect(await fixture.storage.findById('t1')).toBe(stored);\\n  expect(stored?.title).toBe('Minha  tarefa');\\n  expect(stored?.status).toBe('pending');\\n  expect(fixture.ctx.published).toHaveLength(1);\\n});\\n\\ntest(covers([\\n  'usecase:create_task',\\n], 'rejeita título composto apenas por espaços sem salvar ou publicar'), async () => {\\n  const fixture = setup();\\n  const execution = new CreateTask(fixture.repository).execute({ task_id: 't1', title: ' \\\\t\\\\n ' }, fixture.ctx);\\n\\n  await expect(execution).rejects.toBeInstanceOf(DomainError);\\n  await expect(execution).rejects.toHaveProperty('code', 'TASK_TITLE_REQUIRED');\\n  expect(fixture.calls).toEqual(['load:t1']);\\n  expect(await fixture.storage.findById('t1')).toBeNull();\\n  expect(fixture.ctx.published).toEqual([]);\\n});\\n\\ntest(covers([\\n  'usecase:create_task',\\n], 'propaga falha ao salvar sem publicar TaskCreated'), async () => {\\n  const fixture = setup();\\n  const failure = new Error('Falha de persistência');\\n  const repository: TaskRepository = {\\n    findById: fixture.repository.findById,\\n    async save(task) {\\n      expect(task.id).toBe('t1');\\n      expect(task.status).toBe('pending');\\n      await Promise.resolve();\\n      throw failure;\\n    },\\n  };\\n\\n  await expect(new CreateTask(repository).execute({ task_id: 't1', title: 'Tarefa' }, fixture.ctx)).rejects.toBe(failure);\\n\\n  expect(fixture.calls).toEqual(['load:t1']);\\n  expect(await fixture.storage.findById('t1')).toBeNull();\\n  expect(fixture.ctx.published).toEqual([]);\\n});\\n\"\n    }\n  }\n]"
+  },
+  "verification": {
+    "ok": true,
+    "findings": [],
+    "commands": [
+      {
+        "name": "verify-item",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-HipMo7/framework/src/cli/main.ts",
+          "verify",
+          "--item",
+          "usecase:create_task",
+          "--spec-hash",
+          "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6",
+          "--json",
+          "--config",
+          "/tmp/agentic-eval-HipMo7/attempt-2fKj3L/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "{\n  \"item\": \"usecase:create_task\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+          "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item usecase:create_task — done\n",
+          "durationMs": 4562.5140339999925,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/verify-item/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/verify-item/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/verify-item/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "executor-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-HipMo7/attempt-2fKj3L/workspace/.executor-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\napp/test/usecase-complete_task.test.ts:\n(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1, salva completed e aguarda a publicação de TaskCompleted pelo contexto [1.05ms]\n(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id inexistente com TASK_NOT_FOUND sem salvar ou publicar [0.25ms]\n(pass) [covers: usecase:complete_task] rejeita segunda conclusão com TASK_ALREADY_COMPLETED sem nova gravação ou publicação [0.18ms]\n(pass) [covers: usecase:complete_task] propaga falha ao salvar sem publicar ou retirar os eventos pendentes [0.19ms]\n\napp/test/method-Task-complete.test.ts:\n(pass) [covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pendente, registra TaskCompleted e rejeita repetição com TASK_ALREADY_COMPLETED [0.14ms]\n\napp/test/entity-Task.test.ts:\n(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou compostos apenas por espaços com TASK_TITLE_REQUIRED [0.10ms]\n(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente, normaliza o título e registra TaskCreated [0.07ms]\n\napp/test/usecase-create_task.test.ts:\n(pass) [covers: criterion:0001/persistencia-criacao, usecase:create_task] salva t1 pendente, publica TaskCreated e rejeita repetição com TASK_ALREADY_EXISTS [3.14ms]\n(pass) [covers: usecase:create_task] rejeita título composto apenas por espaços sem salvar ou publicar [0.17ms]\n(pass) [covers: usecase:create_task] propaga falha ao salvar sem publicar TaskCreated [0.22ms]\n\n 10 pass\n 0 fail\n 85 expect() calls\nRan 10 tests across 4 files. [148.00ms]\n",
+          "durationMs": 181.21501099993475,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/executor-tests/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/executor-tests/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/executor-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "reference-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "/tmp/agentic-eval-HipMo7/attempt-2fKj3L/workspace/.eval-reference/behavior.test.ts",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-HipMo7/attempt-2fKj3L/workspace/.reference-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) persiste, publica e rejeita duplicado [1.35ms]\n(pass) persiste, publica e rejeita duplicado [0.08ms]\n\n 2 pass\n 0 fail\n 22 expect() calls\nRan 2 tests across 1 file. [131.00ms]\n",
+          "durationMs": 164.4676389999222,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/reference-tests/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/reference-tests/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/reference-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "compile-check",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-HipMo7/framework/src/cli/main.ts",
+          "compile",
+          "--check",
+          "--config",
+          "/tmp/agentic-eval-HipMo7/attempt-2fKj3L/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+          "stderr": "",
+          "durationMs": 680.0835750000551,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/compile-check/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/compile-check/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-create_task/attempt-1/verification/compile-check/process.json"
+          ],
+          "diagnostic": null
+        }
+      }
+    ],
+    "itemReport": {
+      "item": "usecase:create_task",
+      "status": "done",
+      "gates": [
+        {
+          "id": "I1",
+          "name": "Dependências",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I2",
+          "name": "Implementação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I3",
+          "name": "Especificação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I4",
+          "name": "Obrigações",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I5",
+          "name": "Typecheck",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        }
+      ]
+    },
+    "executorTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1, salva completed e aguarda a publicação de TaskCompleted pelo contexto",
+          "file": "app/test/usecase-complete_task.test.ts",
+          "line": 32,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/persistencia-conclusao",
+            "usecase:complete_task"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id inexistente com TASK_NOT_FOUND sem salvar ou publicar",
+          "file": "app/test/usecase-complete_task.test.ts",
+          "line": 62,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/persistencia-conclusao",
+            "usecase:complete_task"
+          ]
+        },
+        {
+          "name": "[covers: usecase:complete_task] rejeita segunda conclusão com TASK_ALREADY_COMPLETED sem nova gravação ou publicação",
+          "file": "app/test/usecase-complete_task.test.ts",
+          "line": 77,
+          "status": "passed",
+          "covers": [
+            "usecase:complete_task"
+          ]
+        },
+        {
+          "name": "[covers: usecase:complete_task] propaga falha ao salvar sem publicar ou retirar os eventos pendentes",
+          "file": "app/test/usecase-complete_task.test.ts",
+          "line": 96,
+          "status": "passed",
+          "covers": [
+            "usecase:complete_task"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pendente, registra TaskCompleted e rejeita repetição com TASK_ALREADY_COMPLETED",
+          "file": "app/test/method-Task-complete.test.ts",
+          "line": 7,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/conclusao",
+            "method:Task.complete"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou compostos apenas por espaços com TASK_TITLE_REQUIRED",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 7,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/titulo-invalido",
+            "invariant:Task/titulo-obrigatorio",
+            "method:Task.create"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente, normaliza o título e registra TaskCreated",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 24,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/criacao",
+            "method:Task.create"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/persistencia-criacao, usecase:create_task] salva t1 pendente, publica TaskCreated e rejeita repetição com TASK_ALREADY_EXISTS",
+          "file": "app/test/usecase-create_task.test.ts",
+          "line": 26,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/persistencia-criacao",
+            "usecase:create_task"
+          ]
+        },
+        {
+          "name": "[covers: usecase:create_task] rejeita título composto apenas por espaços sem salvar ou publicar",
+          "file": "app/test/usecase-create_task.test.ts",
+          "line": 69,
+          "status": "passed",
+          "covers": [
+            "usecase:create_task"
+          ]
+        },
+        {
+          "name": "[covers: usecase:create_task] propaga falha ao salvar sem publicar TaskCreated",
+          "file": "app/test/usecase-create_task.test.ts",
+          "line": 82,
+          "status": "passed",
+          "covers": [
+            "usecase:create_task"
+          ]
+        }
+      ]
+    },
+    "referenceTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "persiste, publica e rejeita duplicado",
+          "file": ".eval-reference/behavior.test.ts",
+          "line": 6,
+          "status": "passed",
+          "covers": []
+        },
+        {
+          "name": "persiste, publica e rejeita duplicado",
+          "file": ".eval-reference/behavior.test.ts",
+          "line": 6,
+          "status": "passed",
+          "covers": []
+        }
+      ]
+    }
+  },
+  "accepted": true,
+  "reason": null
+}

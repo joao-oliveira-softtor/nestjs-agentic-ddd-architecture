@@ -1,0 +1,9 @@
+
+.eval-reference/behavior.test.ts:
+(pass) persiste, publica e rejeita duplicado [0.55ms]
+(pass) persiste, publica e rejeita duplicado [0.07ms]
+
+ 2 pass
+ 0 fail
+ 22 expect() calls
+Ran 2 tests across 1 file. [87.00ms]

@@ -1,0 +1,2 @@
+$ bun scripts/evals/main.ts --config "evals/campaigns/cycle-20/manifests/cursor-codex-medium-r1.json" --out "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1" --real --trusted-source
+Avaliação completed; relatório: /tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/report.md

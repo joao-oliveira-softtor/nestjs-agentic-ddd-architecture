@@ -1,0 +1,106 @@
+{
+  "mode": "dynamic",
+  "change": null,
+  "items": [
+    {
+      "id": "entity:Task",
+      "layer": "domain",
+      "module": "tasks",
+      "source": "app/domain/task.ts:5",
+      "dependsOn": [],
+      "obligations": [
+        "invariant:Task/titulo-obrigatorio",
+        "method:Task.create"
+      ],
+      "baseState": "done",
+      "state": "done",
+      "blockedBy": [],
+      "missingObligations": [],
+      "unsuccessfulTests": [],
+      "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+    },
+    {
+      "id": "method:Task.complete",
+      "layer": "domain",
+      "module": "tasks",
+      "source": "app/domain/task.ts:30",
+      "dependsOn": [
+        "entity:Task"
+      ],
+      "obligations": [
+        "method:Task.complete"
+      ],
+      "baseState": "done",
+      "state": "done",
+      "blockedBy": [],
+      "missingObligations": [],
+      "unsuccessfulTests": [],
+      "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+    },
+    {
+      "id": "operator:task-operator",
+      "layer": "operators",
+      "module": "tasks",
+      "source": "app/operators/task.operator.ts:5",
+      "dependsOn": [
+        "usecase:complete_task",
+        "usecase:create_task"
+      ],
+      "obligations": [
+        "operator:task-operator"
+      ],
+      "baseState": "implemented",
+      "state": "blocked",
+      "blockedBy": [
+        "usecase:complete_task",
+        "usecase:create_task"
+      ],
+      "missingObligations": [
+        "operator:task-operator"
+      ],
+      "unsuccessfulTests": [],
+      "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+    },
+    {
+      "id": "usecase:complete_task",
+      "layer": "application",
+      "module": "tasks",
+      "source": "app/application/complete-task.ts:12",
+      "dependsOn": [
+        "method:Task.complete"
+      ],
+      "obligations": [
+        "usecase:complete_task"
+      ],
+      "baseState": "declared",
+      "state": "declared",
+      "blockedBy": [],
+      "missingObligations": [
+        "usecase:complete_task"
+      ],
+      "unsuccessfulTests": [],
+      "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+    },
+    {
+      "id": "usecase:create_task",
+      "layer": "application",
+      "module": "tasks",
+      "source": "app/application/create-task.ts:13",
+      "dependsOn": [
+        "entity:Task"
+      ],
+      "obligations": [
+        "usecase:create_task"
+      ],
+      "baseState": "declared",
+      "state": "declared",
+      "blockedBy": [],
+      "missingObligations": [
+        "usecase:create_task"
+      ],
+      "unsuccessfulTests": [],
+      "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+    }
+  ],
+  "diagnostics": []
+}

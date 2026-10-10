@@ -1,0 +1,49 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"CompleteTask.execute implementado sem carimbo duplicado de eventos, preservando as 14 linhas do corpo. Novo teste cobre persistência, publicação, id ausente, repetição e falha ao salvar. Verificação com specHash original retornou done, código 0 e todos os gates aprovados.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "01a12766-1ac4-7143-bedc-c20694f70ccd",
+    "source": "codex.thread.started.thread_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "gpt-6.1-sol",
+    "source": "codex.rollout.turn_context.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 218719,
+      "source": "codex.turn.completed.usage.input_tokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 196352,
+      "source": "codex.turn.completed.usage.cached_input_tokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 3622,
+      "source": "codex.turn.completed.usage.output_tokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 82827.79403699999,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-complete_task/attempt-2/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-complete_task/attempt-2/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-complete_task/attempt-2/process.json",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-complete_task/attempt-2/model-metadata.json"
+  ],
+  "diagnostic": null
+}

@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado somente o corpo de `Task.create` em `app/domain/task.ts` (mantendo estrutura de linhas do esqueleto), com normalizacao de titulo, erro `TASK_TITLE_REQUIRED` para vazio/espacos e registro de `TaskCreated`. Criado `app/test/entity-Task.test.ts` cobrindo `criterion:0001/titulo-invalido`, `criterion:0001/criacao`, `invariant:Task/titulo-obrigatorio` e `method:Task.create` via `covers`. Verificacao executada com hash original e config atual: `bun run agentic verify --item entity:Task --spec-hash e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c --config /tmp/agentic-eval-nokLAK/attempt-mq6ICT/workspace/agentic.config.ts --json` => status `done`.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "484bd89b-d290-43a6-9e18-c9988e782387",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 40663.57644199999,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/implementation/cursor-codex-medium/entity-Task/attempt-2/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/implementation/cursor-codex-medium/entity-Task/attempt-2/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/implementation/cursor-codex-medium/entity-Task/attempt-2/process.json"
+  ],
+  "diagnostic": null
+}

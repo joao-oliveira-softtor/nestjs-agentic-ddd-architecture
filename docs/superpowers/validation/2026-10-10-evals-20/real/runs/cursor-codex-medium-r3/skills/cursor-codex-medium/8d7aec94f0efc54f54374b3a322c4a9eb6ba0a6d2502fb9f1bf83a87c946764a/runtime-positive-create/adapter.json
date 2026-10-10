@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"type\":\"tool_call\",\"name\":\"create_order\",\"input\":{\"order_id\":\"o-21\",\"customer_id\":\"c-21\",\"items\":[{\"sku\":\"cafe\",\"quantity\":2,\"unit_price\":12.5},{\"sku\":\"filtro\",\"quantity\":1,\"unit_price\":7}]}}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "52943165-ae6e-4f45-8ada-28a445707f33",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 13663.808034000016,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/process.json"
+  ],
+  "diagnostic": null
+}

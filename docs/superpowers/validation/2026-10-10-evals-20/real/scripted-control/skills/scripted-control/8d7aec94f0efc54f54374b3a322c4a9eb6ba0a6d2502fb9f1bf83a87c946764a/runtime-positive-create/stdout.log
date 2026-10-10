@@ -1,0 +1,1 @@
+{"type":"tool_call","name":"create_order","input":{"order_id":"o-21","customer_id":"c-21","items":[{"sku":"cafe","quantity":2,"unit_price":12.5},{"sku":"filtro","quantity":1,"unit_price":7}]}}

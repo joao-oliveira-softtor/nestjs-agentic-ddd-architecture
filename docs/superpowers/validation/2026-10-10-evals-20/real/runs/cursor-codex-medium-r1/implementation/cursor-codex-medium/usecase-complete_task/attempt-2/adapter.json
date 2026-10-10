@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementei somente o corpo de `CompleteTask.execute` em `app/application/complete-task.ts` (carrega por id, lança `TASK_NOT_FOUND` quando ausente, chama `task.complete()`, persiste no repositório, publica eventos e retorna `{ task_id, status: 'completed' }`) e adicionei o teste `app/test/usecase-complete_task.test.ts` com `covers(['usecase:complete_task','criterion:0001/persistencia-conclusao'], ...)`, validando conclusão persistida, publicação de `TaskCompleted` e erro para id inexistente. Verificações executadas com sucesso: `bun test app/test/usecase-complete_task.test.ts` e `bun run agentic verify --item usecase:complete_task --spec-hash c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d --config /tmp/agentic-eval-ggd69E/attempt-Rsr5x6/workspace/agentic.config.ts --json` (status `done`).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "039e2cf8-b21c-4e1c-b418-33c5ea53fb9f",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 46511.10113000008,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/usecase-complete_task/attempt-2/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/usecase-complete_task/attempt-2/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/usecase-complete_task/attempt-2/process.json"
+  ],
+  "diagnostic": null
+}

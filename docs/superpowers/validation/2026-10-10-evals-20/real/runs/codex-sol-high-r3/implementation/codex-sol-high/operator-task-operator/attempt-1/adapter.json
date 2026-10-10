@@ -1,0 +1,49 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Criado somente app/test/operator-task-operator.test.ts, cobrindo operator:task-operator e criterion:0001/tools. Teste aprovado com 27 asserções. Verify retornou done com o specHash original, código 0 e todos os gates aprovados.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "01a1277e-20b2-7922-ab5d-63eacf571c70",
+    "source": "codex.thread.started.thread_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "gpt-6.1-sol",
+    "source": "codex.rollout.turn_context.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 523566,
+      "source": "codex.turn.completed.usage.input_tokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 489856,
+      "source": "codex.turn.completed.usage.cached_input_tokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 3907,
+      "source": "codex.turn.completed.usage.output_tokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 95899.17155500001,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r3/implementation/codex-sol-high/operator-task-operator/attempt-1/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r3/implementation/codex-sol-high/operator-task-operator/attempt-1/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r3/implementation/codex-sol-high/operator-task-operator/attempt-1/process.json",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r3/implementation/codex-sol-high/operator-task-operator/attempt-1/model-metadata.json"
+  ],
+  "diagnostic": null
+}

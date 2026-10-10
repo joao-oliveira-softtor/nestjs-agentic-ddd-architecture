@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado o corpo de `Task.create` em `app/domain/task.ts` com normalização de título, validação de vazio/espacos (`TASK_TITLE_REQUIRED` via `DomainError`), criação em estado `pending` e registro do evento `TaskCreated`. Adicionado `app/test/entity-Task.test.ts` cobrindo `invariant:Task/titulo-obrigatorio`, `method:Task.create`, `criterion:0001/titulo-invalido` e `criterion:0001/criacao` usando `covers`. Verificação executada com o comando solicitado (specHash original) e resultado final: `done`.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "afdc968c-cf10-41c6-8327-f65bb7523bc3",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 101340.13715999998,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/implementation/cursor-codex-medium/entity-Task/attempt-1/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/implementation/cursor-codex-medium/entity-Task/attempt-1/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/implementation/cursor-codex-medium/entity-Task/attempt-1/process.json"
+  ],
+  "diagnostic": null
+}

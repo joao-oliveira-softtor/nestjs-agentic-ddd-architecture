@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="16" assertions="139" failures="0" skipped="0" time="0.118017962">
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="5" assertions="41" failures="0" skipped="0" time="0.102598476" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] cria e salva t1 antes de publicar TaskCreated, retorna pending e rejeita o mesmo id" classname="" time="0.003764" file="app/test/usecase-create_task.test.ts" line="19" assertions="25" />
+    <testcase name="[covers: usecase:create_task] rejeita título vazio após normalização sem salvar nem publicar" classname="" time="0.000142" file="app/test/usecase-create_task.test.ts" line="66" assertions="5" />
+    <testcase name="[covers: usecase:create_task] propaga falha de consulta sem salvar nem publicar" classname="" time="0.000136" file="app/test/usecase-create_task.test.ts" line="77" assertions="3" />
+    <testcase name="[covers: usecase:create_task] propaga falha de persistência sem publicar" classname="" time="0.00012" file="app/test/usecase-create_task.test.ts" line="88" assertions="4" />
+    <testcase name="[covers: usecase:create_task] aguarda publicação e propaga sua falha após salvar" classname="" time="0.00012" file="app/test/usecase-create_task.test.ts" line="100" assertions="4" />
+  </testsuite>
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="5" assertions="37" failures="0" skipped="0" time="0.002410294" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1, salva completed antes de publicar TaskCompleted e retorna o contrato" classname="" time="0.000407" file="app/test/usecase-complete_task.test.ts" line="22" assertions="15" />
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id inexistente com TASK_NOT_FOUND sem salvar nem publicar" classname="" time="0.000124" file="app/test/usecase-complete_task.test.ts" line="55" assertions="7" />
+    <testcase name="[covers: usecase:complete_task] rejeita conclusão repetida sem salvar nem publicar novamente" classname="" time="0.000134" file="app/test/usecase-complete_task.test.ts" line="71" assertions="6" />
+    <testcase name="[covers: usecase:complete_task] propaga falha de persistência sem publicar os eventos" classname="" time="0.000117" file="app/test/usecase-complete_task.test.ts" line="87" assertions="5" />
+    <testcase name="[covers: usecase:complete_task] aguarda publicação e propaga sua falha após salvar" classname="" time="0.000133" file="app/test/usecase-complete_task.test.ts" line="101" assertions="4" />
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="2" assertions="15" failures="0" skipped="0" time="0.000459752" hostname="softtords">
+    <testcase name="[covers: method:Task.complete] conclui uma tarefa pending e registra TaskCompleted com seu id" classname="" time="0.000063" file="app/test/method-Task-complete.test.ts" line="7" assertions="7" />
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] rejeita repetição com TASK_ALREADY_COMPLETED e preserva estado e evento registrado" classname="" time="0.000085" file="app/test/method-Task-complete.test.ts" line="22" assertions="8" />
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="14" failures="0" skipped="0" time="0.000442232" hostname="softtords">
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou com apenas espaços com TASK_TITLE_REQUIRED" classname="" time="0.000132" file="app/test/entity-Task.test.ts" line="7" assertions="6" />
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente, normaliza as extremidades e registra TaskCreated" classname="" time="0.000054" file="app/test/entity-Task.test.ts" line="24" assertions="8" />
+  </testsuite>
+  <testsuite name="app/test/operator-task-operator.test.ts" file="app/test/operator-task-operator.test.ts" tests="2" assertions="32" failures="0" skipped="0" time="0.010124819" hostname="softtords">
+    <testcase name="[covers: criterion:0001/tools, operator:task-operator] cria e conclui uma tarefa pelas duas tools e publica TaskCreated e TaskCompleted" classname="" time="0.007703" file="app/test/operator-task-operator.test.ts" line="29" assertions="26" />
+    <testcase name="[covers: operator:task-operator] rejeita tool fora das duas permitidas sem criar tarefa nem publicar eventos" classname="" time="0.001462" file="app/test/operator-task-operator.test.ts" line="98" assertions="6" />
+  </testsuite>
+</testsuites>

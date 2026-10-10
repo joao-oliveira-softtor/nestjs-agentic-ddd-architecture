@@ -1,0 +1,27 @@
+[
+  {
+    "path": "app/application/complete-task.ts",
+    "before": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "97b9b46b9218c7d0a7f318deab69481eee561173f47059bf4c530f8137c10b99",
+      "content": "import { z } from 'zod';\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\nimport { AgentUseCase } from '@agentic-ddd/decorators';\nimport { TaskCompleted } from '../domain/task.events';\nimport type { TaskRepository } from '../domain/task.repository';\n\nexport const completeTaskInput = z.object({ task_id: z.string().min(1) });\nexport const completeTaskOutput = z.object({ task_id: z.string(), status: z.literal('completed') });\nexport type CompleteTaskInput = z.infer<typeof completeTaskInput>;\nexport type CompleteTaskOutput = z.infer<typeof completeTaskOutput>;\n\n@AgentUseCase({ name: 'complete_task', description: 'Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.', whenToUse: 'Quando o usuário terminou uma tarefa.', whenNotToUse: 'Para criar uma nova tarefa.', input: completeTaskInput, output: completeTaskOutput, uses: ['method:Task.complete'], emits: [TaskCompleted] })\nexport class CompleteTask implements UseCase<CompleteTaskInput, CompleteTaskOutput> {\n  constructor(private readonly tasks: TaskRepository) {}\n  async execute(input: CompleteTaskInput, ctx: UseCaseContext): Promise<CompleteTaskOutput> {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+    },
+    "after": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "0c8b8d7fc2781b29ec6af7dc23eb52b80ac5ed6c133631a54e22f0f1c2b9bc46",
+      "content": "import { z } from 'zod';\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\nimport { AgentUseCase } from '@agentic-ddd/decorators';\nimport { TaskCompleted } from '../domain/task.events';\nimport type { TaskRepository } from '../domain/task.repository';\n\nexport const completeTaskInput = z.object({ task_id: z.string().min(1) });\nexport const completeTaskOutput = z.object({ task_id: z.string(), status: z.literal('completed') });\nexport type CompleteTaskInput = z.infer<typeof completeTaskInput>;\nexport type CompleteTaskOutput = z.infer<typeof completeTaskOutput>;\n\n@AgentUseCase({ name: 'complete_task', description: 'Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.', whenToUse: 'Quando o usuário terminou uma tarefa.', whenNotToUse: 'Para criar uma nova tarefa.', input: completeTaskInput, output: completeTaskOutput, uses: ['method:Task.complete'], emits: [TaskCompleted] })\nexport class CompleteTask implements UseCase<CompleteTaskInput, CompleteTaskOutput> {\n  constructor(private readonly tasks: TaskRepository) {}\n  async execute(input: CompleteTaskInput, ctx: UseCaseContext): Promise<CompleteTaskOutput> {\n    const task = await this.tasks.findById(input.task_id);\n    if (task === null) throw new DomainError('TASK_NOT_FOUND', 'Tarefa não encontrada.');\n    task.complete();\n    await this.tasks.save(task);\n    await ctx.publish(task.pullEvents());\n    return { task_id: task.id, status: 'completed' };\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+    }
+  },
+  {
+    "path": "app/test/usecase-complete_task.test.ts",
+    "before": null,
+    "after": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "fe899daffa0edc818f39af32a089089b0c5f37d88709c7aa0ce21fe8cb1652d9",
+      "content": "import { describe, expect, test } from 'bun:test';\nimport { DomainError, type DomainEvent, type UseCaseContext } from '@agentic-ddd/core';\nimport { covers } from '@agentic-ddd/testing';\nimport { CompleteTask } from '../application/complete-task';\nimport { Task } from '../domain/task';\nimport { TaskCompleted } from '../domain/task.events';\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\n\ndescribe('CompleteTask use-case', () => {\n  test(covers(['usecase:complete_task', 'criterion:0001/persistencia-conclusao'], 'conclui tarefa persistida, publica evento e rejeita id ausente'), async () => {\n    const tasks = new InMemoryTaskRepository();\n    const published: DomainEvent[] = [];\n    const ctx: UseCaseContext = {\n      correlationId: 'corr-1',\n      causationId: 'cause-1',\n      async publish(events: readonly DomainEvent[]): Promise<void> { published.push(...events); }\n    };\n    const task = Task.create('t1', 'Estudar DDD');\n    task.pullEvents();\n    await tasks.save(task);\n    const useCase = new CompleteTask(tasks);\n\n    const output = await useCase.execute({ task_id: 't1' }, ctx);\n\n    expect(output).toEqual({ task_id: 't1', status: 'completed' });\n    const persisted = await tasks.findById('t1');\n    expect(persisted?.status).toBe('completed');\n    expect(published).toHaveLength(1);\n    expect(published[0]).toBeInstanceOf(TaskCompleted);\n    expect((published[0] as TaskCompleted).payload).toEqual({ taskId: 't1' });\n\n    let error: unknown;\n    try {\n      await useCase.execute({ task_id: 'missing' }, ctx);\n    } catch (caught) {\n      error = caught;\n    }\n    expect(error).toBeInstanceOf(DomainError);\n    expect((error as DomainError).code).toBe('TASK_NOT_FOUND');\n  });\n});\n"
+    }
+  }
+]

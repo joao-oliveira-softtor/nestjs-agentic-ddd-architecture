@@ -1,0 +1,68 @@
+{
+  "configuration": "codex-sol-high",
+  "dataset": "evals/skills/orders.extended.yaml",
+  "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+  "id": "dev-positive-public-method",
+  "audience": "dev",
+  "question": "Qual decorator é obrigatório em todo método público de uma entidade? Responda somente @NomeDoDecorator, sem argumentos.",
+  "expect": {
+    "type": "exact",
+    "value": "@AgentMethod"
+  },
+  "answer": {
+    "type": "exact",
+    "value": "@AgentMethod"
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"type\":\"exact\",\"value\":\"@AgentMethod\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "01a1276b-a57a-7610-a1a5-2780685980fe",
+      "source": "codex.thread.started.thread_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "gpt-6.1-sol",
+      "source": "codex.rollout.turn_context.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "available",
+        "value": 35633,
+        "source": "codex.turn.completed.usage.input_tokens"
+      },
+      "cachedInputTokens": {
+        "status": "available",
+        "value": 27648,
+        "source": "codex.turn.completed.usage.cached_input_tokens"
+      },
+      "outputTokens": {
+        "status": "available",
+        "value": 87,
+        "source": "codex.turn.completed.usage.output_tokens"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 8209.219791999989,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/process.json",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/model-metadata.json"
+    ],
+    "diagnostic": null
+  }
+}

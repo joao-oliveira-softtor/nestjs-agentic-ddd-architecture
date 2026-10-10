@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="3" assertions="24" failures="0" skipped="0" time="0.118399608">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="14" failures="0" skipped="0" time="0.11587706" hostname="softtords">
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou compostos apenas por espaços com TASK_TITLE_REQUIRED" classname="" time="0.000195" file="app/test/entity-Task.test.ts" line="7" assertions="6" />
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente, normaliza o título e registra TaskCreated" classname="" time="0.000298" file="app/test/entity-Task.test.ts" line="24" assertions="8" />
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="10" failures="0" skipped="0" time="0.000609665" hostname="softtords">
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pendente, registra TaskCompleted e rejeita repetição com TASK_ALREADY_COMPLETED" classname="" time="0.000192" file="app/test/method-Task-complete.test.ts" line="7" assertions="10" />
+  </testsuite>
+</testsuites>

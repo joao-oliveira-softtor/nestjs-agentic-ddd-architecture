@@ -1,0 +1,9 @@
+
+.eval-reference/behavior.test.ts:
+(pass) operator executa tools reais e publica eventos [7.08ms]
+(pass) operator executa tools reais e publica eventos [0.82ms]
+
+ 2 pass
+ 0 fail
+ 12 expect() calls
+Ran 2 tests across 1 file. [90.00ms]

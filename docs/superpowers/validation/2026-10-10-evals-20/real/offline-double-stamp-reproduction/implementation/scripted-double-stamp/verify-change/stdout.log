@@ -1,0 +1,89 @@
+{
+  "change": "0001",
+  "title": "Criar e concluir tarefas",
+  "status": "failed",
+  "gates": [
+    {
+      "id": "G1",
+      "name": "Delta",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G2",
+      "name": "Docs",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G3",
+      "name": "Critérios",
+      "status": "failed",
+      "findings": [
+        {
+          "message": "critério criterion:0001/persistencia-conclusao sem teste",
+          "fix": "crie um teste com covers(['criterion:0001/persistencia-conclusao'], \"salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND\")",
+          "source": "changes/archive/0001-tasks/proposal.md"
+        },
+        {
+          "message": "critério criterion:0001/tools sem teste",
+          "fix": "crie um teste com covers(['criterion:0001/tools'], \"conclui a tarefa usando somente suas duas tools e publica os dois eventos\")",
+          "source": "changes/archive/0001-tasks/proposal.md"
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "id": "G4",
+      "name": "Regras",
+      "status": "failed",
+      "findings": [
+        {
+          "message": "operator:task-operator não tem teste com covers",
+          "fix": "crie um teste com covers(['operator:task-operator'], '…')",
+          "source": null
+        },
+        {
+          "message": "usecase:complete_task não tem teste com covers",
+          "fix": "crie um teste com covers(['usecase:complete_task'], '…')",
+          "source": null
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "id": "G5",
+      "name": "Qualidade",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G6",
+      "name": "Manual",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G7",
+      "name": "Work items",
+      "status": "failed",
+      "findings": [
+        {
+          "message": "operator:task-operator está blocked(implemented)",
+          "source": "app/operators/task.operator.ts:5",
+          "fix": "bun run agentic packet operator:task-operator"
+        },
+        {
+          "message": "usecase:complete_task está declared",
+          "source": "app/application/complete-task.ts:12",
+          "fix": "bun run agentic packet usecase:complete_task"
+        }
+      ],
+      "warnings": []
+    }
+  ]
+}

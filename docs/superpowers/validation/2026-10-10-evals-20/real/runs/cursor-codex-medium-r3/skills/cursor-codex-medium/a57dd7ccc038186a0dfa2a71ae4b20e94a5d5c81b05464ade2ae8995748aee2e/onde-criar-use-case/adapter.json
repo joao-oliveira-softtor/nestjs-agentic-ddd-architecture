@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"type\":\"exact\",\"value\":\"No módulo `orders`, crie em `examples/orders/application/refund-order.ts` (padrão `<nome>.ts` em `application`) e declare com o decorator `@AgentUseCase(...)` de `@agentic-ddd/decorators`.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "5191726a-9e4a-4768-838c-06bef5c2622a",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 14787.379916000005,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json"
+  ],
+  "diagnostic": null
+}

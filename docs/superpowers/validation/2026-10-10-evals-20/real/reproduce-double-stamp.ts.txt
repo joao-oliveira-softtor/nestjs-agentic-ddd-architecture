@@ -1,0 +1,22 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
+const {runEvaluation}=await import(`${process.cwd()}/scripts/evals/run`);
+const {createScriptedAdapter}=await import(`${process.cwd()}/scripts/evals/adapters/scripted`);
+const {loadDataset}=await import(`${process.cwd()}/scripts/evals/dataset`);
+const {completeItem}=await import(`${process.cwd()}/test/helpers/tasks-solution`);
+const {manifestSchema}=await import(`${process.cwd()}/scripts/evals/contracts`);
+const root=process.argv[2];
+const attempt=await Bun.file(join(root,'runs/codex-sol-high-r1/implementation/codex-sol-high/usecase-complete_task/attempt-1/attempt.json')).json();
+const patches=JSON.parse(attempt.audit.patch);
+const manifest=manifestSchema.parse({...await Bun.file('evals/campaigns/cycle-20/manifests/codex-sol-high-r1.json').json(),configurations:[{id:'scripted-double-stamp',adapter:'scripted',model:'offline-fixture',parameters:{}}],budget:{...await Bun.file('evals/campaigns/cycle-20/manifests/codex-sol-high-r1.json').json().then(m=>m.budget),maxCorrectionsPerItem:0}});
+const answers=[];
+for(const dataset of manifest.skillDatasets)for(const c of await loadDataset(dataset.path))answers.push({finalText:JSON.stringify(c.expect)});
+const adapter=createScriptedAdapter([...answers,...Array.from({length:5},()=>({finalText:'{"status":"done","summary":"offline replay of captured submission"}',before:async(req)=>{
+  if(req.id!=='usecase:complete_task'){await completeItem(req.cwd,req.id);return;}
+  for(const patch of patches){if(!patch.after?.content||!['app/application/complete-task.ts','app/test/usecase-complete_task.test.ts'].includes(patch.path))throw Error('Unexpected captured patch');const path=join(req.cwd,patch.path);await mkdir(dirname(path),{recursive:true});await writeFile(path,patch.after.content);}
+}}))]);
+const report=await runEvaluation(manifest,{sourceRoot:process.cwd(),outDir:join(root,'offline-double-stamp-reproduction'),real:false,signal:new AbortController().signal,adapters:new Map([['scripted-double-stamp',adapter]])});
+const item=report.benchmarks[0].items.find(i=>i.item==='usecase:complete_task');
+const replay=item?.attempts[0];
+if(replay?.accepted||!replay?.audit?.ok||replay.verification?.executorTests?.exitCode!==0||replay.verification?.referenceTests?.exitCode!==1||replay.reason!=='independent_verification_failed')throw Error('Captured defect did not reproduce through independent gates');
+console.log(JSON.stringify({capturedRun:'codex-sol-high-r1',capturedAttempt:1,item:item.item,state:item.state,audit:replay.audit.ok,executorTests:replay.verification.executorTests.exitCode,referenceTests:replay.verification.referenceTests.exitCode,reason:replay.reason,findings:replay.verification.findings,mode:report.mode,invocations:report.invocations},null,2));

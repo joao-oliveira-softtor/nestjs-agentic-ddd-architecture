@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="6" assertions="28" failures="0" skipped="0" time="0.10262537">
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="1" assertions="6" failures="0" skipped="0" time="0.0901002" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] persiste, publica e rejeita duplicado" classname="" time="0.000616" file="app/test/usecase-create_task.test.ts" line="5" assertions="6" />
+  </testsuite>
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="1" assertions="5" failures="0" skipped="0" time="0.001301972" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] conclui, persiste, publica e rejeita id ausente" classname="" time="0.000302" file="app/test/usecase-complete_task.test.ts" line="6" assertions="5" />
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="5" failures="0" skipped="0" time="0.000354534" hostname="softtords">
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição" classname="" time="0.00012" file="app/test/method-Task-complete.test.ts" line="4" assertions="5" />
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="6" failures="0" skipped="0" time="0.000805402" hostname="softtords">
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento" classname="" time="0.000077" file="app/test/entity-Task.test.ts" line="4" assertions="3" />
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços" classname="" time="0.000142" file="app/test/entity-Task.test.ts" line="11" assertions="3" />
+  </testsuite>
+  <testsuite name="app/test/operator-task-operator.test.ts" file="app/test/operator-task-operator.test.ts" tests="1" assertions="6" failures="0" skipped="0" time="0.008273093" hostname="softtords">
+    <testcase name="[covers: criterion:0001/tools, operator:task-operator] operator executa tools reais e publica eventos" classname="" time="0.007541" file="app/test/operator-task-operator.test.ts" line="10" assertions="6" />
+  </testsuite>
+</testsuites>

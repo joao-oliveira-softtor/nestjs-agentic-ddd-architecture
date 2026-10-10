@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado o corpo de `CompleteTask.execute` em `app/application/complete-task.ts` para buscar tarefa por `task_id`, falhar com `DomainError('TASK_NOT_FOUND')` quando ausente, executar `task.complete()`, persistir via repositório, publicar eventos no `ctx` e retornar `{ task_id, status: 'completed' }`. Criado o teste `app/test/usecase-complete_task.test.ts` com `covers(['usecase:complete_task','criterion:0001/persistencia-conclusao'])`, validando conclusão persistida, emissão de `TaskCompleted` e erro para id inexistente. Verificação executada com o comando solicitado e specHash original: status `done` (I1-I5 passed).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "5d056303-09c1-4332-8d2b-b05c88afcb3d",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 86341.930987,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/process.json"
+  ],
+  "diagnostic": null
+}
