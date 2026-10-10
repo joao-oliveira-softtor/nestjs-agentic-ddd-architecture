@@ -22,8 +22,10 @@ let out: string;
 let answers: ScriptedAction[];
 // The examples' CLI verify already launches bun test. This runner suite has
 // no orders coverage and must not recursively launch complete evaluation runs.
-const test = bunTest.skipIf(process.env.AGENTIC_DDD_VERIFY === '1');
+const insideVerify = process.env.AGENTIC_DDD_VERIFY === '1';
+const test = bunTest.skipIf(insideVerify);
 beforeAll(async () => {
+  if (insideVerify) return;
   fixture = await frozenSource();
   out = await mkdtemp(join(tmpdir(), 'eval-run-regression-'));
   answers = (

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test } from 'bun:test';
+import { afterAll, beforeAll, expect, test as bunTest } from 'bun:test';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -10,12 +10,15 @@ import { judge, parseAnswer } from '../scripts/evals/judge';
 import { evaluateSkills } from '../scripts/evals/skills';
 import { createScriptedAdapter } from '../scripts/evals/adapters/scripted';
 import { evalManifest, frozenSource } from './helpers/evals';
+const insideVerify = process.env.AGENTIC_DDD_VERIFY === '1';
+const test = bunTest.skipIf(insideVerify);
 const path = 'evals/skills/orders.extended.yaml';
 const originalHash =
   '19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6';
 let fixture: Awaited<ReturnType<typeof frozenSource>>;
 let out: string;
 beforeAll(async () => {
+  if (insideVerify) return;
   fixture = await frozenSource([path]);
   out = await mkdtemp(join(tmpdir(), 'eval-extended-'));
 }, 60000);

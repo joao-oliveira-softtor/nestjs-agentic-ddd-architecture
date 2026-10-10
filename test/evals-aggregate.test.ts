@@ -14,7 +14,7 @@ import {
 const roots: string[] = [];
 // Fixtures retain and hash raw evidence, including multiple campaign variants.
 const test = (name: string, body: () => Promise<void>) =>
-  bunTest(name, body, 60000);
+  bunTest.skipIf(process.env.AGENTIC_DDD_VERIFY === '1')(name, body, 60000);
 afterEach(async () => {
   await Promise.all(
     roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
