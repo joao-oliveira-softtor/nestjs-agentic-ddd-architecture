@@ -1,13 +1,13 @@
 {
   "name": "nestjs-agentic-ddd-architecture",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Framework NestJS + DDD em que use-cases são tools, operators (agentes de IA) substituem controllers e um compilador gera skills e AGENTS.md a partir do domínio decorado.",
   "author": "",
   "private": true,
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "bun build ./src/main.ts --target=bun --packages=external --sourcemap=linked --outdir=dist",
+    "build": "bun scripts/build-package.ts",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\" \"scripts/**/*.ts\"",
     "start": "bun src/main.ts",
@@ -21,17 +21,15 @@
     "skills:install": "bun scripts/install-skills.ts",
     "skills:example": "bun scripts/create-skills-example.ts",
     "evals": "bun scripts/evals/main.ts",
-    "evals:aggregate": "bun scripts/evals/aggregate.ts"
+    "evals:aggregate": "bun scripts/evals/aggregate.ts",
+    "build:app": "bun build ./src/main.ts --target=bun --packages=external --sourcemap=linked --outdir=dist",
+    "prepack": "bun run build",
+    "prepublishOnly": "node scripts/block-publish.cjs",
+    "test:package": "bun scripts/package-smoke.ts"
   },
   "dependencies": {
-    "@nestbun/platform": "^0.1.2",
-    "@nestjs/common": "^12.0.1",
-    "@nestjs/core": "^12.0.1",
-    "@nestjs/typeorm": "^12.0.2",
-    "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
-    "typeorm": "^1.1.1",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "typescript": "^6.0.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
@@ -45,6 +43,71 @@
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
-    "typescript": "^6.0.2"
+    "@nestbun/platform": "^0.1.2",
+    "@nestjs/typeorm": "^12.0.2",
+    "typeorm": "^1.1.1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./decorators": {
+      "types": "./dist/decorators/index.d.ts",
+      "import": "./dist/decorators/index.js"
+    },
+    "./compiler": {
+      "types": "./dist/compiler/index.d.ts",
+      "import": "./dist/compiler/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./nestjs": {
+      "types": "./dist/nestjs/index.d.ts",
+      "import": "./dist/nestjs/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
+    }
+  },
+  "main": "./dist/core/index.js",
+  "types": "./dist/core/index.d.ts",
+  "bin": {
+    "agentic-ddd": "./bin/agentic-ddd.js"
+  },
+  "files": [
+    "dist/core",
+    "dist/decorators",
+    "dist/compiler",
+    "dist/contracts",
+    "dist/runtime",
+    "dist/nestjs",
+    "dist/testing",
+    "dist/cli",
+    "bin/agentic-ddd.js",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs/distribution.md"
+  ],
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture.git"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/core": "^12.0.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
   }
 }
