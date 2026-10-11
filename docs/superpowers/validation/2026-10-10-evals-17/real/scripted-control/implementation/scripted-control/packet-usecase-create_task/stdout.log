@@ -1,0 +1,150 @@
+# Identificação
+
+- ID: `usecase:create_task`
+- Camada: application
+- Módulo: tasks
+- source: `app/application/create-task.ts:13`
+- Estado: declared
+- specHash: `daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6`
+- Dependências: `entity:Task`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+      "emits": [
+        "event:TaskCreated"
+      ],
+      "entity": {
+        "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+        "id": "entity:Task",
+        "invariants": [
+          {
+            "id": "invariant:Task/titulo-obrigatorio",
+            "on": null,
+            "text": "Toda tarefa precisa de título não vazio."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+            "emits": [
+              "event:TaskCreated"
+            ],
+            "id": "method:Task.create",
+            "name": "create",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "tasks",
+        "name": "Task",
+        "states": [
+          "pending",
+          "completed"
+        ]
+      },
+      "id": "method:Task.create",
+      "invariants": [],
+      "name": "create",
+      "static": true,
+      "transition": null
+    }
+  ],
+  "declaration": {
+    "description": "Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.",
+    "emits": [
+      "event:TaskCreated"
+    ],
+    "id": "usecase:create_task",
+    "inputSchema": {
+      "properties": {
+        "task_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "title"
+      ],
+      "type": "object"
+    },
+    "module": "tasks",
+    "name": "create_task",
+    "outputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "pending",
+          "type": "string"
+        },
+        "task_id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "title",
+        "status"
+      ],
+      "type": "object"
+    },
+    "uses": [
+      "method:Task.create"
+    ],
+    "whenNotToUse": "Para concluir tarefa existente.",
+    "whenToUse": "Quando o usuário deseja criar uma tarefa."
+  }
+}
+```
+
+## Obrigações de teste
+
+- `usecase:create_task` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item usecase:create_task --spec-hash daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6 --config /tmp/agentic-eval-dUDDGy/attempt-pxnmTX/workspace/agentic.config.ts --json
+```

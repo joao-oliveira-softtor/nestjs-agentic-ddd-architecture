@@ -1,16 +1,18 @@
 import { expect, test } from 'bun:test';
 import { Task } from '__WORKSPACE__/app/domain/task';
+for (const [id, title] of [['oracle-a-29', 'Auditar café'], ['oracle-b-83', 'Separar caixas']] as const) {
 test('cria tarefa normalizada e registra evento', () => {
-  const task = Task.create('oracle-17', '  Revisar  ');
-  expect({ id: task.id, title: task.title, status: task.status }).toEqual({ id: 'oracle-17', title: 'Revisar', status: 'pending' });
+  const task = Task.create(id, `  ${title}  `);
+  expect({ id: task.id, title: task.title, status: task.status }).toEqual({ id: id, title: title, status: 'pending' });
   const events = task.pullEvents();
-  expect(events.map(e => [e.name, e.payload])).toEqual([['TaskCreated', { taskId: 'oracle-17', title: 'Revisar' }]]);
+  expect(events.map(e => [e.name, e.payload])).toEqual([['TaskCreated', { taskId: id, title: title }]]);
   expect(task.pullEvents()).toEqual([]);
 });
 test('rejeita título vazio ou só espaços', () => {
   for (const title of ['', '   ']) {
     let error: unknown;
-    try { Task.create('oracle-17', title); } catch (caught) { error = caught; }
+    try { Task.create(id, title); } catch (caught) { error = caught; }
     expect(error).toMatchObject({ code: 'TASK_TITLE_REQUIRED' });
   }
 });
+}

@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado `CreateTask.execute` em `app/application/create-task.ts` (somente corpo) para validar duplicidade por `task_id`, criar via `Task.create`, persistir, publicar eventos e retornar `{ task_id, title, status: 'pending' }`. Criado `app/test/usecase-create_task.test.ts` com `covers(['criterion:0001/persistencia-criacao','usecase:create_task'], ...)` cobrindo criação/persistência/publicação de `TaskCreated` e rejeição de duplicado com `TASK_ALREADY_EXISTS`. Verificação executada com hash original: `bun run agentic verify --item usecase:create_task --spec-hash daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6 --config /tmp/agentic-eval-Vs9JGs/attempt-B0S2mZ/workspace/agentic.config.ts --json` retornou `done`.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "848b7f9b-7b00-4bbd-a218-47bd6abe59fd",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 53514.743475000025,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/usecase-create_task/attempt-1/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/usecase-create_task/attempt-1/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/usecase-create_task/attempt-1/process.json"
+  ],
+  "diagnostic": null
+}

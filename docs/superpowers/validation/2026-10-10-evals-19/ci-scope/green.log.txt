@@ -1,0 +1,9 @@
+bun test v1.4.2 (744846f84)
+
+test/evals-verification-scope.test.ts:
+(pass) nested quality collection skips benchmark orchestration and executes domain coverage [469.98ms]
+
+ 1 pass
+ 0 fail
+ 6 expect() calls
+Ran 1 test across 1 file. [504.00ms]

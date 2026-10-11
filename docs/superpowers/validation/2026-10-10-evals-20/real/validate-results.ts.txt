@@ -1,0 +1,48 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { reportSchema } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/report-schema';
+import { sha256, fingerprintOrigin } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/isolation';
+import { parseAnswer, judge, parseImplementationReply } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/judge';
+import { campaignSchema } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/aggregate';
+import { stableStringify } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/src/compiler';
+const root=process.argv[2];
+if(!root)throw Error('External campaign parent required');
+const index=campaignSchema.parse(await Bun.file(join(root,'index.json')).json());
+const preflight=await Bun.file(join(root,'authorization-and-preflight.json')).json();
+const summaries=[];
+const replay=[];
+for(const slot of index.runs){
+  if(slot.result.status!=='executed')throw Error('All six authorized positions must be recorded');
+  const reportPath=join(root,slot.result.report.path);
+  const report=reportSchema.parse(await Bun.file(reportPath).json());
+  if(sha256(await readFile(reportPath))!==slot.result.report.sha256)throw Error('Report hash differs');
+  const manifest=await Bun.file(join(root,slot.manifest.path)).json();
+  if(sha256(await Bun.file(join(root,slot.manifest.path)).bytes())!==slot.manifest.sha256||stableStringify(report.manifest)!==stableStringify(manifest)||report.manifestSha256!==sha256(stableStringify(manifest)))throw Error('Manifest differs');
+  if(report.mode!=='real'||report.provenance.sourceCommit!==preflight.sourceCommit||report.provenance.runnerCommit!==preflight.runnerCommit||report.provenance.originBefore!==preflight.originFingerprint||report.provenance.originAfter.status!=='available'||report.provenance.originAfter.value!==preflight.originFingerprint)throw Error('Source provenance differs');
+  if(report.invocations>35||report.cases.length!==25||report.benchmarks.length!==1||report.benchmarks[0]!.items.length!==5)throw Error('Budget or row counts differ');
+  const ledger=await Bun.file(join(root,'runs',slot.id,'artifact-manifest.json')).json();
+  for(const artifact of ledger.artifacts){const bytes=await readFile(join(root,'runs',slot.id,artifact.path));if(bytes.length!==artifact.bytes||sha256(bytes)!==artifact.sha256)throw Error(`Artifact differs ${slot.id}/${artifact.path}`);}
+  for(const c of report.cases){
+    if(!c.execution||c.execution.transport!=='finished'||c.execution.exitCode!==0)continue;
+    let verdict:string;
+    try{verdict=judge(c.expect,parseAnswer(c.execution.finalText??''));}catch{verdict='malformed';}
+    if(verdict!==c.verdict)throw Error('Offline question replay differs');
+    if(c.verdict!=='correct')replay.push({run:slot.id,dataset:c.dataset,datasetSha256:c.datasetSha256,id:c.id,expected:c.expect,finalText:c.execution.finalText,recordedVerdict:c.verdict,replayedVerdict:verdict});
+  }
+  const benchmark=report.benchmarks[0]!;
+  for(const item of benchmark.items)for(const attempt of item.attempts)if(attempt.accepted){
+    if(parseImplementationReply(attempt.execution.finalText??'').status!=='done'||attempt.execution.transport!=='finished'||attempt.execution.exitCode!==0||!attempt.audit?.ok||attempt.audit.findings.length||!attempt.verification?.ok||attempt.verification.itemReport?.status!=='done'||attempt.verification.itemReport.gates.some(g=>g.status!=='passed')||attempt.verification.executorTests?.exitCode!==0||attempt.verification.referenceTests?.exitCode!==0||attempt.verification.commands.some(c=>c.result.transport!=='finished'||c.result.exitCode!==0))throw Error('Accepted item lacks independent evidence');
+  }
+  const allAccepted=benchmark.items.every(i=>i.state==='accepted');
+  const final=benchmark.finalVerification;
+  const certified=allAccepted&&final?.command.result.transport==='finished'&&final.command.result.exitCode===0&&final.report?.status==='done';
+  const executions=[...report.cases.flatMap(c=>c.execution?[c.execution]:[]),...benchmark.items.flatMap(i=>i.attempts.map(a=>a.execution))];
+  summaries.push({id:slot.id,configuration:slot.configuration,repetition:slot.repetition,status:report.status,certified,questions:{correct:report.cases.filter(c=>c.verdict==='correct').length,executed:report.cases.filter(c=>c.execution).length,planned:25,verdicts:report.cases.reduce((out,c)=>{out[c.verdict]=(out[c.verdict]??0)+1;return out;},{})},initialAccepted:benchmark.items.filter(i=>i.attempts[0]?.accepted).length,finalAccepted:benchmark.items.filter(i=>i.state==='accepted').length,verify:final?.report?.status??null,invocations:report.invocations,corrections:benchmark.items.reduce((n,i)=>n+Math.max(0,i.attempts.length-1),0),durationMs:report.durationMs,observedModels:[...new Set(executions.flatMap(e=>e.observedModel.status==='available'?[e.observedModel.value]:[]))],adapter:report.provenance.adapters[slot.configuration],baselineHash:benchmark.baselineHash,packetContracts:benchmark.items.map(i=>({item:i.item,specHash:i.specHash})),artifactsChecked:ledger.artifacts.length,reportSha256:slot.result.report.sha256});
+}
+const invocations=summaries.reduce((n,r)=>n+r.invocations,0);
+if(invocations>210)throw Error('Campaign budget exceeded');
+if(execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim()||await fingerprintOrigin(process.cwd())!==preflight.originFingerprint)throw Error('Origin changed during campaign');
+await Bun.write(join(root,'validated-results.json'),JSON.stringify({schemaVersion:1,sourceCommit:preflight.sourceCommit,runnerCommit:preflight.runnerCommit,originFingerprint:preflight.originFingerprint,sourceUnchanged:true,plannedRuns:6,executedRuns:summaries.length,totalInvocations:invocations,totalDurationMs:summaries.reduce((n,r)=>n+r.durationMs,0),summaries},null,2)+'\n');
+await Bun.write(join(root,'question-offline-replays.json'),JSON.stringify({schemaVersion:1,incorrectOrMalformed:replay.length,results:replay},null,2)+'\n');
+console.log(JSON.stringify(summaries.map(s=>({run:s.id,status:s.status,questions:s.questions.correct+'/25',initialPackets:s.initialAccepted+'/5',finalPackets:s.finalAccepted+'/5',verify:s.verify,sessions:s.invocations,corrections:s.corrections,hashesChecked:s.artifactsChecked})),null,2));

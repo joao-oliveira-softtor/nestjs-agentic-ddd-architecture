@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="6" assertions="42" failures="0" skipped="0" time="0.095026112">
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="1" assertions="9" failures="0" skipped="0" time="0.082848119" hostname="softtords">
+    <testsuite name="create_task" file="app/test/usecase-create_task.test.ts" line="8" tests="1" assertions="9" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS" classname="create_task" time="0.000524" file="app/test/usecase-create_task.test.ts" line="10" assertions="9" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="1" assertions="7" failures="0" skipped="0" time="0.001094134" hostname="softtords">
+    <testsuite name="complete_task" file="app/test/usecase-complete_task.test.ts" line="9" tests="1" assertions="7" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND" classname="complete_task" time="0.000269" file="app/test/usecase-complete_task.test.ts" line="11" assertions="7" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="5" failures="0" skipped="0" time="0.000285463" hostname="softtords">
+    <testsuite name="Task.complete" file="app/test/method-Task-complete.test.ts" line="7" tests="1" assertions="5" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] registra TaskCompleted, muda para completed e rejeita repeticao com TASK_ALREADY_COMPLETED" classname="Task.complete" time="0.000077" file="app/test/method-Task-complete.test.ts" line="9" assertions="5" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="9" failures="0" skipped="0" time="0.000371122" hostname="softtords">
+    <testsuite name="Task.create" file="app/test/entity-Task.test.ts" line="7" tests="2" assertions="9" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita titulo vazio ou so com espacos com TASK_TITLE_REQUIRED" classname="Task.create" time="0.000062" file="app/test/entity-Task.test.ts" line="9" assertions="4" />
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pending, normaliza titulo e registra TaskCreated" classname="Task.create" time="0.000044" file="app/test/entity-Task.test.ts" line="27" assertions="5" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/operator-task-operator.test.ts" file="app/test/operator-task-operator.test.ts" tests="1" assertions="12" failures="0" skipped="0" time="0.00871405" hostname="softtords">
+    <testsuite name="task-operator" file="app/test/operator-task-operator.test.ts" line="10" tests="1" assertions="12" failures="0" skipped="0" time="0.007" hostname="softtords">
+      <testcase name="[covers: criterion:0001/tools, operator:task-operator] conclui tarefa usando apenas create_task e complete_task e publica TaskCreated/TaskCompleted" classname="task-operator" time="0.007731" file="app/test/operator-task-operator.test.ts" line="12" assertions="12" />
+    </testsuite>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,13 @@
+const {runEvaluation}=await import(`${process.cwd()}/scripts/evals/run`);
+const {createScriptedAdapter}=await import(`${process.cwd()}/scripts/evals/adapters/scripted`);
+const {loadDataset}=await import(`${process.cwd()}/scripts/evals/dataset`);
+const {reportSchema}=await import(`${process.cwd()}/scripts/evals/report-schema`);
+const {completeItem}=await import(`${process.cwd()}/test/helpers/tasks-solution`);
+const {manifestSchema}=await import(`${process.cwd()}/scripts/evals/contracts`);
+const manifest=manifestSchema.parse({...await Bun.file('evals/run.certify.codex-sol-high.json').json(),configurations:[{id:'scripted-control',adapter:'scripted',model:'offline-fixture',parameters:{}}]});
+const answers=(await loadDataset('evals/skills/orders.yaml')).map(c=>({finalText:JSON.stringify(c.expect)}));
+const out=process.argv[2]; if(!out)throw Error('Supply a new external output directory');
+const report=await runEvaluation(manifest,{sourceRoot:process.cwd(),outDir:out,real:false,signal:new AbortController().signal,adapters:new Map([['scripted-control',createScriptedAdapter([...answers,...Array.from({length:5},()=>({finalText:'{"status":"done","summary":"offline positive control"}',before:async(req)=>{await completeItem(req.cwd,req.id)}}))])]])});
+reportSchema.parse(await Bun.file(`${out}/report.json`).json());
+if(report.status!=='completed'||report.cases.some(c=>c.verdict!=='correct')||report.benchmarks[0]?.items.some(i=>i.state!=='accepted')||report.benchmarks[0]?.finalVerification?.report?.status!=='done'||report.provenance.originAfter.status!=='available'||report.provenance.originAfter.value!==report.provenance.originBefore)throw Error('Positive control failed');
+console.log(`Offline control: five answers correct, five packets accepted, verify done, ${report.invocations} scripted sessions; unchanged source fingerprint. Report: ${out}/report.json`);

@@ -1,0 +1,5 @@
+test/evals-extended.test.ts:
+(pass) 20 literal cases agree with declarations, full nested schemas and documented rules [121.97ms]
+(pass) all 20 cases judged correct in isolated sessions without dataset or expectations [1616.96ms]
+(pass) all 20 cases judged incorrect in isolated sessions without dataset or expectations [1593.04ms]
+(pass) all 20 cases judged malformed in isolated sessions without dataset or expectations [1536.32ms]

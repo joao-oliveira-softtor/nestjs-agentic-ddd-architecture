@@ -1,0 +1,33 @@
+import {readFile} from 'node:fs/promises';
+import {join} from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {reportSchema} from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/report-schema';
+import {sha256,fingerprintOrigin} from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/isolation';
+import {stableStringify} from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/src/compiler';
+import {finalVerificationState} from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/final-verification';
+const root=process.argv[2];
+const configurations=process.argv.slice(3);
+if(!root||!configurations.length)throw Error('Expected root and configurations');
+const preflight=await Bun.file(join(root,'authorization-and-preflight.json')).json();
+const summaries=[];
+for(const id of configurations){
+ const folder=join(root,id);
+ const report=reportSchema.parse(await Bun.file(join(folder,'report.json')).json());
+ const manifest=await Bun.file(`evals/run.certify.${id}.json`).json();
+ if(stableStringify(report.manifest)!==stableStringify(manifest)||report.manifestSha256!==sha256(stableStringify(manifest)))throw Error('Effective configuration differs');
+ if(report.mode!=='real'||report.provenance.sourceCommit!==preflight.sourceCommit||report.provenance.runnerCommit!==preflight.runnerCommit||report.provenance.originBefore!==preflight.originFingerprint||report.provenance.originAfter.status!=='available'||report.provenance.originAfter.value!==report.provenance.originBefore)throw Error('Source provenance or fingerprint differs');
+ if(report.invocations>15||report.cases.length!==5||report.benchmarks.length!==1||report.benchmarks[0]!.items.length!==5)throw Error('Budget or case/item count differs');
+ const ledger=await Bun.file(join(folder,'artifact-manifest.json')).json();
+ for(const a of ledger.artifacts){const raw=await readFile(join(folder,a.path));if(raw.length!==a.bytes||sha256(raw)!==a.sha256)throw Error(`Artifact hash mismatch ${a.path}`);}
+ const benchmark=report.benchmarks[0]!;
+ for(const item of benchmark.items)if(item.state==='accepted'){
+  const a=item.attempts.at(-1)!;
+  if(!a.accepted||!a.audit?.ok||a.audit.findings.length||!a.verification?.ok||a.verification.itemReport?.status!=='done'||a.verification.executorTests?.exitCode!==0||a.verification.referenceTests?.exitCode!==0||a.verification.commands.some(c=>c.result.transport!=='finished'||c.result.exitCode!==0))throw Error('Accepted item lacks successful independent gates');
+ }
+ const certified=benchmark.items.every(i=>i.state==='accepted')&&finalVerificationState(benchmark.finalVerification)==='verified'&&benchmark.finalVerification?.report?.status==='done';
+ const executions=[...report.cases.flatMap(c=>c.execution?[c.execution]:[]),...benchmark.items.flatMap(i=>i.attempts.map(a=>a.execution))];
+ summaries.push({configuration:id,status:report.status,certified,sourceCommit:report.provenance.sourceCommit,runnerCommit:report.provenance.runnerCommit,originFingerprint:report.provenance.originBefore,sourceUnchanged:true,adapter:report.provenance.adapters[id],requestedConfiguration:manifest.configurations[0],observedModels:[...new Set(executions.flatMap(e=>e.observedModel.status==='available'?[e.observedModel.value]:[]))],modelRevisions:executions.map(e=>e.modelRevision),questions:{correct:report.cases.filter(c=>c.verdict==='correct').length,total:5,results:report.cases.map(c=>({id:c.id,verdict:c.verdict,reason:c.reason}))},initialAccepted:benchmark.items.filter(i=>i.attempts[0]?.accepted).length,finalAccepted:benchmark.items.filter(i=>i.state==='accepted').length,items:benchmark.items.map(i=>({id:i.item,state:i.state,reason:i.reason,attempts:i.attempts.map(a=>({number:a.number,accepted:a.accepted,reason:a.reason}))})),changeVerification:benchmark.finalVerification?.report?.status??null,invocations:report.invocations,corrections:benchmark.items.reduce((n,i)=>n+Math.max(0,i.attempts.length-1),0),durationMs:report.durationMs,artifactsChecked:ledger.artifacts.length,reportSha256:sha256(await readFile(join(folder,'report.json'))) });
+}
+if(execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim()||await fingerprintOrigin(process.cwd())!==preflight.originFingerprint)throw Error('Origin changed during real runs');
+await Bun.write(join(root,'validated-results.json'),JSON.stringify({schemaVersion:1,realRuns:configurations.length,realInvocations:summaries.reduce((n,r)=>n+r.invocations,0),summaries},null,2)+'\n');
+console.log(JSON.stringify(summaries.map(s=>({configuration:s.configuration,status:s.status,certified:s.certified,questions:s.questions.correct+'/5',packets:s.finalAccepted+'/5',verify:s.changeVerification,invocations:s.invocations,corrections:s.corrections,durationMs:s.durationMs,artifactsChecked:s.artifactsChecked,sourceUnchanged:s.sourceUnchanged})),null,2));

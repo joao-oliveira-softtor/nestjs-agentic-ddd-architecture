@@ -1,0 +1,27 @@
+[
+  {
+    "path": "app/application/create-task.ts",
+    "before": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "9bba8436aba10556da636d97fa5096b7a612f2e2ce1b6793c49114a69af187af",
+      "content": "import { z } from 'zod';\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\nimport { AgentUseCase } from '@agentic-ddd/decorators';\nimport { Task } from '../domain/task';\nimport { TaskCreated } from '../domain/task.events';\nimport type { TaskRepository } from '../domain/task.repository';\n\nexport const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });\nexport const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });\nexport type CreateTaskInput = z.infer<typeof createTaskInput>;\nexport type CreateTaskOutput = z.infer<typeof createTaskOutput>;\n\n@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })\nexport class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {\n  constructor(private readonly tasks: TaskRepository) {}\n  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+    },
+    "after": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "945bd70df4fb1561943f21f1ccd1dfb0c1bb835963335d1612d1cb96eeaaf5b6",
+      "content": "import { z } from 'zod';\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\nimport { AgentUseCase } from '@agentic-ddd/decorators';\nimport { Task } from '../domain/task';\nimport { TaskCreated } from '../domain/task.events';\nimport type { TaskRepository } from '../domain/task.repository';\n\nexport const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });\nexport const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });\nexport type CreateTaskInput = z.infer<typeof createTaskInput>;\nexport type CreateTaskOutput = z.infer<typeof createTaskOutput>;\n\n@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })\nexport class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {\n  constructor(private readonly tasks: TaskRepository) {}\n  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {\n    const existing = await this.tasks.findById(input.task_id); if (existing) throw new DomainError('TASK_ALREADY_EXISTS', 'Tarefa com este id ja existe.'); const task = Task.create(input.task_id, input.title); await this.tasks.save(task); await ctx.publish(task.pullEvents()); return { task_id: task.id, title: task.title, status: 'pending' };\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+    }
+  },
+  {
+    "path": "app/test/usecase-create_task.test.ts",
+    "before": null,
+    "after": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "36af4b547b50869f1e88012a2b01d00e0c411c867d8652954e85fa281dd154f2",
+      "content": "import { describe, expect, test } from 'bun:test';\nimport { DomainError } from '@agentic-ddd/core';\nimport { covers, createTestContext } from '@agentic-ddd/testing';\nimport { CreateTask } from '../application/create-task';\nimport { TaskCreated } from '../domain/task.events';\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\n\ndescribe('create_task', () => {\n  test(\n    covers(\n      ['criterion:0001/persistencia-criacao', 'usecase:create_task'],\n      'salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS',\n    ),\n    async () => {\n      const tasks = new InMemoryTaskRepository();\n      const useCase = new CreateTask(tasks);\n      const ctx = createTestContext();\n\n      const output = await useCase.execute({ task_id: 't1', title: '  Minha tarefa  ' }, ctx);\n\n      expect(output).toEqual({ task_id: 't1', title: 'Minha tarefa', status: 'pending' });\n      const saved = await tasks.findById('t1');\n      expect(saved?.id).toBe('t1');\n      expect(saved?.title).toBe('Minha tarefa');\n      expect(saved?.status).toBe('pending');\n      expect(ctx.published).toHaveLength(1);\n      expect(ctx.published[0]).toBeInstanceOf(TaskCreated);\n      expect(ctx.published[0]?.payload).toEqual({ taskId: 't1', title: 'Minha tarefa' });\n\n      try {\n        await useCase.execute({ task_id: 't1', title: 'Outro titulo' }, createTestContext());\n        throw new Error('Expected create_task to throw');\n      } catch (error) {\n        expect(error).toBeInstanceOf(DomainError);\n        expect((error as DomainError).code).toBe('TASK_ALREADY_EXISTS');\n      }\n    },\n  );\n});\n"
+    }
+  }
+]

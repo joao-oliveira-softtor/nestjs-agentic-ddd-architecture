@@ -1,0 +1,82 @@
+# Complemento estrito do dataset original. Perguntas definem formato literal;
+# expectativas ficam exclusivamente com o runner.
+- id: dev-positive-entity
+  audience: dev
+  question: "Para criar a entidade Invoice em orders, indique arquivo e decorator. Responda no formato <caminho> <decorator>, sem argumentos do decorator."
+  expect: { type: exact, value: "examples/orders/domain/invoice.ts @AgentEntity" }
+- id: dev-positive-usecase
+  audience: dev
+  question: "Para criar o use-case refund_order em orders, indique arquivo e decorator. Responda no formato <caminho> <decorator>, sem argumentos do decorator."
+  expect: { type: exact, value: "examples/orders/application/refund-order.ts @AgentUseCase" }
+- id: dev-positive-uses
+  audience: dev
+  question: "Um novo use-case chama Order.confirm. Qual ID deve constar no array uses de @AgentUseCase? Responda somente o ID completo."
+  expect: { type: exact, value: "method:Order.confirm" }
+- id: dev-positive-public-method
+  audience: dev
+  question: "Qual decorator é obrigatório em todo método público de uma entidade? Responda somente @NomeDoDecorator, sem argumentos."
+  expect: { type: exact, value: "@AgentMethod" }
+- id: dev-positive-proposal
+  audience: dev
+  question: "Antes de alterar uma regra de negócio, é necessário escrever proposal.md em changes/NNNN-<slug>? Responda sim ou não."
+  expect: { type: exact, value: "sim" }
+- id: dev-negative-static-done
+  audience: dev
+  question: "A saída de status --static, sem executar os testes, pode certificar done? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: dev-negative-old-hash
+  audience: dev
+  question: "O specHash atual do item difere do hash de um packet antigo. verify --item com esse hash antigo pode certificar done? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: dev-negative-unexecuted-coverage
+  audience: dev
+  question: "Apenas declarar covers com todos os IDs, sem executar os testes, basta para certificar done? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: dev-negative-empty-skeleton
+  audience: dev
+  question: "Um corpo vazio {}, sem a chamada notImplemented(), é reconhecido como esqueleto ainda não implementado? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: dev-negative-generated-edit
+  audience: dev
+  question: "É permitido editar diretamente uma skill gerada em .agents/skills/orders-dev para mudar uma regra? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: runtime-positive-create
+  audience: runtime
+  question: "Crie um pedido o-21 para o cliente c-21 com dois itens: SKU cafe, quantidade 2, preço unitário 12.5; SKU filtro, quantidade 1, preço unitário 7. Qual tool e todos os argumentos?"
+  expect: { type: tool_call, name: create_order, input: { order_id: "o-21", customer_id: "c-21", items: [{ sku: cafe, quantity: 2, unit_price: 12.5 }, { sku: filtro, quantity: 1, unit_price: 7 }] } }
+- id: runtime-positive-confirm
+  audience: runtime
+  question: "O pedido o-22 está pending e o cliente solicitou confirmação. Qual tool e todos os argumentos?"
+  expect: { type: tool_call, name: confirm_order, input: { order_id: "o-22" } }
+- id: runtime-positive-cancel
+  audience: runtime
+  question: "O pedido o-23 está confirmed. O cliente quer cancelar com motivo literal entrega atrasada. A aprovação humana já foi concedida. Qual tool e todos os argumentos?"
+  expect: { type: tool_call, name: cancel_order, input: { order_id: "o-23", reason: "entrega atrasada" } }
+- id: runtime-positive-approval
+  audience: runtime
+  question: "Antes de executar cancel_order, o operator exige aprovação humana? Responda sim ou não."
+  expect: { type: exact, value: "sim" }
+- id: runtime-positive-transition
+  audience: runtime
+  question: "Quais são o estado de origem permitido e o estado de destino de Order.confirm? Responda no formato <estado-origem> <estado-destino>."
+  expect: { type: exact, value: "pending confirmed" }
+- id: runtime-negative-cancelled
+  audience: runtime
+  question: "O pedido está cancelled. É permitido executar confirm_order para confirmá-lo? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: runtime-negative-confirmed
+  audience: runtime
+  question: "O pedido já está confirmed. É permitido executar confirm_order novamente? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: runtime-negative-denied
+  audience: runtime
+  question: "A pessoa negou a aprovação para cancel_order. O operator pode executar o cancelamento mesmo assim? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: runtime-negative-no-reason
+  audience: runtime
+  question: "O cliente pediu cancelamento mas não forneceu motivo. É permitido cancelar com reason vazio? Responda sim ou não."
+  expect: { type: exact, value: "não" }
+- id: runtime-negative-no-items
+  audience: runtime
+  question: "É permitido criar um pedido passando items como array vazio? Responda sim ou não."
+  expect: { type: exact, value: "não" }

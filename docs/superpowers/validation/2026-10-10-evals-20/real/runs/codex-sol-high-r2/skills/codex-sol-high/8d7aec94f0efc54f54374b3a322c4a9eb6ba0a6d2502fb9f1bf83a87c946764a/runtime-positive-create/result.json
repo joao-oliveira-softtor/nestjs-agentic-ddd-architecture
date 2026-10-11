@@ -1,0 +1,100 @@
+{
+  "configuration": "codex-sol-high",
+  "dataset": "evals/skills/orders.extended.yaml",
+  "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+  "id": "runtime-positive-create",
+  "audience": "runtime",
+  "question": "Crie um pedido o-21 para o cliente c-21 com dois itens: SKU cafe, quantidade 2, preço unitário 12.5; SKU filtro, quantidade 1, preço unitário 7. Qual tool e todos os argumentos?",
+  "expect": {
+    "type": "tool_call",
+    "name": "create_order",
+    "input": {
+      "order_id": "o-21",
+      "customer_id": "c-21",
+      "items": [
+        {
+          "sku": "cafe",
+          "quantity": 2,
+          "unit_price": 12.5
+        },
+        {
+          "sku": "filtro",
+          "quantity": 1,
+          "unit_price": 7
+        }
+      ]
+    }
+  },
+  "answer": {
+    "type": "tool_call",
+    "name": "create_order",
+    "input": {
+      "order_id": "o-21",
+      "customer_id": "c-21",
+      "items": [
+        {
+          "sku": "cafe",
+          "quantity": 2,
+          "unit_price": 12.5
+        },
+        {
+          "sku": "filtro",
+          "quantity": 1,
+          "unit_price": 7
+        }
+      ]
+    }
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"type\":\"tool_call\",\"name\":\"create_order\",\"input\":{\"order_id\":\"o-21\",\"customer_id\":\"c-21\",\"items\":[{\"sku\":\"cafe\",\"quantity\":2,\"unit_price\":12.5},{\"sku\":\"filtro\",\"quantity\":1,\"unit_price\":7}]}}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "01a1276c-a103-7ef0-93c0-625c4ad13069",
+      "source": "codex.thread.started.thread_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "gpt-6.1-sol",
+      "source": "codex.rollout.turn_context.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "available",
+        "value": 30872,
+        "source": "codex.turn.completed.usage.input_tokens"
+      },
+      "cachedInputTokens": {
+        "status": "available",
+        "value": 26496,
+        "source": "codex.turn.completed.usage.cached_input_tokens"
+      },
+      "outputTokens": {
+        "status": "available",
+        "value": 127,
+        "source": "codex.turn.completed.usage.output_tokens"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 9143.497782999999,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/process.json",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/model-metadata.json"
+    ],
+    "diagnostic": null
+  }
+}

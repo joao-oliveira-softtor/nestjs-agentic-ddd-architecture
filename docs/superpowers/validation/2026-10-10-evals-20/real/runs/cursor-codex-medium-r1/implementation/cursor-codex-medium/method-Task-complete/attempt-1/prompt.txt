@@ -1,0 +1,128 @@
+Packet:
+# Identificação
+
+- ID: `method:Task.complete`
+- Camada: domain
+- Módulo: tasks
+- source: `app/domain/task.ts:30`
+- Estado: declared
+- specHash: `eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364`
+- Dependências: `entity:Task`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi concluída.",
+      "id": "event:TaskCompleted",
+      "module": "tasks",
+      "name": "TaskCompleted",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "declaration": {
+    "description": "Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.",
+    "emits": [
+      "event:TaskCompleted"
+    ],
+    "entity": {
+      "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+      "id": "entity:Task",
+      "invariants": [
+        {
+          "id": "invariant:Task/titulo-obrigatorio",
+          "on": null,
+          "text": "Toda tarefa precisa de título não vazio."
+        }
+      ],
+      "methods": [
+        {
+          "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+          "emits": [
+            "event:TaskCreated"
+          ],
+          "id": "method:Task.create",
+          "name": "create",
+          "static": true,
+          "transition": null
+        }
+      ],
+      "module": "tasks",
+      "name": "Task",
+      "states": [
+        "pending",
+        "completed"
+      ]
+    },
+    "id": "method:Task.complete",
+    "invariants": [],
+    "name": "complete",
+    "static": false,
+    "transition": {
+      "from": [
+        "pending"
+      ],
+      "to": "completed"
+    }
+  }
+}
+```
+
+## Obrigações de teste
+
+- `method:Task.complete` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item method:Task.complete --spec-hash eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364 --config /tmp/agentic-eval-ggd69E/attempt-kUrnwC/workspace/agentic.config.ts --json
+```
+
+End packet
+Root atual: /tmp/agentic-eval-ggd69E/attempt-VVO5gz/workspace; configuração atual: /tmp/agentic-eval-ggd69E/attempt-VVO5gz/workspace/agentic.config.ts. Use esses paths no lugar de paths temporários do packet; conserve o specHash original eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364.
+Edite somente app/domain/task.ts Task.complete (somente interior do corpo, mesma quantidade de linhas) e o novo teste app/test/method-Task-complete.test.ts. Preserve imports, contratos, decorators, outros corpos, testes existentes, configurações, propostas e gerados.
+Critérios adicionais arquivados: [{"id":"criterion:0001/conclusao","given":"uma tarefa pending","when":"concluir e tentar concluir novamente","then":"registra TaskCompleted, fica completed e rejeita repetição com TASK_ALREADY_COMPLETED"}]. Cubra-os com covers do executor.
+Leia .agents/skills/agentic-ddd/SKILL.md e referências de executor pertinentes. Use só a sessão principal, sem delegação ou subagentes. Neste benchmark, este protocolo de resposta final substitui o handoff normal da skill/referência de executor. Resposta final: objeto JSON com exatamente duas propriedades, status e summary; sem propriedades adicionais. Exemplo {"status":"done","summary":"texto"}; status deve ser done, blocked ou failed, sem prosa ou cercas.

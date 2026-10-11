@@ -1,0 +1,64 @@
+{
+  "configuration": "cursor-codex-medium",
+  "dataset": "evals/skills/orders.extended.yaml",
+  "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+  "id": "runtime-positive-transition",
+  "audience": "runtime",
+  "question": "Quais são o estado de origem permitido e o estado de destino de Order.confirm? Responda no formato <estado-origem> <estado-destino>.",
+  "expect": {
+    "type": "exact",
+    "value": "pending confirmed"
+  },
+  "answer": {
+    "type": "exact",
+    "value": "pending confirmed"
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"type\":\"exact\",\"value\":\"pending confirmed\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "ba24b0b2-3c65-484c-bac8-9f32108b14af",
+      "source": "cursor.result.session_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "Codex 5.3 Medium",
+      "source": "cursor.init.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 14774.409181000025,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/process.json"
+    ],
+    "diagnostic": null
+  }
+}

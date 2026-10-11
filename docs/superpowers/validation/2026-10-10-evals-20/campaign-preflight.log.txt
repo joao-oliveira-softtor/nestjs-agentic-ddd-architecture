@@ -1,0 +1,1 @@
+Six manifests validated: 25 questions/five packets each; common source dc9a25d133fa71975dfd77713e00ea653a273a82; 210 sessions/270 min planned, no inference.

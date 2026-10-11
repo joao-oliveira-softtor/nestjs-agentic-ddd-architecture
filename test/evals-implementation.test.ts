@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, expect, test } from 'bun:test';
+import { afterAll, beforeAll, expect, test as bunTest } from 'bun:test';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -10,6 +10,10 @@ import {
 import { createScriptedAdapter } from '../scripts/evals/adapters/scripted';
 import { completeItem } from './helpers/tasks-solution';
 import { evalManifest, frozenSource } from './helpers/evals';
+// Domain verify collects business coverage; benchmark campaigns run in the
+// outer framework suite instead of being repeated inside that collection.
+const insideVerify = process.env.AGENTIC_DDD_VERIFY === '1';
+const test = bunTest.skipIf(insideVerify);
 const IDS = [
   'entity:Task',
   'method:Task.complete',
@@ -21,6 +25,7 @@ let fixture: Awaited<ReturnType<typeof frozenSource>>;
 let out: string;
 let baseline: string;
 beforeAll(async () => {
+  if (insideVerify) return;
   fixture = await frozenSource();
   out = await mkdtemp(join(tmpdir(), 'eval-implementation-out-'));
   baseline = await prepareTasksBaseline(fixture.source, {

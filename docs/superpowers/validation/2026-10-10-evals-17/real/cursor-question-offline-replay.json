@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "mode": "offline",
+  "realInferenceSessions": 0,
+  "reproductions": [
+    {
+      "case": "cancelar-com-motivo",
+      "capturedEvidence": "cursor-codex-medium/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/result.json",
+      "capturedEvidenceSha256": "cb50df4de92f75d1c4af6786a4fcf9b181ffa5bf97efd0b64cd868844be78491",
+      "capturedFinalText": "{\"type\":\"tool_call\",\"name\":\"cancel_order\",\"input\":{\"order_id\":\"7f3c\",\"reason\":\"cliente desistiu\"}}",
+      "expected": {
+        "type": "tool_call",
+        "name": "cancel_order",
+        "input": {
+          "order_id": "7f3c",
+          "reason": "desistiu"
+        }
+      },
+      "capturedVerdict": "incorrect",
+      "replayedVerdict": "incorrect",
+      "parserAndJudge": "scripts/evals/judge.ts unchanged; no normalization"
+    },
+    {
+      "case": "onde-criar-use-case",
+      "capturedEvidence": "cursor-codex-medium/skills/cursor-codex-medium/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/result.json",
+      "capturedEvidenceSha256": "130e08e1f9d7ef5dc3de439cb17fae556e2f92ceb0dacd43573dde6d601f843b",
+      "capturedFinalText": "{\"type\":\"exact\",\"value\":\"No módulo `orders`, crie o use-case em `examples/orders/application/refund-order.ts` e declare com o decorator `@AgentUseCase(...)` (de `@agentic-ddd/decorators`).\"}",
+      "expected": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "capturedVerdict": "incorrect",
+      "replayedVerdict": "incorrect",
+      "parserAndJudge": "scripts/evals/judge.ts unchanged; no normalization"
+    }
+  ]
+}

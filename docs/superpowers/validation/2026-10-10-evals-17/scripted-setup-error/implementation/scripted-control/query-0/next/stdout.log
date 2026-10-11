@@ -1,0 +1,21 @@
+{
+  "change": "0001",
+  "waves": [
+    [
+      "entity:Task"
+    ],
+    [
+      "method:Task.complete",
+      "usecase:create_task"
+    ],
+    [
+      "usecase:complete_task"
+    ],
+    [
+      "operator:task-operator"
+    ]
+  ],
+  "diagnostics": [
+    "coleta JUnit ausente, inválida ou incompleta; não é possível verificar conclusão"
+  ]
+}

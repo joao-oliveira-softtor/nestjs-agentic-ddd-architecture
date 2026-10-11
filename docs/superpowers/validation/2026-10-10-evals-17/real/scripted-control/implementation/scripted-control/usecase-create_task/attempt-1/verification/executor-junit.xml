@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="5" assertions="22" failures="0" skipped="0" time="0.086205588">
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="1" assertions="5" failures="0" skipped="0" time="0.083000682" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] conclui, persiste, publica e rejeita id ausente" classname="" time="0.0005" file="app/test/usecase-complete_task.test.ts" line="6" assertions="5" />
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="5" failures="0" skipped="0" time="0.0003303" hostname="softtords">
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição" classname="" time="0.000103" file="app/test/method-Task-complete.test.ts" line="4" assertions="5" />
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="6" failures="0" skipped="0" time="0.000356444" hostname="softtords">
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento" classname="" time="0.000076" file="app/test/entity-Task.test.ts" line="4" assertions="3" />
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços" classname="" time="0.000082" file="app/test/entity-Task.test.ts" line="11" assertions="3" />
+  </testsuite>
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="1" assertions="6" failures="0" skipped="0" time="0.000907294" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] persiste, publica e rejeita duplicado" classname="" time="0.000204" file="app/test/usecase-create_task.test.ts" line="5" assertions="6" />
+  </testsuite>
+</testsuites>

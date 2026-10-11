@@ -1,0 +1,27 @@
+
+app/test/usecase-complete_task.test.ts:
+(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1, salva completed antes de publicar TaskCompleted e retorna o contrato [1.42ms]
+(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id inexistente com TASK_NOT_FOUND sem salvar nem publicar [0.25ms]
+(pass) [covers: usecase:complete_task] rejeita conclusão repetida sem salvar nem publicar novamente [0.21ms]
+(pass) [covers: usecase:complete_task] propaga falha de persistência sem publicar os eventos [0.15ms]
+(pass) [covers: usecase:complete_task] aguarda publicação e propaga sua falha após salvar [0.13ms]
+
+app/test/method-Task-complete.test.ts:
+(pass) [covers: method:Task.complete] conclui uma tarefa pending e registra TaskCompleted com seu id [0.07ms]
+(pass) [covers: criterion:0001/conclusao, method:Task.complete] rejeita repetição com TASK_ALREADY_COMPLETED e preserva estado e evento registrado [0.09ms]
+
+app/test/entity-Task.test.ts:
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou com apenas espaços com TASK_TITLE_REQUIRED [0.12ms]
+(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente, normaliza as extremidades e registra TaskCreated [0.06ms]
+
+app/test/usecase-create_task.test.ts:
+(pass) [covers: criterion:0001/persistencia-criacao, usecase:create_task] cria e salva t1 antes de publicar TaskCreated, retorna pending e rejeita o mesmo id [2.27ms]
+(pass) [covers: usecase:create_task] rejeita título vazio após normalização sem salvar nem publicar [0.12ms]
+(pass) [covers: usecase:create_task] propaga falha de consulta sem salvar nem publicar [0.11ms]
+(pass) [covers: usecase:create_task] propaga falha de persistência sem publicar [0.11ms]
+(pass) [covers: usecase:create_task] aguarda publicação e propaga sua falha após salvar [0.12ms]
+
+ 14 pass
+ 0 fail
+ 107 expect() calls
+Ran 14 tests across 4 files. [110.00ms]

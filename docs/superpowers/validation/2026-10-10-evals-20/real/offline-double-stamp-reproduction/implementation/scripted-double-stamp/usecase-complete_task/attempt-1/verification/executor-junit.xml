@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="7" assertions="38" failures="0" skipped="0" time="0.11673634">
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="5" failures="0" skipped="0" time="0.111489789" hostname="softtords">
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição" classname="" time="0.000457" file="app/test/method-Task-complete.test.ts" line="4" assertions="5" />
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="6" failures="0" skipped="0" time="0.000560839" hostname="softtords">
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento" classname="" time="0.000074" file="app/test/entity-Task.test.ts" line="4" assertions="3" />
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços" classname="" time="0.000092" file="app/test/entity-Task.test.ts" line="11" assertions="3" />
+  </testsuite>
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="4" assertions="27" failures="0" skipped="0" time="0.002696998" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1, salva completed e publica TaskCompleted após persistir" classname="" time="0.000472" file="app/test/usecase-complete_task.test.ts" line="40" assertions="10" />
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id inexistente com TASK_NOT_FOUND sem salvar ou publicar" classname="" time="0.000117" file="app/test/usecase-complete_task.test.ts" line="66" assertions="6" />
+    <testcase name="[covers: usecase:complete_task] rejeita segunda conclusão com TASK_ALREADY_COMPLETED sem nova gravação ou publicação" classname="" time="0.000147" file="app/test/usecase-complete_task.test.ts" line="81" assertions="7" />
+    <testcase name="[covers: usecase:complete_task] propaga falha ao salvar e não publica eventos antes da persistência" classname="" time="0.000147" file="app/test/usecase-complete_task.test.ts" line="100" assertions="4" />
+  </testsuite>
+</testsuites>

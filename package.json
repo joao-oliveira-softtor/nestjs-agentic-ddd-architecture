@@ -1,6 +1,6 @@
 {
   "name": "nestjs-agentic-ddd-architecture",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Framework NestJS + DDD em que use-cases são tools, operators (agentes de IA) substituem controllers e um compilador gera skills e AGENTS.md a partir do domínio decorado.",
   "author": "",
   "private": true,
@@ -20,7 +20,8 @@
     "agentic": "bun src/cli/main.ts",
     "skills:install": "bun scripts/install-skills.ts",
     "skills:example": "bun scripts/create-skills-example.ts",
-    "evals": "bun scripts/evals/main.ts"
+    "evals": "bun scripts/evals/main.ts",
+    "evals:aggregate": "bun scripts/evals/aggregate.ts"
   },
   "dependencies": {
     "@nestbun/platform": "^0.1.2",

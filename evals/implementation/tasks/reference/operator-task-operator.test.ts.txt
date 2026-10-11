@@ -7,16 +7,18 @@ import { CreateTask } from '__WORKSPACE__/app/application/create-task';
 import { CompleteTask } from '__WORKSPACE__/app/application/complete-task';
 import { TaskOperator } from '__WORKSPACE__/app/operators/task.operator';
 import { InMemoryTaskRepository } from '__WORKSPACE__/app/infrastructure/in-memory-task.repository';
+for (const [id, title] of [['oracle-a-29', 'Auditar café'], ['oracle-b-83', 'Separar caixas']] as const) {
 test('operator executa tools reais e publica eventos', async () => {
   const tool = (id: string, name: string, input: unknown): LlmResponse => ({content: [{type: 'tool_call', id, name, input}], stopReason: 'tool_calls'});
-  const llm = new FakeLlm([tool('c', 'create_task', {task_id: 'oracle-17', title: 'Revisar'}), tool('f', 'complete_task', {task_id: 'oracle-17'}), {content: [{type: 'text', text: 'Concluída.'}], stopReason: 'end'}]);
+  const llm = new FakeLlm([tool('c', 'create_task', {task_id: id, title: title}), tool('f', 'complete_task', {task_id: id}), {content: [{type: 'text', text: 'Concluída.'}], stopReason: 'end'}]);
   const repo = new InMemoryTaskRepository(); const bus = new InMemoryEventBus();
   const runtime = new OperatorRuntime({llm, eventBus: bus, root: process.cwd(), modules: [{name: 'tasks', path: 'app'}]});
   await runtime.register(TaskOperator, new Map<ClassRef, UseCase<unknown, unknown>>([[CreateTask, new CreateTask(repo)], [CompleteTask, new CompleteTask(repo)]]));
   const result = await runtime.run('task-operator', {message: 'Crie e conclua t1'});
   expect(result.status).toBe('completed'); expect(result.output).toBe('Concluída.');
-  expect((await repo.findById('oracle-17'))?.status).toBe('completed');
+  expect((await repo.findById(id))?.status).toBe('completed');
   expect(llm.requests[0]?.tools.map(t => t.name)).toEqual(['complete_task', 'create_task']);
   expect(result.events.map(e => e.name)).toEqual(['TaskCreated', 'TaskCompleted']);
   expect(bus.events).toEqual(result.events);
 });
+}

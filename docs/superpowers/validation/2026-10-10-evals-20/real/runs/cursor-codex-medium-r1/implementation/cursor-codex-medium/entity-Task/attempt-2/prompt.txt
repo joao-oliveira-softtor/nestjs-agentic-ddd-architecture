@@ -1,0 +1,132 @@
+Packet:
+# Identificação
+
+- ID: `entity:Task`
+- Camada: domain
+- Módulo: tasks
+- source: `app/domain/task.ts:5`
+- Estado: declared
+- specHash: `e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c`
+- Dependências: —
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "declaration": {
+    "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+    "id": "entity:Task",
+    "invariants": [
+      {
+        "id": "invariant:Task/titulo-obrigatorio",
+        "on": null,
+        "text": "Toda tarefa precisa de título não vazio."
+      }
+    ],
+    "methods": [
+      {
+        "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+        "emits": [
+          "event:TaskCreated"
+        ],
+        "id": "method:Task.create",
+        "name": "create",
+        "static": true,
+        "transition": null
+      }
+    ],
+    "module": "tasks",
+    "name": "Task",
+    "states": [
+      "pending",
+      "completed"
+    ]
+  }
+}
+```
+
+## Obrigações de teste
+
+- `invariant:Task/titulo-obrigatorio` — teste com `covers`.
+- `method:Task.create` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item entity:Task --spec-hash e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c --config /tmp/agentic-eval-ggd69E/attempt-2PEnzY/workspace/agentic.config.ts --json
+```
+
+End packet
+Root atual: /tmp/agentic-eval-ggd69E/attempt-zyPEAZ/workspace; configuração atual: /tmp/agentic-eval-ggd69E/attempt-zyPEAZ/workspace/agentic.config.ts. Use esses paths no lugar de paths temporários do packet; conserve o specHash original e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c.
+Edite somente app/domain/task.ts Task.create (somente interior do corpo, mesma quantidade de linhas) e o novo teste app/test/entity-Task.test.ts. Preserve imports, contratos, decorators, outros corpos, testes existentes, configurações, propostas e gerados.
+Critérios adicionais arquivados: [{"id":"criterion:0001/titulo-invalido","given":"um título vazio ou com apenas espaços","when":"criar uma tarefa","then":"rejeita com TASK_TITLE_REQUIRED"},{"id":"criterion:0001/criacao","given":"id t1 e título com espaços nas extremidades","when":"criar a tarefa","then":"fica pending, normaliza o título e registra TaskCreated"}]. Cubra-os com covers do executor.
+Leia .agents/skills/agentic-ddd/SKILL.md e referências de executor pertinentes. Use só a sessão principal, sem delegação ou subagentes. Neste benchmark, este protocolo de resposta final substitui o handoff normal da skill/referência de executor. Resposta final: objeto JSON com exatamente duas propriedades, status e summary; sem propriedades adicionais. Exemplo {"status":"done","summary":"texto"}; status deve ser done, blocked ou failed, sem prosa ou cercas.
+Correction: aplique uma nova submissão a partir deste baseline; nenhuma edição anterior foi reaplicada. Patch anterior: [
+  {
+    "path": "app/domain/task.ts",
+    "before": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "17f303d04ef10815f03a1a0a97d7653843d5afed0a567b8061c1676bb94e3a96",
+      "content": "import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\nimport { TaskCreated, TaskCompleted } from './task.events';\n\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\nexport class Task extends AggregateRoot<string> {\n  #status: 'pending' | 'completed' = 'pending';\n  private constructor(id: string, readonly title: string) { super(id); }\n  get status(): 'pending' | 'completed' { return this.#status; }\n\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\n  static create(id: string, title: string): Task {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\n  complete(): void {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+    },
+    "after": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "609fb0e41489613382b4d2b92d578e5a6ec9705b8fba0847d023c7fd4d794056",
+      "content": "import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\nimport { TaskCreated, TaskCompleted } from './task.events';\n\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\nexport class Task extends AggregateRoot<string> {\n  #status: 'pending' | 'completed' = 'pending';\n  private constructor(id: string, readonly title: string) { super(id); }\n  get status(): 'pending' | 'completed' { return this.#status; }\n\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\n  static create(id: string, title: string): Task {\n    const normalizedTitle = title.trim();\n    if (normalizedTitle.length === 0) {\n      throw new DomainError('TASK_TITLE_REQUIRED', 'Toda tarefa precisa de título não vazio.');\n    }\n    const task = new Task(id, normalizedTitle);\n    task.record(new TaskCreated({ taskId: id, title: normalizedTitle }));\n    return task;\n\n\n\n\n  }\n\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\n  complete(): void {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+    }
+  },
+  {
+    "path": "app/test",
+    "before": null,
+    "after": {
+      "kind": "directory",
+      "mode": 16877,
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    }
+  },
+  {
+    "path": "app/test/entity-Task.test.ts",
+    "before": null,
+    "after": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "7699b88def684e348c71d0fabcc914635ada9f8082b55e84118c615130dfcf07",
+      "content": "import { describe, expect, test } from 'bun:test';\nimport { DomainError } from '@agentic-ddd/core';\nimport { covers } from '@agentic-ddd/testing';\nimport { Task } from '../domain/task';\nimport { TaskCreated } from '../domain/task.events';\n\ndescribe('Task entity', () => {\n  test(covers(['invariant:Task/titulo-obrigatorio', 'method:Task.create', 'criterion:0001/titulo-invalido'], 'rejeita título vazio ao criar tarefa'), () => {\n    let error: unknown;\n    try {\n      Task.create('t1', '   ');\n    } catch (caught) {\n      error = caught;\n    }\n    expect(error).toBeInstanceOf(DomainError);\n    expect((error as DomainError).code).toBe('TASK_TITLE_REQUIRED');\n  });\n\n  test(covers(['method:Task.create', 'criterion:0001/criacao'], 'cria tarefa pending, normaliza título e registra TaskCreated'), () => {\n    const task = Task.create('t1', '  Estudar DDD  ');\n    expect(task.id).toBe('t1');\n    expect(task.status).toBe('pending');\n    expect(task.title).toBe('Estudar DDD');\n    const events = task.pullEvents();\n    expect(events).toHaveLength(1);\n    expect(events[0]).toBeInstanceOf(TaskCreated);\n    expect((events[0] as TaskCreated).payload).toEqual({ taskId: 't1', title: 'Estudar DDD' });\n  });\n});\n"
+    }
+  }
+]. Findings: ["Body line count changed: app/domain/task.ts"]

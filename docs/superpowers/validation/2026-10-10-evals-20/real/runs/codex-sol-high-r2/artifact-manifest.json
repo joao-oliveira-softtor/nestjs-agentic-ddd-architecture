@@ -1,0 +1,2035 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": "adapters/codex-sol-high/probe/process.json",
+      "sha256": "4ba727374171eef5707e960789eb6914bd4dcb9095dee62d7a53ba53a6d87654",
+      "bytes": 361
+    },
+    {
+      "path": "adapters/codex-sol-high/probe/stderr.log",
+      "sha256": "3b0cc40e4ffe9b096bbd82d0397a9a151961c15811eca709c1dc7658f7eaef77",
+      "bytes": 192
+    },
+    {
+      "path": "adapters/codex-sol-high/probe/stdout.log",
+      "sha256": "1df57fdc934f35bbd09e26308fbbd895698596f3be833ace1027c6bcfd2f81e2",
+      "bytes": 18
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/adapter.json",
+      "sha256": "9d7498dbb376f201de7ecd588b0044b664d85c9aa39cf968c2aee373526a88a8",
+      "bytes": 1897
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/attempt.json",
+      "sha256": "c64f23ad13bd17775ce2ed8bf589f7ca1d546ab94014d9253bf7c8534c22dbcf",
+      "bytes": 20165
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/handoff.json",
+      "sha256": "97ede449962a8a8afac4fa64c61b14d87af37a363659212bc178b0d479a64f43",
+      "bytes": 3003
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/model-metadata.json",
+      "sha256": "6f8c7cd0ce81edae1de816f4be40ccfc8fe470dfc91a83db46e0bb84b174de45",
+      "bytes": 366
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/process.json",
+      "sha256": "b96a9fc5ad8d18f3550537f849eb1bbb00f0c36b202e0003be4ed853d3c57eda",
+      "bytes": 9115
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/prompt.txt",
+      "sha256": "788085896f37269841a60639a951f68aeb0d09d85ec7bec98401ba385e80e365",
+      "bytes": 3604
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/stderr.log",
+      "sha256": "9ab675bdd1449b5e35be838af83062d606f83b4b2a0cbb1d44f15668fcabeefe",
+      "bytes": 319
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/stdout.log",
+      "sha256": "3e6fb5158b7a37fa4463b94ce48e7cb2178428027b939b9cbf9bccf153ce1ff2",
+      "bytes": 49908
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/submission.json",
+      "sha256": "7d58053216871d25cc9e3ab55bb66e83cbb31d51e9c08fd6f9da68dba0a73f96",
+      "bytes": 4902
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/compile-check/process.json",
+      "sha256": "5ed147098b57443c588b24075a07f926528eaea9bf997f9fb821640de17d442a",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/executor-junit.xml",
+      "sha256": "528925419081ccf91afb8241bb92809885ffbca87e2e9e6e1a511b130f03f13f",
+      "bytes": 860
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "79016a8826a1bb3a5d21e4d50194c429e2a11158af491716f4b9dc32c4285409",
+      "bytes": 1700
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "1c6325470bc2f250c25c694c2deb166f4e880a9d250fba3cca3814e9dc83432a",
+      "bytes": 427
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/reference-junit.xml",
+      "sha256": "30221f91ded01bc137f391d6a6219ecb5a49ff837010e8138f3ac8a4160a8ffd",
+      "bytes": 981
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "ec20050338bc324b9ebae549044fed1e10145f714aad45f892204bc38a420433",
+      "bytes": 1953
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "47949dbb57bdbb3655c3c437f11e995581928637df9bc5d3904eff8af25fc522",
+      "bytes": 332
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/verify-item/process.json",
+      "sha256": "07024012e72adf35b87fd3a148a21563e7a1aa78cc991bb194d88e9a44d851cc",
+      "bytes": 1869
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "717f87a62d03fb04d52fe306896d8b22f233a6bc9820a13348b955fada6631b6",
+      "bytes": 163
+    },
+    {
+      "path": "implementation/codex-sol-high/entity-Task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "ca40d866891a5e9be3558a9ee6d4a37966d231c075cfc2839e61163fe36a2d79",
+      "bytes": 719
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/adapter.json",
+      "sha256": "62477c285a62552e0958b304ba3a7d97d7476016bbddc404f9d7f1bd4e712327",
+      "bytes": 2000
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/attempt.json",
+      "sha256": "146af3c1dd8ca66c483344143a0c008cc55c606a4bbf8c9316a6828ca3ee9755",
+      "bytes": 22152
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/handoff.json",
+      "sha256": "029324c2aad95d8909e30bc88d57df3769c9617e0401c99a3bef50f2a872604d",
+      "bytes": 3755
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/model-metadata.json",
+      "sha256": "714108a62097c1f68e985407304dd59096156e67389d6693da11f9764b9942be",
+      "bytes": 366
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/process.json",
+      "sha256": "ba74be30ef5ef650ad9b86b76ac89d14b984cd99295afce97aed4c44d89e5806",
+      "bytes": 10061
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/prompt.txt",
+      "sha256": "7b7a6182b255f7ccd4f155dbfec704551d13790533f8fec8339aaefa3bb29ab8",
+      "bytes": 4275
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/stderr.log",
+      "sha256": "4b638ba95a2478fb59b84dd0821b24ced9104622d9941540030deb687ff8a0aa",
+      "bytes": 319
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/stdout.log",
+      "sha256": "45fb6a6a8c91a4e9ff5bf67820ff64aab77254663fdfc707b925e26ac9f5abe9",
+      "bytes": 22545
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/submission.json",
+      "sha256": "581d3f42320767fa8ed49e8012f3fc408a3accc6cc90f3062d044cdb460d8341",
+      "bytes": 5392
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/compile-check/process.json",
+      "sha256": "f9312ac16aabce7c422c50bfe8c898f3104e82a540438c4868837ec52824cfd1",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/executor-junit.xml",
+      "sha256": "4ecee0b71f95b9c98942d010ccb05ff32081af339a158bdedb0c7390d7ff584e",
+      "bytes": 1553
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/executor-tests/process.json",
+      "sha256": "46edda7820fb91ff7775e37365851269cd49f4162f2e448dc7374d6472388abb",
+      "bytes": 1700
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "a4ad360614268787c069fe94439c31e080e07956e7fd7ebf8b424af2add56179",
+      "bytes": 737
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/reference-junit.xml",
+      "sha256": "5352910142304e3323e28f7a25f8b3f4652b9c77d4eab5c9d8458c5301f0f1ef",
+      "bytes": 660
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/reference-tests/process.json",
+      "sha256": "71fed308ded17842d6658fbca410151b49f85260782241415aa77e463978c14e",
+      "bytes": 1953
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "2ed1ae0fbda53b4511c25d4aa8b84e03b2b40c733f5f0badc3304c0ee4b440e5",
+      "bytes": 214
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/verify-item/process.json",
+      "sha256": "88a8de86910d0ad852b8ad8e6a750cf0422293d3ebd758c320608e3c59a3a568",
+      "bytes": 1878
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "932b6b6e279448fba63acc82ac0af5f975755570cdb1b83122a232d83d06067c",
+      "bytes": 172
+    },
+    {
+      "path": "implementation/codex-sol-high/method-Task-complete/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "a52a132ca17be8b0ca7662766ceee15909324603ec337a21c77d3ee118dca36e",
+      "bytes": 728
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/adapter.json",
+      "sha256": "bfaf21dd62500eefd1dcd8b6782440c0dbc43276a79a29280285608030b27174",
+      "bytes": 1941
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/attempt.json",
+      "sha256": "abd19296fdb25549228cfbf209436be9970d51fadca04238cac563aff6a5cc17",
+      "bytes": 32464
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/handoff.json",
+      "sha256": "fd66cf9cc8975f25df4307a341285b33440a0dce53fba68939b78ebd796e1e74",
+      "bytes": 8278
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/model-metadata.json",
+      "sha256": "a28a0e8f268a777ffa0fb1fab7a72ee0c50ecbfdad3fef79378246ceb36aec80",
+      "bytes": 366
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/process.json",
+      "sha256": "52442073f99666c5ba7b549ada9225f9755db48505cb17d536e8fa301ec3609f",
+      "bytes": 14905
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/prompt.txt",
+      "sha256": "c0766c3c554576bf9dfa0a2aa0cb4d9dcd321f209a4bda214c82751b79521cc2",
+      "bytes": 8264
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/stderr.log",
+      "sha256": "d1acdfe4c111c12a918f56ba9d6d76727c88cc7c07527ccc50eea4baa2f0673c",
+      "bytes": 319
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/stdout.log",
+      "sha256": "853aff56f602685a7d89dff5f192fca3608f9e2e3ebcd5af6b944f7fb4ab28e8",
+      "bytes": 78021
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/submission.json",
+      "sha256": "3706499ac0a03b5f0d4fdb1ff0bd403077aa547df21a2ad2adcbf4b78dd0ac8e",
+      "bytes": 5556
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/compile-check/process.json",
+      "sha256": "240c767a9132a8ec04089aacb4f3b164eeac2a983a904816010b4b367791c332",
+      "bytes": 1744
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/executor-junit.xml",
+      "sha256": "e73f67f44ea1252be8826edf6d95b1e13394e75d3c7c2dae8efb2d4fe9872c0c",
+      "bytes": 4959
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/executor-tests/process.json",
+      "sha256": "9df3f7528b84e9dcd12888789e451cbc394bdb543dddda264fefd19f392a45f1",
+      "bytes": 1700
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "ebd747079496fd9bab13158ee0df5c93e6c5eeb40fe7680b27840a544120cbd8",
+      "bytes": 2341
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/reference-junit.xml",
+      "sha256": "4d75d9eb81f27383b9e55d2584606a05a440054fb91e76a3c04a0700916b6071",
+      "bytes": 682
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/reference-tests/process.json",
+      "sha256": "b1d08bed93f4e17cda3e43ad963b3beefa382c53398d2fdc6efe2df114b557e5",
+      "bytes": 1954
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "4274579ab76b15c6ad34933938de283453be1ccd693ca27d12a8abf05278b783",
+      "bytes": 235
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/verify-item/process.json",
+      "sha256": "085eee69c13259d747699c64811123a0f316ad16ab98f45e0a84bf866fd08874",
+      "bytes": 1880
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "cf6be3c3b71013d42a521ae4ba42a2e55980759e2abc9cbf8252b02b79509a86",
+      "bytes": 174
+    },
+    {
+      "path": "implementation/codex-sol-high/operator-task-operator/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "f9ca5cde986b80b435edfa0b633f494ad6004583fd7d04ef3b4931c14c607588",
+      "bytes": 730
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-entity-Task/process.json",
+      "sha256": "de06bfb466d3eba370d010613b442805ce4076c4bc8556a152fb90086e9f4af9",
+      "bytes": 1753
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-entity-Task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-entity-Task/stdout.log",
+      "sha256": "fddcfd5111ed5a38b4d8f3e334dcb444bd22ab6359c1e027c16834e9ea7253f1",
+      "bytes": 2146
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-method-Task-complete/process.json",
+      "sha256": "537b54186849aff6bf7405b622d3034d5c6d80d279bed97a7b73e0e284062085",
+      "bytes": 1762
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-method-Task-complete/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-method-Task-complete/stdout.log",
+      "sha256": "be082d762424e88b965e12054e7fbbc92cbf225161e4e410176d9646b89498b8",
+      "bytes": 2935
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-operator-task-operator/process.json",
+      "sha256": "1175672aa1d0142dd368872ff701d25b237ed1a4717a8a0ee57a50f60697e605",
+      "bytes": 1763
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-operator-task-operator/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-operator-task-operator/stdout.log",
+      "sha256": "0a681932d007e10078ed6c86e22a45e2853bd5b68e38da1cc3239b17a01c7461",
+      "bytes": 6972
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-usecase-complete_task/process.json",
+      "sha256": "ece54930a9ecd3a37622f758ea538e9e2a60fe98fbffd6afb9631d600986e116",
+      "bytes": 1763
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-usecase-complete_task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-usecase-complete_task/stdout.log",
+      "sha256": "c87e01776f9e7083e8871df9401c1d2f50153ff5835844eb0e1de46a84441008",
+      "bytes": 4010
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-usecase-create_task/process.json",
+      "sha256": "9441c0a40dfed5daed61f25faa1194f991f5b670c99243bff22383ad086c7277",
+      "bytes": 1761
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-usecase-create_task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/packet-usecase-create_task/stdout.log",
+      "sha256": "f9eb74439790fe964484bbbcc0bec9e81252030032a67bb7418cf2450d5bc2ef",
+      "bytes": 3678
+    },
+    {
+      "path": "implementation/codex-sol-high/query-0/next/process.json",
+      "sha256": "9fe3de17160ace849bb85df21f02c0a92c603353565f22b185475ba512dc5247",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/codex-sol-high/query-0/next/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/codex-sol-high/query-0/next/stdout.log",
+      "sha256": "cce0416411f98295fbbe81ec9575170bc5e4551731d1608c578487395658c043",
+      "bytes": 347
+    },
+    {
+      "path": "implementation/codex-sol-high/query-0/status/process.json",
+      "sha256": "1f406598e1ba94820e4581d1651a99db2e7c06e5a65421786c750a964019a4df",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/codex-sol-high/query-0/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/codex-sol-high/query-0/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "implementation/codex-sol-high/query-1/next/process.json",
+      "sha256": "0c6b943dce7b95981fa8bf25626ba5a3aaa38d73a2bfe6c1ff8a176afca6b771",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/codex-sol-high/query-1/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-1/next/stdout.log",
+      "sha256": "81e40eb53da28081a00b1ce05d8e1c409b3463968a8bbbb978f9de3970bab4e5",
+      "bytes": 219
+    },
+    {
+      "path": "implementation/codex-sol-high/query-1/status/process.json",
+      "sha256": "a31de4367cd4c914bdc8544be64e4b1252724f6016303a124fda1bb57c68e718",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/codex-sol-high/query-1/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-1/status/stdout.log",
+      "sha256": "1c3d41a34edccaca304d4fb861b5728f58e9204c2989f214270ecb5f44224986",
+      "bytes": 2863
+    },
+    {
+      "path": "implementation/codex-sol-high/query-2/next/process.json",
+      "sha256": "fcb594f8afbee95fdfa413a65e023c3e391a128e196522da88fcc1703eff2538",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/codex-sol-high/query-2/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-2/next/stdout.log",
+      "sha256": "5dfef10222ed61dbf80b2931a02bbcfbf1c00fba26701cbf82aa373dee3122db",
+      "bytes": 177
+    },
+    {
+      "path": "implementation/codex-sol-high/query-2/status/process.json",
+      "sha256": "397a551e36c3d0af668be2250b8da69e8a32d69df195a9eefcbd239436870185",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/codex-sol-high/query-2/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-2/status/stdout.log",
+      "sha256": "16623fd2bda3dd35258478027e7522fc33fbcd502715d777f83d02ba0236034f",
+      "bytes": 2780
+    },
+    {
+      "path": "implementation/codex-sol-high/query-3/next/process.json",
+      "sha256": "2d429c073be90588399d97b069af7a981c60ee8661487cf341b123d363863090",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/codex-sol-high/query-3/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-3/next/stdout.log",
+      "sha256": "2d0bbf64e14bc6a5a59fa283df9364b35d4e650547b4dc5034061fff26a93151",
+      "bytes": 146
+    },
+    {
+      "path": "implementation/codex-sol-high/query-3/status/process.json",
+      "sha256": "97b538ee1c4de147918e31d482f1a578968bd87b17f94db66166d7fbfb862ce7",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/codex-sol-high/query-3/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-3/status/stdout.log",
+      "sha256": "207a605dcc5c5b855d614e31510dfe7afd6c2963caa19e9903ecf91ff2b312ea",
+      "bytes": 2700
+    },
+    {
+      "path": "implementation/codex-sol-high/query-4/next/process.json",
+      "sha256": "343c4a7187d73267385f39ff733135b4ac379574e91a825d95d3abb361a22433",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/codex-sol-high/query-4/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-4/next/stdout.log",
+      "sha256": "cb83a89c5ced6620172e3707b56652c71b2a48828f3e02e2615212118bed8b9c",
+      "bytes": 105
+    },
+    {
+      "path": "implementation/codex-sol-high/query-4/status/process.json",
+      "sha256": "e72de2657e335c5a293cd1abcd2f30348a7d72d73c1a55a8b8ab437c9e79a84f",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/codex-sol-high/query-4/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-4/status/stdout.log",
+      "sha256": "9bf3c1011f900e19cb6122978ba24d25edcf2081b99ef5291277b59a562b2dc5",
+      "bytes": 2622
+    },
+    {
+      "path": "implementation/codex-sol-high/query-5/next/process.json",
+      "sha256": "f8c2ad5e5b062c52d9ce91bd95f5ed6dc7e79b447a65b08a0024b8e76c0df68a",
+      "bytes": 1772
+    },
+    {
+      "path": "implementation/codex-sol-high/query-5/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-5/next/stdout.log",
+      "sha256": "7ff710317c2edbc437dc8efd872fd05db715d42145a74a4a9bc733bf3d5c01ce",
+      "bytes": 59
+    },
+    {
+      "path": "implementation/codex-sol-high/query-5/status/process.json",
+      "sha256": "c1be2c50d631db45424c5924cac5cbc113815d49c1b92e8c2d0d0d68c5a84a64",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/codex-sol-high/query-5/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/query-5/status/stdout.log",
+      "sha256": "bcb8107ef35bec82a14ed19700652b5809008d2cf5c8033b1675080af7bfdf7c",
+      "bytes": 2568
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/adapter.json",
+      "sha256": "3d05e3f28a717a4c3777ae24451e9c1cde17d2f527f2f37f7b096ddcadfad05d",
+      "bytes": 2002
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/attempt.json",
+      "sha256": "061b367c085bcb4c1c4cc87a54d4bf7428758e1bce91969925c50ba2086db06d",
+      "bytes": 28961
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/handoff.json",
+      "sha256": "4b71b1e09ba7df1b5ff62e5e62c7f49edf59ccf0c2171c6c642d452e00a45148",
+      "bytes": 4971
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/model-metadata.json",
+      "sha256": "f49f09e2ea956b8f708ae4ce3a1bf6578b0556ae45c034e051b83abaf970228c",
+      "bytes": 366
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/process.json",
+      "sha256": "0494969511a4827d41a6a632a3a279b6728f5c90dc606aefac224f311083c469",
+      "bytes": 11312
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/prompt.txt",
+      "sha256": "2d903fb8b6f51f9a53b3c49a2fc1d2018f0d94c0dee37f6daf6e0e2e321f6e45",
+      "bytes": 5384
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/stderr.log",
+      "sha256": "6157f2ec7618f5b81d15475aa6409b72daa1bd8e846cc7ddcf69a4b914d0fe02",
+      "bytes": 319
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/stdout.log",
+      "sha256": "82964602d7ad3072289deaf01a5a265659f0dd3be6cd1070ae0ddd950456e58b",
+      "bytes": 53863
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/submission.json",
+      "sha256": "8ba1e8d692d507d904ea7da751737bec48b5d6247bf94fe271fce3a0299cacce",
+      "bytes": 8410
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/compile-check/process.json",
+      "sha256": "7500bcf72b61c015f9b4c2637c31dbd97c8fb39bbdd0b870aaa4a23d64c4a2b8",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/executor-junit.xml",
+      "sha256": "395ce65a9a3ec64b96f58d1f120741127bd14f16d1d6cb6aad06c06139b0ff65",
+      "bytes": 2939
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "9b8d4aec212560a752433e5d021044a86ef50caaff18f2ce7bb3bd2983b55de9",
+      "bytes": 1700
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "8e583c81ceafee24f5ae945c22cdfa3297b877da3345779321f94b0f4a2c3c28",
+      "bytes": 1414
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/reference-junit.xml",
+      "sha256": "dfe2ef0d82ae5b8c0ec85c35cfb003cf3975294f47ba042710f8130a31c8d9fe",
+      "bytes": 682
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "b07acc900e9588b03554c45726eaf6d5acb90e6fd54260044cb7fefea9adace7",
+      "bytes": 1954
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "2062cba305023373db30810588f745dfce0105530fa8178b12aaefe4e46208b8",
+      "bytes": 237
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/verify-item/process.json",
+      "sha256": "6ab2ae07a27d5195838394e6f7712d8adeee60bfd740f6eec2a30f3323c27f8c",
+      "bytes": 1879
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "1421da5ce68b1dcb8aa02403c6040f60632ab390ad0795de1f8b48d08248e3eb",
+      "bytes": 173
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-complete_task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "aa4b1361eb87f5a163999c8f40562c7e1feab3442b971356f0fe9028ea993285",
+      "bytes": 729
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/adapter.json",
+      "sha256": "41c85b2af5a7a5926f27ecfe5ac6184c71d2594de48562ddb18663af265cacf9",
+      "bytes": 1963
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/attempt.json",
+      "sha256": "4c6ceb67c16e60da380f90443328fba08c2d4cce1d457024f44805fa56f6d74c",
+      "bytes": 31169
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/handoff.json",
+      "sha256": "7d246eaaf7ebe29d02d22b14aa7756cf6a16ab5e7405c1bab8596fd87a937ce1",
+      "bytes": 4607
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/model-metadata.json",
+      "sha256": "583536f29d24ee16c37676bfbba992061913cff790e2514a3b9147237d1f3141",
+      "bytes": 366
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/process.json",
+      "sha256": "b7414787eba4fe0fbb1d18ca1c6df7be3177cc587de40f360a983e95c7130d3f",
+      "bytes": 11159
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/prompt.txt",
+      "sha256": "965a29aac4e80627b4d2f3792b6310e53261c24a8b12e90463940a84d8013c5f",
+      "bytes": 5058
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/stderr.log",
+      "sha256": "cce971b4f3a4ef297cc76e728fe857307e65d51d3db9767de714ba914d7a02d1",
+      "bytes": 319
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/stdout.log",
+      "sha256": "ad1b0e3b8a219d5e4fa97e9d5bd218e1b6eb6c47c085333528873051f677f828",
+      "bytes": 45929
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/submission.json",
+      "sha256": "902813a45b081882d493de81cc89a7db54e407798461ea035297555cdaa9fb43",
+      "bytes": 8866
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/compile-check/process.json",
+      "sha256": "4b50dd65e43fb7623ba58006eedbdae64a210a478241637ebc7b36a58d661ca4",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/executor-junit.xml",
+      "sha256": "e82c82c48e201580f589fe56a042cca69166882bb188e2f8284aafa2d18765f2",
+      "bytes": 4246
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "0ebd718aeebabc4089045b817418ac605008c68b4e713f472fab5f73f1d87191",
+      "bytes": 1701
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "1faaa3e8dfdbbc43490491883c405679cc31db1572f81d3f3434e47c0cd96197",
+      "bytes": 2022
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/reference-junit.xml",
+      "sha256": "53a69f0c8d83ce5e9efb3d44e2856fc9d91ced7a4536911f12f4a461bbdcdee4",
+      "bytes": 662
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "98c3ef3a31e9fd30a2be02816d486ad559c907366678e7be10c2b969a0477e19",
+      "bytes": 1953
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "9f3dab4b14f3794c5500776954d0d9ae1ee506fbc3e39c32d63d4af66aa6009a",
+      "bytes": 217
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/verify-item/process.json",
+      "sha256": "6734bee84d76b20fb398685ffd219758106a4ee155d6eae3de0de9b3eee466ae",
+      "bytes": 1877
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "8d04f4cc8e7a6094b8f20ea882579236fecb08a7c849d0756e31af71e9eabd8f",
+      "bytes": 171
+    },
+    {
+      "path": "implementation/codex-sol-high/usecase-create_task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "50e807ab3870ddc5599ede5ed1c862a5181977a16fe6f07861a2303f36951723",
+      "bytes": 727
+    },
+    {
+      "path": "implementation/codex-sol-high/verify-change/process.json",
+      "sha256": "c33317920916339e1355cd5ac736e9c8b99726ee9f8e0487747eeb62b34610c5",
+      "bytes": 1760
+    },
+    {
+      "path": "implementation/codex-sol-high/verify-change/stderr.log",
+      "sha256": "1e4eee259595ae3edc363e9df3a59ec7edd6a56d958ce2e6f1be15193f670551",
+      "bytes": 168
+    },
+    {
+      "path": "implementation/codex-sol-high/verify-change/stdout.log",
+      "sha256": "68af3716a3fa68f257891601638ef27ce25976df4d6844d7be5510178edb5bb3",
+      "bytes": 975
+    },
+    {
+      "path": "implementation/initial-status/process.json",
+      "sha256": "c16f77cdd919b5c124b213af7d5bea9a30d5a38c6819876b24b272305f572893",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/initial-status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/initial-status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "preparation/baseline-tree.json",
+      "sha256": "95c0c2a494b3255829b1e4a7099008b7acca944cb228767c73fc0d4c4291f4b2",
+      "bytes": 48170
+    },
+    {
+      "path": "preparation/compile/process.json",
+      "sha256": "260cdc3e2b4b71e2c86adcf553b57799a395214da34b6d3a39f24a464ca3192c",
+      "bytes": 1730
+    },
+    {
+      "path": "preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "preparation/compile-check/process.json",
+      "sha256": "9eefa6f1450feccc3b58c27ccd8a00e2eabbe76d6fef0984214f4c66f6ee2ac3",
+      "bytes": 1748
+    },
+    {
+      "path": "preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "preparation/create-tutorial/process.json",
+      "sha256": "1d4cc08436e6eaf39f48e92d0db475e39723cf689e4c5475935c8c5f9a2b0f9a",
+      "bytes": 1658
+    },
+    {
+      "path": "preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/create-tutorial/stdout.log",
+      "sha256": "a4c7a2dde8f0cb432d2dae376a9c2ea5f9047347c4f2f09f053550fff363743a",
+      "bytes": 96
+    },
+    {
+      "path": "preparation/status/process.json",
+      "sha256": "3acf09d35600f67b8111a3ed9500d1ca145e0d24ba661a159c8f0f022fec5fc1",
+      "bytes": 1748
+    },
+    {
+      "path": "preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-empty-skeleton/adapter.json",
+      "sha256": "9c33c77d9cf4e361443d2f8b68c93180bec979d67be3be20e55a3dd34d90cb5b",
+      "bytes": 1893
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-empty-skeleton/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-empty-skeleton/model-metadata.json",
+      "sha256": "0bfa68e1ae420c8d5478f0a88ca196fd9c005e2bef6ce9786631ab738ef3f326",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-empty-skeleton/process.json",
+      "sha256": "c56d1f7a8e8f747d8aad0e464dd384e98015c5b48c0af08683f14e4296721fb1",
+      "bytes": 3177
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-empty-skeleton/prompt.txt",
+      "sha256": "0336cdbdacc469a1247bf7658c2f5a010db07eb53522e5650dfc9475e5efb571",
+      "bytes": 667
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-empty-skeleton/result.json",
+      "sha256": "6729b542e4de155a325287cafc3ce62210808d490edcaff2df72ac595c800a90",
+      "bytes": 2634
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-empty-skeleton/stderr.log",
+      "sha256": "faec5cffce178e250f6ef4e1a5a4c7e72e04cd22088d6910802e2af4c713c366",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-empty-skeleton/stdout.log",
+      "sha256": "d5e7321a7524c5dfbb355bd0b4df98156c12da0c9678751bc2efc73e3da9294c",
+      "bytes": 17809
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-generated-edit/adapter.json",
+      "sha256": "713ef43df8d1af5f80c11b96aacb71f68f5fca17d8a74dfa9db39ceaa7d22279",
+      "bytes": 1893
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-generated-edit/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-generated-edit/model-metadata.json",
+      "sha256": "6ee606b074a3bb5c62bc6f76cc8b2e67fc764bd6b5a322eeeb884015d5bba174",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-generated-edit/process.json",
+      "sha256": "dd2051f7ad9b0b7abfcc55536f597598f378d4db35328a6b743d2727cdd81d47",
+      "bytes": 3171
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-generated-edit/prompt.txt",
+      "sha256": "d908bbdb5ec21b8f802f9156d495ebf61e9b03ae065e1cf804f844f3c089d5b5",
+      "bytes": 661
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-generated-edit/result.json",
+      "sha256": "f1e0484d1624fff572bbe724873a53267f3beda005ced2402b97a6421d3db6a6",
+      "bytes": 2628
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-generated-edit/stderr.log",
+      "sha256": "6a2d1224e7f8d947882c7dda67461ab08effac454f82f077d0acac2e0d8a63d3",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-generated-edit/stdout.log",
+      "sha256": "e4dc9fcd335fb149f8353c32da9c8d38aa0b4a4a5d4e922705bdda3de00af803",
+      "bytes": 17809
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/adapter.json",
+      "sha256": "bfbcc26de73f2f0af08cc5b2b35984f8e4ea11cc40cbb0ddd8654071ac64475e",
+      "bytes": 1870
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/model-metadata.json",
+      "sha256": "98d81779a552e744d2511caa8ce270d1a75f1a7d15273a59707c3e9901e0ddee",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/process.json",
+      "sha256": "48109400b2d84155e0e7bee6987b2f7707686695909943886da1186f6f153164",
+      "bytes": 3189
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/prompt.txt",
+      "sha256": "b5b2c8a99b8414d851250db083a1e4e8517cf9be4624c3c8eb627bf870326726",
+      "bytes": 679
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/result.json",
+      "sha256": "5f46fd1e7717df38d8632894cddca752b3b91f855ca317e5bc0383c323c98c3e",
+      "bytes": 2617
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/stderr.log",
+      "sha256": "60e720f9441e5f4986a00c749e3d34133b1e13e9baf3d9facfb7d04b523d6225",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/stdout.log",
+      "sha256": "7f248aeecffd3763ac6dc13ac5b1a97540816e405e7b2bb30226771b96d4e22e",
+      "bytes": 17811
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/adapter.json",
+      "sha256": "6b929781d07f28beb2f40db5b4a5f72bd5d5b40b3ba0832348ecce220e8cd48f",
+      "bytes": 1881
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/model-metadata.json",
+      "sha256": "e72b6c47f2a0070d54a9a1ef4c40ae581dd6d4f21be06a035398e52b6bb00067",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/process.json",
+      "sha256": "34b8f61bd7134a647ddd2998a33a4bf35cdbf94e9254552002a04b383637f693",
+      "bytes": 3146
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/prompt.txt",
+      "sha256": "fa1f1b6b39311780dd7adc157f14b433549da04d642142525c7d983179dfc27c",
+      "bytes": 636
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/result.json",
+      "sha256": "d924007cc899100f96a4f63400980175c8bedf475a456d6267ce4c47b1ab4fbd",
+      "bytes": 2588
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/stderr.log",
+      "sha256": "1cf577b18d84f55ec544d88d031e4f12236531a949c89f692bb3f9c5f34af9c7",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/stdout.log",
+      "sha256": "f1ca8a97aee781a9b45b62ccb8ccff521b718790d140e9495cda29b961b1f096",
+      "bytes": 17809
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-unexecuted-coverage/adapter.json",
+      "sha256": "a28c4150c3c3e21f531920ec23110b2847b4e90d7ff619bbefdfaeeec76d70e3",
+      "bytes": 1914
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-unexecuted-coverage/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-unexecuted-coverage/model-metadata.json",
+      "sha256": "8496c1646cf65c9b464c47ebd9c8889065286a6f290662155413013b5f5f4c2b",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-unexecuted-coverage/process.json",
+      "sha256": "a143f1c74ff53098da3e6e98154aa27ee0c1f67a6dbc22c45dc3448a68971d10",
+      "bytes": 3164
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-unexecuted-coverage/prompt.txt",
+      "sha256": "65084d47f99846d779c7a3db132a594afea0045327df484ad3eeb34d875d4835",
+      "bytes": 654
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-unexecuted-coverage/result.json",
+      "sha256": "6a66d4455f75c1ab5adee15573c0f079a2026b6e5931fc760bc4f467936cebd4",
+      "bytes": 2647
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-unexecuted-coverage/stderr.log",
+      "sha256": "0c3b425733d190aa43b102780426baebefd4ae4dfd47495daceddc8950952a91",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-unexecuted-coverage/stdout.log",
+      "sha256": "7dd10577bc74aba2cd22eead769d358b6e2495a5aadd854c870ad971e4609972",
+      "bytes": 17811
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-entity/adapter.json",
+      "sha256": "db33b96b810237fd0ed30a5296629407e350fd8f192098b872eb792f69a93f1b",
+      "bytes": 1905
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-entity/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-entity/model-metadata.json",
+      "sha256": "a02e5d96fe9c0169b79808da7f597eb8ccfa79b259b252bcb0d4072019914308",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-entity/process.json",
+      "sha256": "692aa2f6d3d55b7c5195956fdf96764ff63b5a57b386f4cbcf8635ca7dff6382",
+      "bytes": 3192
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-entity/prompt.txt",
+      "sha256": "c6caa57983ea8b785baf2d07d42d99865e000f20234752c1627ebc46c30db823",
+      "bytes": 681
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-entity/result.json",
+      "sha256": "ba09bca19e7210b68be11065e5ca874e10e9118b13732c9c311df280cdc66d5a",
+      "bytes": 2736
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-entity/stderr.log",
+      "sha256": "c06f879ddf423cc0692eb373c95809df3f3fd3505c72c0cfd499c13f3b164ea3",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-entity/stdout.log",
+      "sha256": "2f014350204244e2fdda8726144b2748c0a3c02f7922043451574b37be323449",
+      "bytes": 18213
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-proposal/adapter.json",
+      "sha256": "94739feb3e74b4dd77f579709ea2a0958518ba80ed74106badb7123d3d433ada",
+      "bytes": 1868
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-proposal/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-proposal/model-metadata.json",
+      "sha256": "82ae13f92b8cb638f5256cbe25f7dcb8b3cca01376d5a7786b7fbf1903e2bca3",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-proposal/process.json",
+      "sha256": "0a36a48f3cc2a1af941cdcf0767cf34c04d8433a6a2b64571a3f963635e51a66",
+      "bytes": 3171
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-proposal/prompt.txt",
+      "sha256": "9b71a74e192ce31135745c13da7ae8afafbb1fa1df3e0d5a0c8cdeeaeb7bf862",
+      "bytes": 661
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-proposal/result.json",
+      "sha256": "53f1836d39a869785f1951c167d96c797318bb790106c946074f7bd9fb378576",
+      "bytes": 2595
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-proposal/stderr.log",
+      "sha256": "af1456498f657d02d669847f775ef43ea5df15c27f6e7cf895080f5b5abeabc8",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-proposal/stdout.log",
+      "sha256": "fa62dacb7be45ea31d0b674ad23981a8b6afeadceb00ae2e91b95d3b0401dfe3",
+      "bytes": 17808
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/adapter.json",
+      "sha256": "d5bce24de91f2db3b0956c27f43b55e41438906c2f1d7475f0676659d8cbcae9",
+      "bytes": 1897
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/model-metadata.json",
+      "sha256": "436891de5ed434a9b552f8fd8b8a4b37b5cf19ab59674f9aecaa9c469dc37b93",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/process.json",
+      "sha256": "c547dda6efa0a1d80c78bf6461bac96cde28c0fd612a5c6a83b9a04891387461",
+      "bytes": 3173
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/prompt.txt",
+      "sha256": "1bcadec13035a7ddd8dfae9afa55a51f6fc0be8cb940b9f1f9bd4c71083d4f0a",
+      "bytes": 663
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/result.json",
+      "sha256": "2af21b524ace3a8dd00c4bbfca8867b3575f9fdb94d3cb2f76d9ae3293ee6162",
+      "bytes": 2649
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/stderr.log",
+      "sha256": "ea54a81fb1372021b41a6b197f6a1a96866fcf7fbe23a384c5b5a2998d18c029",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-public-method/stdout.log",
+      "sha256": "c9adae6384ca599a4bee06eba95387b5dad45dbbc2414735005e926bc4e0e503",
+      "bytes": 17817
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-usecase/adapter.json",
+      "sha256": "2f4a0794bdef7e77330e88d8f806d1d7bee1986599117cb5f775bc22c1e80100",
+      "bytes": 1919
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-usecase/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-usecase/model-metadata.json",
+      "sha256": "9bd6dc39740f4adae9abbbdeddc5af179576d4695615a1e729169532766ea9d5",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-usecase/process.json",
+      "sha256": "1628f62fff809007e0a14dc981abf86c310d90646ed4759a5c868db2bb52e7d5",
+      "bytes": 3196
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-usecase/prompt.txt",
+      "sha256": "c380a3af8d6b4921dabbddcb14e952c56bf399f948c58663edb5d0992db031f4",
+      "bytes": 686
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-usecase/result.json",
+      "sha256": "7d60bc9fe7b82e472e04914fe15b7fa6f3ea9eb080065bac971dfb300d4097b9",
+      "bytes": 2778
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-usecase/stderr.log",
+      "sha256": "40bfdfb84bcfcf67646089ec9542110e4b68bbf1ac30297c13af5740dd6cf174",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-usecase/stdout.log",
+      "sha256": "99d2ce0c59b33c7e362c77ffa4d355273544075cb6ba2803ccd9d1f9f94fa451",
+      "bytes": 17864
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/adapter.json",
+      "sha256": "eb5c15e12eb5358035059e215e727fde1c4d379b1ac6738699fa52cff206c3e4",
+      "bytes": 1870
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/model-metadata.json",
+      "sha256": "67ccbd65872e880bdf9fb5129969b9cd174b49154a5b111f842ddb171dcd9ca8",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/process.json",
+      "sha256": "fb30f2d361e33d8b7a4035f06a36290680f718228bbae8924976960e66b42169",
+      "bytes": 3172
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/prompt.txt",
+      "sha256": "bb52c69554e31190917d483cd276bd97833e8e83b5619ef55def856f2d0575bb",
+      "bytes": 662
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/result.json",
+      "sha256": "7e7fb2a896eebd85e4095c90e636cbc01d1421d1d424a10922d48cae5f1d3bf4",
+      "bytes": 2628
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/stderr.log",
+      "sha256": "a7278709e6c7c31a098679be41057294c9bfaf8f40f3d139a7ba585ac82b7056",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/stdout.log",
+      "sha256": "efaa1cb6ba86b45a3e2d51bfa656ebd73c84fc094254ff7ba47db94b41740268",
+      "bytes": 17827
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-cancelled/adapter.json",
+      "sha256": "9d7dcbd4e0aa96ce8bdce0b599a0437db0796eef78cfca470866d10c6d8241ee",
+      "bytes": 1889
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-cancelled/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-cancelled/model-metadata.json",
+      "sha256": "98585c881bac4a8ee9a7496e541aec3d97f047b6593164fcfccad3e46968b768",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-cancelled/process.json",
+      "sha256": "e430f43fb0579d398b3dfb55c71bce602b2fedf24cfc18f63d6eefbad531e65b",
+      "bytes": 3114
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-cancelled/prompt.txt",
+      "sha256": "65a888b2106d17d6fc4a0f41b502f936df78fa95277e386640dfdafc22138ef0",
+      "bytes": 605
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-cancelled/result.json",
+      "sha256": "0f178de65ad10b96bff07f57c3af8e586ca474f82b27b33e5112efc8023ead30",
+      "bytes": 2608
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-cancelled/stderr.log",
+      "sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+      "bytes": 39
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-cancelled/stdout.log",
+      "sha256": "dcc9e967cc85fa54976a09b4a7af0a687c9031de9e299a095eb0303526e25bfa",
+      "bytes": 8414
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-confirmed/adapter.json",
+      "sha256": "7e155b96256d9ef035ff376cea93f072095faa41dbdfb861225ba80f71dd2341",
+      "bytes": 1890
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-confirmed/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-confirmed/model-metadata.json",
+      "sha256": "2f062f1e2568fe432cb58d979294f31ddc933fdfd875521e33b3c8c0368590c6",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-confirmed/process.json",
+      "sha256": "0a9b081d9db7f0389441e0f94c361960e5001487bf9d31e00efbe5bb7b39e592",
+      "bytes": 3111
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-confirmed/prompt.txt",
+      "sha256": "6adf34173c398e11850601606750652f0d65f56903cc9509d2903098498d2ef0",
+      "bytes": 601
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-confirmed/result.json",
+      "sha256": "e709779004f12a7a744fa4c88e462cecb83c7a4a1de561e3527b5869ab4fe9d7",
+      "bytes": 2605
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-confirmed/stderr.log",
+      "sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+      "bytes": 39
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-confirmed/stdout.log",
+      "sha256": "af066144460fdc33b3cf9f58f7585bb4755a0467aae95ecb86a40521459649bc",
+      "bytes": 8414
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-denied/adapter.json",
+      "sha256": "3914c7e91e0ec168f6a38822ac9058be08b4df132d5e563c404a19a083f58808",
+      "bytes": 1877
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-denied/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-denied/model-metadata.json",
+      "sha256": "823b3167804ff80b5affcee2a11985650e05e6fe15c3ee2cbd5a5bb3f54c6c37",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-denied/process.json",
+      "sha256": "2e8ea34e80a2fc56115239eb49ea5f442472b78c5a23e9b440830dc52c7b5079",
+      "bytes": 3134
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-denied/prompt.txt",
+      "sha256": "bddb5e62c14ddf914d018fcf80763f3776b0e29f154538ecc4c149ee08968d7d",
+      "bytes": 625
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-denied/result.json",
+      "sha256": "578e14071671bedaefbafb1f7b4ab10e20b71a13ec2cef4167aa5022ef2f8f04",
+      "bytes": 2613
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-denied/stderr.log",
+      "sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+      "bytes": 39
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-denied/stdout.log",
+      "sha256": "ba9ff39c19c9918de0d0d56e775a5888686d623ae7ac385193d3a45afbd23bc1",
+      "bytes": 8414
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-items/adapter.json",
+      "sha256": "79e784a4b2b594aa93c323537aa682a2f1632277994e74842d1bda349dab2575",
+      "bytes": 1885
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-items/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-items/model-metadata.json",
+      "sha256": "d7af82ef8f83c3983d8125837626a0671301c89489e15b879f8cc20b92c0b0a6",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-items/process.json",
+      "sha256": "9561b1784ed24055b11236e66259c985b02d1c3cb570972894acd09b2e9b4036",
+      "bytes": 3095
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-items/prompt.txt",
+      "sha256": "a2bc14fc84248195d7f8686ccdcf87e683ab0271a21a71df2b36edd6bd724704",
+      "bytes": 586
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-items/result.json",
+      "sha256": "8154187bbbe01f03610d4198f269857b028f151719b940c681cd7d44282ca0af",
+      "bytes": 2584
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-items/stderr.log",
+      "sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+      "bytes": 39
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-items/stdout.log",
+      "sha256": "d856285c301bb309b817d1a6f949f369fc4b8494704cb2a2201461f01e702f65",
+      "bytes": 8414
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-reason/adapter.json",
+      "sha256": "e93da129645d315ca24467fab30e03507299b487e7da0d2ddb78aff44439bd3f",
+      "bytes": 1889
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-reason/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-reason/model-metadata.json",
+      "sha256": "451764962f509abb77233dc3d9bada21c5b4d435ae837ab443d4cf54e3b67ac2",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-reason/process.json",
+      "sha256": "d65c117128ada448976fabea1b99ffbe5d05a33640b0a6c7d96620b0a221457d",
+      "bytes": 3128
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-reason/prompt.txt",
+      "sha256": "bb38737a3dfc53a38cf1dbaede84171f30450eea6d4fe5fa4fe3331de8cf4050",
+      "bytes": 619
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-reason/result.json",
+      "sha256": "e041052e84386ce5dfcc56f7bde56f60acf4800bb98efb22159b6e5a9df36ff3",
+      "bytes": 2622
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-reason/stderr.log",
+      "sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+      "bytes": 39
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-negative-no-reason/stdout.log",
+      "sha256": "d3cfdc776153be24d7be5b45921a2e0d1a60f2da86cc6fa44d529031f8bee219",
+      "bytes": 8415
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-approval/adapter.json",
+      "sha256": "5af4fcfe8c6bfab1fb80e5ec9200bd2f8a39fc2c3f2ec9df08f0ab0fa6c51572",
+      "bytes": 1885
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-approval/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-approval/model-metadata.json",
+      "sha256": "736f1ee0fb5bb3a221f1bb104301e2cb2b658d5f80cee8b20e29f2a2306626f0",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-approval/process.json",
+      "sha256": "6b04bbce80ac089c3ab48f985f76ee832c089df6e33e5dd5a63f6cd2bb5f2e88",
+      "bytes": 3103
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-approval/prompt.txt",
+      "sha256": "1570fc46cd2985df37473e4a5ed50f93d0feecf17fd712773f4f8fd3df78a0c1",
+      "bytes": 593
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-approval/result.json",
+      "sha256": "ef34420a9a0374a41bbf8f24f11543d3f1cabead5d840b4ef96dd596c79dfbc1",
+      "bytes": 2589
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-approval/stderr.log",
+      "sha256": "ba256b67e0fd070a758a0f288454be70e0b7db2de00301fe70ae68955fa64c27",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-approval/stdout.log",
+      "sha256": "2552edf7c8bf98c8a5a4d74e509456cedfc438e222592ac92b8f5ae688366331",
+      "bytes": 8495
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/adapter.json",
+      "sha256": "bb41fa5d4da6b215e8f1608e7ce29189c9b0f99017118f4119b15174c6821922",
+      "bytes": 1956
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/model-metadata.json",
+      "sha256": "9e848f664cc6b773ed9ec9884fc123a22a8e22aadbadfb037cf4ee88a462a381",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/process.json",
+      "sha256": "e8aa617c0e340e307ba876bb4e456ce400ffc59e9da7233d34ffde953459f348",
+      "bytes": 3177
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/prompt.txt",
+      "sha256": "dd86c38d1fa8b7abc4536379d4f696dec593aaf314360a4434a1472df4909f38",
+      "bytes": 667
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/result.json",
+      "sha256": "23c43d964eb0d17965981d5b227a3445354e1c6eb66a7f3be70858b6e4d71090",
+      "bytes": 2922
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/stderr.log",
+      "sha256": "5435de9d5435dae74f0a2cf7545927ba245159d1e1706bde184b2a9356f9350c",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/stdout.log",
+      "sha256": "1e1f96af7266a2b67705be7f79ede69713bddf5894c09a3b1aa555e8a45721b4",
+      "bytes": 8492
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-confirm/adapter.json",
+      "sha256": "bb0ac9e6b6e7f121e23bb1b8fc44c39d7bce3f1ff9726d8ef9924b5c8a9b7afa",
+      "bytes": 1927
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-confirm/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-confirm/model-metadata.json",
+      "sha256": "6e82b187c1a6c745b7c40740ad9baf62ae3fde345839eef1a18bbc286e983e7d",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-confirm/process.json",
+      "sha256": "d3aa06b1e322346248779cacb220e8d43617c1dc449a084f9ca1b5f518192f65",
+      "bytes": 3109
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-confirm/prompt.txt",
+      "sha256": "341a9dff866ae2f78fa9c9cf83142a4566076f713b475193834e31918e160307",
+      "bytes": 600
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-confirm/result.json",
+      "sha256": "26680f5d47c9f69f47229fb2540d368f68df2cfdc0d171c9445272cb5b25e03a",
+      "bytes": 2757
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-confirm/stderr.log",
+      "sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+      "bytes": 39
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-confirm/stdout.log",
+      "sha256": "bbe3cb7d2418e53e9ffad28494254ba53011655ea2ad68741871106eec05ce1b",
+      "bytes": 8460
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/adapter.json",
+      "sha256": "1498875eaa3ef5bff6982228ce82d4c91fec1f8ef7e732593ab1472e9d65507c",
+      "bytes": 2067
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/model-metadata.json",
+      "sha256": "2ca5d92b534d09cf7167efb0a5b39a0ebcfaa35d654d0d24baf3042278455448",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/process.json",
+      "sha256": "9a9ca140adef46b5a8ce96ec4737bd64957e180a8065b8104cc8601661c004a2",
+      "bytes": 3193
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/prompt.txt",
+      "sha256": "0ffe6d528d0da598e9218eea59569eb2ec863bee1f9d55e30a90bb79c3db9a87",
+      "bytes": 684
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/result.json",
+      "sha256": "2aaee14dd4dda5e8e75c8df2a531bd96d91bbe437b2cf837a91d279f85b53cd9",
+      "bytes": 3484
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/stderr.log",
+      "sha256": "5e9f551f0a52a53b0e2b1551ddeb4a6cf1d7cfc38631b68d33c38c94032a2ab6",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/stdout.log",
+      "sha256": "571034724cbdb5728714e1b4dd74147c27d9a75cda14f2cfcb17ac3a1ad13137",
+      "bytes": 8604
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/adapter.json",
+      "sha256": "f26a637ba5e7c09ec7aa1eb8bece645dd0db2095dd717229fe9da7b97b7bc25c",
+      "bytes": 1906
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/model-metadata.json",
+      "sha256": "906e67ffd71808477b5ae0af1dde2dbdf8420b28f4da23b4b858eccd2e6cf4c5",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/process.json",
+      "sha256": "4c2d87d2d2b9ee56bc3094d28c0a9c9b11b0e79322ee569acdb1ec2fd1d0295f",
+      "bytes": 3145
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/prompt.txt",
+      "sha256": "06b59b56f6a1f5c19576f9cb536998dd214a8a0951386d627150b1b1588c9e20",
+      "bytes": 636
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/result.json",
+      "sha256": "450556bbcf75a1231341c9e4eb107dcbf8354bcf3a6b7ef83c57dd9cf39bd2bb",
+      "bytes": 2683
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/stderr.log",
+      "sha256": "814500985111dfc5fefdd2e8268aa3a9b73a9d039bd0612214dea580c8429ffe",
+      "bytes": 438
+    },
+    {
+      "path": "skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-transition/stdout.log",
+      "sha256": "039404ff7ad7fa369e763d1194e20a04f38445b34b03826cc1c8bb80beeccc96",
+      "bytes": 8428
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/adapter.json",
+      "sha256": "f0280eb391dd79caf58caf51555be0b0cdc60dff7dc0d12fbe5c98b31a397a94",
+      "bytes": 1931
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/model-metadata.json",
+      "sha256": "1b32a2c6d16da63c424d200195eaf0b86fceaf7a94261e5d763376b15c9fdd34",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json",
+      "sha256": "2ca9b0b64d2d8c0456f6756dbbe43eca0594aa7e90932817edd8913cfc450e85",
+      "bytes": 3102
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/prompt.txt",
+      "sha256": "36208a08dbe3ced5a2b9f393b5b62bbc8ddddda3c1b1530cd9137ecca83a6b14",
+      "bytes": 593
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/result.json",
+      "sha256": "e092e1768fa7ee338156076ffeb93363192c81701878c5cffa906d2768d9715d",
+      "bytes": 2794
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+      "sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+      "bytes": 39
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+      "sha256": "7ff0b628ab5f4bf1416fffa135653b863d6647d6fea2fc4ba686b903f1d0237d",
+      "bytes": 8485
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/adapter.json",
+      "sha256": "3c1d3e951b8685f892073df241ab8f1661553a99233fca770b367ffe6b2c08a9",
+      "bytes": 1874
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/model-metadata.json",
+      "sha256": "8982616dfea28ec1a3e1ef2f46324ceff2f189ad33bc82a10dc30cd2710cb483",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/process.json",
+      "sha256": "91837941bf7934b2bbb0c7085126dadcea5cc8ea80a2ee2e978b2a0428692281",
+      "bytes": 3072
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/prompt.txt",
+      "sha256": "4056e1d6a931bdaf19add132d7c87380aee39be034fe3b651926e55de45070bc",
+      "bytes": 569
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/result.json",
+      "sha256": "7ea9e39c31a691903bca841e12741c7a9ff6d52a837172d0c6171d22c1f9f9b4",
+      "bytes": 2544
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stderr.log",
+      "sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+      "bytes": 39
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stdout.log",
+      "sha256": "5ef67a464719db83c92f89e1a20d320ba421f22341560bda65c65f176538cd9b",
+      "bytes": 8413
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/adapter.json",
+      "sha256": "301c41ed0652f3172e04bd072c6cab067aa2734f96f78d5703c83d9a2e12f536",
+      "bytes": 1856
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/model-metadata.json",
+      "sha256": "b95c6712f54c83c464e3e6268c726b2ae152665744eaec4f58d80934661fcefe",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/process.json",
+      "sha256": "506e8c6494ad8b869151b52df684a3ec3a826a48cf35b855a73e41495da333f9",
+      "bytes": 3106
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/prompt.txt",
+      "sha256": "f565c33b129e2951e65125b99b76500f44d80c755b514ba62452213089661431",
+      "bytes": 602
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/result.json",
+      "sha256": "37459a826d70752522f1078126afdc2bde7ff9c0fc75af3a2da589d9646d5f51",
+      "bytes": 2515
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stderr.log",
+      "sha256": "9b9d53b9f799e3217c7d16b058ad77a179200a650d27f4a3d0a0e9d28d527f12",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stdout.log",
+      "sha256": "a36f1494519c5c6d687561c7137e17d322bbf56f6aa24ae9a717ccda74a93cf7",
+      "bytes": 17811
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/adapter.json",
+      "sha256": "fb733283d9b1613b9f3e49200e309e2ef91b9d12c534801f5962f94fbb7f6c7a",
+      "bytes": 1891
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/model-metadata.json",
+      "sha256": "26bdbd5f24cc6ee1278ec0ea79ecf7987ee0b8ea60e799ede21e43dfcb072052",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/process.json",
+      "sha256": "9a68ae6179cc4cd1e34001cb4939cbbf6df41e53dd0f4dce76afaa10b65fccda",
+      "bytes": 3064
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/prompt.txt",
+      "sha256": "b0572734b86a780895655d474c3859e07585dad009f13eeac5661b3609458ea7",
+      "bytes": 560
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/result.json",
+      "sha256": "33f0e776d89293a6d6d80dd1757efcf55badf8cbd642343d6d8a2b7c4b43e33c",
+      "bytes": 2664
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stderr.log",
+      "sha256": "1aa26269eb1cc57f86b235a03cda53c004edb5b1e9fc99d4da4f00843293d721",
+      "bytes": 39
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stdout.log",
+      "sha256": "f252718ce54f1e88a426fb8a13eb0a087475ff346f4469bbbc52ced31c7a19ff",
+      "bytes": 8462
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/adapter.json",
+      "sha256": "81a4a6aa51b36959173ed9855f14f19c8f6d8ce1bc09c44228caeac517ac6f23",
+      "bytes": 2069
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/model-metadata.json",
+      "sha256": "d961ae682b1c3d9926b385fbdec1361fa8388723e0897fb43c071cd000254d08",
+      "bytes": 366
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json",
+      "sha256": "25d4cdac7ecc10078de9a8aeeb54b5729751398d2913f6d9a499cb7c2ee77475",
+      "bytes": 3116
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/prompt.txt",
+      "sha256": "056e96e3b229d4238a9d70cd98b7beae71643ee8ff5c484a008c9a55b252a158",
+      "bytes": 605
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/result.json",
+      "sha256": "cde780fc4cd99cb236c0ff67f4400225f401ddf48c6c5fd70077fa796730f677",
+      "bytes": 2992
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+      "sha256": "5399721a95128747ee64a0598995fc17d22ef2f6f0cb84493e3564bf62b53e63",
+      "bytes": 319
+    },
+    {
+      "path": "skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+      "sha256": "f6b4d1792e57c16ffc70f0ba46bc241b9185d2b5240426f3f7fc1b17bc0afea6",
+      "bytes": 18377
+    },
+    {
+      "path": "skills/preflight/process.json",
+      "sha256": "193c03360082e16c289b474fdaa9289472e10905f5b0934b87055e3ad21799ff",
+      "bytes": 1673
+    },
+    {
+      "path": "skills/preflight/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/preflight/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "startup/preparation/baseline-tree.json",
+      "sha256": "95c0c2a494b3255829b1e4a7099008b7acca944cb228767c73fc0d4c4291f4b2",
+      "bytes": 48170
+    },
+    {
+      "path": "startup/preparation/compile/process.json",
+      "sha256": "5afa530ef4ea4be0e1806c083133e91270064ac20249c5ad8a98dd9d34a86baf",
+      "bytes": 1730
+    },
+    {
+      "path": "startup/preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "startup/preparation/compile-check/process.json",
+      "sha256": "f4869f3812e7216a069052d23dd1a8e4fbbcab398d67ff53251eb9020154b8bf",
+      "bytes": 1749
+    },
+    {
+      "path": "startup/preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "startup/preparation/create-tutorial/process.json",
+      "sha256": "aafc01035d967a59c81164a09c4dcaec1ffd794948049f11cd212b9546cc58c3",
+      "bytes": 1659
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stdout.log",
+      "sha256": "e55cd7130bc0b33c7704248f5a62461ebb09a34ad3d8c39cb168c171f5055c76",
+      "bytes": 96
+    },
+    {
+      "path": "startup/preparation/status/process.json",
+      "sha256": "5452905ffddbc671b3e378ed318293b9d8a13066e2100aeaa0c400b135eae99f",
+      "bytes": 1748
+    },
+    {
+      "path": "startup/preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "startup/preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "report.json",
+      "sha256": "73d2b1b3d126ee1d51de5db2af2ca9b8553862847deb03cc5fa7b76dc4c74616",
+      "bytes": 326171
+    },
+    {
+      "path": "report.md",
+      "sha256": "57df87a1a0290b7428a5b7b03bb94cbf5b252b52e7650f91524768aa083a3bee",
+      "bytes": 5446
+    }
+  ]
+}

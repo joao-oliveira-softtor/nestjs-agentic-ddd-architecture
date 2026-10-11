@@ -1,0 +1,3304 @@
+{
+  "schemaVersion": 1,
+  "id": "38c18cf3-fa5d-4b12-9ab4-e7ee68704ee7",
+  "mode": "scripted",
+  "startedAt": "2026-10-10T13:44:00.189Z",
+  "finishedAt": "2026-10-10T13:44:48.049Z",
+  "durationMs": 47859.930197,
+  "status": "completed",
+  "diagnostics": [],
+  "manifest": {
+    "schemaVersion": 1,
+    "sourceRef": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425",
+    "skillDatasets": [
+      {
+        "path": "evals/skills/orders.yaml",
+        "contextRoots": {
+          "dev": [
+            "AGENTS.md",
+            ".agents/skills/orders-dev"
+          ],
+          "runtime": [
+            ".agentic/runtime/order-operator"
+          ]
+        }
+      }
+    ],
+    "benchmark": "tasks",
+    "configurations": [
+      {
+        "id": "scripted-control",
+        "adapter": "scripted",
+        "model": "offline-fixture",
+        "parameters": {}
+      }
+    ],
+    "budget": {
+      "maxInvocations": 15,
+      "skillTimeoutMs": 120000,
+      "implementationTimeoutMs": 600000,
+      "totalTimeoutMs": 2700000,
+      "maxCorrectionsPerItem": 1,
+      "repetitions": 1,
+      "concurrency": 1
+    }
+  },
+  "manifestSha256": "5d2ad11ef9cb140f9ae9dcc1ad02c41f05f6a52d808853bd9bb2e921285d7f2b",
+  "invocations": 10,
+  "provenance": {
+    "sourceCommit": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425",
+    "runnerCommit": "d6ef40b39ee00507c0e1a8d66ddfeb4af27a5833",
+    "platform": "linux/x64",
+    "bun": "1.4.2",
+    "originBefore": "95d563be2d2b189a1a5620464ac83d0154265e83c1c88b1d66f5708b392bf3cd",
+    "originAfter": {
+      "status": "available",
+      "value": "95d563be2d2b189a1a5620464ac83d0154265e83c1c88b1d66f5708b392bf3cd",
+      "source": "filesystem_and_git_fingerprint"
+    },
+    "adapters": {
+      "scripted-control": {
+        "id": "scripted",
+        "version": "scripted-v1 / Bun 1.4.2",
+        "executableSha256": "a83d263767d839e4d2649ca8e35d07159c7afc99afdc96d731ced29e056dda0c"
+      }
+    }
+  },
+  "cases": [
+    {
+      "configuration": "scripted-control",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "confirmar-pedido",
+      "audience": "runtime",
+      "question": "Qual tool confirma o pedido 7f3c, e com quais argumentos?",
+      "expect": {
+        "type": "tool_call",
+        "name": "confirm_order",
+        "input": {
+          "order_id": "7f3c"
+        }
+      },
+      "answer": {
+        "type": "tool_call",
+        "name": "confirm_order",
+        "input": {
+          "order_id": "7f3c"
+        }
+      },
+      "verdict": "correct",
+      "reason": null,
+      "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+      "execution": {
+        "sessionId": {
+          "status": "available",
+          "value": "scripted-1",
+          "source": "scripted_fixture"
+        },
+        "observedModel": {
+          "status": "available",
+          "value": "scripted",
+          "source": "scripted_fixture"
+        },
+        "modelRevision": {
+          "status": "unavailable",
+          "reason": "synthetic"
+        },
+        "usage": {
+          "inputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cachedInputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "outputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cost": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          }
+        },
+        "exitCode": 0,
+        "signal": null,
+        "durationMs": 43.17058799999904,
+        "evidence": [
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stdout.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stderr.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/process.json"
+        ],
+        "transport": "finished",
+        "finalText": "{\"type\":\"tool_call\",\"name\":\"confirm_order\",\"input\":{\"order_id\":\"7f3c\"}}",
+        "diagnostic": null
+      }
+    },
+    {
+      "configuration": "scripted-control",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "cancelar-com-motivo",
+      "audience": "runtime",
+      "question": "O cliente pediu para cancelar o pedido 7f3c porque desistiu. Qual tool e quais argumentos?",
+      "expect": {
+        "type": "tool_call",
+        "name": "cancel_order",
+        "input": {
+          "order_id": "7f3c",
+          "reason": "desistiu"
+        }
+      },
+      "answer": {
+        "type": "tool_call",
+        "name": "cancel_order",
+        "input": {
+          "order_id": "7f3c",
+          "reason": "desistiu"
+        }
+      },
+      "verdict": "correct",
+      "reason": null,
+      "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+      "execution": {
+        "sessionId": {
+          "status": "available",
+          "value": "scripted-2",
+          "source": "scripted_fixture"
+        },
+        "observedModel": {
+          "status": "available",
+          "value": "scripted",
+          "source": "scripted_fixture"
+        },
+        "modelRevision": {
+          "status": "unavailable",
+          "reason": "synthetic"
+        },
+        "usage": {
+          "inputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cachedInputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "outputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cost": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          }
+        },
+        "exitCode": 0,
+        "signal": null,
+        "durationMs": 42.96642099999917,
+        "evidence": [
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json"
+        ],
+        "transport": "finished",
+        "finalText": "{\"type\":\"tool_call\",\"name\":\"cancel_order\",\"input\":{\"order_id\":\"7f3c\",\"reason\":\"desistiu\"}}",
+        "diagnostic": null
+      }
+    },
+    {
+      "configuration": "scripted-control",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "cancelar-exige-aprovacao",
+      "audience": "runtime",
+      "question": "Cancelar um pedido exige aprovação humana? Responda sim ou não.",
+      "expect": {
+        "type": "exact",
+        "value": "sim"
+      },
+      "answer": {
+        "type": "exact",
+        "value": "sim"
+      },
+      "verdict": "correct",
+      "reason": null,
+      "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+      "execution": {
+        "sessionId": {
+          "status": "available",
+          "value": "scripted-3",
+          "source": "scripted_fixture"
+        },
+        "observedModel": {
+          "status": "available",
+          "value": "scripted",
+          "source": "scripted_fixture"
+        },
+        "modelRevision": {
+          "status": "unavailable",
+          "reason": "synthetic"
+        },
+        "usage": {
+          "inputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cachedInputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "outputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cost": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          }
+        },
+        "exitCode": 0,
+        "signal": null,
+        "durationMs": 22.46093800000017,
+        "evidence": [
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stdout.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stderr.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/process.json"
+        ],
+        "transport": "finished",
+        "finalText": "{\"type\":\"exact\",\"value\":\"sim\"}",
+        "diagnostic": null
+      }
+    },
+    {
+      "configuration": "scripted-control",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "confirmar-cancelado",
+      "audience": "dev",
+      "question": "Um pedido cancelled pode ser confirmado? Responda sim ou não.",
+      "expect": {
+        "type": "exact",
+        "value": "não"
+      },
+      "answer": {
+        "type": "exact",
+        "value": "não"
+      },
+      "verdict": "correct",
+      "reason": null,
+      "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d",
+      "execution": {
+        "sessionId": {
+          "status": "available",
+          "value": "scripted-4",
+          "source": "scripted_fixture"
+        },
+        "observedModel": {
+          "status": "available",
+          "value": "scripted",
+          "source": "scripted_fixture"
+        },
+        "modelRevision": {
+          "status": "unavailable",
+          "reason": "synthetic"
+        },
+        "usage": {
+          "inputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cachedInputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "outputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cost": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          }
+        },
+        "exitCode": 0,
+        "signal": null,
+        "durationMs": 40.17574400000012,
+        "evidence": [
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stdout.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stderr.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/process.json"
+        ],
+        "transport": "finished",
+        "finalText": "{\"type\":\"exact\",\"value\":\"não\"}",
+        "diagnostic": null
+      }
+    },
+    {
+      "configuration": "scripted-control",
+      "dataset": "evals/skills/orders.yaml",
+      "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "id": "onde-criar-use-case",
+      "audience": "dev",
+      "question": "Em que caminho e com qual decorator crio o use-case refund_order?",
+      "expect": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "answer": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "verdict": "correct",
+      "reason": null,
+      "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d",
+      "execution": {
+        "sessionId": {
+          "status": "available",
+          "value": "scripted-5",
+          "source": "scripted_fixture"
+        },
+        "observedModel": {
+          "status": "available",
+          "value": "scripted",
+          "source": "scripted_fixture"
+        },
+        "modelRevision": {
+          "status": "unavailable",
+          "reason": "synthetic"
+        },
+        "usage": {
+          "inputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cachedInputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "outputTokens": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          },
+          "cost": {
+            "status": "unavailable",
+            "reason": "not_reported"
+          }
+        },
+        "exitCode": 0,
+        "signal": null,
+        "durationMs": 22.4013759999998,
+        "evidence": [
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+          "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json"
+        ],
+        "transport": "finished",
+        "finalText": "{\"type\":\"exact\",\"value\":\"examples/orders/application/refund-order.ts @AgentUseCase\"}",
+        "diagnostic": null
+      }
+    }
+  ],
+  "benchmarks": [
+    {
+      "configuration": "scripted-control",
+      "baselineHash": "7af62adbaba55962bafa47adf6da651eb0868d00f241c63c5ec94e235f4563ff",
+      "items": [
+        {
+          "item": "entity:Task",
+          "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "handoff": {
+                "item": "entity:Task",
+                "packet": "# Identificação\n\n- ID: `entity:Task`\n- Camada: domain\n- Módulo: tasks\n- source: `app/domain/task.ts:5`\n- Estado: declared\n- specHash: `e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c`\n- Dependências: —\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n    \"id\": \"entity:Task\",\n    \"invariants\": [\n      {\n        \"id\": \"invariant:Task/titulo-obrigatorio\",\n        \"on\": null,\n        \"text\": \"Toda tarefa precisa de título não vazio.\"\n      }\n    ],\n    \"methods\": [\n      {\n        \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n        \"emits\": [\n          \"event:TaskCreated\"\n        ],\n        \"id\": \"method:Task.create\",\n        \"name\": \"create\",\n        \"static\": true,\n        \"transition\": null\n      }\n    ],\n    \"module\": \"tasks\",\n    \"name\": \"Task\",\n    \"states\": [\n      \"pending\",\n      \"completed\"\n    ]\n  }\n}\n```\n\n## Obrigações de teste\n\n- `invariant:Task/titulo-obrigatorio` — teste com `covers`.\n- `method:Task.create` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item entity:Task --spec-hash e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c --config /tmp/agentic-eval-Tut47y/attempt-1pWPt4/workspace/agentic.config.ts --json\n```\n",
+                "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c",
+                "configPath": "/tmp/agentic-eval-Tut47y/accepted-HR7mYZ/tasks/agentic.config.ts",
+                "testFile": "app/test/entity-Task.test.ts",
+                "criteria": [
+                  {
+                    "id": "titulo-invalido",
+                    "given": "um título vazio ou com apenas espaços",
+                    "when": "criar uma tarefa",
+                    "then": "rejeita com TASK_TITLE_REQUIRED"
+                  },
+                  {
+                    "id": "criacao",
+                    "given": "id t1 e título com espaços nas extremidades",
+                    "when": "criar a tarefa",
+                    "then": "fica pending, normaliza o título e registra TaskCreated"
+                  }
+                ]
+              },
+              "baselineHash": "7af62adbaba55962bafa47adf6da651eb0868d00f241c63c5ec94e235f4563ff",
+              "execution": {
+                "sessionId": {
+                  "status": "available",
+                  "value": "scripted-6",
+                  "source": "scripted_fixture"
+                },
+                "observedModel": {
+                  "status": "available",
+                  "value": "scripted",
+                  "source": "scripted_fixture"
+                },
+                "modelRevision": {
+                  "status": "unavailable",
+                  "reason": "synthetic"
+                },
+                "usage": {
+                  "inputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cachedInputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "outputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cost": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  }
+                },
+                "exitCode": 0,
+                "signal": null,
+                "durationMs": 48.88268000000062,
+                "evidence": [
+                  "implementation/scripted-control/entity-Task/attempt-1/stdout.log",
+                  "implementation/scripted-control/entity-Task/attempt-1/stderr.log",
+                  "implementation/scripted-control/entity-Task/attempt-1/process.json"
+                ],
+                "transport": "finished",
+                "finalText": "{\"status\":\"done\",\"summary\":\"offline positive control\"}",
+                "diagnostic": null
+              },
+              "reply": {
+                "status": "done",
+                "summary": "offline positive control"
+              },
+              "audit": {
+                "ok": true,
+                "findings": [],
+                "changedFiles": [
+                  "app/domain/task.ts",
+                  "app/test",
+                  "app/test/entity-Task.test.ts"
+                ],
+                "patch": "[\n  {\n    \"path\": \"app/domain/task.ts\",\n    \"before\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"17f303d04ef10815f03a1a0a97d7653843d5afed0a567b8061c1676bb94e3a96\",\n      \"content\": \"import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\\nimport { TaskCreated, TaskCompleted } from './task.events';\\n\\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\\nexport class Task extends AggregateRoot<string> {\\n  #status: 'pending' | 'completed' = 'pending';\\n  private constructor(id: string, readonly title: string) { super(id); }\\n  get status(): 'pending' | 'completed' { return this.#status; }\\n\\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\\n  static create(id: string, title: string): Task {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n\\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\\n  complete(): void {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    },\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"5fa7dc81d2c0b9b52df17c596d2d847c257c21a3da2db9ed6a2d52e08692f7da\",\n      \"content\": \"import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\\nimport { TaskCreated, TaskCompleted } from './task.events';\\n\\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\\nexport class Task extends AggregateRoot<string> {\\n  #status: 'pending' | 'completed' = 'pending';\\n  private constructor(id: string, readonly title: string) { super(id); }\\n  get status(): 'pending' | 'completed' { return this.#status; }\\n\\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\\n  static create(id: string, title: string): Task {\\nconst normalized = title.trim();\\nif (!normalized) throw new DomainError('TASK_TITLE_REQUIRED', 'Título obrigatório.');\\nconst task = new Task(id, normalized);\\ntask.record(new TaskCreated({ taskId: id, title: normalized }));\\nreturn task;\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n}\\n\\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\\n  complete(): void {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    }\n  },\n  {\n    \"path\": \"app/test\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"directory\",\n      \"mode\": 16877,\n      \"hash\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\",\n      \"content\": \"\"\n    }\n  },\n  {\n    \"path\": \"app/test/entity-Task.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"9884c26f6252743dfc6971bc72eb8ccadc5ef7b0fb2ac22e74226d14553a9b6e\",\n      \"content\": \"import { expect, test } from 'bun:test';\\nimport { covers } from '@agentic-ddd/testing';\\nimport { Task } from '../domain/task';\\ntest(covers(['method:Task.create', 'criterion:0001/criacao'], 'cria tarefa normalizada e registra evento'), () => {\\n  const task = Task.create('t1', '  Ler  ');\\n  expect({ id: task.id, title: task.title, status: task.status }).toEqual({ id: 't1', title: 'Ler', status: 'pending' });\\n  const events = task.pullEvents();\\n  expect(events.map(e => [e.name, e.payload])).toEqual([['TaskCreated', { taskId: 't1', title: 'Ler' }]]);\\n  expect(task.pullEvents()).toEqual([]);\\n});\\ntest(covers(['invariant:Task/titulo-obrigatorio', 'criterion:0001/titulo-invalido'], 'rejeita título vazio ou só espaços'), () => {\\n  for (const title of ['', '   ']) expect(() => Task.create('t1', title)).toThrow('Título obrigatório.');\\n  try { Task.create('t1', ''); } catch (e) { expect((e as {code: string}).code).toBe('TASK_TITLE_REQUIRED'); }\\n});\\n\"\n    }\n  }\n]"
+              },
+              "verification": {
+                "ok": true,
+                "findings": [],
+                "commands": [
+                  {
+                    "name": "verify-item",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "verify",
+                      "--item",
+                      "entity:Task",
+                      "--spec-hash",
+                      "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c",
+                      "--json",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-zlBLrt/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "{\n  \"item\": \"entity:Task\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+                      "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item entity:Task — done\n",
+                      "durationMs": 3272.718718,
+                      "evidence": [
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/verify-item/stdout.log",
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/verify-item/stderr.log",
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/verify-item/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "executor-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-zlBLrt/workspace/.executor-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\napp/test/entity-Task.test.ts:\n(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento [0.30ms]\n(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços [0.14ms]\n\n 2 pass\n 0 fail\n 6 expect() calls\nRan 2 tests across 1 file. [105.00ms]\n",
+                      "durationMs": 133.33486699999776,
+                      "evidence": [
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/executor-tests/stdout.log",
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/executor-tests/stderr.log",
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/executor-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "reference-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "/tmp/agentic-eval-Tut47y/attempt-zlBLrt/workspace/.eval-reference/behavior.test.ts",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-zlBLrt/workspace/.reference-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) cria tarefa normalizada e registra evento [0.35ms]\n(pass) rejeita título vazio ou só espaços [0.10ms]\n(pass) cria tarefa normalizada e registra evento [0.02ms]\n(pass) rejeita título vazio ou só espaços [0.01ms]\n\n 4 pass\n 0 fail\n 10 expect() calls\nRan 4 tests across 1 file. [76.00ms]\n",
+                      "durationMs": 104.80993099999978,
+                      "evidence": [
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/reference-tests/stdout.log",
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/reference-tests/stderr.log",
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/reference-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "compile-check",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "compile",
+                      "--check",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-zlBLrt/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+                      "stderr": "",
+                      "durationMs": 535.5075490000017,
+                      "evidence": [
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/compile-check/stdout.log",
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/compile-check/stderr.log",
+                        "implementation/scripted-control/entity-Task/attempt-1/verification/compile-check/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  }
+                ],
+                "itemReport": {
+                  "item": "entity:Task",
+                  "status": "done",
+                  "gates": [
+                    {
+                      "id": "I1",
+                      "name": "Dependências",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I2",
+                      "name": "Implementação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I3",
+                      "name": "Especificação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I4",
+                      "name": "Obrigações",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I5",
+                      "name": "Typecheck",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    }
+                  ]
+                },
+                "executorTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/criacao",
+                        "method:Task.create"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 11,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/titulo-invalido",
+                        "invariant:Task/titulo-obrigatorio"
+                      ]
+                    }
+                  ]
+                },
+                "referenceTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "cria tarefa normalizada e registra evento",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": []
+                    },
+                    {
+                      "name": "rejeita título vazio ou só espaços",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 11,
+                      "status": "passed",
+                      "covers": []
+                    },
+                    {
+                      "name": "cria tarefa normalizada e registra evento",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": []
+                    },
+                    {
+                      "name": "rejeita título vazio ou só espaços",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 11,
+                      "status": "passed",
+                      "covers": []
+                    }
+                  ]
+                }
+              },
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "item": "method:Task.complete",
+          "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "handoff": {
+                "item": "method:Task.complete",
+                "packet": "# Identificação\n\n- ID: `method:Task.complete`\n- Camada: domain\n- Módulo: tasks\n- source: `app/domain/task.ts:30`\n- Estado: declared\n- specHash: `eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364`\n- Dependências: `entity:Task`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi concluída.\",\n      \"id\": \"event:TaskCompleted\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCompleted\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.\",\n    \"emits\": [\n      \"event:TaskCompleted\"\n    ],\n    \"entity\": {\n      \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n      \"id\": \"entity:Task\",\n      \"invariants\": [\n        {\n          \"id\": \"invariant:Task/titulo-obrigatorio\",\n          \"on\": null,\n          \"text\": \"Toda tarefa precisa de título não vazio.\"\n        }\n      ],\n      \"methods\": [\n        {\n          \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n          \"emits\": [\n            \"event:TaskCreated\"\n          ],\n          \"id\": \"method:Task.create\",\n          \"name\": \"create\",\n          \"static\": true,\n          \"transition\": null\n        }\n      ],\n      \"module\": \"tasks\",\n      \"name\": \"Task\",\n      \"states\": [\n        \"pending\",\n        \"completed\"\n      ]\n    },\n    \"id\": \"method:Task.complete\",\n    \"invariants\": [],\n    \"name\": \"complete\",\n    \"static\": false,\n    \"transition\": {\n      \"from\": [\n        \"pending\"\n      ],\n      \"to\": \"completed\"\n    }\n  }\n}\n```\n\n## Obrigações de teste\n\n- `method:Task.complete` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item method:Task.complete --spec-hash eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364 --config /tmp/agentic-eval-Tut47y/attempt-FAQ48N/workspace/agentic.config.ts --json\n```\n",
+                "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364",
+                "configPath": "/tmp/agentic-eval-Tut47y/accepted-HR7mYZ/tasks/agentic.config.ts",
+                "testFile": "app/test/method-Task-complete.test.ts",
+                "criteria": [
+                  {
+                    "id": "conclusao",
+                    "given": "uma tarefa pending",
+                    "when": "concluir e tentar concluir novamente",
+                    "then": "registra TaskCompleted, fica completed e rejeita repetição com TASK_ALREADY_COMPLETED"
+                  }
+                ]
+              },
+              "baselineHash": "39bb0c429e44c21bca4c559a77caf553d07144fbd950ce753c77a1fcec650174",
+              "execution": {
+                "sessionId": {
+                  "status": "available",
+                  "value": "scripted-7",
+                  "source": "scripted_fixture"
+                },
+                "observedModel": {
+                  "status": "available",
+                  "value": "scripted",
+                  "source": "scripted_fixture"
+                },
+                "modelRevision": {
+                  "status": "unavailable",
+                  "reason": "synthetic"
+                },
+                "usage": {
+                  "inputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cachedInputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "outputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cost": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  }
+                },
+                "exitCode": 0,
+                "signal": null,
+                "durationMs": 49.701569000000745,
+                "evidence": [
+                  "implementation/scripted-control/method-Task-complete/attempt-1/stdout.log",
+                  "implementation/scripted-control/method-Task-complete/attempt-1/stderr.log",
+                  "implementation/scripted-control/method-Task-complete/attempt-1/process.json"
+                ],
+                "transport": "finished",
+                "finalText": "{\"status\":\"done\",\"summary\":\"offline positive control\"}",
+                "diagnostic": null
+              },
+              "reply": {
+                "status": "done",
+                "summary": "offline positive control"
+              },
+              "audit": {
+                "ok": true,
+                "findings": [],
+                "changedFiles": [
+                  "app/domain/task.ts",
+                  "app/test/method-Task-complete.test.ts"
+                ],
+                "patch": "[\n  {\n    \"path\": \"app/domain/task.ts\",\n    \"before\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"5fa7dc81d2c0b9b52df17c596d2d847c257c21a3da2db9ed6a2d52e08692f7da\",\n      \"content\": \"import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\\nimport { TaskCreated, TaskCompleted } from './task.events';\\n\\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\\nexport class Task extends AggregateRoot<string> {\\n  #status: 'pending' | 'completed' = 'pending';\\n  private constructor(id: string, readonly title: string) { super(id); }\\n  get status(): 'pending' | 'completed' { return this.#status; }\\n\\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\\n  static create(id: string, title: string): Task {\\nconst normalized = title.trim();\\nif (!normalized) throw new DomainError('TASK_TITLE_REQUIRED', 'Título obrigatório.');\\nconst task = new Task(id, normalized);\\ntask.record(new TaskCreated({ taskId: id, title: normalized }));\\nreturn task;\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n}\\n\\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\\n  complete(): void {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    },\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"44a5d47bad32457c72628347a0e23c84852542e6df14251101aac0509b3616dd\",\n      \"content\": \"import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\\nimport { TaskCreated, TaskCompleted } from './task.events';\\n\\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\\nexport class Task extends AggregateRoot<string> {\\n  #status: 'pending' | 'completed' = 'pending';\\n  private constructor(id: string, readonly title: string) { super(id); }\\n  get status(): 'pending' | 'completed' { return this.#status; }\\n\\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\\n  static create(id: string, title: string): Task {\\nconst normalized = title.trim();\\nif (!normalized) throw new DomainError('TASK_TITLE_REQUIRED', 'Título obrigatório.');\\nconst task = new Task(id, normalized);\\ntask.record(new TaskCreated({ taskId: id, title: normalized }));\\nreturn task;\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n}\\n\\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\\n  complete(): void {\\nif (this.#status !== 'pending') throw new DomainError('TASK_ALREADY_COMPLETED', 'Tarefa já concluída.');\\nthis.#status = 'completed';\\nthis.record(new TaskCompleted({ taskId: this.id }));\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n}\\n}\\n\"\n    }\n  },\n  {\n    \"path\": \"app/test/method-Task-complete.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"db46d966963840200afb7bfba518353a0cfc20dfb1b9313e67830feeb2a7d079\",\n      \"content\": \"import { expect, test } from 'bun:test';\\nimport { covers } from '@agentic-ddd/testing';\\nimport { Task } from '../domain/task';\\ntest(covers(['method:Task.complete', 'criterion:0001/conclusao'], 'conclui, emite e rejeita repetição'), () => {\\n  const task = Task.create('t1', 'Ler'); task.pullEvents(); task.complete();\\n  expect(task.status).toBe('completed');\\n  expect(task.pullEvents().map(e => [e.name, e.payload])).toEqual([['TaskCompleted', { taskId: 't1' }]]);\\n  expect(() => task.complete()).toThrow('Tarefa já concluída.');\\n  try { task.complete(); } catch (e) { expect((e as {code: string}).code).toBe('TASK_ALREADY_COMPLETED'); }\\n  expect(task.pullEvents()).toEqual([]);\\n});\\n\"\n    }\n  }\n]"
+              },
+              "verification": {
+                "ok": true,
+                "findings": [],
+                "commands": [
+                  {
+                    "name": "verify-item",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "verify",
+                      "--item",
+                      "method:Task.complete",
+                      "--spec-hash",
+                      "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364",
+                      "--json",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-QAaqRY/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "{\n  \"item\": \"method:Task.complete\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+                      "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item method:Task.complete — done\n",
+                      "durationMs": 3241.398369999999,
+                      "evidence": [
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/verify-item/stdout.log",
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/verify-item/stderr.log",
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/verify-item/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "executor-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-QAaqRY/workspace/.executor-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\napp/test/entity-Task.test.ts:\n(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento [0.45ms]\n(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços [0.17ms]\n\napp/test/method-Task-complete.test.ts:\n(pass) [covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição [0.18ms]\n\n 3 pass\n 0 fail\n 11 expect() calls\nRan 3 tests across 2 files. [100.00ms]\n",
+                      "durationMs": 130.89375499999733,
+                      "evidence": [
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-tests/stdout.log",
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-tests/stderr.log",
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "reference-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "/tmp/agentic-eval-Tut47y/attempt-QAaqRY/workspace/.eval-reference/behavior.test.ts",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-QAaqRY/workspace/.reference-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) conclui, emite e rejeita repetição [0.38ms]\n(pass) conclui, emite e rejeita repetição [0.04ms]\n\n 2 pass\n 0 fail\n 10 expect() calls\nRan 2 tests across 1 file. [74.00ms]\n",
+                      "durationMs": 103.63718099999824,
+                      "evidence": [
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-tests/stdout.log",
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-tests/stderr.log",
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "compile-check",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "compile",
+                      "--check",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-QAaqRY/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+                      "stderr": "",
+                      "durationMs": 514.4550940000008,
+                      "evidence": [
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/compile-check/stdout.log",
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/compile-check/stderr.log",
+                        "implementation/scripted-control/method-Task-complete/attempt-1/verification/compile-check/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  }
+                ],
+                "itemReport": {
+                  "item": "method:Task.complete",
+                  "status": "done",
+                  "gates": [
+                    {
+                      "id": "I1",
+                      "name": "Dependências",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I2",
+                      "name": "Implementação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I3",
+                      "name": "Especificação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I4",
+                      "name": "Obrigações",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I5",
+                      "name": "Typecheck",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    }
+                  ]
+                },
+                "executorTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/criacao",
+                        "method:Task.create"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 11,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/titulo-invalido",
+                        "invariant:Task/titulo-obrigatorio"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição",
+                      "file": "app/test/method-Task-complete.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/conclusao",
+                        "method:Task.complete"
+                      ]
+                    }
+                  ]
+                },
+                "referenceTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "conclui, emite e rejeita repetição",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": []
+                    },
+                    {
+                      "name": "conclui, emite e rejeita repetição",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": []
+                    }
+                  ]
+                }
+              },
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "item": "usecase:create_task",
+          "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "handoff": {
+                "item": "usecase:create_task",
+                "packet": "# Identificação\n\n- ID: `usecase:create_task`\n- Camada: application\n- Módulo: tasks\n- source: `app/application/create-task.ts:13`\n- Estado: declared\n- specHash: `daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6`\n- Dependências: `entity:Task`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n      \"emits\": [\n        \"event:TaskCreated\"\n      ],\n      \"entity\": {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      },\n      \"id\": \"method:Task.create\",\n      \"invariants\": [],\n      \"name\": \"create\",\n      \"static\": true,\n      \"transition\": null\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.\",\n    \"emits\": [\n      \"event:TaskCreated\"\n    ],\n    \"id\": \"usecase:create_task\",\n    \"inputSchema\": {\n      \"properties\": {\n        \"task_id\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        },\n        \"title\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"title\"\n      ],\n      \"type\": \"object\"\n    },\n    \"module\": \"tasks\",\n    \"name\": \"create_task\",\n    \"outputSchema\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"status\": {\n          \"const\": \"pending\",\n          \"type\": \"string\"\n        },\n        \"task_id\": {\n          \"type\": \"string\"\n        },\n        \"title\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"title\",\n        \"status\"\n      ],\n      \"type\": \"object\"\n    },\n    \"uses\": [\n      \"method:Task.create\"\n    ],\n    \"whenNotToUse\": \"Para concluir tarefa existente.\",\n    \"whenToUse\": \"Quando o usuário deseja criar uma tarefa.\"\n  }\n}\n```\n\n## Obrigações de teste\n\n- `usecase:create_task` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item usecase:create_task --spec-hash daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6 --config /tmp/agentic-eval-Tut47y/attempt-6rkGCt/workspace/agentic.config.ts --json\n```\n",
+                "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6",
+                "configPath": "/tmp/agentic-eval-Tut47y/accepted-HR7mYZ/tasks/agentic.config.ts",
+                "testFile": "app/test/usecase-create_task.test.ts",
+                "criteria": [
+                  {
+                    "id": "persistencia-criacao",
+                    "given": "repositório vazio e id t1",
+                    "when": "executar create_task e repetir o mesmo id",
+                    "then": "salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS"
+                  }
+                ]
+              },
+              "baselineHash": "102715d408c33a6cf82af082d74a29f8da93a23da12f25c08a1ad6f9dd714edf",
+              "execution": {
+                "sessionId": {
+                  "status": "available",
+                  "value": "scripted-9",
+                  "source": "scripted_fixture"
+                },
+                "observedModel": {
+                  "status": "available",
+                  "value": "scripted",
+                  "source": "scripted_fixture"
+                },
+                "modelRevision": {
+                  "status": "unavailable",
+                  "reason": "synthetic"
+                },
+                "usage": {
+                  "inputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cachedInputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "outputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cost": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  }
+                },
+                "exitCode": 0,
+                "signal": null,
+                "durationMs": 40.18887399999949,
+                "evidence": [
+                  "implementation/scripted-control/usecase-create_task/attempt-1/stdout.log",
+                  "implementation/scripted-control/usecase-create_task/attempt-1/stderr.log",
+                  "implementation/scripted-control/usecase-create_task/attempt-1/process.json"
+                ],
+                "transport": "finished",
+                "finalText": "{\"status\":\"done\",\"summary\":\"offline positive control\"}",
+                "diagnostic": null
+              },
+              "reply": {
+                "status": "done",
+                "summary": "offline positive control"
+              },
+              "audit": {
+                "ok": true,
+                "findings": [],
+                "changedFiles": [
+                  "app/application/create-task.ts",
+                  "app/test/usecase-create_task.test.ts"
+                ],
+                "patch": "[\n  {\n    \"path\": \"app/application/create-task.ts\",\n    \"before\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"9bba8436aba10556da636d97fa5096b7a612f2e2ce1b6793c49114a69af187af\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { Task } from '../domain/task';\\nimport { TaskCreated } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });\\nexport const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });\\nexport type CreateTaskInput = z.infer<typeof createTaskInput>;\\nexport type CreateTaskOutput = z.infer<typeof createTaskOutput>;\\n\\n@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })\\nexport class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    },\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"74dd25db6c185c997429c9936973822f1ba6eca83d980644035451829b127912\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { Task } from '../domain/task';\\nimport { TaskCreated } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });\\nexport const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });\\nexport type CreateTaskInput = z.infer<typeof createTaskInput>;\\nexport type CreateTaskOutput = z.infer<typeof createTaskOutput>;\\n\\n@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })\\nexport class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {\\nif (await this.tasks.findById(input.task_id)) throw new DomainError('TASK_ALREADY_EXISTS', 'Tarefa já existe.');\\nconst task = Task.create(input.task_id, input.title);\\nawait this.tasks.save(task);\\nawait ctx.publish(task.pullEvents());\\nreturn { task_id: task.id, title: task.title, status: 'pending' };\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n}\\n}\\n\"\n    }\n  },\n  {\n    \"path\": \"app/test/usecase-create_task.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"37aca9136abd3cc1e03634495af0170f9129c56603008d9602baa57775241bdd\",\n      \"content\": \"import { expect, test } from 'bun:test';\\nimport { covers, createTestContext } from '@agentic-ddd/testing';\\nimport { CreateTask } from '../application/create-task';\\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\\ntest(covers(['usecase:create_task', 'criterion:0001/persistencia-criacao'], 'persiste, publica e rejeita duplicado'), async () => {\\n  const repo = new InMemoryTaskRepository(); const ctx = createTestContext(); const uc = new CreateTask(repo);\\n  expect(await uc.execute({task_id: 't1', title: ' Ler '}, ctx)).toEqual({task_id: 't1', title: 'Ler', status: 'pending'});\\n  expect((await repo.findById('t1'))?.title).toBe('Ler');\\n  expect(ctx.published.map(e => [e.name, e.payload])).toEqual([['TaskCreated', {taskId: 't1', title: 'Ler'}]]);\\n  expect(ctx.published[0]?.correlationId).toBe(ctx.correlationId);\\n  await expect(uc.execute({task_id: 't1', title: 'Outra'}, ctx)).rejects.toMatchObject({code: 'TASK_ALREADY_EXISTS'});\\n  expect(ctx.published).toHaveLength(1);\\n});\\n\"\n    }\n  }\n]"
+              },
+              "verification": {
+                "ok": true,
+                "findings": [],
+                "commands": [
+                  {
+                    "name": "verify-item",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "verify",
+                      "--item",
+                      "usecase:create_task",
+                      "--spec-hash",
+                      "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6",
+                      "--json",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-3M0CME/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "{\n  \"item\": \"usecase:create_task\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+                      "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item usecase:create_task — done\n",
+                      "durationMs": 3257.8412150000004,
+                      "evidence": [
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/verify-item/stdout.log",
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/verify-item/stderr.log",
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/verify-item/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "executor-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-3M0CME/workspace/.executor-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\napp/test/usecase-complete_task.test.ts:\n(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] conclui, persiste, publica e rejeita id ausente [0.66ms]\n\napp/test/method-Task-complete.test.ts:\n(pass) [covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição [0.30ms]\n\napp/test/entity-Task.test.ts:\n(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento [0.11ms]\n(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços [0.15ms]\n\napp/test/usecase-create_task.test.ts:\n(pass) [covers: criterion:0001/persistencia-criacao, usecase:create_task] persiste, publica e rejeita duplicado [0.28ms]\n\n 5 pass\n 0 fail\n 22 expect() calls\nRan 5 tests across 4 files. [106.00ms]\n",
+                      "durationMs": 135.46752800000104,
+                      "evidence": [
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-tests/stdout.log",
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-tests/stderr.log",
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "reference-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "/tmp/agentic-eval-Tut47y/attempt-3M0CME/workspace/.eval-reference/behavior.test.ts",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-3M0CME/workspace/.reference-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) persiste, publica e rejeita duplicado [1.23ms]\n(pass) persiste, publica e rejeita duplicado [0.11ms]\n\n 2 pass\n 0 fail\n 22 expect() calls\nRan 2 tests across 1 file. [104.00ms]\n",
+                      "durationMs": 134.3274470000033,
+                      "evidence": [
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-tests/stdout.log",
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-tests/stderr.log",
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "compile-check",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "compile",
+                      "--check",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-3M0CME/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+                      "stderr": "",
+                      "durationMs": 549.1290990000052,
+                      "evidence": [
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/compile-check/stdout.log",
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/compile-check/stderr.log",
+                        "implementation/scripted-control/usecase-create_task/attempt-1/verification/compile-check/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  }
+                ],
+                "itemReport": {
+                  "item": "usecase:create_task",
+                  "status": "done",
+                  "gates": [
+                    {
+                      "id": "I1",
+                      "name": "Dependências",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I2",
+                      "name": "Implementação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I3",
+                      "name": "Especificação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I4",
+                      "name": "Obrigações",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I5",
+                      "name": "Typecheck",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    }
+                  ]
+                },
+                "executorTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] conclui, persiste, publica e rejeita id ausente",
+                      "file": "app/test/usecase-complete_task.test.ts",
+                      "line": 6,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/persistencia-conclusao",
+                        "usecase:complete_task"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição",
+                      "file": "app/test/method-Task-complete.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/conclusao",
+                        "method:Task.complete"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/criacao",
+                        "method:Task.create"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 11,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/titulo-invalido",
+                        "invariant:Task/titulo-obrigatorio"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/persistencia-criacao, usecase:create_task] persiste, publica e rejeita duplicado",
+                      "file": "app/test/usecase-create_task.test.ts",
+                      "line": 5,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/persistencia-criacao",
+                        "usecase:create_task"
+                      ]
+                    }
+                  ]
+                },
+                "referenceTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "persiste, publica e rejeita duplicado",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 6,
+                      "status": "passed",
+                      "covers": []
+                    },
+                    {
+                      "name": "persiste, publica e rejeita duplicado",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 6,
+                      "status": "passed",
+                      "covers": []
+                    }
+                  ]
+                }
+              },
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "item": "usecase:complete_task",
+          "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "handoff": {
+                "item": "usecase:complete_task",
+                "packet": "# Identificação\n\n- ID: `usecase:complete_task`\n- Camada: application\n- Módulo: tasks\n- source: `app/application/complete-task.ts:12`\n- Estado: declared\n- specHash: `c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d`\n- Dependências: `method:Task.complete`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi concluída.\",\n      \"id\": \"event:TaskCompleted\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCompleted\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.\",\n      \"emits\": [\n        \"event:TaskCompleted\"\n      ],\n      \"entity\": {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      },\n      \"id\": \"method:Task.complete\",\n      \"invariants\": [],\n      \"name\": \"complete\",\n      \"static\": false,\n      \"transition\": {\n        \"from\": [\n          \"pending\"\n        ],\n        \"to\": \"completed\"\n      }\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.\",\n    \"emits\": [\n      \"event:TaskCompleted\"\n    ],\n    \"id\": \"usecase:complete_task\",\n    \"inputSchema\": {\n      \"properties\": {\n        \"task_id\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\"\n      ],\n      \"type\": \"object\"\n    },\n    \"module\": \"tasks\",\n    \"name\": \"complete_task\",\n    \"outputSchema\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"status\": {\n          \"const\": \"completed\",\n          \"type\": \"string\"\n        },\n        \"task_id\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"status\"\n      ],\n      \"type\": \"object\"\n    },\n    \"uses\": [\n      \"method:Task.complete\"\n    ],\n    \"whenNotToUse\": \"Para criar uma nova tarefa.\",\n    \"whenToUse\": \"Quando o usuário terminou uma tarefa.\"\n  }\n}\n```\n\n## Obrigações de teste\n\n- `usecase:complete_task` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item usecase:complete_task --spec-hash c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d --config /tmp/agentic-eval-Tut47y/attempt-wPy3dU/workspace/agentic.config.ts --json\n```\n",
+                "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d",
+                "configPath": "/tmp/agentic-eval-Tut47y/accepted-HR7mYZ/tasks/agentic.config.ts",
+                "testFile": "app/test/usecase-complete_task.test.ts",
+                "criteria": [
+                  {
+                    "id": "persistencia-conclusao",
+                    "given": "tarefa t1 persistida e um id inexistente",
+                    "when": "executar complete_task",
+                    "then": "salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND"
+                  }
+                ]
+              },
+              "baselineHash": "bb05c898fcbc88d23c3c25701ef238a03e30559ad301ad43d0996fba2e483582",
+              "execution": {
+                "sessionId": {
+                  "status": "available",
+                  "value": "scripted-8",
+                  "source": "scripted_fixture"
+                },
+                "observedModel": {
+                  "status": "available",
+                  "value": "scripted",
+                  "source": "scripted_fixture"
+                },
+                "modelRevision": {
+                  "status": "unavailable",
+                  "reason": "synthetic"
+                },
+                "usage": {
+                  "inputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cachedInputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "outputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cost": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  }
+                },
+                "exitCode": 0,
+                "signal": null,
+                "durationMs": 41.42666200000167,
+                "evidence": [
+                  "implementation/scripted-control/usecase-complete_task/attempt-1/stdout.log",
+                  "implementation/scripted-control/usecase-complete_task/attempt-1/stderr.log",
+                  "implementation/scripted-control/usecase-complete_task/attempt-1/process.json"
+                ],
+                "transport": "finished",
+                "finalText": "{\"status\":\"done\",\"summary\":\"offline positive control\"}",
+                "diagnostic": null
+              },
+              "reply": {
+                "status": "done",
+                "summary": "offline positive control"
+              },
+              "audit": {
+                "ok": true,
+                "findings": [],
+                "changedFiles": [
+                  "app/application/complete-task.ts",
+                  "app/test/usecase-complete_task.test.ts"
+                ],
+                "patch": "[\n  {\n    \"path\": \"app/application/complete-task.ts\",\n    \"before\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"97b9b46b9218c7d0a7f318deab69481eee561173f47059bf4c530f8137c10b99\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { TaskCompleted } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const completeTaskInput = z.object({ task_id: z.string().min(1) });\\nexport const completeTaskOutput = z.object({ task_id: z.string(), status: z.literal('completed') });\\nexport type CompleteTaskInput = z.infer<typeof completeTaskInput>;\\nexport type CompleteTaskOutput = z.infer<typeof completeTaskOutput>;\\n\\n@AgentUseCase({ name: 'complete_task', description: 'Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.', whenToUse: 'Quando o usuário terminou uma tarefa.', whenNotToUse: 'Para criar uma nova tarefa.', input: completeTaskInput, output: completeTaskOutput, uses: ['method:Task.complete'], emits: [TaskCompleted] })\\nexport class CompleteTask implements UseCase<CompleteTaskInput, CompleteTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CompleteTaskInput, ctx: UseCaseContext): Promise<CompleteTaskOutput> {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    },\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"a3c2deb8cba00d1e7cbaca68ae09fc2260c230104538966a5e13c7b05e71c67d\",\n      \"content\": \"import { z } from 'zod';\\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\\nimport { AgentUseCase } from '@agentic-ddd/decorators';\\nimport { TaskCompleted } from '../domain/task.events';\\nimport type { TaskRepository } from '../domain/task.repository';\\n\\nexport const completeTaskInput = z.object({ task_id: z.string().min(1) });\\nexport const completeTaskOutput = z.object({ task_id: z.string(), status: z.literal('completed') });\\nexport type CompleteTaskInput = z.infer<typeof completeTaskInput>;\\nexport type CompleteTaskOutput = z.infer<typeof completeTaskOutput>;\\n\\n@AgentUseCase({ name: 'complete_task', description: 'Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.', whenToUse: 'Quando o usuário terminou uma tarefa.', whenNotToUse: 'Para criar uma nova tarefa.', input: completeTaskInput, output: completeTaskOutput, uses: ['method:Task.complete'], emits: [TaskCompleted] })\\nexport class CompleteTask implements UseCase<CompleteTaskInput, CompleteTaskOutput> {\\n  constructor(private readonly tasks: TaskRepository) {}\\n  async execute(input: CompleteTaskInput, ctx: UseCaseContext): Promise<CompleteTaskOutput> {\\nconst task = await this.tasks.findById(input.task_id);\\nif (!task) throw new DomainError('TASK_NOT_FOUND', 'Tarefa não encontrada.');\\ntask.complete();\\nawait this.tasks.save(task);\\nawait ctx.publish(task.pullEvents());\\nreturn { task_id: task.id, status: 'completed' };\\n\\n\\n\\n\\n\\n\\n\\n\\n}\\n}\\n\"\n    }\n  },\n  {\n    \"path\": \"app/test/usecase-complete_task.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"6618e838d6b3ac8b4c547e983d4fa7c6cf9ab7d7c9ba03c91e0137bc841243d9\",\n      \"content\": \"import { expect, test } from 'bun:test';\\nimport { covers, createTestContext } from '@agentic-ddd/testing';\\nimport { CompleteTask } from '../application/complete-task';\\nimport { Task } from '../domain/task';\\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\\ntest(covers(['usecase:complete_task', 'criterion:0001/persistencia-conclusao'], 'conclui, persiste, publica e rejeita id ausente'), async () => {\\n  const repo = new InMemoryTaskRepository(); const task = Task.create('t1', 'Ler'); task.pullEvents(); await repo.save(task);\\n  const ctx = createTestContext(); const uc = new CompleteTask(repo);\\n  expect(await uc.execute({task_id: 't1'}, ctx)).toEqual({task_id: 't1', status: 'completed'});\\n  expect((await repo.findById('t1'))?.status).toBe('completed');\\n  expect(ctx.published.map(e => [e.name, e.payload])).toEqual([['TaskCompleted', {taskId: 't1'}]]);\\n  await expect(uc.execute({task_id: 'missing'}, ctx)).rejects.toMatchObject({code: 'TASK_NOT_FOUND'});\\n  expect(ctx.published).toHaveLength(1);\\n});\\n\"\n    }\n  }\n]"
+              },
+              "verification": {
+                "ok": true,
+                "findings": [],
+                "commands": [
+                  {
+                    "name": "verify-item",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "verify",
+                      "--item",
+                      "usecase:complete_task",
+                      "--spec-hash",
+                      "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d",
+                      "--json",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-8cJPbd/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "{\n  \"item\": \"usecase:complete_task\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+                      "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item usecase:complete_task — done\n",
+                      "durationMs": 3212.116194000002,
+                      "evidence": [
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/verify-item/stdout.log",
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/verify-item/stderr.log",
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/verify-item/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "executor-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-8cJPbd/workspace/.executor-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\napp/test/method-Task-complete.test.ts:\n(pass) [covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição [0.68ms]\n\napp/test/entity-Task.test.ts:\n(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento [0.12ms]\n(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços [0.10ms]\n\napp/test/usecase-complete_task.test.ts:\n(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] conclui, persiste, publica e rejeita id ausente [0.43ms]\n\n 4 pass\n 0 fail\n 16 expect() calls\nRan 4 tests across 3 files. [106.00ms]\n",
+                      "durationMs": 136.95473499999935,
+                      "evidence": [
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-tests/stdout.log",
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-tests/stderr.log",
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "reference-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "/tmp/agentic-eval-Tut47y/attempt-8cJPbd/workspace/.eval-reference/behavior.test.ts",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-8cJPbd/workspace/.reference-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) conclui, persiste, publica e rejeita id ausente [1.46ms]\n(pass) conclui, persiste, publica e rejeita id ausente [0.15ms]\n\n 2 pass\n 0 fail\n 18 expect() calls\nRan 2 tests across 1 file. [104.00ms]\n",
+                      "durationMs": 134.13303799999994,
+                      "evidence": [
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-tests/stdout.log",
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-tests/stderr.log",
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "compile-check",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "compile",
+                      "--check",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-8cJPbd/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+                      "stderr": "",
+                      "durationMs": 539.0619589999988,
+                      "evidence": [
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/compile-check/stdout.log",
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/compile-check/stderr.log",
+                        "implementation/scripted-control/usecase-complete_task/attempt-1/verification/compile-check/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  }
+                ],
+                "itemReport": {
+                  "item": "usecase:complete_task",
+                  "status": "done",
+                  "gates": [
+                    {
+                      "id": "I1",
+                      "name": "Dependências",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I2",
+                      "name": "Implementação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I3",
+                      "name": "Especificação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I4",
+                      "name": "Obrigações",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I5",
+                      "name": "Typecheck",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    }
+                  ]
+                },
+                "executorTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "[covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição",
+                      "file": "app/test/method-Task-complete.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/conclusao",
+                        "method:Task.complete"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/criacao",
+                        "method:Task.create"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 11,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/titulo-invalido",
+                        "invariant:Task/titulo-obrigatorio"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] conclui, persiste, publica e rejeita id ausente",
+                      "file": "app/test/usecase-complete_task.test.ts",
+                      "line": 6,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/persistencia-conclusao",
+                        "usecase:complete_task"
+                      ]
+                    }
+                  ]
+                },
+                "referenceTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "conclui, persiste, publica e rejeita id ausente",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 7,
+                      "status": "passed",
+                      "covers": []
+                    },
+                    {
+                      "name": "conclui, persiste, publica e rejeita id ausente",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 7,
+                      "status": "passed",
+                      "covers": []
+                    }
+                  ]
+                }
+              },
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        },
+        {
+          "item": "operator:task-operator",
+          "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1",
+          "state": "accepted",
+          "reason": null,
+          "attempts": [
+            {
+              "number": 1,
+              "handoff": {
+                "item": "operator:task-operator",
+                "packet": "# Identificação\n\n- ID: `operator:task-operator`\n- Camada: operators\n- Módulo: tasks\n- source: `app/operators/task.operator.ts:5`\n- Estado: implemented\n- specHash: `78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1`\n- Dependências: `usecase:complete_task`, `usecase:create_task`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi concluída.\",\n      \"id\": \"event:TaskCompleted\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCompleted\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.\",\n      \"emits\": [\n        \"event:TaskCompleted\"\n      ],\n      \"entity\": {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      },\n      \"id\": \"method:Task.complete\",\n      \"invariants\": [],\n      \"name\": \"complete\",\n      \"static\": false,\n      \"transition\": {\n        \"from\": [\n          \"pending\"\n        ],\n        \"to\": \"completed\"\n      }\n    },\n    {\n      \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n      \"emits\": [\n        \"event:TaskCreated\"\n      ],\n      \"entity\": {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      },\n      \"id\": \"method:Task.create\",\n      \"invariants\": [],\n      \"name\": \"create\",\n      \"static\": true,\n      \"transition\": null\n    },\n    {\n      \"description\": \"Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.\",\n      \"emits\": [\n        \"event:TaskCompleted\"\n      ],\n      \"id\": \"usecase:complete_task\",\n      \"inputSchema\": {\n        \"properties\": {\n          \"task_id\": {\n            \"minLength\": 1,\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\"\n        ],\n        \"type\": \"object\"\n      },\n      \"module\": \"tasks\",\n      \"name\": \"complete_task\",\n      \"outputSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"status\": {\n            \"const\": \"completed\",\n            \"type\": \"string\"\n          },\n          \"task_id\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\",\n          \"status\"\n        ],\n        \"type\": \"object\"\n      },\n      \"uses\": [\n        \"method:Task.complete\"\n      ],\n      \"whenNotToUse\": \"Para criar uma nova tarefa.\",\n      \"whenToUse\": \"Quando o usuário terminou uma tarefa.\"\n    },\n    {\n      \"description\": \"Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.\",\n      \"emits\": [\n        \"event:TaskCreated\"\n      ],\n      \"id\": \"usecase:create_task\",\n      \"inputSchema\": {\n        \"properties\": {\n          \"task_id\": {\n            \"minLength\": 1,\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"minLength\": 1,\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      },\n      \"module\": \"tasks\",\n      \"name\": \"create_task\",\n      \"outputSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"status\": {\n            \"const\": \"pending\",\n            \"type\": \"string\"\n          },\n          \"task_id\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\",\n          \"title\",\n          \"status\"\n        ],\n        \"type\": \"object\"\n      },\n      \"uses\": [\n        \"method:Task.create\"\n      ],\n      \"whenNotToUse\": \"Para concluir tarefa existente.\",\n      \"whenToUse\": \"Quando o usuário deseja criar uma tarefa.\"\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Cria e conclui tarefas conforme pedido do usuário.\",\n    \"id\": \"operator:task-operator\",\n    \"instructions\": \"Use as tools para criar e concluir tarefas. Identifique a tarefa pelo id e responda em português.\",\n    \"limits\": {\n      \"maxSteps\": 8,\n      \"timeoutMs\": 30000\n    },\n    \"model\": \"default\",\n    \"module\": \"tasks\",\n    \"name\": \"task-operator\",\n    \"requiresApproval\": [],\n    \"useCases\": [\n      \"usecase:complete_task\",\n      \"usecase:create_task\"\n    ]\n  }\n}\n```\n\n## Obrigações de teste\n\n- `operator:task-operator` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item operator:task-operator --spec-hash 78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1 --config /tmp/agentic-eval-Tut47y/attempt-oB33At/workspace/agentic.config.ts --json\n```\n",
+                "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1",
+                "configPath": "/tmp/agentic-eval-Tut47y/accepted-HR7mYZ/tasks/agentic.config.ts",
+                "testFile": "app/test/operator-task-operator.test.ts",
+                "criteria": [
+                  {
+                    "id": "tools",
+                    "given": "FakeLlm solicitando create_task e complete_task",
+                    "when": "executar task-operator com repositório em memória",
+                    "then": "conclui a tarefa usando somente suas duas tools e publica os dois eventos"
+                  }
+                ]
+              },
+              "baselineHash": "bdca21d1e1bda60815298f81b723a81e16b13a0e210152bb3290bf240fadc300",
+              "execution": {
+                "sessionId": {
+                  "status": "available",
+                  "value": "scripted-10",
+                  "source": "scripted_fixture"
+                },
+                "observedModel": {
+                  "status": "available",
+                  "value": "scripted",
+                  "source": "scripted_fixture"
+                },
+                "modelRevision": {
+                  "status": "unavailable",
+                  "reason": "synthetic"
+                },
+                "usage": {
+                  "inputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cachedInputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "outputTokens": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  },
+                  "cost": {
+                    "status": "unavailable",
+                    "reason": "not_reported"
+                  }
+                },
+                "exitCode": 0,
+                "signal": null,
+                "durationMs": 40.77154500000324,
+                "evidence": [
+                  "implementation/scripted-control/operator-task-operator/attempt-1/stdout.log",
+                  "implementation/scripted-control/operator-task-operator/attempt-1/stderr.log",
+                  "implementation/scripted-control/operator-task-operator/attempt-1/process.json"
+                ],
+                "transport": "finished",
+                "finalText": "{\"status\":\"done\",\"summary\":\"offline positive control\"}",
+                "diagnostic": null
+              },
+              "reply": {
+                "status": "done",
+                "summary": "offline positive control"
+              },
+              "audit": {
+                "ok": true,
+                "findings": [],
+                "changedFiles": [
+                  "app/test/operator-task-operator.test.ts"
+                ],
+                "patch": "[\n  {\n    \"path\": \"app/test/operator-task-operator.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"e1938cf4432e06dc095181fea009e85282fd9359ee21f9252d26c7798479f60b\",\n      \"content\": \"import { expect, test } from 'bun:test';\\nimport { covers, FakeLlm, InMemoryEventBus } from '@agentic-ddd/testing';\\nimport type { UseCase } from '@agentic-ddd/core';\\nimport type { ClassRef } from '@agentic-ddd/decorators';\\nimport { OperatorRuntime, type LlmResponse } from '@agentic-ddd/runtime';\\nimport { CreateTask } from '../application/create-task';\\nimport { CompleteTask } from '../application/complete-task';\\nimport { TaskOperator } from '../operators/task.operator';\\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\\ntest(covers(['operator:task-operator', 'criterion:0001/tools'], 'operator executa tools reais e publica eventos'), async () => {\\n  const tool = (id: string, name: string, input: unknown): LlmResponse => ({content: [{type: 'tool_call', id, name, input}], stopReason: 'tool_calls'});\\n  const llm = new FakeLlm([tool('c', 'create_task', {task_id: 't1', title: 'Ler'}), tool('f', 'complete_task', {task_id: 't1'}), {content: [{type: 'text', text: 'Concluída.'}], stopReason: 'end'}]);\\n  const repo = new InMemoryTaskRepository(); const bus = new InMemoryEventBus();\\n  const runtime = new OperatorRuntime({llm, eventBus: bus, root: process.cwd(), modules: [{name: 'tasks', path: 'app'}]});\\n  await runtime.register(TaskOperator, new Map<ClassRef, UseCase<unknown, unknown>>([[CreateTask, new CreateTask(repo)], [CompleteTask, new CompleteTask(repo)]]));\\n  const result = await runtime.run('task-operator', {message: 'Crie e conclua t1'});\\n  expect(result.status).toBe('completed'); expect(result.output).toBe('Concluída.');\\n  expect((await repo.findById('t1'))?.status).toBe('completed');\\n  expect(llm.requests[0]?.tools.map(t => t.name)).toEqual(['complete_task', 'create_task']);\\n  expect(result.events.map(e => e.name)).toEqual(['TaskCreated', 'TaskCompleted']);\\n  expect(bus.events).toEqual(result.events);\\n});\\n\"\n    }\n  }\n]"
+              },
+              "verification": {
+                "ok": true,
+                "findings": [],
+                "commands": [
+                  {
+                    "name": "verify-item",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "verify",
+                      "--item",
+                      "operator:task-operator",
+                      "--spec-hash",
+                      "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1",
+                      "--json",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-lFq74H/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "{\n  \"item\": \"operator:task-operator\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+                      "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item operator:task-operator — done\n",
+                      "durationMs": 3378.539107999997,
+                      "evidence": [
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/verify-item/stdout.log",
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/verify-item/stderr.log",
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/verify-item/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "executor-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-lFq74H/workspace/.executor-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\napp/test/usecase-create_task.test.ts:\n(pass) [covers: criterion:0001/persistencia-criacao, usecase:create_task] persiste, publica e rejeita duplicado [0.76ms]\n\napp/test/usecase-complete_task.test.ts:\n(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] conclui, persiste, publica e rejeita id ausente [0.39ms]\n\napp/test/method-Task-complete.test.ts:\n(pass) [covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição [0.15ms]\n\napp/test/entity-Task.test.ts:\n(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento [0.10ms]\n(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços [0.11ms]\n\napp/test/operator-task-operator.test.ts:\n(pass) [covers: criterion:0001/tools, operator:task-operator] operator executa tools reais e publica eventos [9.90ms]\n\n 6 pass\n 0 fail\n 28 expect() calls\nRan 6 tests across 5 files. [126.00ms]\n",
+                      "durationMs": 155.98724799999763,
+                      "evidence": [
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-tests/stdout.log",
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-tests/stderr.log",
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "reference-tests",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "test",
+                      "/tmp/agentic-eval-Tut47y/attempt-lFq74H/workspace/.eval-reference/behavior.test.ts",
+                      "--reporter=junit",
+                      "--reporter-outfile=/tmp/agentic-eval-Tut47y/attempt-lFq74H/workspace/.reference-junit.xml"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "bun test v1.4.2 (744846f84)\n",
+                      "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) operator executa tools reais e publica eventos [11.55ms]\n(pass) operator executa tools reais e publica eventos [1.26ms]\n\n 2 pass\n 0 fail\n 12 expect() calls\nRan 2 tests across 1 file. [124.00ms]\n",
+                      "durationMs": 154.36571600000025,
+                      "evidence": [
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-tests/stdout.log",
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-tests/stderr.log",
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-tests/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  },
+                  {
+                    "name": "compile-check",
+                    "argv": [
+                      "/home/jvtuta/.bun/bin/bun",
+                      "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+                      "compile",
+                      "--check",
+                      "--config",
+                      "/tmp/agentic-eval-Tut47y/attempt-lFq74H/workspace/agentic.config.ts"
+                    ],
+                    "result": {
+                      "transport": "finished",
+                      "exitCode": 0,
+                      "signal": null,
+                      "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+                      "stderr": "",
+                      "durationMs": 550.9143160000021,
+                      "evidence": [
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/compile-check/stdout.log",
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/compile-check/stderr.log",
+                        "implementation/scripted-control/operator-task-operator/attempt-1/verification/compile-check/process.json"
+                      ],
+                      "diagnostic": null
+                    }
+                  }
+                ],
+                "itemReport": {
+                  "item": "operator:task-operator",
+                  "status": "done",
+                  "gates": [
+                    {
+                      "id": "I1",
+                      "name": "Dependências",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I2",
+                      "name": "Implementação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I3",
+                      "name": "Especificação",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I4",
+                      "name": "Obrigações",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    },
+                    {
+                      "id": "I5",
+                      "name": "Typecheck",
+                      "status": "passed",
+                      "findings": [],
+                      "warnings": []
+                    }
+                  ]
+                },
+                "executorTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "[covers: criterion:0001/persistencia-criacao, usecase:create_task] persiste, publica e rejeita duplicado",
+                      "file": "app/test/usecase-create_task.test.ts",
+                      "line": 5,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/persistencia-criacao",
+                        "usecase:create_task"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] conclui, persiste, publica e rejeita id ausente",
+                      "file": "app/test/usecase-complete_task.test.ts",
+                      "line": 6,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/persistencia-conclusao",
+                        "usecase:complete_task"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição",
+                      "file": "app/test/method-Task-complete.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/conclusao",
+                        "method:Task.complete"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 4,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/criacao",
+                        "method:Task.create"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços",
+                      "file": "app/test/entity-Task.test.ts",
+                      "line": 11,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/titulo-invalido",
+                        "invariant:Task/titulo-obrigatorio"
+                      ]
+                    },
+                    {
+                      "name": "[covers: criterion:0001/tools, operator:task-operator] operator executa tools reais e publica eventos",
+                      "file": "app/test/operator-task-operator.test.ts",
+                      "line": 10,
+                      "status": "passed",
+                      "covers": [
+                        "criterion:0001/tools",
+                        "operator:task-operator"
+                      ]
+                    }
+                  ]
+                },
+                "referenceTests": {
+                  "exitCode": 0,
+                  "cases": [
+                    {
+                      "name": "operator executa tools reais e publica eventos",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 11,
+                      "status": "passed",
+                      "covers": []
+                    },
+                    {
+                      "name": "operator executa tools reais e publica eventos",
+                      "file": ".eval-reference/behavior.test.ts",
+                      "line": 11,
+                      "status": "passed",
+                      "covers": []
+                    }
+                  ]
+                }
+              },
+              "accepted": true,
+              "reason": null
+            }
+          ]
+        }
+      ],
+      "finalVerification": {
+        "report": {
+          "change": "0001",
+          "title": "Criar e concluir tarefas",
+          "status": "done",
+          "gates": [
+            {
+              "id": "G1",
+              "name": "Delta",
+              "status": "passed",
+              "findings": [],
+              "warnings": []
+            },
+            {
+              "id": "G2",
+              "name": "Docs",
+              "status": "passed",
+              "findings": [],
+              "warnings": []
+            },
+            {
+              "id": "G3",
+              "name": "Critérios",
+              "status": "passed",
+              "findings": [],
+              "warnings": []
+            },
+            {
+              "id": "G4",
+              "name": "Regras",
+              "status": "passed",
+              "findings": [],
+              "warnings": []
+            },
+            {
+              "id": "G5",
+              "name": "Qualidade",
+              "status": "passed",
+              "findings": [],
+              "warnings": []
+            },
+            {
+              "id": "G6",
+              "name": "Manual",
+              "status": "passed",
+              "findings": [],
+              "warnings": []
+            },
+            {
+              "id": "G7",
+              "name": "Work items",
+              "status": "passed",
+              "findings": [],
+              "warnings": []
+            }
+          ]
+        },
+        "command": {
+          "name": "verify-change",
+          "argv": [
+            "/home/jvtuta/.bun/bin/bun",
+            "/tmp/agentic-eval-Tut47y/framework/src/cli/main.ts",
+            "verify",
+            "0001",
+            "--json",
+            "--config",
+            "/tmp/agentic-eval-Tut47y/attempt-PEemNS/workspace/agentic.config.ts"
+          ],
+          "result": {
+            "transport": "finished",
+            "exitCode": 0,
+            "signal": null,
+            "stdout": "{\n  \"change\": \"0001\",\n  \"title\": \"Criar e concluir tarefas\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"G1\",\n      \"name\": \"Delta\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"G2\",\n      \"name\": \"Docs\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"G3\",\n      \"name\": \"Critérios\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"G4\",\n      \"name\": \"Regras\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"G5\",\n      \"name\": \"Qualidade\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"G6\",\n      \"name\": \"Manual\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"G7\",\n      \"name\": \"Work items\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+            "stderr": "G1 Delta: passed\nG2 Docs: passed\nG3 Critérios: passed\nG4 Regras: passed\nG5 Qualidade: passed\nG6 Manual: passed\nG7 Work items: passed\nagentic-ddd: change 0001 — done\n",
+            "durationMs": 3308.514003000004,
+            "evidence": [
+              "implementation/scripted-control/verify-change/stdout.log",
+              "implementation/scripted-control/verify-change/stderr.log",
+              "implementation/scripted-control/verify-change/process.json"
+            ],
+            "diagnostic": null
+          }
+        }
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "implementation/initial-status/process.json",
+      "sha256": "5a9c7f35a802e3f515cf911c150b61e8d07d723663e597b889ef3397d3ac7f4e",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/initial-status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/initial-status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/attempt.json",
+      "sha256": "7c6ccb3b5d57491ece0a99dea79969f6b551960052b3f7c4125c033cb435e60e",
+      "bytes": 18372
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/handoff.json",
+      "sha256": "6345404446c14cff2b8fdc06a36d22b427d9604b3ea977fe5ae247073cb80f55",
+      "bytes": 3003
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/process.json",
+      "sha256": "88b3946e73a900852cda13fbaf33e7f772db6af139e2d06dc51bd18356d1e074",
+      "bytes": 4438
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/prompt.txt",
+      "sha256": "34e45718a6131d73db6bd97e5020fc752a9112c69b49780fa76e081053714f8e",
+      "bytes": 3604
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/submission.json",
+      "sha256": "354430a84fd6a019e7a6e486ad22d16ce54044dc8525ecd1471887e9be9bd17c",
+      "bytes": 4425
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/compile-check/process.json",
+      "sha256": "17748c7a6b5e9fef241f9b846e0648d1bc7c5264e246658206fed5985a3fa516",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/executor-junit.xml",
+      "sha256": "93316b33d430ff564be03650662913451dab65eacbd2d22f594aec639f20d30c",
+      "bytes": 778
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "eb465432d523c409dc0abb5290f9139484d071605a03b9e15a2cae499b09f095",
+      "bytes": 1700
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "2fc6d365001d7afb9622c30cdf57401614f052d3923753af72c2beeb9c3e94fe",
+      "bytes": 345
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/reference-junit.xml",
+      "sha256": "46e8ff6c26f5f526ee7cccba95d6f7d82504ce817b92f8955e4d4c89974e25cb",
+      "bytes": 982
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "244b5e5cb9b287ac2588e505622fadf18508fd7d967980be2e6d8e7538b109e3",
+      "bytes": 1954
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "e770110e3b1c30e9a6a71c86a76d431681a4e9a6dfddafe3859c61885fbe3d7e",
+      "bytes": 332
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/verify-item/process.json",
+      "sha256": "370dada514d11588678e9499c117d2d13b5461c7a699acd2dd40ccc7cbc441f2",
+      "bytes": 1862
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "717f87a62d03fb04d52fe306896d8b22f233a6bc9820a13348b955fada6631b6",
+      "bytes": 163
+    },
+    {
+      "path": "implementation/scripted-control/entity-Task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "ca40d866891a5e9be3558a9ee6d4a37966d231c075cfc2839e61163fe36a2d79",
+      "bytes": 719
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/attempt.json",
+      "sha256": "a20f026d715fef446449d47fa06a4f5d36cc616a6cf3541847868541b7019048",
+      "bytes": 19078
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/handoff.json",
+      "sha256": "213f820d4cfeedcd77682a174167be51b1b1786f2508c99de71fbaacbb0f0346",
+      "bytes": 3755
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/process.json",
+      "sha256": "5fecff9d3671c69ec8891b904fb5127dd1ee04b0ca2d4963311aa8e23336d18a",
+      "bytes": 4628
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/prompt.txt",
+      "sha256": "69393be2f866e0e95a74890ec63ed8e60fcd9117dc5b69147d76c9ce9b49dac1",
+      "bytes": 4275
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/submission.json",
+      "sha256": "146f55cc31396a1eb2a304acc051eaa6702c7f8ab4012228d16b6b200edc80b3",
+      "bytes": 4295
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/compile-check/process.json",
+      "sha256": "915f7838bd769bf272b31a15fb673d6741387788216902baf65d12479b80cb73",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-junit.xml",
+      "sha256": "5f15f05cb2d9c6210c02518e04284ef43bbd4d9883d30709c8c1ef31a147b1f8",
+      "bytes": 1203
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-tests/process.json",
+      "sha256": "643913bc4ac0609d2ab054325d7a183b82d65531d6557f4d2e324fd57eac7015",
+      "bytes": 1700
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "324e8b4c46f18b37f00226ae148de8a910a5ff6023b0c7ff4dc85bcb4d1770df",
+      "bytes": 497
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-junit.xml",
+      "sha256": "3ae81783c5de46a752276cf4565b3d03ad982ba29b8eecb8bc202fe6df142944",
+      "bytes": 660
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-tests/process.json",
+      "sha256": "d3e95642f37f83e0fe05382db35ec2dbb0ba10934bb5218da912919a4de3cf9a",
+      "bytes": 1954
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "1fd2e2f1a07291e586f7abb03ef2c36d573686b61e95042bf728f8f6d9e87ca9",
+      "bytes": 214
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/verify-item/process.json",
+      "sha256": "852da6b89654c596b0eef8029287ec7da150464e15fcc413f101f78077459c3d",
+      "bytes": 1877
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "932b6b6e279448fba63acc82ac0af5f975755570cdb1b83122a232d83d06067c",
+      "bytes": 172
+    },
+    {
+      "path": "implementation/scripted-control/method-Task-complete/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "a52a132ca17be8b0ca7662766ceee15909324603ec337a21c77d3ee118dca36e",
+      "bytes": 728
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/attempt.json",
+      "sha256": "2e646273cbd5fd9cdf9a2753dd0adb54c550b26c35928f895fbd4bdef38e7b3c",
+      "bytes": 23012
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/handoff.json",
+      "sha256": "e54384e7df23f9603d2874bc3ca3f78af9db82020fba573fa5dfec95e27c07c9",
+      "bytes": 8278
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/process.json",
+      "sha256": "3a7fb5bf9612d0605698d98a6eb21991954a7a1692542300896fbdac56a27973",
+      "bytes": 5027
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/prompt.txt",
+      "sha256": "7a124b49dffee4c395965cf80dcb063c3423ba3b45473dd2a156baffcc266688",
+      "bytes": 8264
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/submission.json",
+      "sha256": "ead7606d26d8f679dd8b2709d6e360e1618f03f77573fec02a4913b8e5a288c7",
+      "bytes": 2145
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/compile-check/process.json",
+      "sha256": "288a63c62df7f9f17938d956263e64c4ccc73ebb1eb701fd007f9f40fa420a22",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-junit.xml",
+      "sha256": "74fd117364419af4715d21a1f5414376967b9c66c60995287c7e06a2a197bd06",
+      "bytes": 2530
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-tests/process.json",
+      "sha256": "1aad33def4f7f320fb96a82ba3fbc788e59a5456ce38c5871265dcca8fd13b99",
+      "bytes": 1701
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "2fa1485dd95edc6b518954a26563eca80b85d8e78343b72b54beebe4180139d7",
+      "bytes": 993
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-junit.xml",
+      "sha256": "9d0c5c16afef73456c8c36becb595d63501b2e3d8fb435da50b77470a67cb68d",
+      "bytes": 681
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-tests/process.json",
+      "sha256": "cab51bcc73fd521aef3ab4d0c6b9a37340d562db84b4283f45fa372882f6d4e8",
+      "bytes": 1954
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "562423b039fc45599a9c563d87726e7c351595f74c816bd7ad68b2eb9a62f60e",
+      "bytes": 236
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/verify-item/process.json",
+      "sha256": "58c55ad4ad174f6b350f2752c914a3bc9d36134a49d6808d994f3ddbb23aaf8c",
+      "bytes": 1879
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "cf6be3c3b71013d42a521ae4ba42a2e55980759e2abc9cbf8252b02b79509a86",
+      "bytes": 174
+    },
+    {
+      "path": "implementation/scripted-control/operator-task-operator/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "f9ca5cde986b80b435edfa0b633f494ad6004583fd7d04ef3b4931c14c607588",
+      "bytes": 730
+    },
+    {
+      "path": "implementation/scripted-control/packet-entity-Task/process.json",
+      "sha256": "b57e4f5c42f732276ffa979f13d418ab39a0cae67937496c567ca0943e9b79ee",
+      "bytes": 1746
+    },
+    {
+      "path": "implementation/scripted-control/packet-entity-Task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/packet-entity-Task/stdout.log",
+      "sha256": "b1449f29e48618fe0bc1138a3e5b38e6ed5497fc10cf82250ee3f3d93dc76bdc",
+      "bytes": 2146
+    },
+    {
+      "path": "implementation/scripted-control/packet-method-Task-complete/process.json",
+      "sha256": "4edfe5fb02ea603515dfd543ba2e9d83272b130c7ba51a44aeb208949b0ec857",
+      "bytes": 1762
+    },
+    {
+      "path": "implementation/scripted-control/packet-method-Task-complete/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/packet-method-Task-complete/stdout.log",
+      "sha256": "f5b75463ef4d063f6e30dbb769141a976719b37841207f81b2ea3792e25b98ae",
+      "bytes": 2935
+    },
+    {
+      "path": "implementation/scripted-control/packet-operator-task-operator/process.json",
+      "sha256": "fcf4155e152560ade12e49dd7a7a251a5d8a871c3ec6bce50119be0833210844",
+      "bytes": 1764
+    },
+    {
+      "path": "implementation/scripted-control/packet-operator-task-operator/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/packet-operator-task-operator/stdout.log",
+      "sha256": "21656418075eaa7d95c8f2b0ad1bab75c72403c34f5add91b689829c5c7ed879",
+      "bytes": 6972
+    },
+    {
+      "path": "implementation/scripted-control/packet-usecase-complete_task/process.json",
+      "sha256": "28b2c4b5b3cef5f1e3b65e35ef79602b65a1e1e5ce11b2b54a6e21df20bac295",
+      "bytes": 1763
+    },
+    {
+      "path": "implementation/scripted-control/packet-usecase-complete_task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/packet-usecase-complete_task/stdout.log",
+      "sha256": "8b7021963ca43a3b2cb7b4de81f30cbdb7c714f5c48a10ae36dc85c7c585d784",
+      "bytes": 4010
+    },
+    {
+      "path": "implementation/scripted-control/packet-usecase-create_task/process.json",
+      "sha256": "5d83d874c4ca156b3a4a640ec05829784821d23865c2037737e5ef5613794cd2",
+      "bytes": 1761
+    },
+    {
+      "path": "implementation/scripted-control/packet-usecase-create_task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/packet-usecase-create_task/stdout.log",
+      "sha256": "40937dfb86b0d907d0c6ea1d0f043a405cbb9cd42a731edb88a0c21cebfc0f3d",
+      "bytes": 3678
+    },
+    {
+      "path": "implementation/scripted-control/query-0/next/process.json",
+      "sha256": "3aab09881f508a090eb366afa86696f7280cd7c8e39633e5c68b7087fc8adfa6",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/scripted-control/query-0/next/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/scripted-control/query-0/next/stdout.log",
+      "sha256": "cce0416411f98295fbbe81ec9575170bc5e4551731d1608c578487395658c043",
+      "bytes": 347
+    },
+    {
+      "path": "implementation/scripted-control/query-0/status/process.json",
+      "sha256": "b57beb82f815e69ece6d279e859fb2b27d134459ab7b73154479f6583fcdaa78",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/scripted-control/query-0/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/scripted-control/query-0/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "implementation/scripted-control/query-1/next/process.json",
+      "sha256": "cc4ab478f43f2b59eeca0ca9da060f1ba2d6fce98f0039f133a1ac9eecd82ab1",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/scripted-control/query-1/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-1/next/stdout.log",
+      "sha256": "81e40eb53da28081a00b1ce05d8e1c409b3463968a8bbbb978f9de3970bab4e5",
+      "bytes": 219
+    },
+    {
+      "path": "implementation/scripted-control/query-1/status/process.json",
+      "sha256": "8c8ea8e280db2429225d4cecd623743e72758f707701754845987485f1917b2e",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/scripted-control/query-1/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-1/status/stdout.log",
+      "sha256": "1c3d41a34edccaca304d4fb861b5728f58e9204c2989f214270ecb5f44224986",
+      "bytes": 2863
+    },
+    {
+      "path": "implementation/scripted-control/query-2/next/process.json",
+      "sha256": "6c32b15f48e11cb4301586d59d76c1414ae53414852156c284c54d23852686f5",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/scripted-control/query-2/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-2/next/stdout.log",
+      "sha256": "5dfef10222ed61dbf80b2931a02bbcfbf1c00fba26701cbf82aa373dee3122db",
+      "bytes": 177
+    },
+    {
+      "path": "implementation/scripted-control/query-2/status/process.json",
+      "sha256": "01a4cb9badde97cc0c40f92f11b6142bd7a2c63b7b3399fe772cb25ff0aa1afc",
+      "bytes": 1741
+    },
+    {
+      "path": "implementation/scripted-control/query-2/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-2/status/stdout.log",
+      "sha256": "16623fd2bda3dd35258478027e7522fc33fbcd502715d777f83d02ba0236034f",
+      "bytes": 2780
+    },
+    {
+      "path": "implementation/scripted-control/query-3/next/process.json",
+      "sha256": "b43cf7b93f6baa903e6918f49a05cd52401c9f22242e2192080bc2fe3c9ca9bd",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/scripted-control/query-3/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-3/next/stdout.log",
+      "sha256": "2d0bbf64e14bc6a5a59fa283df9364b35d4e650547b4dc5034061fff26a93151",
+      "bytes": 146
+    },
+    {
+      "path": "implementation/scripted-control/query-3/status/process.json",
+      "sha256": "2f2cb30886009f22a6926a839313d01e90eeab921325e87b7fc79a44e46a22b6",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/scripted-control/query-3/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-3/status/stdout.log",
+      "sha256": "207a605dcc5c5b855d614e31510dfe7afd6c2963caa19e9903ecf91ff2b312ea",
+      "bytes": 2700
+    },
+    {
+      "path": "implementation/scripted-control/query-4/next/process.json",
+      "sha256": "d1db3c6c7f72148ebc19f221d016582bc76ad28b4a0e6821012ef53841841bf9",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/scripted-control/query-4/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-4/next/stdout.log",
+      "sha256": "cb83a89c5ced6620172e3707b56652c71b2a48828f3e02e2615212118bed8b9c",
+      "bytes": 105
+    },
+    {
+      "path": "implementation/scripted-control/query-4/status/process.json",
+      "sha256": "aa85e542914e7fc3eb8d5decf453fd49e6f4d65d1b79a1c72183c3f11ca0f99a",
+      "bytes": 1747
+    },
+    {
+      "path": "implementation/scripted-control/query-4/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-4/status/stdout.log",
+      "sha256": "9bf3c1011f900e19cb6122978ba24d25edcf2081b99ef5291277b59a562b2dc5",
+      "bytes": 2622
+    },
+    {
+      "path": "implementation/scripted-control/query-5/next/process.json",
+      "sha256": "cd3897910acf0c8dee7b3a9698c50ff429ae9f407611f07adcc0bdd440a6661a",
+      "bytes": 1772
+    },
+    {
+      "path": "implementation/scripted-control/query-5/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-5/next/stdout.log",
+      "sha256": "7ff710317c2edbc437dc8efd872fd05db715d42145a74a4a9bc733bf3d5c01ce",
+      "bytes": 59
+    },
+    {
+      "path": "implementation/scripted-control/query-5/status/process.json",
+      "sha256": "8a0360394d00b14540f66e8d6e8cebb38ac22206c4a330fbb8c58abc3640b06d",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/scripted-control/query-5/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/query-5/status/stdout.log",
+      "sha256": "bcb8107ef35bec82a14ed19700652b5809008d2cf5c8033b1675080af7bfdf7c",
+      "bytes": 2568
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/attempt.json",
+      "sha256": "99d815c78fafc1352395d07f2f50871f876a964628cd973be2ef723158ea7289",
+      "bytes": 21108
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/handoff.json",
+      "sha256": "be6fe93fcf5d08e8f1a30fe065b18b12eee28b74f0f6828f621dd660651affa9",
+      "bytes": 4971
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/process.json",
+      "sha256": "37aec13c3ddeaa7f95483c508ba7885598c792103a99c47c444630e494e08b3e",
+      "bytes": 4643
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/prompt.txt",
+      "sha256": "8470c20074da11e419359ed48ac0c6d7ae4a502ed16626f5c748227b1dba8eb5",
+      "bytes": 5384
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/submission.json",
+      "sha256": "fe3a58efb3a0081ac9341da1eeb10716502464c677d0f17c0da1750abcb80211",
+      "bytes": 4486
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/compile-check/process.json",
+      "sha256": "2cb74e31045ce88b65ff9842fe73c88e099a91e28fdf1bf17a45cf7375e750ae",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-junit.xml",
+      "sha256": "29b7a94f43c3d89b31b9f90f098c655302cd213736203cf13e0cf2fb41794544",
+      "bytes": 1657
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "39d26455b7dcffd910e09d2feeedaa6b1114f93888ef3c0dd217c45a7b823d61",
+      "bytes": 1700
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "f225164535bcc0e66e97cd9e0ca5f70701a483139fffca963d5adfa41b5f1798",
+      "bytes": 673
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-junit.xml",
+      "sha256": "1fd3c6223b1e58d6a7588f01dd5687cbbf611d060f6b69861283edaa4ccbcad1",
+      "bytes": 682
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "66b1ad3636c649e65f68841d9ccbc4030b7306a00182012b413714615013ab18",
+      "bytes": 1954
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "0b9a7b64ea7e9aa8248cb7fed48c1cd7db71b41296b53e1227edecd76d2e3444",
+      "bytes": 237
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/verify-item/process.json",
+      "sha256": "18100d3b0bb3a362ddfdd632a5a10f2c9d90fc677439792b461efa1fb7efb7c4",
+      "bytes": 1878
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "1421da5ce68b1dcb8aa02403c6040f60632ab390ad0795de1f8b48d08248e3eb",
+      "bytes": 173
+    },
+    {
+      "path": "implementation/scripted-control/usecase-complete_task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "aa4b1361eb87f5a163999c8f40562c7e1feab3442b971356f0fe9028ea993285",
+      "bytes": 729
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/attempt.json",
+      "sha256": "5264fe40ef795d909144df4b7ab65975c3fce3342640a14363b2db5122bd549a",
+      "bytes": 21329
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/handoff.json",
+      "sha256": "fbea0cf6d6ef78bbb8e7c3d4bcdfe84331a644d004ef42bd88493183425a5602",
+      "bytes": 4607
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/process.json",
+      "sha256": "65973326521973f6efacd25ad52aade5c4cb115ab394ddfb50526bc2a5c94609",
+      "bytes": 4856
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/prompt.txt",
+      "sha256": "a5a5c8aa377f53163a53bbc1334f5a69dc9b5735b06f7afe532c805bfe5267a9",
+      "bytes": 5058
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/stdout.log",
+      "sha256": "6070c60870159369e6ec77773bfb6c12ae3d8620d4270ed3a095f0da2c4dd14b",
+      "bytes": 54
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/submission.json",
+      "sha256": "3571b6ccadc781f613f254921a33c37bc1cbf327f8a09af7f75b18ab58cc4393",
+      "bytes": 4614
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/compile-check/process.json",
+      "sha256": "355e6eafe2f541c196408345d0adf447e46a0fa3e66b0a4996d0bfb89f5dcd77",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-junit.xml",
+      "sha256": "a5dba749d40e6c54da56bacc78ab84fef2ab95785c3ba5421e8182dd6072f272",
+      "bytes": 2087
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "a78a521fff01d71a999a8237c5a21a063e4c817dc04dd6155b637d4143d71c20",
+      "bytes": 1700
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "8fe6176ebb0d857c27ffc1f75255ecc96ba962d6b9007608c5fa303115debb18",
+      "bytes": 833
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-junit.xml",
+      "sha256": "f124b6356bb3f5a92bf72a9da3f344f35182b0721e156178e728ea5b2736eb2b",
+      "bytes": 664
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "65e1af8f021d53bb7a00dc46315e04705e7ef468092cbff1f7fb5484a50c0fa9",
+      "bytes": 1953
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "87c0f1157a46653442e1150a5a0c9f3d2a9de60df9adc5f0fba13cb9bbb43908",
+      "bytes": 217
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "6043908c8d26d62698476b88f737f39d5d3e91008d4155a81730902f5a37479c",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/verify-item/process.json",
+      "sha256": "0720e8cdc82eb0b37ba2bd980a2b3b9b5f8ae2b750163155b29053240cbce3e7",
+      "bytes": 1877
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "8d04f4cc8e7a6094b8f20ea882579236fecb08a7c849d0756e31af71e9eabd8f",
+      "bytes": 171
+    },
+    {
+      "path": "implementation/scripted-control/usecase-create_task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "50e807ab3870ddc5599ede5ed1c862a5181977a16fe6f07861a2303f36951723",
+      "bytes": 727
+    },
+    {
+      "path": "implementation/scripted-control/verify-change/process.json",
+      "sha256": "d6a099dc7dbd2c041070954f944980ea165c877a92f2a1c5889ea7dfba811758",
+      "bytes": 1760
+    },
+    {
+      "path": "implementation/scripted-control/verify-change/stderr.log",
+      "sha256": "1e4eee259595ae3edc363e9df3a59ec7edd6a56d958ce2e6f1be15193f670551",
+      "bytes": 168
+    },
+    {
+      "path": "implementation/scripted-control/verify-change/stdout.log",
+      "sha256": "68af3716a3fa68f257891601638ef27ce25976df4d6844d7be5510178edb5bb3",
+      "bytes": 975
+    },
+    {
+      "path": "preparation/baseline-tree.json",
+      "sha256": "59f3826d4d4a0b10e6eac38c11c7fa9db7bd72f8d63cb95c55ecb17fe3d693ae",
+      "bytes": 48170
+    },
+    {
+      "path": "preparation/compile/process.json",
+      "sha256": "26a719f9e1bda4a668a019fa0aabd67fe6b687af1b6589865523260c18f03758",
+      "bytes": 1730
+    },
+    {
+      "path": "preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "preparation/compile-check/process.json",
+      "sha256": "9853567dd74e7414934401a4dffc14a12e6a9107fb87496e94e7a0782c83f07b",
+      "bytes": 1748
+    },
+    {
+      "path": "preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "preparation/create-tutorial/process.json",
+      "sha256": "6e9dace906bfc763e5ef90d009f89d614d4440edced37214a1a0d890342f48e5",
+      "bytes": 1658
+    },
+    {
+      "path": "preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/create-tutorial/stdout.log",
+      "sha256": "cd5e5667edcd2a5194d2ece808c6cb0a6078c4eb56332dc4595fd441beab8bf8",
+      "bytes": 96
+    },
+    {
+      "path": "preparation/status/process.json",
+      "sha256": "ada950bb7955b58c51dcebccb7ab497dc0fce56fdf43731ca070e335ddcf71b7",
+      "bytes": 1748
+    },
+    {
+      "path": "preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "skills/preflight/process.json",
+      "sha256": "146960f4cea5752947b586ed1651711d696058ee42fa4dee716b6699b77c490c",
+      "bytes": 1672
+    },
+    {
+      "path": "skills/preflight/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/preflight/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json",
+      "sha256": "cb188c34b3f521e8108d0493053f347049abeb2457a2c19e076b2de281868322",
+      "bytes": 1721
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/prompt.txt",
+      "sha256": "36208a08dbe3ced5a2b9f393b5b62bbc8ddddda3c1b1530cd9137ecca83a6b14",
+      "bytes": 593
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/result.json",
+      "sha256": "5056daaab99136014f0da21d5a80a50ae2e6eda998f08b53972cc41b726f26c1",
+      "bytes": 2328
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+      "sha256": "32d69f0c858168fa71e5859bf839cd864483d11032905215e180f6e872e16631",
+      "bytes": 90
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/process.json",
+      "sha256": "3777016d76d6d6c9e9ae4bae7fb833283b52ad7b9e3fd7e5a7ac447420953e0c",
+      "bytes": 1631
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/prompt.txt",
+      "sha256": "4056e1d6a931bdaf19add132d7c87380aee39be034fe3b651926e55de45070bc",
+      "bytes": 569
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/result.json",
+      "sha256": "8cbf3bbad9ebeccee2fe5ead00eedb69237c9ca804f8805c1e86266b9ab191f1",
+      "bytes": 2080
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stdout.log",
+      "sha256": "d6ac565f1a5aff62155b8a889e1acbffdb4cdde372525af4b55d6f61b2296bfd",
+      "bytes": 30
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/process.json",
+      "sha256": "6e1fdd23c2c74fb4aee7dcaf0cf6bca376f9032e4c56813cbdbab026d9279bc5",
+      "bytes": 1632
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/prompt.txt",
+      "sha256": "f565c33b129e2951e65125b99b76500f44d80c755b514ba62452213089661431",
+      "bytes": 602
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/result.json",
+      "sha256": "d998d7bc87814551058c8145bf522db689f46eb3f0eb00e8f3e62deb028c1e75",
+      "bytes": 2055
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-cancelado/stdout.log",
+      "sha256": "77f07defa43dba76d698c0ebfa86ae1841770f9b0631ff4f46139c61595dd158",
+      "bytes": 31
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/context.json",
+      "sha256": "72f78de2854724d56bb634043892185e6ee9579f2cb8553e5de0aa572fc991d3",
+      "bytes": 7784
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/process.json",
+      "sha256": "b47612585ea89a9509aeeee8721b6215138a4c6d6a7db00e08190ec24254b278",
+      "bytes": 1690
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/prompt.txt",
+      "sha256": "b0572734b86a780895655d474c3859e07585dad009f13eeac5661b3609458ea7",
+      "bytes": 560
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/result.json",
+      "sha256": "959eb734d48ade347e15114154b61d86791065a629aa076252c9b44b0e6a651d",
+      "bytes": 2206
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/confirmar-pedido/stdout.log",
+      "sha256": "429e181652bdbcec78ea77938cc0ddb6997505659c84d715a152d343162cf7dd",
+      "bytes": 71
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/context.json",
+      "sha256": "801f594bc4ee2718db28b1f7b4952d4751b5d38aa7042266c7edb77d0c51e6c6",
+      "bytes": 17244
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/process.json",
+      "sha256": "6c8eb6e02838199b0e6587a03e136ff7989e123cd19ad6b6156321ff6bc0d271",
+      "bytes": 1684
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/prompt.txt",
+      "sha256": "056e96e3b229d4238a9d70cd98b7beae71643ee8ff5c484a008c9a55b252a158",
+      "bytes": 605
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/result.json",
+      "sha256": "8da5c18940f137d5e400dae9046f554574ec7e524282a8b9829ec44c7c96acf4",
+      "bytes": 2216
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/stdout.log",
+      "sha256": "c15d81e26da086f1e8f6e037f1ab89d4a8e9dea50127debe9c9acc40690375ee",
+      "bytes": 84
+    },
+    {
+      "path": "startup/preparation/baseline-tree.json",
+      "sha256": "59f3826d4d4a0b10e6eac38c11c7fa9db7bd72f8d63cb95c55ecb17fe3d693ae",
+      "bytes": 48170
+    },
+    {
+      "path": "startup/preparation/compile/process.json",
+      "sha256": "f378b43bce80c917402374dbf6a8a509eea83f25e35ead673854d974fe58e9c7",
+      "bytes": 1730
+    },
+    {
+      "path": "startup/preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "startup/preparation/compile-check/process.json",
+      "sha256": "7ca7437896ed4ded88c443ad1df29b098d757e1afea300067652c5512f612e0d",
+      "bytes": 1748
+    },
+    {
+      "path": "startup/preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "startup/preparation/create-tutorial/process.json",
+      "sha256": "0d662cf6c32de1612e15fda174739a60a4a596e656447f6745e06af4483fc0d7",
+      "bytes": 1658
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stdout.log",
+      "sha256": "e3f9090eb2ce4936494c9233ac6d1e648d154195ffe4e672f4c9716be83cafdd",
+      "bytes": 96
+    },
+    {
+      "path": "startup/preparation/status/process.json",
+      "sha256": "7047a7f2b1cf01feeedc359d78edd2b54dda26bc90667a4c846022ab97554f6c",
+      "bytes": 1748
+    },
+    {
+      "path": "startup/preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "startup/preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    }
+  ],
+  "redaction": {
+    "applied": false,
+    "artifacts": [],
+    "marker": "[REDACTED]"
+  },
+  "metrics": {
+    "skills": [
+      {
+        "configuration": "scripted-control",
+        "dataset": null,
+        "audience": null,
+        "planned": 5,
+        "evaluable": 5,
+        "infrastructure": 0,
+        "notRun": 0,
+        "accuracy": {
+          "numerator": 5,
+          "denominator": 5,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        },
+        "coverage": {
+          "numerator": 5,
+          "denominator": 5,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        }
+      },
+      {
+        "configuration": "scripted-control",
+        "dataset": "evals/skills/orders.yaml",
+        "audience": null,
+        "planned": 5,
+        "evaluable": 5,
+        "infrastructure": 0,
+        "notRun": 0,
+        "accuracy": {
+          "numerator": 5,
+          "denominator": 5,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        },
+        "coverage": {
+          "numerator": 5,
+          "denominator": 5,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        }
+      },
+      {
+        "configuration": "scripted-control",
+        "dataset": "evals/skills/orders.yaml",
+        "audience": "dev",
+        "planned": 2,
+        "evaluable": 2,
+        "infrastructure": 0,
+        "notRun": 0,
+        "accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        },
+        "coverage": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        }
+      },
+      {
+        "configuration": "scripted-control",
+        "dataset": "evals/skills/orders.yaml",
+        "audience": "runtime",
+        "planned": 3,
+        "evaluable": 3,
+        "infrastructure": 0,
+        "notRun": 0,
+        "accuracy": {
+          "numerator": 3,
+          "denominator": 3,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        },
+        "coverage": {
+          "numerator": 3,
+          "denominator": 3,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        }
+      }
+    ],
+    "benchmarks": [
+      {
+        "configuration": "scripted-control",
+        "initial": {
+          "numerator": 5,
+          "denominator": 5,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        },
+        "final": {
+          "numerator": 5,
+          "denominator": 5,
+          "value": {
+            "status": "available",
+            "value": 1,
+            "source": "deterministic_counts"
+          }
+        },
+        "corrections": 0,
+        "completion": {
+          "status": "available",
+          "value": "done",
+          "source": "independent_verify_change"
+        },
+        "agentDurationMs": 220.97133000000576,
+        "verificationDurationMs": 20375.593068000002
+      }
+    ],
+    "agreements": [],
+    "kappa": {
+      "value": {
+        "status": "unavailable",
+        "reason": "insufficient_raters_or_rows"
+      },
+      "completeRows": 5,
+      "plannedRows": 5,
+      "raters": 1,
+      "coverage": {
+        "numerator": 5,
+        "denominator": 5,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "deterministic_counts"
+        }
+      }
+    },
+    "usage": {
+      "scripted-control": {
+        "inputTokens": {
+          "status": "unavailable",
+          "reason": "incomplete_measurements"
+        },
+        "cachedInputTokens": {
+          "status": "unavailable",
+          "reason": "incomplete_measurements"
+        },
+        "outputTokens": {
+          "status": "unavailable",
+          "reason": "incomplete_measurements"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      }
+    }
+  }
+}

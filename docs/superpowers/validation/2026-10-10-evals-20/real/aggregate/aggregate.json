@@ -1,0 +1,1463 @@
+{
+  "schemaVersion": 1,
+  "id": "cycle-20",
+  "campaignSha256": "e94fd9bf0a32a7e06395d66f3849c24d998930688830f55f9f6b810fb16e3030",
+  "configurations": [
+    {
+      "configuration": "codex-sol-high",
+      "plannedRuns": 3,
+      "executedRuns": 3,
+      "plannedCases": 75,
+      "evaluableCases": 75,
+      "correctCases": 72,
+      "plannedItems": 15,
+      "initialItems": 14,
+      "finalItems": 15,
+      "certifiedRuns": 3,
+      "corrections": 1,
+      "protocolFailures": 0,
+      "behaviorFailures": 4,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 72,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 0.96,
+          "source": "evidence_counts"
+        }
+      },
+      "coverage": {
+        "numerator": 75,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "initial": {
+        "numerator": 14,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0.9333333333333333,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 15,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 6277653,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 5423104,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 62170,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "notRun": []
+    },
+    {
+      "configuration": "cursor-codex-medium",
+      "plannedRuns": 3,
+      "executedRuns": 3,
+      "plannedCases": 75,
+      "evaluableCases": 75,
+      "correctCases": 70,
+      "plannedItems": 15,
+      "initialItems": 10,
+      "finalItems": 13,
+      "certifiedRuns": 2,
+      "corrections": 4,
+      "protocolFailures": 0,
+      "behaviorFailures": 10,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 70,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 0.9333333333333333,
+          "source": "evidence_counts"
+        }
+      },
+      "coverage": {
+        "numerator": 75,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "initial": {
+        "numerator": 10,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0.6666666666666666,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 13,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0.8666666666666667,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 2,
+        "denominator": 3,
+        "value": {
+          "status": "available",
+          "value": 0.6666666666666666,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "unavailable",
+          "reason": "incomplete_measurements"
+        },
+        "cachedInputTokens": {
+          "status": "unavailable",
+          "reason": "incomplete_measurements"
+        },
+        "outputTokens": {
+          "status": "unavailable",
+          "reason": "incomplete_measurements"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "notRun": []
+    }
+  ],
+  "groups": [
+    {
+      "id": "308ff0cba8816487897f5ece0bd99b7bf9302b63d76e88afc1e9339360e839f0",
+      "provenance": {
+        "mode": "real",
+        "source": "dc9a25d133fa71975dfd77713e00ea653a273a82",
+        "runner": "d5669b13b661986af9a3a1f2b0a5b0f5af8b8f0e",
+        "configuration": {
+          "id": "cursor-codex-medium",
+          "adapter": "cursor-cli",
+          "authentication": "local-login",
+          "model": "gpt-5.3-codex",
+          "parameters": {}
+        },
+        "adapter": {
+          "id": "cursor-cli",
+          "version": "2026.10.01-e373342",
+          "executableSha256": "2ccc9a8e167797641448b5e5c936f006ba137a2555f117f38c5eb76a5238a233"
+        },
+        "environment": {
+          "platform": "linux/x64",
+          "bun": "1.4.2",
+          "nativeToolAccess": {
+            "sourceTrustAcknowledged": true,
+            "credentials": "accessible",
+            "network": "host"
+          }
+        },
+        "budget": {
+          "maxInvocations": 35,
+          "skillTimeoutMs": 120000,
+          "implementationTimeoutMs": 600000,
+          "totalTimeoutMs": 2700000,
+          "maxCorrectionsPerItem": 1,
+          "repetitions": 1,
+          "concurrency": 1
+        },
+        "datasets": [
+          {
+            "path": "evals/skills/orders.yaml",
+            "contextRoots": {
+              "dev": [
+                "AGENTS.md",
+                ".agents/skills/orders-dev"
+              ],
+              "runtime": [
+                ".agentic/runtime/order-operator"
+              ]
+            }
+          },
+          {
+            "path": "evals/skills/orders.extended.yaml",
+            "contextRoots": {
+              "dev": [
+                "AGENTS.md",
+                ".agents/skills/orders-dev"
+              ],
+              "runtime": [
+                ".agentic/runtime/order-operator"
+              ]
+            }
+          }
+        ],
+        "cases": [
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-public-method",
+            "audience": "dev",
+            "question": "Qual decorator é obrigatório em todo método público de uma entidade? Responda somente @NomeDoDecorator, sem argumentos.",
+            "expect": {
+              "type": "exact",
+              "value": "@AgentMethod"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-usecase",
+            "audience": "dev",
+            "question": "Para criar o use-case refund_order em orders, indique arquivo e decorator. Responda no formato <caminho> <decorator>, sem argumentos do decorator.",
+            "expect": {
+              "type": "exact",
+              "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-entity",
+            "audience": "dev",
+            "question": "Para criar a entidade Invoice em orders, indique arquivo e decorator. Responda no formato <caminho> <decorator>, sem argumentos do decorator.",
+            "expect": {
+              "type": "exact",
+              "value": "examples/orders/domain/invoice.ts @AgentEntity"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-uses",
+            "audience": "dev",
+            "question": "Um novo use-case chama Order.confirm. Qual ID deve constar no array uses de @AgentUseCase? Responda somente o ID completo.",
+            "expect": {
+              "type": "exact",
+              "value": "method:Order.confirm"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-empty-skeleton",
+            "audience": "dev",
+            "question": "Um corpo vazio {}, sem a chamada notImplemented(), é reconhecido como esqueleto ainda não implementado? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-generated-edit",
+            "audience": "dev",
+            "question": "É permitido editar diretamente uma skill gerada em .agents/skills/orders-dev para mudar uma regra? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-old-hash",
+            "audience": "dev",
+            "question": "O specHash atual do item difere do hash de um packet antigo. verify --item com esse hash antigo pode certificar done? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-static-done",
+            "audience": "dev",
+            "question": "A saída de status --static, sem executar os testes, pode certificar done? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-unexecuted-coverage",
+            "audience": "dev",
+            "question": "Apenas declarar covers com todos os IDs, sem executar os testes, basta para certificar done? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-proposal",
+            "audience": "dev",
+            "question": "Antes de alterar uma regra de negócio, é necessário escrever proposal.md em changes/NNNN-<slug>? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "sim"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "onde-criar-use-case",
+            "audience": "dev",
+            "question": "Em que caminho e com qual decorator crio o use-case refund_order?",
+            "expect": {
+              "type": "exact",
+              "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "confirmar-cancelado",
+            "audience": "dev",
+            "question": "Um pedido cancelled pode ser confirmado? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-create",
+            "audience": "runtime",
+            "question": "Crie um pedido o-21 para o cliente c-21 com dois itens: SKU cafe, quantidade 2, preço unitário 12.5; SKU filtro, quantidade 1, preço unitário 7. Qual tool e todos os argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "create_order",
+              "input": {
+                "order_id": "o-21",
+                "customer_id": "c-21",
+                "items": [
+                  {
+                    "sku": "cafe",
+                    "quantity": 2,
+                    "unit_price": 12.5
+                  },
+                  {
+                    "sku": "filtro",
+                    "quantity": 1,
+                    "unit_price": 7
+                  }
+                ]
+              }
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-confirm",
+            "audience": "runtime",
+            "question": "O pedido o-22 está pending e o cliente solicitou confirmação. Qual tool e todos os argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "confirm_order",
+              "input": {
+                "order_id": "o-22"
+              }
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-cancel",
+            "audience": "runtime",
+            "question": "O pedido o-23 está confirmed. O cliente quer cancelar com motivo literal entrega atrasada. A aprovação humana já foi concedida. Qual tool e todos os argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "cancel_order",
+              "input": {
+                "order_id": "o-23",
+                "reason": "entrega atrasada"
+              }
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-cancelled",
+            "audience": "runtime",
+            "question": "O pedido está cancelled. É permitido executar confirm_order para confirmá-lo? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-confirmed",
+            "audience": "runtime",
+            "question": "O pedido já está confirmed. É permitido executar confirm_order novamente? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-denied",
+            "audience": "runtime",
+            "question": "A pessoa negou a aprovação para cancel_order. O operator pode executar o cancelamento mesmo assim? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-no-items",
+            "audience": "runtime",
+            "question": "É permitido criar um pedido passando items como array vazio? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-no-reason",
+            "audience": "runtime",
+            "question": "O cliente pediu cancelamento mas não forneceu motivo. É permitido cancelar com reason vazio? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-transition",
+            "audience": "runtime",
+            "question": "Quais são o estado de origem permitido e o estado de destino de Order.confirm? Responda no formato <estado-origem> <estado-destino>.",
+            "expect": {
+              "type": "exact",
+              "value": "pending confirmed"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-approval",
+            "audience": "runtime",
+            "question": "Antes de executar cancel_order, o operator exige aprovação humana? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "sim"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "confirmar-pedido",
+            "audience": "runtime",
+            "question": "Qual tool confirma o pedido 7f3c, e com quais argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "confirm_order",
+              "input": {
+                "order_id": "7f3c"
+              }
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "cancelar-com-motivo",
+            "audience": "runtime",
+            "question": "O cliente pediu para cancelar o pedido 7f3c porque desistiu. Qual tool e quais argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "cancel_order",
+              "input": {
+                "order_id": "7f3c",
+                "reason": "desistiu"
+              }
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "cancelar-exige-aprovacao",
+            "audience": "runtime",
+            "question": "Cancelar um pedido exige aprovação humana? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "sim"
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          }
+        ],
+        "packets": [
+          {
+            "item": "entity:Task",
+            "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+          },
+          {
+            "item": "method:Task.complete",
+            "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+          },
+          {
+            "item": "operator:task-operator",
+            "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+          },
+          {
+            "item": "usecase:complete_task",
+            "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+          },
+          {
+            "item": "usecase:create_task",
+            "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+          }
+        ],
+        "observed": [
+          {
+            "model": {
+              "status": "available",
+              "value": "Codex 5.3 Medium"
+            },
+            "revision": {
+              "reason": "not_reported",
+              "status": "unavailable"
+            }
+          }
+        ]
+      },
+      "plannedRuns": 3,
+      "executedRuns": 3,
+      "plannedCases": 75,
+      "evaluableCases": 75,
+      "correctCases": 70,
+      "plannedItems": 15,
+      "initialItems": 10,
+      "finalItems": 13,
+      "certifiedRuns": 2,
+      "corrections": 4,
+      "protocolFailures": 0,
+      "behaviorFailures": 10,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 70,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 0.9333333333333333,
+          "source": "evidence_counts"
+        }
+      },
+      "coverage": {
+        "numerator": 75,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "initial": {
+        "numerator": 10,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0.6666666666666666,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 13,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0.8666666666666667,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 2,
+        "denominator": 3,
+        "value": {
+          "status": "available",
+          "value": 0.6666666666666666,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "unavailable",
+          "reason": "incomplete_measurements"
+        },
+        "cachedInputTokens": {
+          "status": "unavailable",
+          "reason": "incomplete_measurements"
+        },
+        "outputTokens": {
+          "status": "unavailable",
+          "reason": "incomplete_measurements"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "runs": [
+        {
+          "id": "cursor-codex-medium-r1",
+          "reportId": "9c40a644-260b-4f26-a334-d7842609983d",
+          "repetition": 1,
+          "reportSha256": "6f665926ae35a9c53c99dace00aef1f72d687fdcd0f1f1c98dbb63de5b02929d",
+          "status": "completed"
+        },
+        {
+          "id": "cursor-codex-medium-r2",
+          "reportId": "0f698399-52d8-410c-979c-223d5e678cce",
+          "repetition": 2,
+          "reportSha256": "a04a97c04ff0ab5d1c4c6d08e71c6c0e73b5a56a559a9eba9066124abbf4ae26",
+          "status": "completed"
+        },
+        {
+          "id": "cursor-codex-medium-r3",
+          "reportId": "02db5e80-b9ea-41b6-8867-fe64f4751bcf",
+          "repetition": 3,
+          "reportSha256": "9d0e830565b8e8fda227785d8f7338ceaa26adf6d015772330f195b6d1fd080f",
+          "status": "completed"
+        }
+      ],
+      "baselines": [
+        {
+          "run": "cursor-codex-medium-r1",
+          "baselineHash": "44ee52957285e2e7086d525c41b591182ba44ca5d66f7be1324568a4cb5aa803",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "44ee52957285e2e7086d525c41b591182ba44ca5d66f7be1324568a4cb5aa803"
+            },
+            {
+              "item": "entity:Task",
+              "number": 2,
+              "hash": "44ee52957285e2e7086d525c41b591182ba44ca5d66f7be1324568a4cb5aa803"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "e274d4306105537e827965cf53071a3e9d30c1f6cf9dc573cad97997a840c58f"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "1369cee194e62eed3e35b3355509e90231d1e3df07497a6f409953774cadbaed"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "1369cee194e62eed3e35b3355509e90231d1e3df07497a6f409953774cadbaed"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 2,
+              "hash": "1369cee194e62eed3e35b3355509e90231d1e3df07497a6f409953774cadbaed"
+            }
+          ]
+        },
+        {
+          "run": "cursor-codex-medium-r2",
+          "baselineHash": "e138ca5d6b28b02d6b0f1dd2208f26bd188968cf04734ea3095a770cb7e3c590",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "e138ca5d6b28b02d6b0f1dd2208f26bd188968cf04734ea3095a770cb7e3c590"
+            },
+            {
+              "item": "entity:Task",
+              "number": 2,
+              "hash": "e138ca5d6b28b02d6b0f1dd2208f26bd188968cf04734ea3095a770cb7e3c590"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "fa0825f3286ed754bae9366202a5236d1b683d3e0d592190bce7a41d33ffedcb"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "a062703ee1d9a7f4ea06689733ef738145f55b4c3386aced6ded73d47d4e4cbd"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "70efa541ed3b2f48fb2769421e161b8ce61719b45ed9e2e52a1ee39b4581f09a"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "b629abbe0d64fc26d3670e93c2b9eed56a212f1dbca09126a779f4889a982180"
+            }
+          ]
+        },
+        {
+          "run": "cursor-codex-medium-r3",
+          "baselineHash": "a859d4ffc6c4f9e51e156472398fed5af57f422951ad1f78e62054fc78b64ac0",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "a859d4ffc6c4f9e51e156472398fed5af57f422951ad1f78e62054fc78b64ac0"
+            },
+            {
+              "item": "entity:Task",
+              "number": 2,
+              "hash": "a859d4ffc6c4f9e51e156472398fed5af57f422951ad1f78e62054fc78b64ac0"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "59c1d98f3a9c85a9b2be707e63c4dbaa073942da5656d1a62c782ad4022055c3"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "d3b729e5c85d54bbf5c79da532e1c95fd3d7746e6205de3437a39c02ebcd53da"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "ee7452db227eec0f18178879d307cb8f9915753dfc086013a0e83c731898b5fd"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "95d5992f7fe26c5a50d7213894925dbbde99b782650097fc2e903f992546835b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "c28a01a03f692d35d3b851f21ce9720fa9545b4d7cffbaddaabf1db053310f6c",
+      "provenance": {
+        "mode": "real",
+        "source": "dc9a25d133fa71975dfd77713e00ea653a273a82",
+        "runner": "d5669b13b661986af9a3a1f2b0a5b0f5af8b8f0e",
+        "configuration": {
+          "id": "codex-sol-high",
+          "adapter": "codex-cli",
+          "authentication": "local-login",
+          "model": "gpt-6.1-sol",
+          "parameters": {
+            "reasoningEffort": "high"
+          }
+        },
+        "adapter": {
+          "id": "codex-cli",
+          "version": "codex-cli 0.162.1",
+          "executableSha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+          "companions": [
+            {
+              "name": "codex-code-mode-host",
+              "sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+            }
+          ]
+        },
+        "environment": {
+          "platform": "linux/x64",
+          "bun": "1.4.2",
+          "nativeToolAccess": {
+            "sourceTrustAcknowledged": true,
+            "credentials": "accessible",
+            "network": "host"
+          }
+        },
+        "budget": {
+          "maxInvocations": 35,
+          "skillTimeoutMs": 120000,
+          "implementationTimeoutMs": 600000,
+          "totalTimeoutMs": 2700000,
+          "maxCorrectionsPerItem": 1,
+          "repetitions": 1,
+          "concurrency": 1
+        },
+        "datasets": [
+          {
+            "path": "evals/skills/orders.yaml",
+            "contextRoots": {
+              "dev": [
+                "AGENTS.md",
+                ".agents/skills/orders-dev"
+              ],
+              "runtime": [
+                ".agentic/runtime/order-operator"
+              ]
+            }
+          },
+          {
+            "path": "evals/skills/orders.extended.yaml",
+            "contextRoots": {
+              "dev": [
+                "AGENTS.md",
+                ".agents/skills/orders-dev"
+              ],
+              "runtime": [
+                ".agentic/runtime/order-operator"
+              ]
+            }
+          }
+        ],
+        "cases": [
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-public-method",
+            "audience": "dev",
+            "question": "Qual decorator é obrigatório em todo método público de uma entidade? Responda somente @NomeDoDecorator, sem argumentos.",
+            "expect": {
+              "type": "exact",
+              "value": "@AgentMethod"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-usecase",
+            "audience": "dev",
+            "question": "Para criar o use-case refund_order em orders, indique arquivo e decorator. Responda no formato <caminho> <decorator>, sem argumentos do decorator.",
+            "expect": {
+              "type": "exact",
+              "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-entity",
+            "audience": "dev",
+            "question": "Para criar a entidade Invoice em orders, indique arquivo e decorator. Responda no formato <caminho> <decorator>, sem argumentos do decorator.",
+            "expect": {
+              "type": "exact",
+              "value": "examples/orders/domain/invoice.ts @AgentEntity"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-uses",
+            "audience": "dev",
+            "question": "Um novo use-case chama Order.confirm. Qual ID deve constar no array uses de @AgentUseCase? Responda somente o ID completo.",
+            "expect": {
+              "type": "exact",
+              "value": "method:Order.confirm"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-empty-skeleton",
+            "audience": "dev",
+            "question": "Um corpo vazio {}, sem a chamada notImplemented(), é reconhecido como esqueleto ainda não implementado? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-generated-edit",
+            "audience": "dev",
+            "question": "É permitido editar diretamente uma skill gerada em .agents/skills/orders-dev para mudar uma regra? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-old-hash",
+            "audience": "dev",
+            "question": "O specHash atual do item difere do hash de um packet antigo. verify --item com esse hash antigo pode certificar done? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-static-done",
+            "audience": "dev",
+            "question": "A saída de status --static, sem executar os testes, pode certificar done? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-negative-unexecuted-coverage",
+            "audience": "dev",
+            "question": "Apenas declarar covers com todos os IDs, sem executar os testes, basta para certificar done? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "dev-positive-proposal",
+            "audience": "dev",
+            "question": "Antes de alterar uma regra de negócio, é necessário escrever proposal.md em changes/NNNN-<slug>? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "sim"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "onde-criar-use-case",
+            "audience": "dev",
+            "question": "Em que caminho e com qual decorator crio o use-case refund_order?",
+            "expect": {
+              "type": "exact",
+              "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "confirmar-cancelado",
+            "audience": "dev",
+            "question": "Um pedido cancelled pode ser confirmado? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-create",
+            "audience": "runtime",
+            "question": "Crie um pedido o-21 para o cliente c-21 com dois itens: SKU cafe, quantidade 2, preço unitário 12.5; SKU filtro, quantidade 1, preço unitário 7. Qual tool e todos os argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "create_order",
+              "input": {
+                "order_id": "o-21",
+                "customer_id": "c-21",
+                "items": [
+                  {
+                    "sku": "cafe",
+                    "quantity": 2,
+                    "unit_price": 12.5
+                  },
+                  {
+                    "sku": "filtro",
+                    "quantity": 1,
+                    "unit_price": 7
+                  }
+                ]
+              }
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-confirm",
+            "audience": "runtime",
+            "question": "O pedido o-22 está pending e o cliente solicitou confirmação. Qual tool e todos os argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "confirm_order",
+              "input": {
+                "order_id": "o-22"
+              }
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-cancel",
+            "audience": "runtime",
+            "question": "O pedido o-23 está confirmed. O cliente quer cancelar com motivo literal entrega atrasada. A aprovação humana já foi concedida. Qual tool e todos os argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "cancel_order",
+              "input": {
+                "order_id": "o-23",
+                "reason": "entrega atrasada"
+              }
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-cancelled",
+            "audience": "runtime",
+            "question": "O pedido está cancelled. É permitido executar confirm_order para confirmá-lo? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-confirmed",
+            "audience": "runtime",
+            "question": "O pedido já está confirmed. É permitido executar confirm_order novamente? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-denied",
+            "audience": "runtime",
+            "question": "A pessoa negou a aprovação para cancel_order. O operator pode executar o cancelamento mesmo assim? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-no-items",
+            "audience": "runtime",
+            "question": "É permitido criar um pedido passando items como array vazio? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-negative-no-reason",
+            "audience": "runtime",
+            "question": "O cliente pediu cancelamento mas não forneceu motivo. É permitido cancelar com reason vazio? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "não"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-transition",
+            "audience": "runtime",
+            "question": "Quais são o estado de origem permitido e o estado de destino de Order.confirm? Responda no formato <estado-origem> <estado-destino>.",
+            "expect": {
+              "type": "exact",
+              "value": "pending confirmed"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.extended.yaml",
+            "id": "runtime-positive-approval",
+            "audience": "runtime",
+            "question": "Antes de executar cancel_order, o operator exige aprovação humana? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "sim"
+            },
+            "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "confirmar-pedido",
+            "audience": "runtime",
+            "question": "Qual tool confirma o pedido 7f3c, e com quais argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "confirm_order",
+              "input": {
+                "order_id": "7f3c"
+              }
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "cancelar-com-motivo",
+            "audience": "runtime",
+            "question": "O cliente pediu para cancelar o pedido 7f3c porque desistiu. Qual tool e quais argumentos?",
+            "expect": {
+              "type": "tool_call",
+              "name": "cancel_order",
+              "input": {
+                "order_id": "7f3c",
+                "reason": "desistiu"
+              }
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          },
+          {
+            "dataset": "evals/skills/orders.yaml",
+            "id": "cancelar-exige-aprovacao",
+            "audience": "runtime",
+            "question": "Cancelar um pedido exige aprovação humana? Responda sim ou não.",
+            "expect": {
+              "type": "exact",
+              "value": "sim"
+            },
+            "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+            "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d"
+          }
+        ],
+        "packets": [
+          {
+            "item": "entity:Task",
+            "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+          },
+          {
+            "item": "method:Task.complete",
+            "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+          },
+          {
+            "item": "operator:task-operator",
+            "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+          },
+          {
+            "item": "usecase:complete_task",
+            "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+          },
+          {
+            "item": "usecase:create_task",
+            "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+          }
+        ],
+        "observed": [
+          {
+            "model": {
+              "status": "available",
+              "value": "gpt-6.1-sol"
+            },
+            "revision": {
+              "reason": "not_reported",
+              "status": "unavailable"
+            }
+          }
+        ]
+      },
+      "plannedRuns": 3,
+      "executedRuns": 3,
+      "plannedCases": 75,
+      "evaluableCases": 75,
+      "correctCases": 72,
+      "plannedItems": 15,
+      "initialItems": 14,
+      "finalItems": 15,
+      "certifiedRuns": 3,
+      "corrections": 1,
+      "protocolFailures": 0,
+      "behaviorFailures": 4,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 72,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 0.96,
+          "source": "evidence_counts"
+        }
+      },
+      "coverage": {
+        "numerator": 75,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "initial": {
+        "numerator": 14,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0.9333333333333333,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 15,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 6277653,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 5423104,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 62170,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "runs": [
+        {
+          "id": "codex-sol-high-r1",
+          "reportId": "32bd54f0-067e-418c-b818-3c2c98e3384d",
+          "repetition": 1,
+          "reportSha256": "0d4bd9721a146d925ee93af6379f9dd88ce07f79448dfa2993c2653b1732a5c0",
+          "status": "completed"
+        },
+        {
+          "id": "codex-sol-high-r2",
+          "reportId": "07c59dca-4c5f-43f9-a022-b9cc1b82b252",
+          "repetition": 2,
+          "reportSha256": "73d2b1b3d126ee1d51de5db2af2ca9b8553862847deb03cc5fa7b76dc4c74616",
+          "status": "completed"
+        },
+        {
+          "id": "codex-sol-high-r3",
+          "reportId": "c0fd5dd7-2ca0-40b5-9710-1031ce9f2c57",
+          "repetition": 3,
+          "reportSha256": "9fb525ba427923d909e1bade0607da5fe9c3d1c73bd2a8defca6c9a29dd3931e",
+          "status": "completed"
+        }
+      ],
+      "baselines": [
+        {
+          "run": "codex-sol-high-r1",
+          "baselineHash": "9e401dc3f58224a6fac01b924f1fda4d49d42ffa37cb54a7d28e1ffd7ee06b14",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "9e401dc3f58224a6fac01b924f1fda4d49d42ffa37cb54a7d28e1ffd7ee06b14"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "927cb2c029808aced90ad24b929ccf1db78e641578f4239ec96c7af964916b30"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "93e49ffbcca9e38af61fe6d307cc26eadf2ca124ec175b1a310c7037ff15a366"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "9b9884040a1194181f34902cf8209317c2fd580bd837942e73a38af4bbddaa85"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 2,
+              "hash": "9b9884040a1194181f34902cf8209317c2fd580bd837942e73a38af4bbddaa85"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "c60fe1cbfc5ad5005eece5b2937d6958fcb84b4e4e631c92e6c15845edea861c"
+            }
+          ]
+        },
+        {
+          "run": "codex-sol-high-r2",
+          "baselineHash": "dd8d283b4d4cb5cd26e96ecfc5420cbd3473a44804ab9d3e06c1fa784462266d",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "dd8d283b4d4cb5cd26e96ecfc5420cbd3473a44804ab9d3e06c1fa784462266d"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "097ef3cbda5a877478fa7639ec94e0fe21ee58622777817be083972b49298603"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "800f5888294595d76c08e681f5a09d2deb3df1d87e4a0134d78a068ce9911ae8"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "2d16665e8870838c25da45ec05a1a620f60baeea57357b5d5e166681cabf9527"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "6c37b7807d0124bd7794d13ef959ee46902075d271f91c860fc96dc2667076be"
+            }
+          ]
+        },
+        {
+          "run": "codex-sol-high-r3",
+          "baselineHash": "15ec5d39f360f072eef70010912920348b3bd7cfb44d67d4c789bae5e405dcf9",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "15ec5d39f360f072eef70010912920348b3bd7cfb44d67d4c789bae5e405dcf9"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "fae27276a6a2967c08c5c34e4aa9553cace6d6d46e8f3883dd6c853dd08b7c38"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "fcf05fbdd558d3e2781a25c85553e08b72d789434fda09f96dc3ef97d560a75d"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "7d64a103f5f494494a774d4c6277f8fb1c299c9b642633f0b8961fd81eade3b8"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "ef9cbc3f77bb4f21a1b8d2d03aa6189aaef2239b4c4a2d8a10e76c8848069af9"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

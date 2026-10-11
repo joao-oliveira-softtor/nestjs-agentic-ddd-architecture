@@ -1,0 +1,12 @@
+
+app/test/entity-Task.test.ts:
+(pass) Task entity > [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita titulo vazio ao criar tarefa [0.15ms]
+(pass) Task entity > [covers: criterion:0001/criacao, method:Task.create] cria tarefa pending, normaliza titulo e registra TaskCreated [0.34ms]
+
+app/test/method-Task-complete.test.ts:
+(pass) Task.complete method > [covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pending, registra TaskCompleted e rejeita repeticao [0.16ms]
+
+ 3 pass
+ 0 fail
+ 15 expect() calls
+Ran 3 tests across 2 files. [113.00ms]

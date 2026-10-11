@@ -1,0 +1,37 @@
+bun test v1.4.2 (744846f84)
+
+test/evals-run.test.ts:
+78 |   const report=await run(defect.name,Array.from({length:5},()=>done(async req=>{if(req.id===defect.item) await defective(req,defect); else await completeItem(req.cwd,req.id);})));
+79 |   const benchmark=report.benchmarks[0]!, item=benchmark.items.find(i=>i.item===defect.item)!, attempt=item.attempts[0]!;
+80 |   expect(attempt.audit?.ok).toBe(true);
+81 |   expect(attempt.verification?.itemReport?.status).toBe('done');
+82 |   expect(attempt.verification?.executorTests?.exitCode).toBe(0);
+83 |   expect(attempt.verification?.referenceTests?.cases.some(c=>c.status==='failed')).toBe(true);
+                                                                                        ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/tmp/agentic-evals-cycle-17-20/test/evals-run.test.ts:83:84)
+(fail) full run rejects hardcoded-oracle-id after audit and green executor suite [40461.70ms]
+120 |   expect(report.benchmarks[0]!.finalVerification).toBeNull();
+121 | },180000);
+122 | test('final verification timeout after five acceptances cannot certify change',async()=>{
+123 |   const report=await run('final-unavailable',Array.from({length:5},()=>done()),{finalTimeout:true});
+124 |   expect(report.benchmarks[0]!.items.map(i=>i.state)).toEqual(Array(5).fill('accepted'));
+125 |   expect(finalVerificationState(report.benchmarks[0]!.finalVerification)).toBe('infra_error');
+                                                                                ^
+error: expect(received).toBe(expected)
+
+Expected: "infra_error"
+Received: "verified"
+
+      at <anonymous> (/tmp/agentic-evals-cycle-17-20/test/evals-run.test.ts:125:75)
+(fail) final verification timeout after five acceptances cannot certify change [58000.50ms]
+
+ 0 pass
+ 23 filtered out
+ 2 fail
+ 11 expect() calls
+Ran 2 tests across 1 file. [105.64s]

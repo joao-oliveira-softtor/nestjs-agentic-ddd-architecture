@@ -1,0 +1,9 @@
+
+app/test/entity-Task.test.ts:
+(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento [0.24ms]
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços [0.20ms]
+
+ 2 pass
+ 0 fail
+ 6 expect() calls
+Ran 2 tests across 1 file. [87.00ms]

@@ -1,0 +1,9 @@
+{
+  "change": "0001",
+  "waves": [
+    [
+      "operator:task-operator"
+    ]
+  ],
+  "diagnostics": []
+}

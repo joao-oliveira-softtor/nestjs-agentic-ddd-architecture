@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="2" assertions="12" failures="0" skipped="0" time="0.09446942">
+  <testsuite name=".eval-reference/behavior.test.ts" file=".eval-reference/behavior.test.ts" tests="2" assertions="12" failures="0" skipped="0" time="0.092840463" hostname="softtords">
+    <testcase name="operator executa tools reais e publica eventos" classname="" time="0.007923" file=".eval-reference/behavior.test.ts" line="11" assertions="6" />
+    <testcase name="operator executa tools reais e publica eventos" classname="" time="0.000963" file=".eval-reference/behavior.test.ts" line="11" assertions="6" />
+  </testsuite>
+</testsuites>

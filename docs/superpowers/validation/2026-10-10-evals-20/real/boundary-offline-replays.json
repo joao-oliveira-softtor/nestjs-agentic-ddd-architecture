@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "rejectedSubmissions": 5,
+  "results": [
+    {
+      "run": "cursor-codex-medium-r3",
+      "item": "entity:Task",
+      "attempt": 1,
+      "recordedAccepted": false,
+      "replayedAudit": false,
+      "findings": [
+        "Body line count changed: app/domain/task.ts"
+      ]
+    },
+    {
+      "run": "cursor-codex-medium-r2",
+      "item": "entity:Task",
+      "attempt": 1,
+      "recordedAccepted": false,
+      "replayedAudit": false,
+      "findings": [
+        "Body line count changed: app/domain/task.ts"
+      ]
+    },
+    {
+      "run": "cursor-codex-medium-r1",
+      "item": "usecase:complete_task",
+      "attempt": 2,
+      "recordedAccepted": false,
+      "replayedAudit": false,
+      "findings": [
+        "Body line count changed: app/application/complete-task.ts"
+      ]
+    },
+    {
+      "run": "cursor-codex-medium-r1",
+      "item": "usecase:complete_task",
+      "attempt": 1,
+      "recordedAccepted": false,
+      "replayedAudit": false,
+      "findings": [
+        "Body line count changed: app/application/complete-task.ts"
+      ]
+    },
+    {
+      "run": "cursor-codex-medium-r1",
+      "item": "entity:Task",
+      "attempt": 1,
+      "recordedAccepted": false,
+      "replayedAudit": false,
+      "findings": [
+        "Body line count changed: app/domain/task.ts"
+      ]
+    }
+  ]
+}

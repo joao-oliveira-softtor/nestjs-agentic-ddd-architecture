@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado apenas o corpo de `Task.create` em `app/domain/task.ts` (mantendo a estrutura/linhas do esqueleto) para: normalizar `title` com `trim`, rejeitar vazio com `DomainError` código `TASK_TITLE_REQUIRED`, criar `Task` pendente e registrar `TaskCreated`. Adicionado `app/test/entity-Task.test.ts` com `covers` para `invariant:Task/titulo-obrigatorio`, `method:Task.create`, `criterion:0001/titulo-invalido` e `criterion:0001/criacao`, validando rejeição de título inválido e criação com normalização + evento. Verificação executada com hash original: `bun run agentic verify --item entity:Task --spec-hash e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c --config /tmp/agentic-eval-ggd69E/attempt-zyPEAZ/workspace/agentic.config.ts --json` => status `done` com I1-I5 `passed`.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "0773dde9-4dfc-45f0-a83a-4adbb8d01f01",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 44796.47857799998,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/entity-Task/attempt-2/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/entity-Task/attempt-2/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/entity-Task/attempt-2/process.json"
+  ],
+  "diagnostic": null
+}

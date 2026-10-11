@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "userReply": "autorizo",
+  "scope": "six independent issue #20 runs, three per configuration",
+  "maxNativeInvocations": 210,
+  "maxTotalMinutes": 270,
+  "maxInvocationsPerRun": 35,
+  "maxMinutesPerRun": 45,
+  "retriesOutsidePlannedSlots": false,
+  "sourceCommit": "dc9a25d133fa71975dfd77713e00ea653a273a82",
+  "runnerCommit": "d5669b13b661986af9a3a1f2b0a5b0f5af8b8f0e",
+  "originFingerprint": "11f596f55338a11a1f0dba2a7e2f6ee74ea859a3a7d784d27e8a525f1b14e245",
+  "versions": {
+    "codex": "codex-cli 0.162.1",
+    "cursor": "2026.10.01-e373342"
+  },
+  "manifestEvidence": [
+    {
+      "id": "codex-sol-high-r1",
+      "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e",
+      "configuration": {
+        "id": "codex-sol-high",
+        "adapter": "codex-cli",
+        "authentication": "local-login",
+        "model": "gpt-6.1-sol",
+        "parameters": {
+          "reasoningEffort": "high"
+        }
+      },
+      "budget": {
+        "maxInvocations": 35,
+        "skillTimeoutMs": 120000,
+        "implementationTimeoutMs": 600000,
+        "totalTimeoutMs": 2700000,
+        "maxCorrectionsPerItem": 1,
+        "repetitions": 1,
+        "concurrency": 1
+      }
+    },
+    {
+      "id": "codex-sol-high-r2",
+      "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e",
+      "configuration": {
+        "id": "codex-sol-high",
+        "adapter": "codex-cli",
+        "authentication": "local-login",
+        "model": "gpt-6.1-sol",
+        "parameters": {
+          "reasoningEffort": "high"
+        }
+      },
+      "budget": {
+        "maxInvocations": 35,
+        "skillTimeoutMs": 120000,
+        "implementationTimeoutMs": 600000,
+        "totalTimeoutMs": 2700000,
+        "maxCorrectionsPerItem": 1,
+        "repetitions": 1,
+        "concurrency": 1
+      }
+    },
+    {
+      "id": "codex-sol-high-r3",
+      "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e",
+      "configuration": {
+        "id": "codex-sol-high",
+        "adapter": "codex-cli",
+        "authentication": "local-login",
+        "model": "gpt-6.1-sol",
+        "parameters": {
+          "reasoningEffort": "high"
+        }
+      },
+      "budget": {
+        "maxInvocations": 35,
+        "skillTimeoutMs": 120000,
+        "implementationTimeoutMs": 600000,
+        "totalTimeoutMs": 2700000,
+        "maxCorrectionsPerItem": 1,
+        "repetitions": 1,
+        "concurrency": 1
+      }
+    },
+    {
+      "id": "cursor-codex-medium-r1",
+      "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331",
+      "configuration": {
+        "id": "cursor-codex-medium",
+        "adapter": "cursor-cli",
+        "authentication": "local-login",
+        "model": "gpt-5.3-codex",
+        "parameters": {}
+      },
+      "budget": {
+        "maxInvocations": 35,
+        "skillTimeoutMs": 120000,
+        "implementationTimeoutMs": 600000,
+        "totalTimeoutMs": 2700000,
+        "maxCorrectionsPerItem": 1,
+        "repetitions": 1,
+        "concurrency": 1
+      }
+    },
+    {
+      "id": "cursor-codex-medium-r2",
+      "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331",
+      "configuration": {
+        "id": "cursor-codex-medium",
+        "adapter": "cursor-cli",
+        "authentication": "local-login",
+        "model": "gpt-5.3-codex",
+        "parameters": {}
+      },
+      "budget": {
+        "maxInvocations": 35,
+        "skillTimeoutMs": 120000,
+        "implementationTimeoutMs": 600000,
+        "totalTimeoutMs": 2700000,
+        "maxCorrectionsPerItem": 1,
+        "repetitions": 1,
+        "concurrency": 1
+      }
+    },
+    {
+      "id": "cursor-codex-medium-r3",
+      "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331",
+      "configuration": {
+        "id": "cursor-codex-medium",
+        "adapter": "cursor-cli",
+        "authentication": "local-login",
+        "model": "gpt-5.3-codex",
+        "parameters": {}
+      },
+      "budget": {
+        "maxInvocations": 35,
+        "skillTimeoutMs": 120000,
+        "implementationTimeoutMs": 600000,
+        "totalTimeoutMs": 2700000,
+        "maxCorrectionsPerItem": 1,
+        "repetitions": 1,
+        "concurrency": 1
+      }
+    }
+  ],
+  "positiveControl": "passed"
+}

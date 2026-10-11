@@ -1,0 +1,9 @@
+
+app/test/entity-Task.test.ts:
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] Task.create rejeita titulo vazio [0.13ms]
+(pass) [covers: criterion:0001/criacao, method:Task.create] Task.create normaliza titulo e registra TaskCreated [0.34ms]
+
+ 2 pass
+ 0 fail
+ 8 expect() calls
+Ran 2 tests across 1 file. [85.00ms]

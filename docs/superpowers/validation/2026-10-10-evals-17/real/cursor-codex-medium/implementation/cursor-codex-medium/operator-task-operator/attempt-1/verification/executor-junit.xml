@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="6" assertions="48" failures="0" skipped="0" time="0.092817241">
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="1" assertions="11" failures="0" skipped="0" time="0.081480056" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] create_task salva pending, publica TaskCreated e rejeita id duplicado" classname="" time="0.000524" file="app/test/usecase-create_task.test.ts" line="9" assertions="11" />
+  </testsuite>
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="1" assertions="10" failures="0" skipped="0" time="0.001162079" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] complete_task salva completed, publica TaskCompleted e falha para id ausente" classname="" time="0.00033" file="app/test/usecase-complete_task.test.ts" line="9" assertions="10" />
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="7" failures="0" skipped="0" time="0.000351287" hostname="softtords">
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] Task.complete conclui tarefa e bloqueia repeticao" classname="" time="0.000128" file="app/test/method-Task-complete.test.ts" line="7" assertions="7" />
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="8" failures="0" skipped="0" time="0.000298276" hostname="softtords">
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] Task.create rejeita titulo vazio" classname="" time="0.000051" file="app/test/entity-Task.test.ts" line="7" assertions="3" />
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] Task.create normaliza titulo e registra TaskCreated" classname="" time="0.000042" file="app/test/entity-Task.test.ts" line="20" assertions="5" />
+  </testsuite>
+  <testsuite name="app/test/operator-task-operator.test.ts" file="app/test/operator-task-operator.test.ts" tests="1" assertions="12" failures="0" skipped="0" time="0.007831555" hostname="softtords">
+    <testcase name="[covers: criterion:0001/tools, operator:task-operator] task-operator conclui tarefa usando somente create_task e complete_task e publica eventos" classname="" time="0.006869" file="app/test/operator-task-operator.test.ts" line="12" assertions="12" />
+  </testsuite>
+</testsuites>

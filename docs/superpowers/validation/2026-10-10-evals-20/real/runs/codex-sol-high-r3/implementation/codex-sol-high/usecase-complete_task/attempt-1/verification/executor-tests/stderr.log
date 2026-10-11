@@ -1,0 +1,20 @@
+
+app/test/method-Task-complete.test.ts:
+(pass) [covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pending, registra TaskCompleted e rejeita repetição [0.39ms]
+
+app/test/entity-Task.test.ts:
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita título vazio após normalização: "" [0.05ms]
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita título vazio após normalização: "   "
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita título vazio após normalização: "\t\n\r "
+(pass) [covers: criterion:0001/criacao, invariant:Task/titulo-obrigatorio, method:Task.create] cria tarefa pendente, normaliza título e registra TaskCreated [0.07ms]
+
+app/test/usecase-complete_task.test.ts:
+(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1, salva completed antes de publicar TaskCompleted e retorna o contrato [0.45ms]
+(pass) [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id ausente com TASK_NOT_FOUND sem salvar ou publicar [0.62ms]
+(pass) [covers: usecase:complete_task] propaga TASK_ALREADY_COMPLETED sem salvar ou publicar novamente [0.17ms]
+(pass) [covers: usecase:complete_task] aguarda gravação e propaga sua falha sem publicar eventos [0.18ms]
+
+ 9 pass
+ 0 fail
+ 49 expect() calls
+Ran 9 tests across 3 files. [113.00ms]

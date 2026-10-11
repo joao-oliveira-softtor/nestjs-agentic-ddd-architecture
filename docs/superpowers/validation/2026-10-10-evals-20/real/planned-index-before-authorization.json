@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "cycle-20",
+  "runs": [
+    {
+      "id": "codex-sol-high-r1",
+      "configuration": "codex-sol-high",
+      "repetition": 1,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/codex-sol-high-r1.json",
+        "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "inference_budget_not_authorized"
+      }
+    },
+    {
+      "id": "codex-sol-high-r2",
+      "configuration": "codex-sol-high",
+      "repetition": 2,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/codex-sol-high-r2.json",
+        "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "inference_budget_not_authorized"
+      }
+    },
+    {
+      "id": "codex-sol-high-r3",
+      "configuration": "codex-sol-high",
+      "repetition": 3,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/codex-sol-high-r3.json",
+        "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "inference_budget_not_authorized"
+      }
+    },
+    {
+      "id": "cursor-codex-medium-r1",
+      "configuration": "cursor-codex-medium",
+      "repetition": 1,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/cursor-codex-medium-r1.json",
+        "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "inference_budget_not_authorized"
+      }
+    },
+    {
+      "id": "cursor-codex-medium-r2",
+      "configuration": "cursor-codex-medium",
+      "repetition": 2,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/cursor-codex-medium-r2.json",
+        "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "inference_budget_not_authorized"
+      }
+    },
+    {
+      "id": "cursor-codex-medium-r3",
+      "configuration": "cursor-codex-medium",
+      "repetition": 3,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/cursor-codex-medium-r3.json",
+        "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "inference_budget_not_authorized"
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+
+.eval-reference/behavior.test.ts:
+33 |     return this.#causationId;
+34 |   }
+35 | 
+36 |   stamp(correlationId: string, causationId: string): void {
+37 |     if (this.#correlationId !== null) {
+38 |       throw new Error(`Evento ${this.eventId} já foi carimbado`);
+                     ^
+error: Evento cd9f0220-733f-45df-9115-b653219d349d já foi carimbado
+      at stamp (/tmp/agentic-eval-HIJSK3/framework/src/core/domain-event.ts:38:17)
+      at publish (/tmp/agentic-eval-HIJSK3/framework/src/testing/context.ts:19:15)
+      at execute (/tmp/agentic-eval-HIJSK3/attempt-OoREhD/workspace/app/application/complete-task.ts:22:15)
+      at async <anonymous> (/tmp/agentic-eval-HIJSK3/attempt-OoREhD/workspace/.eval-reference/behavior.test.ts:11:19)
+(fail) conclui, persiste, publica e rejeita id ausente [0.87ms]
+33 |     return this.#causationId;
+34 |   }
+35 | 
+36 |   stamp(correlationId: string, causationId: string): void {
+37 |     if (this.#correlationId !== null) {
+38 |       throw new Error(`Evento ${this.eventId} já foi carimbado`);
+                     ^
+error: Evento b8601b81-3259-443d-b0ff-c5206a87823d já foi carimbado
+      at stamp (/tmp/agentic-eval-HIJSK3/framework/src/core/domain-event.ts:38:17)
+      at publish (/tmp/agentic-eval-HIJSK3/framework/src/testing/context.ts:19:15)
+      at execute (/tmp/agentic-eval-HIJSK3/attempt-OoREhD/workspace/app/application/complete-task.ts:22:15)
+      at async <anonymous> (/tmp/agentic-eval-HIJSK3/attempt-OoREhD/workspace/.eval-reference/behavior.test.ts:11:19)
+(fail) conclui, persiste, publica e rejeita id ausente [0.10ms]
+
+ 0 pass
+ 2 fail
+Ran 2 tests across 1 file. [110.00ms]

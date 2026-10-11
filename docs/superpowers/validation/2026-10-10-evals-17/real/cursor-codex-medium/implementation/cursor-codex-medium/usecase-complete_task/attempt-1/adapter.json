@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado o corpo de `CompleteTask.execute` em `app/application/complete-task.ts` para carregar por `task_id`, falhar com `TASK_NOT_FOUND` quando ausente, concluir a tarefa, persistir via repositório, publicar `TaskCompleted` e retornar `{ task_id, status: 'completed' }`. Criado `app/test/usecase-complete_task.test.ts` com `covers(['usecase:complete_task','criterion:0001/persistencia-conclusao'], ...)`, validando caminho feliz (save em estado completed + publish de `TaskCompleted`) e rejeição de id inexistente com `DomainError.code = TASK_NOT_FOUND`. Verificação executada com o comando solicitado e specHash original: resultado `done` com gates I1-I5 todos `passed`.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "6a8eecd2-a5b7-47b4-a9ed-bb620a2d038d",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 81133.85279200002,
+  "evidence": [
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/stdout.log",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/stderr.log",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/usecase-complete_task/attempt-1/process.json"
+  ],
+  "diagnostic": null
+}

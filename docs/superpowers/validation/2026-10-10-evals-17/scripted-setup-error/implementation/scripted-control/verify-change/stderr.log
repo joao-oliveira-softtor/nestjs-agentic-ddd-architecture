@@ -1,0 +1,27 @@
+G1 Delta: passed
+G2 Docs: passed
+G3 Critérios: failed
+  - critério criterion:0001/titulo-invalido sem teste (changes/archive/0001-tasks/proposal.md) → crie um teste com covers(['criterion:0001/titulo-invalido'], "rejeita com TASK_TITLE_REQUIRED")
+  - critério criterion:0001/criacao sem teste (changes/archive/0001-tasks/proposal.md) → crie um teste com covers(['criterion:0001/criacao'], "fica pending, normaliza o título e registra TaskCreated")
+  - critério criterion:0001/conclusao sem teste (changes/archive/0001-tasks/proposal.md) → crie um teste com covers(['criterion:0001/conclusao'], "registra TaskCompleted, fica completed e rejeita repetição com TASK_ALREADY_COMPLETED")
+  - critério criterion:0001/persistencia-criacao sem teste (changes/archive/0001-tasks/proposal.md) → crie um teste com covers(['criterion:0001/persistencia-criacao'], "salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS")
+  - critério criterion:0001/persistencia-conclusao sem teste (changes/archive/0001-tasks/proposal.md) → crie um teste com covers(['criterion:0001/persistencia-conclusao'], "salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND")
+  - critério criterion:0001/tools sem teste (changes/archive/0001-tasks/proposal.md) → crie um teste com covers(['criterion:0001/tools'], "conclui a tarefa usando somente suas duas tools e publica os dois eventos")
+G4 Regras: failed
+  - invariant:Task/titulo-obrigatorio não tem teste com covers → crie um teste com covers(['invariant:Task/titulo-obrigatorio'], '…')
+  - method:Task.complete não tem teste com covers → crie um teste com covers(['method:Task.complete'], '…')
+  - method:Task.create não tem teste com covers → crie um teste com covers(['method:Task.create'], '…')
+  - operator:task-operator não tem teste com covers → crie um teste com covers(['operator:task-operator'], '…')
+  - usecase:complete_task não tem teste com covers → crie um teste com covers(['usecase:complete_task'], '…')
+  - usecase:create_task não tem teste com covers → crie um teste com covers(['usecase:create_task'], '…')
+G5 Qualidade: failed
+  - coleta JUnit ausente, inválida ou incompleta; não é possível verificar conclusão → restaure a coleta JUnit da suíte
+  - a suíte de testes saiu com 1 → rode bun test e corrija as falhas
+G6 Manual: passed
+G7 Work items: failed
+  - entity:Task está declared (app/domain/task.ts:5) → bun run agentic packet entity:Task
+  - method:Task.complete está blocked(declared) (app/domain/task.ts:30) → bun run agentic packet method:Task.complete
+  - operator:task-operator está blocked(implemented) (app/operators/task.operator.ts:5) → bun run agentic packet operator:task-operator
+  - usecase:complete_task está blocked(declared) (app/application/complete-task.ts:12) → bun run agentic packet usecase:complete_task
+  - usecase:create_task está blocked(declared) (app/application/create-task.ts:13) → bun run agentic packet usecase:create_task
+agentic-ddd: change 0001 — failed

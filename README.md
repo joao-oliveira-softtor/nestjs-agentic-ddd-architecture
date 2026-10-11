@@ -1,6 +1,6 @@
 # @agentic-ddd
 
-Primeira release: [v0.1.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.1.0). [Demonstração reproduzível](docs/releases/0.1.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
+Release atual: [v0.3.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.3.0). [Demonstração reproduzível](docs/releases/0.3.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
 
 Framework open-source sobre **NestJS + DDD** em que:
 
@@ -238,7 +238,8 @@ Exits: `0` para avaliação concluída, inclusive erros do agente; `1` para infr
 
 - **v0** (implementado, ver [`docs/superpowers/plans`](docs/superpowers/plans/2026-10-06-v0-00-index.md)): compilador de documentação → lock, changes e `verify` → estado do projeto e coordenação de agentes → runtime do operator e integração Nest.
 - **v0.1.0**: primeira release da base acima.
-- **v0.2.0 — em desenvolvimento**: skill do framework e agentes gerente/executor implementados; runner de avaliações, adapter LLM e demonstração CLI acompanhados como próximos planos.
+- **v0.3.0**: skill e tutorial isolado, runner com Codex/Cursor, dataset ampliado, regressões contra falso done e campanhas com agregação offline.
+- **Próximos planos**: adapter real de LlmPort (#7) e demonstração CLI com aprovação (#8).
 - **Backlog**: `reactsTo`, contratos gerados, canal HTTP, propostas paralelas e distribuição npm. Veja [issues, dependências e critérios de aceite](docs/ROADMAP.md).
 
 Design: [`docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md`](docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md) · Decisões: [`docs/adr/ADR-0001.md`](docs/adr/ADR-0001.md)

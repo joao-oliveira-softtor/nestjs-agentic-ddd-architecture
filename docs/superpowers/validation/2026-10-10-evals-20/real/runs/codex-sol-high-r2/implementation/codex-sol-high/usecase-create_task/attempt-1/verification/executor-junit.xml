@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="14" assertions="107" failures="0" skipped="0" time="0.110744645">
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="5" assertions="37" failures="0" skipped="0" time="0.10304587" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] carrega t1, salva completed antes de publicar TaskCompleted e retorna o contrato" classname="" time="0.001415" file="app/test/usecase-complete_task.test.ts" line="22" assertions="15" />
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] rejeita id inexistente com TASK_NOT_FOUND sem salvar nem publicar" classname="" time="0.000255" file="app/test/usecase-complete_task.test.ts" line="55" assertions="7" />
+    <testcase name="[covers: usecase:complete_task] rejeita conclusão repetida sem salvar nem publicar novamente" classname="" time="0.00021" file="app/test/usecase-complete_task.test.ts" line="71" assertions="6" />
+    <testcase name="[covers: usecase:complete_task] propaga falha de persistência sem publicar os eventos" classname="" time="0.000153" file="app/test/usecase-complete_task.test.ts" line="87" assertions="5" />
+    <testcase name="[covers: usecase:complete_task] aguarda publicação e propaga sua falha após salvar" classname="" time="0.000128" file="app/test/usecase-complete_task.test.ts" line="101" assertions="4" />
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="2" assertions="15" failures="0" skipped="0" time="0.000935326" hostname="softtords">
+    <testcase name="[covers: method:Task.complete] conclui uma tarefa pending e registra TaskCompleted com seu id" classname="" time="0.000067" file="app/test/method-Task-complete.test.ts" line="7" assertions="7" />
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] rejeita repetição com TASK_ALREADY_COMPLETED e preserva estado e evento registrado" classname="" time="0.000091" file="app/test/method-Task-complete.test.ts" line="22" assertions="8" />
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="14" failures="0" skipped="0" time="0.00073761" hostname="softtords">
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita títulos vazios ou com apenas espaços com TASK_TITLE_REQUIRED" classname="" time="0.00012" file="app/test/entity-Task.test.ts" line="7" assertions="6" />
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente, normaliza as extremidades e registra TaskCreated" classname="" time="0.00006" file="app/test/entity-Task.test.ts" line="24" assertions="8" />
+  </testsuite>
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="5" assertions="41" failures="0" skipped="0" time="0.004244633" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] cria e salva t1 antes de publicar TaskCreated, retorna pending e rejeita o mesmo id" classname="" time="0.002266" file="app/test/usecase-create_task.test.ts" line="19" assertions="25" />
+    <testcase name="[covers: usecase:create_task] rejeita título vazio após normalização sem salvar nem publicar" classname="" time="0.000121" file="app/test/usecase-create_task.test.ts" line="66" assertions="5" />
+    <testcase name="[covers: usecase:create_task] propaga falha de consulta sem salvar nem publicar" classname="" time="0.000105" file="app/test/usecase-create_task.test.ts" line="77" assertions="3" />
+    <testcase name="[covers: usecase:create_task] propaga falha de persistência sem publicar" classname="" time="0.000112" file="app/test/usecase-create_task.test.ts" line="88" assertions="4" />
+    <testcase name="[covers: usecase:create_task] aguarda publicação e propaga sua falha após salvar" classname="" time="0.000116" file="app/test/usecase-create_task.test.ts" line="100" assertions="4" />
+  </testsuite>
+</testsuites>

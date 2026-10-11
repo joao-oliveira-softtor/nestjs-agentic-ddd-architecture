@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0] — 2026-10-10
+
+Publica os Planos 5–6 e o ciclo de avaliações #17–#20, com evidências de agentes reais e comparação descritiva entre execuções independentes.
+
+- Skill autoral do framework, agentes gerente/executor e tutorial tasks isolado, com instalação para Codex, Cursor e Claude.
+- Runner de avaliações com adapters nativos, isolamento de workspaces, orçamento, auditoria de submissões e oráculos independentes; CI e testes padrão offline.
+- Certificação #17: Codex e Cursor aceitam cinco packets e obtêm verify 0001 done.
+- Dataset adicional de 20 casos, julgamento literal/tool_call estrito com AJV e 25 regressões no percurso completo contra falso done.
+- Agregador offline valida hashes, recalcula métricas pelas evidências e preserva proveniência, cobertura e resultados parciais.
+- Campanha #20: seis runs/150 perguntas; Codex 72/75 e 3/3 certificações, Cursor 70/75 e 2/3. Consumo de 184 sessões/76,8 minutos; run parcial preservado, sem repetição extra ou reparo manual.
+- Framework público, orders, dataset original e evidências históricas preservados.
+
+Distribuição pelo código-fonte GitHub. Adapter real de LlmPort e CLI de runtime continuam nos Planos 7–8; o runtime demonstrativo permanece com FakeLlm. Custos e medições incompletas continuam indisponíveis.
+
+Veja [demonstração e validação](docs/releases/0.3.0.md) e [campanha completa](docs/superpowers/validation/2026-10-10-evals-20/real/README.md).
+
 ## [0.1.0] — 2026-10-08
 
 Primeira release de código-fonte do `@agentic-ddd`, publicando os quatro planos do marco de design v0.
@@ -26,3 +42,5 @@ Primeira release de código-fonte do `@agentic-ddd`, publicando os quatro planos
 Veja [demonstração e validação](docs/releases/0.1.0.md) e [roadmap](docs/ROADMAP.md).
 
 [0.1.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.1.0
+
+[0.3.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.3.0
