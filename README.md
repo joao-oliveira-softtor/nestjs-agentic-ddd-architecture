@@ -1,6 +1,6 @@
 # @agentic-ddd
 
-Release atual: [v0.3.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.3.0). [Demonstração reproduzível](docs/releases/0.3.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
+Release atual: [v0.4.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.4.0). [Demonstração reproduzível](docs/releases/0.4.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
 
 Uso em aplicações externas: [distribuição por tarball, exports públicos e compatibilidade](docs/distribution.md). O nome do pacote é provisório; publicação npm permanece bloqueada.
 
@@ -241,6 +241,7 @@ Exits: `0` para avaliação concluída, inclusive erros do agente; `1` para infr
 - **v0** (implementado, ver [`docs/superpowers/plans`](docs/superpowers/plans/2026-10-06-v0-00-index.md)): compilador de documentação → lock, changes e `verify` → estado do projeto e coordenação de agentes → runtime do operator e integração Nest.
 - **v0.1.0**: primeira release da base acima.
 - **v0.3.0**: skill e tutorial isolado, runner com Codex/Cursor, dataset ampliado, regressões contra falso done e campanhas com agregação offline.
+- **v0.4.0**: biblioteca ESM modular com exports públicos, CLI instalável e tarball validado em consumidor externo.
 - **Próximos planos**: adapter real de LlmPort (#7) e demonstração CLI com aprovação (#8).
 - **Backlog**: `reactsTo`, contratos gerados, canal HTTP, propostas paralelas e distribuição npm. Veja [issues, dependências e critérios de aceite](docs/ROADMAP.md).
 

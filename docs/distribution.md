@@ -11,13 +11,15 @@ A distribuição usa um pacote ESM único com seis fronteiras. O nome `nestjs-ag
 - CommonJS não tem export require nesta versão.
 - Os source maps são distribuídos com sourcesContent e caminhos relativos. Mantenha maps ao empacotar o consumidor: o IR inclui localização original das declarações e o runtime valida o hash da skill.
 
+O tarball v0.4.0 também é disponibilizado como asset da [release GitHub](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.4.0), com SHA-256 e logs de validação.
+
 ## Instalação local
 
 ```bash
 bun install --frozen-lockfile
 npm pack
 # Na aplicação consumidora:
-npm install ../framework/nestjs-agentic-ddd-architecture-0.1.0.tgz @nestjs/common@^12 @nestjs/core@^12 reflect-metadata@^0.2.2 rxjs@^7.8.1 zod@^4
+npm install ../framework/nestjs-agentic-ddd-architecture-0.4.0.tgz @nestjs/common@^12 @nestjs/core@^12 reflect-metadata@^0.2.2 rxjs@^7.8.1 zod@^4
 ```
 
 Não adicione paths de `@agentic-ddd/*` ao tsconfig do consumidor. Esses aliases são exclusivamente do desenvolvimento deste checkout.

@@ -36,6 +36,10 @@ O ciclo preserva o dataset original e a referência real anterior. Manifestos de
 
 [Release](releases/0.3.0.md): Planos 5–6 e ciclo #17–#20, preservando framework público, orders e referências históricas. #17 certificou ambos os agentes; #18/#19 ampliaram compreensão e regressões; #20 registrou seis runs e comparação descritiva. Os Planos 7–8 permanecem próximos trabalhos.
 
+## v0.4.0 — Distribuição por tarball
+
+[Release](releases/0.4.0.md), [PR #21](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/21) e [#13](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/13): exports públicos, CLI instalável, biblioteca/declarações/maps e smoke do tarball real em consumidor externo. Tarball disponível no GitHub; publicação no registro npm segue bloqueada até definir nome e permissões. Planos 7–8 permanecem próximos trabalhos.
+
 ## Backlog — Extensões e distribuição
 
 [Milestone](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/milestone/2). Sem versão ou prazo comprometidos.
@@ -44,7 +48,6 @@ O ciclo preserva o dataset original e a referência real anterior. Manifestos de
 - [#10 — Operators reativos a eventos com fila e proteção contra cascata](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/10)
 - [#11 — Canal HTTP genérico para executar operators](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/11)
 - [#12 — Suportar múltiplas propostas abertas sem reconciliar ambiguamente](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/12)
-- [#13 — Distribuição npm e smoke test em projeto consumidor](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/13)
 
 ## Critério para iniciar um plano
 

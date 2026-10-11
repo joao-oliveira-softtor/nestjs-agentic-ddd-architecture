@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0] — 2026-10-10
+
+Adiciona distribuição por tarball instalável em aplicações externas, com seis fronteiras públicas e a CLI agentic-ddd.
+
+- Biblioteca ESM modular, declarações TypeScript e source maps; exports de core, decorators, compiler, runtime, nestjs e testing.
+- Transformação dos imports e instruções de CLI antes da emissão, preservando mappings e registry/tokens compartilhados.
+- CLI instalável, allowlist auditada do tarball e smoke com npm em consumidor isolado, sem aliases do checkout. NodeNext/bundler com skipLibCheck false; geração/check de skills, DI e bundle com hash/localização iguais.
+- CI inclui o smoke do pacote. evals:aggregate e o ciclo de avaliações v0.3.0 preservados.
+
+**Mudança de build:** bun run build passa a gerar biblioteca/CLI; a aplicação demonstrativa usa bun run build:app antes de start:prod.
+
+Tarball publicado como asset GitHub; publicação no registro npm permanece bloqueada por private: true e prepublishOnly. O nome do pacote segue provisório.
+
+Veja [instalação e validação](docs/releases/0.4.0.md) e [compatibilidade](docs/distribution.md).
+
 ## [0.3.0] — 2026-10-10
 
 Publica os Planos 5–6 e o ciclo de avaliações #17–#20, com evidências de agentes reais e comparação descritiva entre execuções independentes.
@@ -44,3 +59,5 @@ Veja [demonstração e validação](docs/releases/0.1.0.md) e [roadmap](docs/ROA
 [0.1.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.1.0
 
 [0.3.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.3.0
+
+[0.4.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.4.0
