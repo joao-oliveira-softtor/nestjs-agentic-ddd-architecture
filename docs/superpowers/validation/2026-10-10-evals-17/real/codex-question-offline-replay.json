@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "mode": "offline",
+  "realInferenceSessions": 0,
+  "reproductions": [
+    {
+      "case": "onde-criar-use-case",
+      "capturedEvidence": "codex-sol-high/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/onde-criar-use-case/result.json",
+      "capturedEvidenceSha256": "bd75c74d4520950ab62c26babfac6f141c39fad1577543fa58b0b6f219ea2f95",
+      "capturedFinalText": "{\"type\":\"exact\",\"value\":\"Crie em examples/orders/application/refund-order.ts com @AgentUseCase de @agentic-ddd/decorators, declarando name: 'refund_order', description, whenToUse, input, output e uses (obrigatório); emits é opcional.\"}",
+      "expected": {
+        "type": "exact",
+        "value": "examples/orders/application/refund-order.ts @AgentUseCase"
+      },
+      "capturedVerdict": "incorrect",
+      "replayedVerdict": "incorrect",
+      "parserAndJudge": "scripts/evals/judge.ts unchanged; no normalization"
+    }
+  ]
+}

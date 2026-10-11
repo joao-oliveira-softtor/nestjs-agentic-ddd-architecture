@@ -1,0 +1,311 @@
+{
+  "number": 1,
+  "handoff": {
+    "item": "operator:task-operator",
+    "packet": "# Identificação\n\n- ID: `operator:task-operator`\n- Camada: operators\n- Módulo: tasks\n- source: `app/operators/task.operator.ts:5`\n- Estado: implemented\n- specHash: `78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1`\n- Dependências: `usecase:complete_task`, `usecase:create_task`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi concluída.\",\n      \"id\": \"event:TaskCompleted\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCompleted\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.\",\n      \"emits\": [\n        \"event:TaskCompleted\"\n      ],\n      \"entity\": {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      },\n      \"id\": \"method:Task.complete\",\n      \"invariants\": [],\n      \"name\": \"complete\",\n      \"static\": false,\n      \"transition\": {\n        \"from\": [\n          \"pending\"\n        ],\n        \"to\": \"completed\"\n      }\n    },\n    {\n      \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n      \"emits\": [\n        \"event:TaskCreated\"\n      ],\n      \"entity\": {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      },\n      \"id\": \"method:Task.create\",\n      \"invariants\": [],\n      \"name\": \"create\",\n      \"static\": true,\n      \"transition\": null\n    },\n    {\n      \"description\": \"Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.\",\n      \"emits\": [\n        \"event:TaskCompleted\"\n      ],\n      \"id\": \"usecase:complete_task\",\n      \"inputSchema\": {\n        \"properties\": {\n          \"task_id\": {\n            \"minLength\": 1,\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\"\n        ],\n        \"type\": \"object\"\n      },\n      \"module\": \"tasks\",\n      \"name\": \"complete_task\",\n      \"outputSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"status\": {\n            \"const\": \"completed\",\n            \"type\": \"string\"\n          },\n          \"task_id\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\",\n          \"status\"\n        ],\n        \"type\": \"object\"\n      },\n      \"uses\": [\n        \"method:Task.complete\"\n      ],\n      \"whenNotToUse\": \"Para criar uma nova tarefa.\",\n      \"whenToUse\": \"Quando o usuário terminou uma tarefa.\"\n    },\n    {\n      \"description\": \"Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.\",\n      \"emits\": [\n        \"event:TaskCreated\"\n      ],\n      \"id\": \"usecase:create_task\",\n      \"inputSchema\": {\n        \"properties\": {\n          \"task_id\": {\n            \"minLength\": 1,\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"minLength\": 1,\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      },\n      \"module\": \"tasks\",\n      \"name\": \"create_task\",\n      \"outputSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"status\": {\n            \"const\": \"pending\",\n            \"type\": \"string\"\n          },\n          \"task_id\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\",\n          \"title\",\n          \"status\"\n        ],\n        \"type\": \"object\"\n      },\n      \"uses\": [\n        \"method:Task.create\"\n      ],\n      \"whenNotToUse\": \"Para concluir tarefa existente.\",\n      \"whenToUse\": \"Quando o usuário deseja criar uma tarefa.\"\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Cria e conclui tarefas conforme pedido do usuário.\",\n    \"id\": \"operator:task-operator\",\n    \"instructions\": \"Use as tools para criar e concluir tarefas. Identifique a tarefa pelo id e responda em português.\",\n    \"limits\": {\n      \"maxSteps\": 8,\n      \"timeoutMs\": 30000\n    },\n    \"model\": \"default\",\n    \"module\": \"tasks\",\n    \"name\": \"task-operator\",\n    \"requiresApproval\": [],\n    \"useCases\": [\n      \"usecase:complete_task\",\n      \"usecase:create_task\"\n    ]\n  }\n}\n```\n\n## Obrigações de teste\n\n- `operator:task-operator` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item operator:task-operator --spec-hash 78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1 --config /tmp/agentic-eval-Vs9JGs/attempt-HGxmRJ/workspace/agentic.config.ts --json\n```\n",
+    "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1",
+    "configPath": "/tmp/agentic-eval-Vs9JGs/accepted-TAS83b/tasks/agentic.config.ts",
+    "testFile": "app/test/operator-task-operator.test.ts",
+    "criteria": [
+      {
+        "id": "tools",
+        "given": "FakeLlm solicitando create_task e complete_task",
+        "when": "executar task-operator com repositório em memória",
+        "then": "conclui a tarefa usando somente suas duas tools e publica os dois eventos"
+      }
+    ]
+  },
+  "baselineHash": "b629abbe0d64fc26d3670e93c2b9eed56a212f1dbca09126a779f4889a982180",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"status\":\"done\",\"summary\":\"Adicionei apenas o teste permitido em `app/test/operator-task-operator.test.ts`, com `covers(['criterion:0001/tools','operator:task-operator'], ...)`, exercitando `task-operator` via `FakeLlm` no fluxo create->complete com repositório em memória, validando uso exclusivo das tools `create_task` e `complete_task`, publicação dos eventos `TaskCreated` e `TaskCompleted` e estado final da tarefa como `completed`. Executei `bun run agentic verify --item operator:task-operator --spec-hash 78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1 --config /tmp/agentic-eval-Vs9JGs/attempt-Vbw3sE/workspace/agentic.config.ts --json` e o resultado foi `done` com todos os gates passados.\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "7d67aa38-a07b-4cf1-97d4-eebe6e83c10d",
+      "source": "cursor.result.session_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "Codex 5.3 Medium",
+      "source": "cursor.init.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 97148.53860199999,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/process.json"
+    ],
+    "diagnostic": null
+  },
+  "reply": {
+    "status": "done",
+    "summary": "Adicionei apenas o teste permitido em `app/test/operator-task-operator.test.ts`, com `covers(['criterion:0001/tools','operator:task-operator'], ...)`, exercitando `task-operator` via `FakeLlm` no fluxo create->complete com repositório em memória, validando uso exclusivo das tools `create_task` e `complete_task`, publicação dos eventos `TaskCreated` e `TaskCompleted` e estado final da tarefa como `completed`. Executei `bun run agentic verify --item operator:task-operator --spec-hash 78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1 --config /tmp/agentic-eval-Vs9JGs/attempt-Vbw3sE/workspace/agentic.config.ts --json` e o resultado foi `done` com todos os gates passados."
+  },
+  "audit": {
+    "ok": true,
+    "findings": [],
+    "changedFiles": [
+      "app/test/operator-task-operator.test.ts"
+    ],
+    "patch": "[\n  {\n    \"path\": \"app/test/operator-task-operator.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"48b908d20524e46abebe4c675d139ef41e5ca2844f442b48d89e64c9df207e12\",\n      \"content\": \"import { describe, expect, test } from 'bun:test';\\nimport { covers, FakeLlm } from '@agentic-ddd/testing';\\nimport { OperatorRuntime } from '@agentic-ddd/runtime';\\nimport { TaskOperator } from '../operators/task.operator';\\nimport { CreateTask } from '../application/create-task';\\nimport { CompleteTask } from '../application/complete-task';\\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\\nimport { TaskCreated, TaskCompleted } from '../domain/task.events';\\n\\ndescribe('task-operator', () => {\\n  test(covers(['criterion:0001/tools', 'operator:task-operator'], 'usa somente create_task e complete_task e publica os dois eventos no fluxo create->complete'), async () => {\\n    const llm = new FakeLlm([\\n      { stopReason: 'tool_calls', content: [{ type: 'tool_call', id: 'call-1', name: 'create_task', input: { task_id: 't1', title: '  titulo  ' } }] },\\n      { stopReason: 'tool_calls', content: [{ type: 'tool_call', id: 'call-2', name: 'complete_task', input: { task_id: 't1' } }] },\\n      { stopReason: 'end', content: [{ type: 'text', text: 'Tarefa t1 criada e concluida.' }] },\\n    ]);\\n    const tasks = new InMemoryTaskRepository();\\n    const runtime = new OperatorRuntime({ llm, modules: [{ name: 'tasks', path: 'app' }] });\\n    const useCases = new Map();\\n    useCases.set(CreateTask, new CreateTask(tasks));\\n    useCases.set(CompleteTask, new CompleteTask(tasks));\\n    await runtime.register(TaskOperator, useCases);\\n\\n    const result = await runtime.run('task-operator', { message: 'Crie a tarefa t1 e depois conclua a tarefa t1.' });\\n\\n    expect(result.status).toBe('completed');\\n    expect(result.output).toBe('Tarefa t1 criada e concluida.');\\n\\n    expect(llm.requests).toHaveLength(3);\\n    expect(llm.requests[0]?.tools.map((tool) => tool.name)).toEqual(['complete_task', 'create_task']);\\n\\n    const usedTools = result.steps.flatMap((step) => step.tools.map((tool) => tool.call.name));\\n    expect(usedTools).toEqual(['create_task', 'complete_task']);\\n    expect(new Set(usedTools)).toEqual(new Set(['create_task', 'complete_task']));\\n\\n    expect(result.events).toHaveLength(2);\\n    expect(result.events[0]).toBeInstanceOf(TaskCreated);\\n    expect(result.events[1]).toBeInstanceOf(TaskCompleted);\\n    expect(result.events.map((event) => ({ name: event.name, payload: event.payload }))).toEqual([\\n      { name: 'TaskCreated', payload: { taskId: 't1', title: 'titulo' } },\\n      { name: 'TaskCompleted', payload: { taskId: 't1' } },\\n    ]);\\n    expect((await tasks.findById('t1'))?.status).toBe('completed');\\n  });\\n});\\n\"\n    }\n  }\n]"
+  },
+  "verification": {
+    "ok": true,
+    "findings": [],
+    "commands": [
+      {
+        "name": "verify-item",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-Vs9JGs/framework/src/cli/main.ts",
+          "verify",
+          "--item",
+          "operator:task-operator",
+          "--spec-hash",
+          "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1",
+          "--json",
+          "--config",
+          "/tmp/agentic-eval-Vs9JGs/attempt-kwGkGq/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "{\n  \"item\": \"operator:task-operator\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+          "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item operator:task-operator — done\n",
+          "durationMs": 2649.4827709998935,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/verify-item/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/verify-item/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/verify-item/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "executor-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-Vs9JGs/attempt-kwGkGq/workspace/.executor-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\napp/test/usecase-create_task.test.ts:\n(pass) create_task > [covers: criterion:0001/persistencia-criacao, usecase:create_task] salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS [0.49ms]\n\napp/test/usecase-complete_task.test.ts:\n(pass) complete_task > [covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND [0.29ms]\n\napp/test/method-Task-complete.test.ts:\n(pass) Task.complete > [covers: criterion:0001/conclusao, method:Task.complete] conclui pending, registra TaskCompleted e rejeita repeticao [0.07ms]\n\napp/test/entity-Task.test.ts:\n(pass) Task.create > [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita titulo vazio ou com espacos [0.04ms]\n(pass) Task.create > [covers: criterion:0001/criacao, method:Task.create] cria pending, normaliza titulo e registra TaskCreated [0.04ms]\n\napp/test/operator-task-operator.test.ts:\n(pass) task-operator > [covers: criterion:0001/tools, operator:task-operator] usa somente create_task e complete_task e publica os dois eventos no fluxo create->complete [6.86ms]\n\n 6 pass\n 0 fail\n 42 expect() calls\nRan 6 tests across 5 files. [96.00ms]\n",
+          "durationMs": 127.11756300006527,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/executor-tests/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/executor-tests/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/executor-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "reference-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "/tmp/agentic-eval-Vs9JGs/attempt-kwGkGq/workspace/.eval-reference/behavior.test.ts",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-Vs9JGs/attempt-kwGkGq/workspace/.reference-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) operator executa tools reais e publica eventos [6.95ms]\n(pass) operator executa tools reais e publica eventos [0.89ms]\n\n 2 pass\n 0 fail\n 12 expect() calls\nRan 2 tests across 1 file. [90.00ms]\n",
+          "durationMs": 121.03257999999914,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/reference-tests/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/reference-tests/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/reference-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "compile-check",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-Vs9JGs/framework/src/cli/main.ts",
+          "compile",
+          "--check",
+          "--config",
+          "/tmp/agentic-eval-Vs9JGs/attempt-kwGkGq/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+          "stderr": "",
+          "durationMs": 432.09219799994025,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/compile-check/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/compile-check/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/operator-task-operator/attempt-1/verification/compile-check/process.json"
+          ],
+          "diagnostic": null
+        }
+      }
+    ],
+    "itemReport": {
+      "item": "operator:task-operator",
+      "status": "done",
+      "gates": [
+        {
+          "id": "I1",
+          "name": "Dependências",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I2",
+          "name": "Implementação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I3",
+          "name": "Especificação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I4",
+          "name": "Obrigações",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I5",
+          "name": "Typecheck",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        }
+      ]
+    },
+    "executorTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "[covers: criterion:0001/persistencia-criacao, usecase:create_task] salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS",
+          "file": "app/test/usecase-create_task.test.ts",
+          "line": 9,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/persistencia-criacao",
+            "usecase:create_task"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND",
+          "file": "app/test/usecase-complete_task.test.ts",
+          "line": 10,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/persistencia-conclusao",
+            "usecase:complete_task"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/conclusao, method:Task.complete] conclui pending, registra TaskCompleted e rejeita repeticao",
+          "file": "app/test/method-Task-complete.test.ts",
+          "line": 8,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/conclusao",
+            "method:Task.complete"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita titulo vazio ou com espacos",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 8,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/titulo-invalido",
+            "invariant:Task/titulo-obrigatorio",
+            "method:Task.create"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/criacao, method:Task.create] cria pending, normaliza titulo e registra TaskCreated",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 19,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/criacao",
+            "method:Task.create"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/tools, operator:task-operator] usa somente create_task e complete_task e publica os dois eventos no fluxo create->complete",
+          "file": "app/test/operator-task-operator.test.ts",
+          "line": 11,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/tools",
+            "operator:task-operator"
+          ]
+        }
+      ]
+    },
+    "referenceTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "operator executa tools reais e publica eventos",
+          "file": ".eval-reference/behavior.test.ts",
+          "line": 11,
+          "status": "passed",
+          "covers": []
+        },
+        {
+          "name": "operator executa tools reais e publica eventos",
+          "file": ".eval-reference/behavior.test.ts",
+          "line": 11,
+          "status": "passed",
+          "covers": []
+        }
+      ]
+    }
+  },
+  "accepted": true,
+  "reason": null
+}

@@ -1,0 +1,14 @@
+G1 Delta: passed
+G2 Docs: passed
+G3 Critérios: failed
+  - critério criterion:0001/persistencia-conclusao sem teste (changes/archive/0001-tasks/proposal.md) → crie um teste com covers(['criterion:0001/persistencia-conclusao'], "salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND")
+  - critério criterion:0001/tools sem teste (changes/archive/0001-tasks/proposal.md) → crie um teste com covers(['criterion:0001/tools'], "conclui a tarefa usando somente suas duas tools e publica os dois eventos")
+G4 Regras: failed
+  - operator:task-operator não tem teste com covers → crie um teste com covers(['operator:task-operator'], '…')
+  - usecase:complete_task não tem teste com covers → crie um teste com covers(['usecase:complete_task'], '…')
+G5 Qualidade: passed
+G6 Manual: passed
+G7 Work items: failed
+  - operator:task-operator está blocked(implemented) (app/operators/task.operator.ts:5) → bun run agentic packet operator:task-operator
+  - usecase:complete_task está declared (app/application/complete-task.ts:12) → bun run agentic packet usecase:complete_task
+agentic-ddd: change 0001 — failed

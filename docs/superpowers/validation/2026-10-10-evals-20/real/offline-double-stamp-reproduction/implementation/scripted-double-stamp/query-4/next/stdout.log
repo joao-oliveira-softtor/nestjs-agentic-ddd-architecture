@@ -1,0 +1,12 @@
+{
+  "change": "0001",
+  "waves": [
+    [
+      "usecase:complete_task"
+    ],
+    [
+      "operator:task-operator"
+    ]
+  ],
+  "diagnostics": []
+}

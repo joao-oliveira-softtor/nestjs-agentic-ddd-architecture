@@ -1,0 +1,9 @@
+
+.eval-reference/behavior.test.ts:
+(pass) conclui, persiste, publica e rejeita id ausente [0.80ms]
+(pass) conclui, persiste, publica e rejeita id ausente [0.07ms]
+
+ 2 pass
+ 0 fail
+ 18 expect() calls
+Ran 2 tests across 1 file. [84.00ms]

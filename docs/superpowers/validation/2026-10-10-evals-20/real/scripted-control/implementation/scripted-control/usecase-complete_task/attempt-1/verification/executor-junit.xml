@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="4" assertions="16" failures="0" skipped="0" time="0.089208079">
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="5" failures="0" skipped="0" time="0.085380074" hostname="softtords">
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição" classname="" time="0.000388" file="app/test/method-Task-complete.test.ts" line="4" assertions="5" />
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="6" failures="0" skipped="0" time="0.00061368" hostname="softtords">
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento" classname="" time="0.000089" file="app/test/entity-Task.test.ts" line="4" assertions="3" />
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços" classname="" time="0.000085" file="app/test/entity-Task.test.ts" line="11" assertions="3" />
+  </testsuite>
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="1" assertions="5" failures="0" skipped="0" time="0.00155433" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] conclui, persiste, publica e rejeita id ausente" classname="" time="0.000319" file="app/test/usecase-complete_task.test.ts" line="6" assertions="5" />
+  </testsuite>
+</testsuites>

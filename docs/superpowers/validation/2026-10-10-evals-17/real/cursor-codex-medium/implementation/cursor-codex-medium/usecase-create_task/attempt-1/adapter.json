@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementei o corpo de `CreateTask.execute` em `app/application/create-task.ts` com fluxo completo: checagem de id duplicado (`TASK_ALREADY_EXISTS`), criação via `Task.create`, persistência no repositório, publicação de `TaskCreated` e retorno `{ task_id, title, status: 'pending' }`. Criei `app/test/usecase-create_task.test.ts` com `covers(['usecase:create_task','criterion:0001/persistencia-criacao'], ...)`, validando criação/persistência/publicação/retorno e a rejeição de duplicidade com o código de erro esperado. Rodei `bun run agentic verify --item usecase:create_task --spec-hash daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6 --config /tmp/agentic-eval-ZK8DP3/attempt-tSIoPW/workspace/agentic.config.ts --json` e o item ficou `done` com todos os gates `passed`.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "cf1acbf6-d9c8-4131-9545-0c00637cd5bf",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 38890.3223,
+  "evidence": [
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/usecase-create_task/attempt-1/stdout.log",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/usecase-create_task/attempt-1/stderr.log",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/usecase-create_task/attempt-1/process.json"
+  ],
+  "diagnostic": null
+}

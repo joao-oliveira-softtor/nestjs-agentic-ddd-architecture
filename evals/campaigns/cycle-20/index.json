@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "id": "cycle-20",
+  "runs": [
+    {
+      "id": "codex-sol-high-r1",
+      "configuration": "codex-sol-high",
+      "repetition": 1,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/codex-sol-high-r1.json",
+        "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e"
+      },
+      "result": {
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-10-evals-20/real/runs/codex-sol-high-r1/report.json",
+          "sha256": "0d4bd9721a146d925ee93af6379f9dd88ce07f79448dfa2993c2653b1732a5c0"
+        }
+      }
+    },
+    {
+      "id": "codex-sol-high-r2",
+      "configuration": "codex-sol-high",
+      "repetition": 2,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/codex-sol-high-r2.json",
+        "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e"
+      },
+      "result": {
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-10-evals-20/real/runs/codex-sol-high-r2/report.json",
+          "sha256": "73d2b1b3d126ee1d51de5db2af2ca9b8553862847deb03cc5fa7b76dc4c74616"
+        }
+      }
+    },
+    {
+      "id": "codex-sol-high-r3",
+      "configuration": "codex-sol-high",
+      "repetition": 3,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/codex-sol-high-r3.json",
+        "sha256": "3f8da315bb54cb80e5c631ba87c766c1f367e944ee0061e5cf317b4b606cae2e"
+      },
+      "result": {
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-10-evals-20/real/runs/codex-sol-high-r3/report.json",
+          "sha256": "9fb525ba427923d909e1bade0607da5fe9c3d1c73bd2a8defca6c9a29dd3931e"
+        }
+      }
+    },
+    {
+      "id": "cursor-codex-medium-r1",
+      "configuration": "cursor-codex-medium",
+      "repetition": 1,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/cursor-codex-medium-r1.json",
+        "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331"
+      },
+      "result": {
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-10-evals-20/real/runs/cursor-codex-medium-r1/report.json",
+          "sha256": "6f665926ae35a9c53c99dace00aef1f72d687fdcd0f1f1c98dbb63de5b02929d"
+        }
+      }
+    },
+    {
+      "id": "cursor-codex-medium-r2",
+      "configuration": "cursor-codex-medium",
+      "repetition": 2,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/cursor-codex-medium-r2.json",
+        "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331"
+      },
+      "result": {
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-10-evals-20/real/runs/cursor-codex-medium-r2/report.json",
+          "sha256": "a04a97c04ff0ab5d1c4c6d08e71c6c0e73b5a56a559a9eba9066124abbf4ae26"
+        }
+      }
+    },
+    {
+      "id": "cursor-codex-medium-r3",
+      "configuration": "cursor-codex-medium",
+      "repetition": 3,
+      "plannedCases": 25,
+      "manifest": {
+        "path": "manifests/cursor-codex-medium-r3.json",
+        "sha256": "ed7ac24d083fec8881c0ea1795a10f239b8993b486c7cae3cfad6917a9dfa331"
+      },
+      "result": {
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-10-evals-20/real/runs/cursor-codex-medium-r3/report.json",
+          "sha256": "9d0e830565b8e8fda227785d8f7338ceaa26adf6d015772330f195b6d1fd080f"
+        }
+      }
+    }
+  ]
+}

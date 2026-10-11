@@ -1,0 +1,49 @@
+{
+  "transport": "finished",
+  "finalText": "{\"type\":\"exact\",\"value\":\"method:Order.confirm\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "01a1276b-7fa6-7840-835f-a066a8e40af7",
+    "source": "codex.thread.started.thread_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "gpt-6.1-sol",
+    "source": "codex.rollout.turn_context.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 35191,
+      "source": "codex.turn.completed.usage.input_tokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 27648,
+      "source": "codex.turn.completed.usage.cached_input_tokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 115,
+      "source": "codex.turn.completed.usage.output_tokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 9289.204360999996,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/process.json",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-positive-uses/model-metadata.json"
+  ],
+  "diagnostic": null
+}

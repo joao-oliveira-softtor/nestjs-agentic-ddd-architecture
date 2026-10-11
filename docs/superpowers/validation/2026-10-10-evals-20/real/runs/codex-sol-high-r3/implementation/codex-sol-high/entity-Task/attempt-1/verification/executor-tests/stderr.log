@@ -1,0 +1,11 @@
+
+app/test/entity-Task.test.ts:
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita título vazio após normalização: "" [0.12ms]
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita título vazio após normalização: "   " [0.01ms]
+(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] rejeita título vazio após normalização: "\t\n\r "
+(pass) [covers: criterion:0001/criacao, invariant:Task/titulo-obrigatorio, method:Task.create] cria tarefa pendente, normaliza título e registra TaskCreated [0.25ms]
+
+ 4 pass
+ 0 fail
+ 14 expect() calls
+Ran 4 tests across 1 file. [100.00ms]

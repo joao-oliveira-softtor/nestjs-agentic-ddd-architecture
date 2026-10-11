@@ -1,0 +1,281 @@
+{
+  "number": 1,
+  "handoff": {
+    "item": "method:Task.complete",
+    "packet": "# Identificação\n\n- ID: `method:Task.complete`\n- Camada: domain\n- Módulo: tasks\n- source: `app/domain/task.ts:30`\n- Estado: declared\n- specHash: `eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364`\n- Dependências: `entity:Task`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi concluída.\",\n      \"id\": \"event:TaskCompleted\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCompleted\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.\",\n    \"emits\": [\n      \"event:TaskCompleted\"\n    ],\n    \"entity\": {\n      \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n      \"id\": \"entity:Task\",\n      \"invariants\": [\n        {\n          \"id\": \"invariant:Task/titulo-obrigatorio\",\n          \"on\": null,\n          \"text\": \"Toda tarefa precisa de título não vazio.\"\n        }\n      ],\n      \"methods\": [\n        {\n          \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n          \"emits\": [\n            \"event:TaskCreated\"\n          ],\n          \"id\": \"method:Task.create\",\n          \"name\": \"create\",\n          \"static\": true,\n          \"transition\": null\n        }\n      ],\n      \"module\": \"tasks\",\n      \"name\": \"Task\",\n      \"states\": [\n        \"pending\",\n        \"completed\"\n      ]\n    },\n    \"id\": \"method:Task.complete\",\n    \"invariants\": [],\n    \"name\": \"complete\",\n    \"static\": false,\n    \"transition\": {\n      \"from\": [\n        \"pending\"\n      ],\n      \"to\": \"completed\"\n    }\n  }\n}\n```\n\n## Obrigações de teste\n\n- `method:Task.complete` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item method:Task.complete --spec-hash eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364 --config /tmp/agentic-eval-HIJSK3/attempt-b2vcb7/workspace/agentic.config.ts --json\n```\n",
+    "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364",
+    "configPath": "/tmp/agentic-eval-HIJSK3/accepted-4ZkVwm/tasks/agentic.config.ts",
+    "testFile": "app/test/method-Task-complete.test.ts",
+    "criteria": [
+      {
+        "id": "conclusao",
+        "given": "uma tarefa pending",
+        "when": "concluir e tentar concluir novamente",
+        "then": "registra TaskCompleted, fica completed e rejeita repetição com TASK_ALREADY_COMPLETED"
+      }
+    ]
+  },
+  "baselineHash": "49e34adc886ca4afd7c95acade949ab8fce965c7fef3a3ddaef99d5395382227",
+  "execution": {
+    "sessionId": {
+      "status": "available",
+      "value": "scripted-27",
+      "source": "scripted_fixture"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "scripted",
+      "source": "scripted_fixture"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "synthetic"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 51.707627999996475,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/process.json"
+    ],
+    "transport": "finished",
+    "finalText": "{\"status\":\"done\",\"summary\":\"offline replay of captured submission\"}",
+    "diagnostic": null
+  },
+  "reply": {
+    "status": "done",
+    "summary": "offline replay of captured submission"
+  },
+  "audit": {
+    "ok": true,
+    "findings": [],
+    "changedFiles": [
+      "app/domain/task.ts",
+      "app/test/method-Task-complete.test.ts"
+    ],
+    "patch": "[\n  {\n    \"path\": \"app/domain/task.ts\",\n    \"before\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"5fa7dc81d2c0b9b52df17c596d2d847c257c21a3da2db9ed6a2d52e08692f7da\",\n      \"content\": \"import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\\nimport { TaskCreated, TaskCompleted } from './task.events';\\n\\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\\nexport class Task extends AggregateRoot<string> {\\n  #status: 'pending' | 'completed' = 'pending';\\n  private constructor(id: string, readonly title: string) { super(id); }\\n  get status(): 'pending' | 'completed' { return this.#status; }\\n\\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\\n  static create(id: string, title: string): Task {\\nconst normalized = title.trim();\\nif (!normalized) throw new DomainError('TASK_TITLE_REQUIRED', 'Título obrigatório.');\\nconst task = new Task(id, normalized);\\ntask.record(new TaskCreated({ taskId: id, title: normalized }));\\nreturn task;\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n}\\n\\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\\n  complete(): void {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    },\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"44a5d47bad32457c72628347a0e23c84852542e6df14251101aac0509b3616dd\",\n      \"content\": \"import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\\nimport { TaskCreated, TaskCompleted } from './task.events';\\n\\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\\nexport class Task extends AggregateRoot<string> {\\n  #status: 'pending' | 'completed' = 'pending';\\n  private constructor(id: string, readonly title: string) { super(id); }\\n  get status(): 'pending' | 'completed' { return this.#status; }\\n\\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\\n  static create(id: string, title: string): Task {\\nconst normalized = title.trim();\\nif (!normalized) throw new DomainError('TASK_TITLE_REQUIRED', 'Título obrigatório.');\\nconst task = new Task(id, normalized);\\ntask.record(new TaskCreated({ taskId: id, title: normalized }));\\nreturn task;\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n}\\n\\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\\n  complete(): void {\\nif (this.#status !== 'pending') throw new DomainError('TASK_ALREADY_COMPLETED', 'Tarefa já concluída.');\\nthis.#status = 'completed';\\nthis.record(new TaskCompleted({ taskId: this.id }));\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n}\\n}\\n\"\n    }\n  },\n  {\n    \"path\": \"app/test/method-Task-complete.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"db46d966963840200afb7bfba518353a0cfc20dfb1b9313e67830feeb2a7d079\",\n      \"content\": \"import { expect, test } from 'bun:test';\\nimport { covers } from '@agentic-ddd/testing';\\nimport { Task } from '../domain/task';\\ntest(covers(['method:Task.complete', 'criterion:0001/conclusao'], 'conclui, emite e rejeita repetição'), () => {\\n  const task = Task.create('t1', 'Ler'); task.pullEvents(); task.complete();\\n  expect(task.status).toBe('completed');\\n  expect(task.pullEvents().map(e => [e.name, e.payload])).toEqual([['TaskCompleted', { taskId: 't1' }]]);\\n  expect(() => task.complete()).toThrow('Tarefa já concluída.');\\n  try { task.complete(); } catch (e) { expect((e as {code: string}).code).toBe('TASK_ALREADY_COMPLETED'); }\\n  expect(task.pullEvents()).toEqual([]);\\n});\\n\"\n    }\n  }\n]"
+  },
+  "verification": {
+    "ok": true,
+    "findings": [],
+    "commands": [
+      {
+        "name": "verify-item",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-HIJSK3/framework/src/cli/main.ts",
+          "verify",
+          "--item",
+          "method:Task.complete",
+          "--spec-hash",
+          "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364",
+          "--json",
+          "--config",
+          "/tmp/agentic-eval-HIJSK3/attempt-zKc3qe/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "{\n  \"item\": \"method:Task.complete\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+          "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item method:Task.complete — done\n",
+          "durationMs": 3603.699883000001,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/verify-item/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/verify-item/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/verify-item/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "executor-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-HIJSK3/attempt-zKc3qe/workspace/.executor-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\napp/test/entity-Task.test.ts:\n(pass) [covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento [0.31ms]\n(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços [0.15ms]\n\napp/test/method-Task-complete.test.ts:\n(pass) [covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição [0.18ms]\n\n 3 pass\n 0 fail\n 11 expect() calls\nRan 3 tests across 2 files. [111.00ms]\n",
+          "durationMs": 143.80583200000183,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/executor-tests/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/executor-tests/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/executor-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "reference-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "/tmp/agentic-eval-HIJSK3/attempt-zKc3qe/workspace/.eval-reference/behavior.test.ts",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-HIJSK3/attempt-zKc3qe/workspace/.reference-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) conclui, emite e rejeita repetição [0.45ms]\n(pass) conclui, emite e rejeita repetição [0.04ms]\n\n 2 pass\n 0 fail\n 10 expect() calls\nRan 2 tests across 1 file. [85.00ms]\n",
+          "durationMs": 114.24101899999732,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/reference-tests/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/reference-tests/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/reference-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "compile-check",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-HIJSK3/framework/src/cli/main.ts",
+          "compile",
+          "--check",
+          "--config",
+          "/tmp/agentic-eval-HIJSK3/attempt-zKc3qe/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+          "stderr": "",
+          "durationMs": 576.2795640000004,
+          "evidence": [
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/compile-check/stdout.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/compile-check/stderr.log",
+            "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/implementation/scripted-double-stamp/method-Task-complete/attempt-1/verification/compile-check/process.json"
+          ],
+          "diagnostic": null
+        }
+      }
+    ],
+    "itemReport": {
+      "item": "method:Task.complete",
+      "status": "done",
+      "gates": [
+        {
+          "id": "I1",
+          "name": "Dependências",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I2",
+          "name": "Implementação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I3",
+          "name": "Especificação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I4",
+          "name": "Obrigações",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I5",
+          "name": "Typecheck",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        }
+      ]
+    },
+    "executorTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "[covers: criterion:0001/criacao, method:Task.create] cria tarefa normalizada e registra evento",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 4,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/criacao",
+            "method:Task.create"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só espaços",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 11,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/titulo-invalido",
+            "invariant:Task/titulo-obrigatorio"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/conclusao, method:Task.complete] conclui, emite e rejeita repetição",
+          "file": "app/test/method-Task-complete.test.ts",
+          "line": 4,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/conclusao",
+            "method:Task.complete"
+          ]
+        }
+      ]
+    },
+    "referenceTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "conclui, emite e rejeita repetição",
+          "file": ".eval-reference/behavior.test.ts",
+          "line": 4,
+          "status": "passed",
+          "covers": []
+        },
+        {
+          "name": "conclui, emite e rejeita repetição",
+          "file": ".eval-reference/behavior.test.ts",
+          "line": 4,
+          "status": "passed",
+          "covers": []
+        }
+      ]
+    }
+  },
+  "accepted": true,
+  "reason": null
+}

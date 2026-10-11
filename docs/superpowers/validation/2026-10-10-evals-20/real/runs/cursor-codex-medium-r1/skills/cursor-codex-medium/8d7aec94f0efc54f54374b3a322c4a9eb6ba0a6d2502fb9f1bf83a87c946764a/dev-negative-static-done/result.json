@@ -1,0 +1,64 @@
+{
+  "configuration": "cursor-codex-medium",
+  "dataset": "evals/skills/orders.extended.yaml",
+  "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+  "id": "dev-negative-static-done",
+  "audience": "dev",
+  "question": "A saída de status --static, sem executar os testes, pode certificar done? Responda sim ou não.",
+  "expect": {
+    "type": "exact",
+    "value": "não"
+  },
+  "answer": {
+    "type": "exact",
+    "value": "não"
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"type\":\"exact\",\"value\":\"não\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "bdc86fc4-6683-4cd7-8e30-5901b1634bec",
+      "source": "cursor.result.session_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "Codex 5.3 Medium",
+      "source": "cursor.init.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 15480.258330000011,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-static-done/process.json"
+    ],
+    "diagnostic": null
+  }
+}

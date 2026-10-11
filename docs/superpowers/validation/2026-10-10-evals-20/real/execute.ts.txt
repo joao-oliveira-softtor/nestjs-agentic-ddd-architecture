@@ -1,0 +1,46 @@
+import { open, mkdir, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { reportSchema } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/report-schema';
+import { sha256, fingerprintOrigin } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/isolation';
+import { campaignSchema } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/aggregate';
+import { stableStringify } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/src/compiler';
+const root=process.argv[2];
+if(!root)throw Error('External authorized campaign parent required');
+const preflight=await Bun.file(join(root,'authorization-and-preflight.json')).json();
+if(preflight.userReply!=='autorizo'||preflight.positiveControl!=='passed'||preflight.maxNativeInvocations!==210||preflight.maxTotalMinutes!==270)throw Error('Missing approved preflight/control');
+const index=campaignSchema.parse(await Bun.file(join(root,'index.json')).json());
+const executions=[];
+await mkdir(join(root,'runs'));
+let totalInvocations=0;
+for(const slot of index.runs){
+  if(slot.result.status!=='not_run'||slot.result.reason!=='authorized_not_started')throw Error('Refusing to repeat campaign slot');
+  if(execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim()||await fingerprintOrigin(process.cwd())!==preflight.originFingerprint)throw Error('Origin changed before run');
+  const manifestPath=join('evals/campaigns/cycle-20',slot.manifest.path);
+  const manifest=await Bun.file(manifestPath).json();
+  if(sha256(await Bun.file(manifestPath).bytes())!==slot.manifest.sha256)throw Error('Manifest changed');
+  const out=join(root,'runs',slot.id);
+  const command=['bun','run','evals','--config',manifestPath,'--out',out,'--real','--trusted-source'];
+  const startedAt=new Date().toISOString();
+  const execution={id:slot.id,command,startedAt,finishedAt:null as string|null,exitCode:null as number|null};
+  executions.push(execution);
+  await Bun.write(join(root,'execution-ledger.json'),JSON.stringify({schemaVersion:1,executions},null,2)+'\n');
+  console.log(`${startedAt} START ${slot.id}`);
+  const log=await open(join(root,`${slot.id}.log`),'wx',0o600);
+  try{const process=Bun.spawn(command,{cwd:execFileSync('pwd',{encoding:'utf8'}).trim(),stdin:'ignore',stdout:log.fd,stderr:log.fd});execution.exitCode=await process.exited;}
+  finally{await log.close();}
+  execution.finishedAt=new Date().toISOString();
+  await Bun.write(join(root,'execution-ledger.json'),JSON.stringify({schemaVersion:1,executions},null,2)+'\n');
+  const report=reportSchema.parse(await Bun.file(join(out,'report.json')).json());
+  if(report.mode!=='real'||stableStringify(report.manifest)!==stableStringify(manifest)||report.provenance.sourceCommit!==preflight.sourceCommit||report.provenance.runnerCommit!==preflight.runnerCommit||report.provenance.originBefore!==preflight.originFingerprint||report.provenance.originAfter.status!=='available'||report.provenance.originAfter.value!==preflight.originFingerprint)throw Error('Run provenance differs');
+  if(report.invocations>35||report.cases.length!==25||report.benchmarks.length!==1||report.benchmarks[0]!.items.length!==5)throw Error('Run count or budget differs');
+  const artifacts=await Bun.file(join(out,'artifact-manifest.json')).json();
+  for(const artifact of artifacts.artifacts){const bytes=await readFile(join(out,artifact.path));if(bytes.length!==artifact.bytes||sha256(bytes)!==artifact.sha256)throw Error(`Artifact hash mismatch ${slot.id}/${artifact.path}`);}
+  totalInvocations+=report.invocations;
+  if(totalInvocations>210)throw Error('Total campaign invocation budget exceeded');
+  slot.result={status:'executed',report:{path:`runs/${slot.id}/report.json`,sha256:sha256(await Bun.file(join(out,'report.json')).bytes())}};
+  await Bun.write(join(root,'index.json'),JSON.stringify(index,null,2)+'\n');
+  console.log(`${execution.finishedAt} END ${slot.id}: ${report.status}; questions ${report.cases.filter(c=>c.verdict==='correct').length}/25; packets ${report.benchmarks[0]!.items.filter(i=>i.state==='accepted').length}/5; verify ${report.benchmarks[0]!.finalVerification?.report?.status??'unavailable'}; sessions ${report.invocations}; hashes ${artifacts.artifacts.length} checked`);
+}
+if(execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim()||await fingerprintOrigin(process.cwd())!==preflight.originFingerprint)throw Error('Origin changed after campaign');
+console.log(`All six planned runs recorded; ${totalInvocations}/210 native sessions; fingerprint unchanged.`);

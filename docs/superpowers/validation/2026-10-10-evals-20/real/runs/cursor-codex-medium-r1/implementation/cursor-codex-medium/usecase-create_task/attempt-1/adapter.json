@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado `CreateTask.execute` em `app/application/create-task.ts` (somente o corpo), com verificação de duplicidade por `task_id` (`TASK_ALREADY_EXISTS`), criação via `Task.create`, persistência no repositório, publicação de eventos via `ctx.publish`, e retorno `{ task_id, title normalizado, status: 'pending' }`. Adicionado `app/test/usecase-create_task.test.ts` com `covers(['usecase:create_task','criterion:0001/persistencia-criacao'], ...)`, cobrindo criação/persistência/publicação de `TaskCreated`, retorno pending e rejeição de id duplicado. Verificação executada com o comando solicitado e hash original: item `usecase:create_task` com status `done` (gates I1-I5 passed).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "1b8bdef0-ab9e-4170-8f76-87ebc3ee5bde",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 80082.67335399997,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/usecase-create_task/attempt-1/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/usecase-create_task/attempt-1/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/usecase-create_task/attempt-1/process.json"
+  ],
+  "diagnostic": null
+}

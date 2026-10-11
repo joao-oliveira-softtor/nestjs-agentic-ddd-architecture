@@ -1,0 +1,14 @@
+bun test v1.4.2 (744846f84)
+
+src/cli/verify.test.ts:
+(pass) agentic-ddd verify > uso incorreto sai com 2 [193.12ms]
+(pass) agentic-ddd verify > número inválido sai com 2; proposta inexistente sai com 1 e explica [464.24ms]
+(pass) agentic-ddd verify > domínio que não compila mostra a causa em vez de "não encontrada" [200.32ms]
+(pass) agentic-ddd verify > proposta inválida mostra a dica do compile em vez de "não encontrada" [195.27ms]
+(pass) agentic-ddd verify > verify 0001 do exemplo retorna done [104568.11ms]
+(pass) agentic-ddd verify > verify 0002 do exemplo retorna needs-human por causa do critério manual [109731.12ms]
+
+ 6 pass
+ 0 fail
+ 22 expect() calls
+Ran 6 tests across 1 file. [215.36s]

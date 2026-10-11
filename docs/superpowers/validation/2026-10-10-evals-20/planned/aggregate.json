@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "id": "cycle-20",
+  "campaignSha256": "f96d14eb9d12fad4fee1ecc2ff28a653c8779ec1b6d07a2f67a3ac8997799e3a",
+  "configurations": [
+    {
+      "configuration": "codex-sol-high",
+      "plannedRuns": 3,
+      "executedRuns": 0,
+      "plannedCases": 75,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 15,
+      "initialItems": 0,
+      "finalItems": 0,
+      "certifiedRuns": 0,
+      "corrections": 0,
+      "protocolFailures": 0,
+      "behaviorFailures": 0,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "initial": {
+        "numerator": 0,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 0,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        "cachedInputTokens": {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        "outputTokens": {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "not_reported"
+        }
+      },
+      "notRun": [
+        {
+          "id": "codex-sol-high-r1",
+          "repetition": 1,
+          "reason": "inference_budget_not_authorized"
+        },
+        {
+          "id": "codex-sol-high-r2",
+          "repetition": 2,
+          "reason": "inference_budget_not_authorized"
+        },
+        {
+          "id": "codex-sol-high-r3",
+          "repetition": 3,
+          "reason": "inference_budget_not_authorized"
+        }
+      ]
+    },
+    {
+      "configuration": "cursor-codex-medium",
+      "plannedRuns": 3,
+      "executedRuns": 0,
+      "plannedCases": 75,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 15,
+      "initialItems": 0,
+      "finalItems": 0,
+      "certifiedRuns": 0,
+      "corrections": 0,
+      "protocolFailures": 0,
+      "behaviorFailures": 0,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 75,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "initial": {
+        "numerator": 0,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 0,
+        "denominator": 15,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        "cachedInputTokens": {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        "outputTokens": {
+          "status": "unavailable",
+          "reason": "not_reported"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "not_reported"
+        }
+      },
+      "notRun": [
+        {
+          "id": "cursor-codex-medium-r1",
+          "repetition": 1,
+          "reason": "inference_budget_not_authorized"
+        },
+        {
+          "id": "cursor-codex-medium-r2",
+          "repetition": 2,
+          "reason": "inference_budget_not_authorized"
+        },
+        {
+          "id": "cursor-codex-medium-r3",
+          "repetition": 3,
+          "reason": "inference_budget_not_authorized"
+        }
+      ]
+    }
+  ],
+  "groups": []
+}

@@ -1,0 +1,68 @@
+{
+  "configuration": "codex-sol-high",
+  "dataset": "evals/skills/orders.yaml",
+  "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+  "id": "cancelar-exige-aprovacao",
+  "audience": "runtime",
+  "question": "Cancelar um pedido exige aprovação humana? Responda sim ou não.",
+  "expect": {
+    "type": "exact",
+    "value": "sim"
+  },
+  "answer": {
+    "type": "exact",
+    "value": "sim"
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"type\":\"exact\",\"value\":\"sim\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "01a1276a-a3c4-7a12-b72e-d38cd0498c1a",
+      "source": "codex.thread.started.thread_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "gpt-6.1-sol",
+      "source": "codex.rollout.turn_context.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "available",
+        "value": 30798,
+        "source": "codex.turn.completed.usage.input_tokens"
+      },
+      "cachedInputTokens": {
+        "status": "available",
+        "value": 26496,
+        "source": "codex.turn.completed.usage.cached_input_tokens"
+      },
+      "outputTokens": {
+        "status": "available",
+        "value": 75,
+        "source": "codex.turn.completed.usage.output_tokens"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 8712.449793,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/process.json",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2/skills/codex-sol-high/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-exige-aprovacao/model-metadata.json"
+    ],
+    "diagnostic": null
+  }
+}

@@ -1,0 +1,1 @@
+Offline control: five answers correct, five packets accepted, verify done, 10 scripted sessions; unchanged source fingerprint. Report: /tmp/evals-cycle-17-scripted-control-corrected/report.json

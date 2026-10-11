@@ -1,0 +1,10 @@
+bun test v1.4.2 (744846f84)
+
+test/evals-aggregate.test.ts:
+(pass) accepts a checksummed current-schema report with derived metrics omitted [989.09ms]
+
+ 1 pass
+ 8 filtered out
+ 0 fail
+ 1 expect() calls
+Ran 1 test across 1 file. [1210.00ms]

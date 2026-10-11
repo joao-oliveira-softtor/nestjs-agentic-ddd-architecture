@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="5" assertions="36" failures="0" skipped="0" time="0.085675014">
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="1" assertions="10" failures="0" skipped="0" time="0.082114854" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] complete_task salva completed, publica TaskCompleted e falha para id ausente" classname="" time="0.000573" file="app/test/usecase-complete_task.test.ts" line="9" assertions="10" />
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="7" failures="0" skipped="0" time="0.000406284" hostname="softtords">
+    <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] Task.complete conclui tarefa e bloqueia repeticao" classname="" time="0.000127" file="app/test/method-Task-complete.test.ts" line="7" assertions="7" />
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="8" failures="0" skipped="0" time="0.000305646" hostname="softtords">
+    <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] Task.create rejeita titulo vazio" classname="" time="0.000051" file="app/test/entity-Task.test.ts" line="7" assertions="3" />
+    <testcase name="[covers: criterion:0001/criacao, method:Task.create] Task.create normaliza titulo e registra TaskCreated" classname="" time="0.000042" file="app/test/entity-Task.test.ts" line="20" assertions="5" />
+  </testsuite>
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="1" assertions="11" failures="0" skipped="0" time="0.001139569" hostname="softtords">
+    <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] create_task salva pending, publica TaskCreated e rejeita id duplicado" classname="" time="0.000327" file="app/test/usecase-create_task.test.ts" line="9" assertions="11" />
+  </testsuite>
+</testsuites>

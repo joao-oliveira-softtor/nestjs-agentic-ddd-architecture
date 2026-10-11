@@ -1,0 +1,361 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "dc9a25d133fa71975dfd77713e00ea653a273a82",
+  "runnerCommit": "d5669b13b661986af9a3a1f2b0a5b0f5af8b8f0e",
+  "originFingerprint": "11f596f55338a11a1f0dba2a7e2f6ee74ea859a3a7d784d27e8a525f1b14e245",
+  "sourceUnchanged": true,
+  "plannedRuns": 6,
+  "executedRuns": 6,
+  "totalInvocations": 184,
+  "totalDurationMs": 4610762.097453,
+  "summaries": [
+    {
+      "id": "codex-sol-high-r1",
+      "configuration": "codex-sol-high",
+      "repetition": 1,
+      "status": "completed",
+      "certified": true,
+      "questions": {
+        "correct": 24,
+        "executed": 25,
+        "planned": 25,
+        "verdicts": {
+          "correct": 24,
+          "incorrect": 1
+        }
+      },
+      "initialAccepted": 4,
+      "finalAccepted": 5,
+      "verify": "done",
+      "invocations": 31,
+      "corrections": 1,
+      "durationMs": 735375.040603,
+      "observedModels": [
+        "gpt-6.1-sol"
+      ],
+      "adapter": {
+        "id": "codex-cli",
+        "version": "codex-cli 0.162.1",
+        "executableSha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+        "companions": [
+          {
+            "name": "codex-code-mode-host",
+            "sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+          }
+        ]
+      },
+      "baselineHash": "9e401dc3f58224a6fac01b924f1fda4d49d42ffa37cb54a7d28e1ffd7ee06b14",
+      "packetContracts": [
+        {
+          "item": "entity:Task",
+          "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+        },
+        {
+          "item": "method:Task.complete",
+          "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+        },
+        {
+          "item": "usecase:create_task",
+          "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+        },
+        {
+          "item": "usecase:complete_task",
+          "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+        },
+        {
+          "item": "operator:task-operator",
+          "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+        }
+      ],
+      "artifactsChecked": 429,
+      "reportSha256": "0d4bd9721a146d925ee93af6379f9dd88ce07f79448dfa2993c2653b1732a5c0"
+    },
+    {
+      "id": "codex-sol-high-r2",
+      "configuration": "codex-sol-high",
+      "repetition": 2,
+      "status": "completed",
+      "certified": true,
+      "questions": {
+        "correct": 24,
+        "executed": 25,
+        "planned": 25,
+        "verdicts": {
+          "correct": 24,
+          "incorrect": 1
+        }
+      },
+      "initialAccepted": 5,
+      "finalAccepted": 5,
+      "verify": "done",
+      "invocations": 30,
+      "corrections": 0,
+      "durationMs": 717437.444783,
+      "observedModels": [
+        "gpt-6.1-sol"
+      ],
+      "adapter": {
+        "id": "codex-cli",
+        "version": "codex-cli 0.162.1",
+        "executableSha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+        "companions": [
+          {
+            "name": "codex-code-mode-host",
+            "sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+          }
+        ]
+      },
+      "baselineHash": "dd8d283b4d4cb5cd26e96ecfc5420cbd3473a44804ab9d3e06c1fa784462266d",
+      "packetContracts": [
+        {
+          "item": "entity:Task",
+          "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+        },
+        {
+          "item": "method:Task.complete",
+          "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+        },
+        {
+          "item": "usecase:create_task",
+          "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+        },
+        {
+          "item": "usecase:complete_task",
+          "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+        },
+        {
+          "item": "operator:task-operator",
+          "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+        }
+      ],
+      "artifactsChecked": 406,
+      "reportSha256": "73d2b1b3d126ee1d51de5db2af2ca9b8553862847deb03cc5fa7b76dc4c74616"
+    },
+    {
+      "id": "codex-sol-high-r3",
+      "configuration": "codex-sol-high",
+      "repetition": 3,
+      "status": "completed",
+      "certified": true,
+      "questions": {
+        "correct": 24,
+        "executed": 25,
+        "planned": 25,
+        "verdicts": {
+          "correct": 24,
+          "incorrect": 1
+        }
+      },
+      "initialAccepted": 5,
+      "finalAccepted": 5,
+      "verify": "done",
+      "invocations": 30,
+      "corrections": 0,
+      "durationMs": 695025.9292329999,
+      "observedModels": [
+        "gpt-6.1-sol"
+      ],
+      "adapter": {
+        "id": "codex-cli",
+        "version": "codex-cli 0.162.1",
+        "executableSha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+        "companions": [
+          {
+            "name": "codex-code-mode-host",
+            "sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+          }
+        ]
+      },
+      "baselineHash": "15ec5d39f360f072eef70010912920348b3bd7cfb44d67d4c789bae5e405dcf9",
+      "packetContracts": [
+        {
+          "item": "entity:Task",
+          "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+        },
+        {
+          "item": "method:Task.complete",
+          "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+        },
+        {
+          "item": "usecase:create_task",
+          "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+        },
+        {
+          "item": "usecase:complete_task",
+          "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+        },
+        {
+          "item": "operator:task-operator",
+          "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+        }
+      ],
+      "artifactsChecked": 406,
+      "reportSha256": "9fb525ba427923d909e1bade0607da5fe9c3d1c73bd2a8defca6c9a29dd3931e"
+    },
+    {
+      "id": "cursor-codex-medium-r1",
+      "configuration": "cursor-codex-medium",
+      "repetition": 1,
+      "status": "completed",
+      "certified": false,
+      "questions": {
+        "correct": 23,
+        "executed": 25,
+        "planned": 25,
+        "verdicts": {
+          "incorrect": 2,
+          "correct": 23
+        }
+      },
+      "initialAccepted": 2,
+      "finalAccepted": 3,
+      "verify": "failed",
+      "invocations": 31,
+      "corrections": 2,
+      "durationMs": 801507.853626,
+      "observedModels": [
+        "Codex 5.3 Medium"
+      ],
+      "adapter": {
+        "id": "cursor-cli",
+        "version": "2026.10.01-e373342",
+        "executableSha256": "2ccc9a8e167797641448b5e5c936f006ba137a2555f117f38c5eb76a5238a233"
+      },
+      "baselineHash": "44ee52957285e2e7086d525c41b591182ba44ca5d66f7be1324568a4cb5aa803",
+      "packetContracts": [
+        {
+          "item": "entity:Task",
+          "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+        },
+        {
+          "item": "method:Task.complete",
+          "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+        },
+        {
+          "item": "usecase:create_task",
+          "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+        },
+        {
+          "item": "usecase:complete_task",
+          "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+        },
+        {
+          "item": "operator:task-operator",
+          "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+        }
+      ],
+      "artifactsChecked": 347,
+      "reportSha256": "6f665926ae35a9c53c99dace00aef1f72d687fdcd0f1f1c98dbb63de5b02929d"
+    },
+    {
+      "id": "cursor-codex-medium-r2",
+      "configuration": "cursor-codex-medium",
+      "repetition": 2,
+      "status": "completed",
+      "certified": true,
+      "questions": {
+        "correct": 23,
+        "executed": 25,
+        "planned": 25,
+        "verdicts": {
+          "correct": 23,
+          "incorrect": 2
+        }
+      },
+      "initialAccepted": 4,
+      "finalAccepted": 5,
+      "verify": "done",
+      "invocations": 31,
+      "corrections": 1,
+      "durationMs": 833350.0186470001,
+      "observedModels": [
+        "Codex 5.3 Medium"
+      ],
+      "adapter": {
+        "id": "cursor-cli",
+        "version": "2026.10.01-e373342",
+        "executableSha256": "2ccc9a8e167797641448b5e5c936f006ba137a2555f117f38c5eb76a5238a233"
+      },
+      "baselineHash": "e138ca5d6b28b02d6b0f1dd2208f26bd188968cf04734ea3095a770cb7e3c590",
+      "packetContracts": [
+        {
+          "item": "entity:Task",
+          "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+        },
+        {
+          "item": "method:Task.complete",
+          "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+        },
+        {
+          "item": "usecase:create_task",
+          "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+        },
+        {
+          "item": "usecase:complete_task",
+          "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+        },
+        {
+          "item": "operator:task-operator",
+          "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+        }
+      ],
+      "artifactsChecked": 384,
+      "reportSha256": "a04a97c04ff0ab5d1c4c6d08e71c6c0e73b5a56a559a9eba9066124abbf4ae26"
+    },
+    {
+      "id": "cursor-codex-medium-r3",
+      "configuration": "cursor-codex-medium",
+      "repetition": 3,
+      "status": "completed",
+      "certified": true,
+      "questions": {
+        "correct": 24,
+        "executed": 25,
+        "planned": 25,
+        "verdicts": {
+          "correct": 24,
+          "incorrect": 1
+        }
+      },
+      "initialAccepted": 4,
+      "finalAccepted": 5,
+      "verify": "done",
+      "invocations": 31,
+      "corrections": 1,
+      "durationMs": 828065.8105609999,
+      "observedModels": [
+        "Codex 5.3 Medium"
+      ],
+      "adapter": {
+        "id": "cursor-cli",
+        "version": "2026.10.01-e373342",
+        "executableSha256": "2ccc9a8e167797641448b5e5c936f006ba137a2555f117f38c5eb76a5238a233"
+      },
+      "baselineHash": "a859d4ffc6c4f9e51e156472398fed5af57f422951ad1f78e62054fc78b64ac0",
+      "packetContracts": [
+        {
+          "item": "entity:Task",
+          "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+        },
+        {
+          "item": "method:Task.complete",
+          "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+        },
+        {
+          "item": "usecase:create_task",
+          "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+        },
+        {
+          "item": "usecase:complete_task",
+          "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+        },
+        {
+          "item": "operator:task-operator",
+          "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+        }
+      ],
+      "artifactsChecked": 384,
+      "reportSha256": "9d0e830565b8e8fda227785d8f7338ceaa26adf6d015772330f195b6d1fd080f"
+    }
+  ]
+}

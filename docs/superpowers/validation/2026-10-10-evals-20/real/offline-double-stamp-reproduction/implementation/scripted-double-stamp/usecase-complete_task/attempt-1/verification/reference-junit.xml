@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="2" assertions="0" failures="2" skipped="0" time="0.110238317">
+  <testsuite name=".eval-reference/behavior.test.ts" file=".eval-reference/behavior.test.ts" tests="2" assertions="0" failures="2" skipped="0" time="0.108507166" hostname="softtords">
+    <testcase name="conclui, persiste, publica e rejeita id ausente" classname="" time="0.000872" file=".eval-reference/behavior.test.ts" line="7" assertions="0">
+      <failure type="Error" message="Evento cd9f0220-733f-45df-9115-b653219d349d já foi carimbado">Error: Evento cd9f0220-733f-45df-9115-b653219d349d já foi carimbado&#10;      at stamp (../../framework/src/core/domain-event.ts:38:17)&#10;      at publish (../../framework/src/testing/context.ts:19:15)&#10;      at execute (app/application/complete-task.ts:22:15)&#10;      at .eval-reference/behavior.test.ts:11:19&#10;</failure>
+    </testcase>
+    <testcase name="conclui, persiste, publica e rejeita id ausente" classname="" time="0.000102" file=".eval-reference/behavior.test.ts" line="7" assertions="0">
+      <failure type="Error" message="Evento b8601b81-3259-443d-b0ff-c5206a87823d já foi carimbado">Error: Evento b8601b81-3259-443d-b0ff-c5206a87823d já foi carimbado&#10;      at stamp (../../framework/src/core/domain-event.ts:38:17)&#10;      at publish (../../framework/src/testing/context.ts:19:15)&#10;      at execute (app/application/complete-task.ts:22:15)&#10;      at .eval-reference/behavior.test.ts:11:19&#10;</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

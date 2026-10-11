@@ -1,0 +1,22 @@
+bun test v1.4.2 (744846f84)
+
+test/evals-verification-scope.test.ts:
+22 |     );
+23 |     expect(result.exitCode).toBe(0);
+24 |     expect(result.collectionError).toBeUndefined();
+25 |     const benchmark = result.cases.filter((c) => c.covers.length === 0);
+26 |     expect(benchmark.length).toBeGreaterThan(30);
+27 |     expect(benchmark.every((c) => c.status === 'skipped')).toBe(true);
+                                                                ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/home/jvtuta/code/nestjs-agentic-ddd-architecture/test/evals-verification-scope.test.ts:27:60)
+(fail) nested quality collection skips benchmark orchestration and executes domain coverage [146831.07ms]
+
+ 0 pass
+ 1 fail
+ 4 expect() calls
+Ran 1 test across 1 file. [146.86s]

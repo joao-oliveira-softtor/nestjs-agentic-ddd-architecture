@@ -1,0 +1,72 @@
+{
+  "configuration": "cursor-codex-medium",
+  "dataset": "evals/skills/orders.extended.yaml",
+  "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+  "id": "runtime-positive-cancel",
+  "audience": "runtime",
+  "question": "O pedido o-23 está confirmed. O cliente quer cancelar com motivo literal entrega atrasada. A aprovação humana já foi concedida. Qual tool e todos os argumentos?",
+  "expect": {
+    "type": "tool_call",
+    "name": "cancel_order",
+    "input": {
+      "order_id": "o-23",
+      "reason": "entrega atrasada"
+    }
+  },
+  "answer": {
+    "type": "tool_call",
+    "name": "cancel_order",
+    "input": {
+      "order_id": "o-23",
+      "reason": "entrega atrasada"
+    }
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"type\":\"tool_call\",\"name\":\"cancel_order\",\"input\":{\"order_id\":\"o-23\",\"reason\":\"entrega atrasada\"}}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "1dd35da3-9f7c-4f2e-ab14-5488ca3f77bb",
+      "source": "cursor.result.session_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "Codex 5.3 Medium",
+      "source": "cursor.init.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 14643.513131999993,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1/skills/cursor-codex-medium/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-cancel/process.json"
+    ],
+    "diagnostic": null
+  }
+}

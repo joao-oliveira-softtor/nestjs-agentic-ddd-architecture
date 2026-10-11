@@ -1,0 +1,3 @@
+Leia os arquivos de contexto desta sessão: .agents/skills/orders-dev/SKILL.md, .agents/skills/orders-dev/references/history.md, .agents/skills/orders-dev/references/schemas.json, .agents/skills/orders-dev/references/state-machine.md, AGENTS.md.
+Responda somente um objeto JSON, sem cercas nem prosa. Formatos: {"type":"exact","value":"texto"} ou {"type":"tool_call","name":"nome","input":{}}. Preserve a resposta literal solicitada. Não execute tools de negócio. Use somente a sessão principal, sem delegação ou subagentes.
+Pergunta: Qual decorator é obrigatório em todo método público de uma entidade? Responda somente @NomeDoDecorator, sem argumentos.

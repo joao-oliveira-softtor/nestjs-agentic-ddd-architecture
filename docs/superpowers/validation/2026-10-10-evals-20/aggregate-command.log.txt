@@ -1,0 +1,1 @@
+$ bun scripts/evals/aggregate.ts --campaign "evals/campaigns/cycle-20/index.json" --out "/tmp/evals-cycle-20-planned-aggregate"

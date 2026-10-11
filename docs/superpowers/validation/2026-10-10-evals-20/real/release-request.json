@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "userMessage": "após isso vamos publicar a release v0.3.0",
+  "requestedVersion": "0.3.0",
+  "sequence": "finish six authorized campaign runs and aggregation, publish evidence, integrate verified PR, publish GitHub source release on main",
+  "distribution": "GitHub source and validation assets, following v0.1.0; package remains private",
+  "inferenceBudgetUnchanged": true,
+  "originMutationsDeferredUntilAllRunsFinish": true,
+  "mainObserved": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425"
+}

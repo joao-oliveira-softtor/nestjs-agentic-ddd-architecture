@@ -1,0 +1,72 @@
+{
+  "configuration": "scripted-control",
+  "dataset": "evals/skills/orders.yaml",
+  "datasetSha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+  "id": "cancelar-com-motivo",
+  "audience": "runtime",
+  "question": "O cliente pediu para cancelar o pedido 7f3c porque desistiu. Qual tool e quais argumentos?",
+  "expect": {
+    "type": "tool_call",
+    "name": "cancel_order",
+    "input": {
+      "order_id": "7f3c",
+      "reason": "desistiu"
+    }
+  },
+  "answer": {
+    "type": "tool_call",
+    "name": "cancel_order",
+    "input": {
+      "order_id": "7f3c",
+      "reason": "desistiu"
+    }
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+  "execution": {
+    "sessionId": {
+      "status": "available",
+      "value": "scripted-2",
+      "source": "scripted_fixture"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "scripted",
+      "source": "scripted_fixture"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "synthetic"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 14.888394999999946,
+    "evidence": [
+      "/tmp/agentic-evals-17-real-20261010-CxAASz/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stdout.log",
+      "/tmp/agentic-evals-17-real-20261010-CxAASz/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/stderr.log",
+      "/tmp/agentic-evals-17-real-20261010-CxAASz/scripted-control/skills/scripted-control/a57dd7ccc038186a0dfa2a71ae4b20e94a5d5c81b05464ade2ae8995748aee2e/cancelar-com-motivo/process.json"
+    ],
+    "transport": "finished",
+    "finalText": "{\"type\":\"tool_call\",\"name\":\"cancel_order\",\"input\":{\"order_id\":\"7f3c\",\"reason\":\"desistiu\"}}",
+    "diagnostic": null
+  }
+}

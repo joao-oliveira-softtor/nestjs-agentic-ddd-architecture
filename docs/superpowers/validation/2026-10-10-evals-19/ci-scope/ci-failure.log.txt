@@ -1,0 +1,742 @@
+ci	Run bun test	﻿2026-10-10T13:50:59.3439882Z ##[group]Run bun test
+ci	Run bun test	2026-10-10T13:50:59.3440180Z [36;1mbun test[0m
+ci	Run bun test	2026-10-10T13:50:59.3513030Z shell: /usr/bin/bash -e {0}
+ci	Run bun test	2026-10-10T13:50:59.3513340Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:50:59.3651761Z bun test v1.4.2 (744846f84)
+ci	Run bun test	2026-10-10T13:50:59.3715070Z 
+ci	Run bun test	2026-10-10T13:50:59.3716460Z ##[group]test/evals-report.test.ts:
+ci	Run bun test	2026-10-10T13:50:59.8875301Z (pass) accuracy denominators include malformed/timeout but exclude infrastructure; coverage remains explicit [1.37ms]
+ci	Run bun test	2026-10-10T13:50:59.8961820Z (pass) final done requires a matching complete report and successful process; infrastructure cannot leave run completed [11.01ms]
+ci	Run bun test	2026-10-10T13:50:59.8971570Z (pass) agreement counts identical wrong answers separately from correctness; Fleiss kappa uses binary complete rows [1.02ms]
+ci	Run bun test	2026-10-10T13:50:59.9172140Z (pass) tokens and costs remain explicitly unavailable; Markdown derives from the report and artifact hashes include preserved bytes [19.95ms]
+ci	Run bun test	2026-10-10T13:50:59.9202837Z (pass) publication redacts secrets in agent patches and report strings before computing hashes [3.11ms]
+ci	Run bun test	2026-10-10T13:50:59.9203535Z 
+ci	Run bun test	2026-10-10T13:50:59.9204076Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:50:59.9204210Z 
+ci	Run bun test	2026-10-10T13:50:59.9204497Z ##[group]test/evals-isolation.test.ts:
+ci	Run bun test	2026-10-10T13:51:00.3211232Z (pass) physical source snapshot excludes solutions and materializes dependencies privately [399.89ms]
+ci	Run bun test	2026-10-10T13:51:00.3793596Z (pass) rejects dirty sources, outward links, and existing or origin-contained output including symbolic ancestors [58.18ms]
+ci	Run bun test	2026-10-10T13:51:00.3794549Z 
+ci	Run bun test	2026-10-10T13:51:00.3795158Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:51:00.3795358Z 
+ci	Run bun test	2026-10-10T13:51:00.3795840Z ##[group]test/evals-implementation.test.ts:
+ci	Run bun test	2026-10-10T13:51:07.3537754Z (pass) audit permits selected body and test while preserving source coordinates and all other bytes [376.98ms]
+ci	Run bun test	2026-10-10T13:51:07.6693704Z (pass) audit rejects oversized sparse files, excessive entries and aggregate content before retaining a patch [315.53ms]
+ci	Run bun test	2026-10-10T13:51:55.8723371Z (pass) complete scripted benchmark independently accepts all five frozen packets and change done [48203.02ms]
+ci	Run bun test	2026-10-10T13:52:28.1746191Z (pass) one fresh correction keeps packet/hash; failed method leaves independent create executable [32302.28ms]
+ci	Run bun test	2026-10-10T13:52:28.4564181Z (pass) boundary audit rejects generated/config files, unexpected paths, malformed source and edits to accepted tests [281.73ms]
+ci	Run bun test	2026-10-10T13:52:35.4472583Z (pass) archived coverage must come from executor; missing JUnit and verification timeout cannot certify done [6990.81ms]
+ci	Run bun test	2026-10-10T13:52:40.7748660Z (pass) infrastructure gets no correction and preserves unstarted items [5327.70ms]
+ci	Run bun test	2026-10-10T13:52:47.4953483Z (pass) submitted tests cannot disclose host files through either JUnit output symlink [6720.42ms]
+ci	Run bun test	2026-10-10T13:53:40.9557037Z (pass) private oracle detects omitted save even when shared in-memory references make executor tests pass [53460.25ms]
+ci	Run bun test	2026-10-10T13:53:42.3574591Z 
+ci	Run bun test	2026-10-10T13:53:42.3576226Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:53:42.3576559Z 
+ci	Run bun test	2026-10-10T13:53:42.3577052Z ##[group]test/evals-cli.test.ts:
+ci	Run bun test	2026-10-10T13:53:42.3596316Z (pass) session reservation is consumed before failed spawn and stops new work only when a new reservation is denied [0.28ms]
+ci	Run bun test	2026-10-10T13:53:42.3801565Z (pass) total deadline and external cancellation propagate to active work [20.49ms]
+ci	Run bun test	2026-10-10T13:53:42.3827260Z Error: offline interrupted
+ci	Run bun test	2026-10-10T13:53:42.3828663Z (pass) SIGINT aborts active CLI work, returns 130 and removes handlers [2.83ms]
+ci	Run bun test	2026-10-10T13:53:42.3835592Z Error: Uso: bun run evals --config <manifest.json> --out <diretório externo inexistente> [--real --trusted-source]
+ci	Run bun test	2026-10-10T13:53:42.3849661Z [
+ci	Run bun test	2026-10-10T13:53:42.3850021Z   {
+ci	Run bun test	2026-10-10T13:53:42.3850354Z     "expected": "object",
+ci	Run bun test	2026-10-10T13:53:42.3850741Z     "code": "invalid_type",
+ci	Run bun test	2026-10-10T13:53:42.3851170Z     "path": [
+ci	Run bun test	2026-10-10T13:53:42.3851500Z       "budget"
+ci	Run bun test	2026-10-10T13:53:42.3851831Z     ],
+ci	Run bun test	2026-10-10T13:53:42.3852301Z     "message": "Invalid input: expected object, received undefined"
+ci	Run bun test	2026-10-10T13:53:42.3853374Z   }
+ci	Run bun test	2026-10-10T13:53:42.3853682Z ]
+ci	Run bun test	2026-10-10T13:53:42.3856553Z Error: Adapters reais exigem --real
+ci	Run bun test	2026-10-10T13:53:42.3859305Z Error: Adapters reais exigem --trusted-source: ferramentas nativas podem acessar credenciais e a rede do host; use somente fonte/datasets confiáveis
+ci	Run bun test	2026-10-10T13:53:42.3882239Z Error: offline dispatch seam
+ci	Run bun test	2026-10-10T13:53:42.3884858Z (pass) CLI rejects invalid args, missing budget and real profiles without opt-in before any native execution [5.58ms]
+ci	Run bun test	2026-10-10T13:53:54.6616737Z (pass) offline integrated run stops after one reservation, preserves evidence and original hashes, and leaves origin unchanged [12272.76ms]
+ci	Run bun test	2026-10-10T13:53:54.6617819Z 
+ci	Run bun test	2026-10-10T13:53:54.6618591Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:53:54.6618798Z 
+ci	Run bun test	2026-10-10T13:53:54.6619242Z ##[group]test/skills-install.test.ts:
+ci	Run bun test	2026-10-10T13:53:54.7912062Z (pass) instala project: formatos nativos, mesma fonte, referências e idempotência [128.16ms]
+ci	Run bun test	2026-10-10T13:53:54.9282498Z (pass) instala user: formatos nativos, mesma fonte, referências e idempotência [137.06ms]
+ci	Run bun test	2026-10-10T13:53:54.9442052Z (pass) target cursor instala somente adaptadores pedidos [15.99ms]
+ci	Run bun test	2026-10-10T13:53:54.9576845Z (pass) target codex instala somente adaptadores pedidos [13.45ms]
+ci	Run bun test	2026-10-10T13:53:54.9731029Z (pass) target claude instala somente adaptadores pedidos [15.42ms]
+ci	Run bun test	2026-10-10T13:53:55.0177706Z (pass) instala project com link na root e preserva links válidos ao reinstalar [44.59ms]
+ci	Run bun test	2026-10-10T13:53:55.0625537Z (pass) instala project com link na ancestor e preserva links válidos ao reinstalar [44.77ms]
+ci	Run bun test	2026-10-10T13:53:55.1074170Z (pass) instala user com link na root e preserva links válidos ao reinstalar [44.87ms]
+ci	Run bun test	2026-10-10T13:53:55.1517553Z (pass) instala user com link na ancestor e preserva links válidos ao reinstalar [44.31ms]
+ci	Run bun test	2026-10-10T13:53:55.1650483Z (pass) recusa pais simbólicos dentro da raiz sem escrever fora dela [13.29ms]
+ci	Run bun test	2026-10-10T13:53:55.1948409Z (pass) preflight recusa arquivo alheio sem instalar parcialmente; check não altera conflito [29.75ms]
+ci	Run bun test	2026-10-10T13:53:55.2200915Z (pass) recusa links alheios e pais que não são diretórios antes de escrever [25.29ms]
+ci	Run bun test	2026-10-10T13:53:55.2615131Z (pass) recusa opções inválidas antes de escrever [41.34ms]
+ci	Run bun test	2026-10-10T13:53:55.2914225Z (pass) recusa link alheio inclusive dangling e preserva configuração existente [29.93ms]
+ci	Run bun test	2026-10-10T13:53:55.9960096Z (pass) compile preserva links e adaptadores instalados em raiz user [704.44ms]
+ci	Run bun test	2026-10-10T13:53:55.9960946Z 
+ci	Run bun test	2026-10-10T13:53:55.9961914Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:53:55.9962286Z 
+ci	Run bun test	2026-10-10T13:53:55.9962886Z ##[group]test/evals-contracts.test.ts:
+ci	Run bun test	2026-10-10T13:53:55.9974541Z (pass) deterministic evaluation contracts > exact preserves spaces, case and accents [0.17ms]
+ci	Run bun test	2026-10-10T13:53:55.9988966Z (pass) deterministic evaluation contracts > tool calls ignore object ordering but preserve keys, types and array ordering [0.35ms]
+ci	Run bun test	2026-10-10T13:53:56.0073659Z (pass) deterministic evaluation contracts > only a single strict JSON response is accepted [9.43ms]
+ci	Run bun test	2026-10-10T13:53:56.0100150Z (pass) deterministic evaluation contracts > original dataset has five validated cases; duplicate IDs and bad audience fail [2.60ms]
+ci	Run bun test	2026-10-10T13:53:56.0110535Z (pass) deterministic evaluation contracts > manifest requires explicit bounded budget and unique configurations [1.12ms]
+ci	Run bun test	2026-10-10T13:53:56.0111757Z 
+ci	Run bun test	2026-10-10T13:53:56.0112561Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:53:56.0113034Z 
+ci	Run bun test	2026-10-10T13:53:56.0113617Z ##[group]test/app.test.ts:
+ci	Run bun test	2026-10-10T13:53:56.0941728Z (pass) AppModule > não registra nenhum controller [0.04ms]
+ci	Run bun test	2026-10-10T13:53:56.1599042Z (pass) AppModule compõe o runtime e os use-cases de orders [65.75ms]
+ci	Run bun test	2026-10-10T13:53:56.3868284Z (pass) build preserva localização das declarações e inicializa com BunAdapter [226.85ms]
+ci	Run bun test	2026-10-10T13:53:56.3868777Z 
+ci	Run bun test	2026-10-10T13:53:56.3869272Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:53:56.3869409Z 
+ci	Run bun test	2026-10-10T13:53:56.3869690Z ##[group]test/architecture.test.ts:
+ci	Run bun test	2026-10-10T13:53:56.3879325Z (pass) arquitetura > o extrator de imports funciona [0.25ms]
+ci	Run bun test	2026-10-10T13:53:56.3888878Z (pass) arquitetura > src/core só importa zod e o próprio core [0.92ms]
+ci	Run bun test	2026-10-10T13:53:56.3892944Z (pass) arquitetura > src/decorators só importa core, zod, reflect-metadata e node:* [0.36ms]
+ci	Run bun test	2026-10-10T13:53:56.3898442Z (pass) arquitetura > domain e application do exemplo não importam Nest nem runtime de LLM [0.53ms]
+ci	Run bun test	2026-10-10T13:53:56.3905712Z (pass) arquitetura > examples só importa o framework via @agentic-ddd/* [0.72ms]
+ci	Run bun test	2026-10-10T13:53:56.3931225Z (pass) arquitetura > compiler e runtime não se importam [2.46ms]
+ci	Run bun test	2026-10-10T13:53:56.3955028Z (pass) arquitetura > nenhum @Controller no repositório [2.37ms]
+ci	Run bun test	2026-10-10T13:53:56.3960741Z (pass) arquitetura > os diretórios governados pelas regras existem e têm arquivos [0.62ms]
+ci	Run bun test	2026-10-10T13:53:56.3961600Z 
+ci	Run bun test	2026-10-10T13:53:56.3962229Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:53:56.3962459Z 
+ci	Run bun test	2026-10-10T13:53:56.3962927Z ##[group]test/evals-extended.test.ts:
+ci	Run bun test	2026-10-10T13:54:00.5334730Z (pass) 20 literal cases agree with declarations, full nested schemas and documented rules [68.14ms]
+ci	Run bun test	2026-10-10T13:54:02.6789598Z (pass) all 20 cases judged correct in isolated sessions without dataset or expectations [2145.46ms]
+ci	Run bun test	2026-10-10T13:54:04.8188620Z (pass) all 20 cases judged incorrect in isolated sessions without dataset or expectations [2139.90ms]
+ci	Run bun test	2026-10-10T13:54:07.0020788Z (pass) all 20 cases judged malformed in isolated sessions without dataset or expectations [2183.22ms]
+ci	Run bun test	2026-10-10T13:54:07.3760220Z 
+ci	Run bun test	2026-10-10T13:54:07.3761595Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:54:07.3761951Z 
+ci	Run bun test	2026-10-10T13:54:07.3762658Z ##[group]test/skills-example.test.ts:
+ci	Run bun test	2026-10-10T13:54:08.2393380Z (pass) example cria tutorial completo sob ancestral simbólico [862.65ms]
+ci	Run bun test	2026-10-10T13:54:08.9087774Z (pass) example recusa destino existente e opções inválidas sem alterar arquivos [669.35ms]
+ci	Run bun test	2026-10-10T13:54:37.8634954Z (pass) tutorial tasks: sem testes → ondas → hash/gerados estáveis → verify change done; instalação preservada [28954.76ms]
+ci	Run bun test	2026-10-10T13:54:37.8635869Z 
+ci	Run bun test	2026-10-10T13:54:37.8636726Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:54:37.8636960Z 
+ci	Run bun test	2026-10-10T13:54:37.8639292Z ##[group]test/evals-adapters.test.ts:
+ci	Run bun test	2026-10-10T13:54:37.8695286Z (pass) Codex metadata refuses oversized sparse files and host links without accepting their model claims [4.40ms]
+ci	Run bun test	2026-10-10T13:54:37.8703939Z (pass) failed processes retain native measurements without accepting the final answer [0.88ms]
+ci	Run bun test	2026-10-10T13:54:37.8707403Z (pass) Codex native tool host startup errors are infrastructure even with a final assistant answer [0.35ms]
+ci	Run bun test	2026-10-10T13:54:37.8710940Z (pass) Codex final assistant independent from progress, native tokens preserved, model/cost unavailable [0.32ms]
+ci	Run bun test	2026-10-10T13:54:37.8713426Z (pass) Cursor final full assistant independent of concatenated terminal result; observed model preserved [0.28ms]
+ci	Run bun test	2026-10-10T13:54:37.8722483Z (pass) missing terminal, native errors, malformed NDJSON and nonzero exit are infrastructure [0.85ms]
+ci	Run bun test	2026-10-10T13:54:37.8724006Z (pass) malformed final agent JSON remains successful transport; partial usage does not invent missing fields [0.09ms]
+ci	Run bun test	2026-10-10T13:54:37.8725650Z (pass) explicit argv selects model/effort and mode; no schema advantage, delegation, resume or credential argv [0.24ms]
+ci	Run bun test	2026-10-10T13:54:42.3611523Z (pass) complete native adapters execute only offline stub CLIs in private homes and redact injected secrets [4488.49ms]
+ci	Run bun test	2026-10-10T13:54:42.3612325Z 
+ci	Run bun test	2026-10-10T13:54:42.3612765Z ##[endgroup]
+ci	Run bun test	2026-10-10T13:54:42.3612908Z 
+ci	Run bun test	2026-10-10T13:54:42.3615739Z ##[group]test/evals-run.test.ts:
+ci	Run bun test	2026-10-10T13:55:43.2823718Z (pass) full run answers five questions, accepts five packets and independently certifies change [57032.06ms]
+ci	Run bun test	2026-10-10T13:56:06.8570744Z (pass) full run rejects normalization after audit and green executor suite [23574.69ms]
+ci	Run bun test	2026-10-10T13:56:31.1903567Z (pass) full run rejects empty-title after audit and green executor suite [24333.29ms]
+ci	Run bun test	2026-10-10T13:56:54.6165721Z (pass) full run rejects wrong-id after audit and green executor suite [23426.20ms]
+ci	Run bun test	2026-10-10T13:57:17.6944091Z (pass) full run rejects hardcoded-oracle-id after audit and green executor suite [23077.38ms]
+ci	Run bun test	2026-10-10T13:57:40.5187257Z (pass) full run rejects created-event-missing after audit and green executor suite [22824.68ms]
+ci	Run bun test	2026-10-10T13:58:02.9301096Z (pass) full run rejects created-payload after audit and green executor suite [22411.36ms]
+ci	Run bun test	2026-10-10T13:58:25.2577530Z (pass) full run rejects title-error-code after audit and green executor suite [22326.32ms]
+ci	Run bun test	2026-10-10T13:59:02.5866447Z (pass) full run rejects wrong-state after audit and green executor suite [37330.14ms]
+ci	Run bun test	2026-10-10T13:59:40.0608183Z (pass) full run rejects completed-event-missing after audit and green executor suite [37474.22ms]
+ci	Run bun test	2026-10-10T14:00:16.8538547Z (pass) full run rejects completed-payload after audit and green executor suite [36793.01ms]
+ci	Run bun test	2026-10-10T14:00:53.5396977Z (pass) full run rejects repetition-accepted after audit and green executor suite [36685.81ms]
+ci	Run bun test	2026-10-10T14:01:29.9118873Z (pass) full run rejects repeat-error-code after audit and green executor suite [36372.22ms]
+ci	Run bun test	2026-10-10T14:02:13.7228100Z (pass) full run rejects duplicate-accepted after audit and green executor suite [43810.84ms]
+ci	Run bun test	2026-10-10T14:03:00.2689665Z (pass) full run rejects duplicate-error-code after audit and green executor suite [46546.12ms]
+ci	Run bun test	2026-10-10T14:03:47.2870550Z (pass) full run rejects create-save-omitted after audit and green executor suite [47018.08ms]
+ci	Run bun test	2026-10-10T14:04:33.3275167Z (pass) full run rejects create-publish-omitted after audit and green executor suite [46040.46ms]
+ci	Run bun test	2026-10-10T14:05:19.9147609Z (pass) full run rejects complete-save-omitted after audit and green executor suite [46587.19ms]
+ci	Run bun test	2026-10-10T14:06:06.5208456Z (pass) full run rejects complete-publish-omitted after audit and green executor suite [46606.10ms]
+ci	Run bun test	2026-10-10T14:06:53.2561289Z (pass) full run rejects missing-error-code after audit and green executor suite [46735.32ms]
+ci	Run bun test	2026-10-10T14:07:52.0704903Z (pass) fresh correction preserves original packet and hash while rejecting first behavior [58814.28ms]
+ci	Run bun test	2026-10-10T14:08:11.4647416Z (pass) full run cannot certify protocol [19394.21ms]
+ci	Run bun test	2026-10-10T14:08:24.5430855Z (pass) full run cannot certify infrastructure [13078.41ms]
+ci	Run bun test	2026-10-10T14:08:37.5182747Z (pass) invocation budget stops before implementation and persists all planned items [12975.14ms]
+ci	Run bun test	2026-10-10T14:09:27.6091546Z (pass) final verification timeout after five acceptances cannot certify change [50090.84ms]
+ci	Run bun test	2026-10-10T14:09:29.2623376Z 
+ci	Run bun test	2026-10-10T14:09:29.2624542Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:09:29.2624708Z 
+ci	Run bun test	2026-10-10T14:09:29.2627796Z ##[group]test/evals.test.ts:
+ci	Run bun test	2026-10-10T14:09:29.2673880Z (pass) evals/skills/orders.yaml > o domínio do exemplo compila [0.02ms]
+ci	Run bun test	2026-10-10T14:09:29.2675130Z (pass) evals/skills/orders.yaml > tem de 3 a 5 casos com id kebab-case único, audience e pergunta [0.13ms]
+ci	Run bun test	2026-10-10T14:09:29.2676732Z (pass) evals/skills/orders.yaml > tool_call cita uma tool existente e só parâmetros do input dela [0.12ms]
+ci	Run bun test	2026-10-10T14:09:29.2678250Z (pass) evals/skills/orders.yaml > respostas exatas não são vazias e só existem os tipos tool_call e exact [0.06ms]
+ci	Run bun test	2026-10-10T14:09:29.2679016Z 
+ci	Run bun test	2026-10-10T14:09:29.2679531Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:09:29.2679730Z 
+ci	Run bun test	2026-10-10T14:09:29.2680169Z ##[group]test/evals-aggregate.test.ts:
+ci	Run bun test	2026-10-10T14:09:32.4323323Z Error: Output already exists
+ci	Run bun test	2026-10-10T14:09:33.2717700Z Error: Output already exists
+ci	Run bun test	2026-10-10T14:09:33.3693884Z Error: Output already exists
+ci	Run bun test	2026-10-10T14:09:33.3741279Z (pass) complete and partial campaigns preserve planned/executed denominators and deterministic output [4099.75ms]
+ci	Run bun test	2026-10-10T14:09:35.3233451Z (pass) recomputes answer correctness and acceptance rather than trusting derived metrics and flags [1949.16ms]
+ci	Run bun test	2026-10-10T14:09:46.2824997Z (pass) separates requested configuration, source/runner/adapter/environment/context/packet and observed metadata [10959.13ms]
+ci	Run bun test	2026-10-10T14:09:47.5862929Z (pass) rejects duplicate slots, report IDs, case IDs, incompatible schema and declared hash mismatches [1303.82ms]
+ci	Run bun test	2026-10-10T14:09:50.3698199Z (pass) incomplete token measurements and distinct currencies remain unavailable [2783.48ms]
+ci	Run bun test	2026-10-10T14:09:55.1500349Z (pass) item completion and certification derive from executed gates and both test suites [4780.21ms]
+ci	Run bun test	2026-10-10T14:09:55.3331679Z (pass) rejects evidence references even when missing files are also removed from hash ledger [183.09ms]
+ci	Run bun test	2026-10-10T14:09:55.3349567Z (pass) offline aggregator dependency graph contains no inference adapter or runner import [1.83ms]
+ci	Run bun test	2026-10-10T14:09:56.1674255Z (pass) accepts a checksummed current-schema report with derived metrics omitted [832.38ms]
+ci	Run bun test	2026-10-10T14:09:56.1675057Z 
+ci	Run bun test	2026-10-10T14:09:56.1677503Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:09:56.1677771Z 
+ci	Run bun test	2026-10-10T14:09:56.1681237Z ##[group]test/evals-skills.test.ts:
+ci	Run bun test	2026-10-10T14:10:01.3899772Z (pass) all five original cases judged correctly in fresh readonly sessions without expectations [1374.68ms]
+ci	Run bun test	2026-10-10T14:10:02.8843075Z (pass) wrong, malformed, timeout, infrastructure remain distinct and do not stop independent questions [1494.24ms]
+ci	Run bun test	2026-10-10T14:10:02.8891173Z (pass) bundle hashes independent of temporary paths; dangerous context roots rejected [4.84ms]
+ci	Run bun test	2026-10-10T14:10:03.2537388Z 
+ci	Run bun test	2026-10-10T14:10:03.2539384Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:03.2539736Z 
+ci	Run bun test	2026-10-10T14:10:03.2540276Z ##[group]test/evals-process.test.ts:
+ci	Run bun test	2026-10-10T14:10:03.2692980Z (pass) supervisor preserves successful and nonzero completion with redacted evidence [13.91ms]
+ci	Run bun test	2026-10-10T14:10:03.2717161Z (pass) missing executable is infrastructure and leaves evidence [1.00ms]
+ci	Run bun test	2026-10-10T14:10:03.5265952Z (pass) late credential collection precedes evidence persistence on success, timeout and cancellation; failure withholds streams and argv [256.29ms]
+ci	Run bun test	2026-10-10T14:10:05.9534751Z (pass) timeout and cancellation terminate resistant descendant processes [2426.94ms]
+ci	Run bun test	2026-10-10T14:10:06.0709218Z (pass) drains both streams and enforces a combined eight MiB limit [117.42ms]
+ci	Run bun test	2026-10-10T14:10:06.0974145Z (pass) successful parent cannot leave a background child holding its pipes [26.49ms]
+ci	Run bun test	2026-10-10T14:10:06.2327202Z (pass) reaching the combined output cap is infrastructure; one byte below remains complete [135.25ms]
+ci	Run bun test	2026-10-10T14:10:06.2327704Z 
+ci	Run bun test	2026-10-10T14:10:06.2328192Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.2328336Z 
+ci	Run bun test	2026-10-10T14:10:06.2328611Z ##[group]src/compiler/dev-skill.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.2390311Z (pass) renderDevSkill > gera SKILL.md e references [0.03ms]
+ci	Run bun test	2026-10-10T14:10:06.2391313Z (pass) renderDevSkill > lista o histórico de mudanças nas referências [0.02ms]
+ci	Run bun test	2026-10-10T14:10:06.2392111Z (pass) renderDevSkill > frontmatter de dev com nome do módulo [0.02ms]
+ci	Run bun test	2026-10-10T14:10:06.2392820Z (pass) renderDevSkill > descreve entidade, invariantes com quem garante e métodos com fonte [0.16ms]
+ci	Run bun test	2026-10-10T14:10:06.2393605Z (pass) renderDevSkill > lista dependências e obrigações de teste sem nenhum estado de implementação [0.07ms]
+ci	Run bun test	2026-10-10T14:10:06.2394311Z (pass) renderDevSkill > explica como estender usando o caminho do módulo [0.02ms]
+ci	Run bun test	2026-10-10T14:10:06.2395807Z (pass) renderDevSkill > snapshot dos arquivos [0.33ms]
+ci	Run bun test	2026-10-10T14:10:06.2407173Z (pass) renderDevSkill > limita description a 1024 caracteres quando há muitos use-cases [1.03ms]
+ci	Run bun test	2026-10-10T14:10:06.2407632Z 
+ci	Run bun test	2026-10-10T14:10:06.2408000Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.2408154Z 
+ci	Run bun test	2026-10-10T14:10:06.2408404Z ##[group]src/compiler/packet.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.2464809Z (pass) pacotes determinísticos dos quatro tipos compartilham hash e especificação [1.08ms]
+ci	Run bun test	2026-10-10T14:10:06.2472753Z (pass) hash exclui localização e mudanças independentes, inclui contratos e regras referenciados [0.90ms]
+ci	Run bun test	2026-10-10T14:10:06.2478053Z (pass) source é dado de schema: preserva propriedade, enum e hash do contrato [0.57ms]
+ci	Run bun test	2026-10-10T14:10:06.2485890Z (pass) spec de item enriquecido não duplica critérios e preserva o hash publicado [0.79ms]
+ci	Run bun test	2026-10-10T14:10:06.2486652Z 
+ci	Run bun test	2026-10-10T14:10:06.2487015Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.2487512Z 
+ci	Run bun test	2026-10-10T14:10:06.2487776Z ##[group]src/compiler/compile.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.2606855Z (pass) compile (exemplo orders) > escreve skills de dev e de runtime, AGENTS.md e CLAUDE.md [10.60ms]
+ci	Run bun test	2026-10-10T14:10:06.2968682Z (pass) compile (exemplo orders) > é idempotente e o check passa depois de escrever [36.18ms]
+ci	Run bun test	2026-10-10T14:10:06.3065624Z (pass) compile (exemplo orders) > check acusa arquivo gerado editado à mão [9.68ms]
+ci	Run bun test	2026-10-10T14:10:06.3123802Z (pass) compile (exemplo orders) > avisa quando CLAUDE.md existe sem @AGENTS.md [5.83ms]
+ci	Run bun test	2026-10-10T14:10:06.3215900Z (pass) compile (exemplo orders) > sem lock e sem proposta: write segue com pendência; check falha [9.17ms]
+ci	Run bun test	2026-10-10T14:10:06.3279777Z (pass) compile (exemplo orders) > --draft-change cria a proposta; sem Motivo ela não é aplicada [6.38ms]
+ci	Run bun test	2026-10-10T14:10:06.3456663Z (pass) compile (exemplo orders) > proposta com Motivo é aplicada: arquivo arquivado, lock e histórico [17.63ms]
+ci	Run bun test	2026-10-10T14:10:06.3690321Z (pass) compile (exemplo orders) > diff só de docs atualiza o lock sem proposta [23.39ms]
+ci	Run bun test	2026-10-10T14:10:06.3874708Z (pass) compile (exemplo orders) > proposta arquivada editada à mão quebra o write e o check [18.40ms]
+ci	Run bun test	2026-10-10T14:10:06.4087194Z (pass) compile (exemplo orders) > --draft-change sem mudança ou com proposta aberta é recusado [21.21ms]
+ci	Run bun test	2026-10-10T14:10:06.7295289Z (pass) compile (exemplo orders) > isola o registry entre configurações no mesmo processo [320.79ms]
+ci	Run bun test	2026-10-10T14:10:06.7296841Z 
+ci	Run bun test	2026-10-10T14:10:06.7317189Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.7317442Z 
+ci	Run bun test	2026-10-10T14:10:06.7340002Z ##[group]src/compiler/lock.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.7342175Z (pass) lock > serializa de forma estável e volta igual [2.48ms]
+ci	Run bun test	2026-10-10T14:10:06.7367088Z (pass) lock > JSON malformado vira erro em pt-BR com o caminho [0.67ms]
+ci	Run bun test	2026-10-10T14:10:06.7370171Z (pass) lock > versão desconhecida e lock incompleto viram erro [0.30ms]
+ci	Run bun test	2026-10-10T14:10:06.7370903Z (pass) lock > readLock devolve null quando o arquivo não existe [0.65ms]
+ci	Run bun test	2026-10-10T14:10:06.7371605Z (pass) lock > JSON válido que não é objeto vira lock incompleto [0.34ms]
+ci	Run bun test	2026-10-10T14:10:06.7372558Z (pass) lock > lock com ir válido mas sem arrays vira incompleto [0.24ms]
+ci	Run bun test	2026-10-10T14:10:06.7373428Z (pass) lock > lock com change faltando hash vira incompleto [0.32ms]
+ci	Run bun test	2026-10-10T14:10:06.7374245Z (pass) lock > readLock propaga erro de JSON malformado [0.49ms]
+ci	Run bun test	2026-10-10T14:10:06.7374834Z 
+ci	Run bun test	2026-10-10T14:10:06.7375425Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.7375766Z 
+ci	Run bun test	2026-10-10T14:10:06.7376602Z ##[group]src/compiler/ir.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.7461318Z (pass) canonical > ordena chaves recursivamente e descarta undefined [0.07ms]
+ci	Run bun test	2026-10-10T14:10:06.7477253Z (pass) buildIR > converte o shop sem erros [1.65ms]
+ci	Run bun test	2026-10-10T14:10:06.7489250Z (pass) buildIR > distingue invariantes de classe e de método e ordena por id [1.17ms]
+ci	Run bun test	2026-10-10T14:10:06.7498703Z (pass) buildIR > usa fonte relativa POSIX com linha e o módulo configurado [0.95ms]
+ci	Run bun test	2026-10-10T14:10:06.7509309Z (pass) buildIR > gera JSON Schema sem a chave $schema [1.07ms]
+ci	Run bun test	2026-10-10T14:10:06.7523746Z (pass) buildIR > IR estável (snapshot) [1.40ms]
+ci	Run bun test	2026-10-10T14:10:06.7535552Z (pass) buildIR > não depende da ordem de registro [1.19ms]
+ci	Run bun test	2026-10-10T14:10:06.7543568Z (pass) buildIR > schema Zod não representável vira erro com arquivo:linha [0.79ms]
+ci	Run bun test	2026-10-10T14:10:06.7553861Z (pass) buildIR > elemento fora dos módulos configurados vira erro [1.00ms]
+ci	Run bun test	2026-10-10T14:10:06.7562078Z (pass) buildIR > inputSchema omite campos com default do required [0.82ms]
+ci	Run bun test	2026-10-10T14:10:06.7572176Z (pass) buildIR > inputSchema com transform não gera erro [0.99ms]
+ci	Run bun test	2026-10-10T14:10:06.7583877Z (pass) buildIR > irHash é estável e sensível a mudanças [1.16ms]
+ci	Run bun test	2026-10-10T14:10:06.7584443Z 
+ci	Run bun test	2026-10-10T14:10:06.7585026Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.7585267Z 
+ci	Run bun test	2026-10-10T14:10:06.7585623Z ##[group]src/compiler/lint.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.7592302Z (pass) lintSkill > skill válida não tem erros [0.15ms]
+ci	Run bun test	2026-10-10T14:10:06.7593429Z (pass) lintSkill > name diferente da pasta ou fora do padrão [0.13ms]
+ci	Run bun test	2026-10-10T14:10:06.7594988Z (pass) lintSkill > description vazia ou acima de 1024 caracteres [0.13ms]
+ci	Run bun test	2026-10-10T14:10:06.7596380Z (pass) lintSkill > SKILL.md acima de 500 linhas e referência profunda [0.09ms]
+ci	Run bun test	2026-10-10T14:10:06.7597582Z (pass) lintSkill > SKILL.md com exatamente 500 linhas não tem erro [0.06ms]
+ci	Run bun test	2026-10-10T14:10:06.7598466Z (pass) lintSkill > frontmatter ausente [0.03ms]
+ci	Run bun test	2026-10-10T14:10:06.7599321Z (pass) lintSkill > orçamento de tokens vira aviso [0.11ms]
+ci	Run bun test	2026-10-10T14:10:06.7617511Z (pass) lintSkill > as skills geradas do shop passam no lint [1.81ms]
+ci	Run bun test	2026-10-10T14:10:06.7618264Z 
+ci	Run bun test	2026-10-10T14:10:06.7618826Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.7619038Z 
+ci	Run bun test	2026-10-10T14:10:06.7619630Z ##[group]src/compiler/validate.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.7645122Z (pass) validate > o shop é válido [1.27ms]
+ci	Run bun test	2026-10-10T14:10:06.7648550Z (pass) validate > id de invariante precisa ser kebab-case [0.39ms]
+ci	Run bun test	2026-10-10T14:10:06.7657486Z (pass) validate > transição exige states declarados na entidade [0.38ms]
+ci	Run bun test	2026-10-10T14:10:06.7659252Z (pass) validate > transição com estado desconhecido [0.25ms]
+ci	Run bun test	2026-10-10T14:10:06.7660619Z (pass) validate > emits precisa apontar para classe com @AgentEvent [0.37ms]
+ci	Run bun test	2026-10-10T14:10:06.7672060Z (pass) validate > uses precisa citar método existente [0.31ms]
+ci	Run bun test	2026-10-10T14:10:06.7673084Z (pass) validate > emits do use-case precisa vir dos métodos em uses [0.59ms]
+ci	Run bun test	2026-10-10T14:10:06.7674811Z (pass) validate > requiresApproval precisa estar na allowlist [0.30ms]
+ci	Run bun test	2026-10-10T14:10:06.7675678Z (pass) validate > operator com classe sem @AgentUseCase [0.17ms]
+ci	Run bun test	2026-10-10T14:10:06.7677064Z (pass) validate > método público sem @AgentMethod é erro; #privado e getters não [0.19ms]
+ci	Run bun test	2026-10-10T14:10:06.7678134Z (pass) validate > duas entidades com o mesmo nome geram ID duplicado [0.30ms]
+ci	Run bun test	2026-10-10T14:10:06.7681332Z (pass) validate > nome de use-case precisa ser snake_case e whenToUse não pode ser vazio [0.32ms]
+ci	Run bun test	2026-10-10T14:10:06.7684346Z (pass) validate > @Invariant em método sem @AgentMethod [0.29ms]
+ci	Run bun test	2026-10-10T14:10:06.7689209Z (pass) validate > ordenação determinística de analyze: erros misturados de buildIR e validate em ordem diferente da declaração [0.42ms]
+ci	Run bun test	2026-10-10T14:10:06.7690598Z (pass) validate > invariante com text vazio [0.19ms]
+ci	Run bun test	2026-10-10T14:10:06.7693157Z (pass) validate > transition com from vazio [0.26ms]
+ci	Run bun test	2026-10-10T14:10:06.7694248Z (pass) validate > @Operator com useCases vazio [0.13ms]
+ci	Run bun test	2026-10-10T14:10:06.7697141Z (pass) validate > operator com name fora de kebab-case [0.21ms]
+ci	Run bun test	2026-10-10T14:10:06.7698767Z (pass) validate > método estático público sem @AgentMethod [0.16ms]
+ci	Run bun test	2026-10-10T14:10:06.7700780Z (pass) validate > @AgentMethod numa classe sem @AgentEntity [0.19ms]
+ci	Run bun test	2026-10-10T14:10:06.7701271Z 
+ci	Run bun test	2026-10-10T14:10:06.7701769Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.7701965Z 
+ci	Run bun test	2026-10-10T14:10:06.7702358Z ##[group]src/compiler/static-tests.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.7734230Z (pass) lê só declarações literais de teste, diagnostica dinâmicas, não conta helpers soltos [2.83ms]
+ci	Run bun test	2026-10-10T14:10:06.7744501Z (pass) não conta função local como teste; each dinâmico é diagnosticado e todo literal é evidência skipped [1.02ms]
+ci	Run bun test	2026-10-10T14:10:06.7745308Z 
+ci	Run bun test	2026-10-10T14:10:06.7745676Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.7745794Z 
+ci	Run bun test	2026-10-10T14:10:06.7746356Z ##[group]src/compiler/diff.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.7790356Z (pass) semanticDiff > IR igual não tem diferenças [0.72ms]
+ci	Run bun test	2026-10-10T14:10:06.7792541Z (pass) semanticDiff > da IR vazia, tudo é added e behavioral, ordenado por id [0.40ms]
+ci	Run bun test	2026-10-10T14:10:06.7797165Z (pass) semanticDiff > mudar só a fonte (arquivo:linha) não é diferença [0.42ms]
+ci	Run bun test	2026-10-10T14:10:06.7802782Z (pass) semanticDiff > texto de invariante muda → modified behavioral, sem marcar a entidade [0.49ms]
+ci	Run bun test	2026-10-10T14:10:06.7806505Z (pass) semanticDiff > invariante nova não modifica a entidade nem o método [0.42ms]
+ci	Run bun test	2026-10-10T14:10:06.7812010Z (pass) semanticDiff > só description/whenToUse mudam → docs [0.56ms]
+ci	Run bun test	2026-10-10T14:10:06.7828196Z (pass) semanticDiff > input ganha campo obrigatório → breaking; campo opcional → behavioral [1.46ms]
+ci	Run bun test	2026-10-10T14:10:06.7838803Z (pass) semanticDiff > input perde campo ou muda tipo → breaking; output perde campo → breaking [1.14ms]
+ci	Run bun test	2026-10-10T14:10:06.7845915Z (pass) semanticDiff > use-case removido → breaking; uses alterado → behavioral [0.75ms]
+ci	Run bun test	2026-10-10T14:10:06.7852086Z (pass) semanticDiff > método perde a transição → breaking; emits muda → behavioral [0.59ms]
+ci	Run bun test	2026-10-10T14:10:06.7855090Z (pass) semanticDiff > método com transição removido → breaking [0.32ms]
+ci	Run bun test	2026-10-10T14:10:06.7859682Z (pass) semanticDiff > campo aninhado removido no input → breaking [0.45ms]
+ci	Run bun test	2026-10-10T14:10:06.7864258Z (pass) semanticDiff > items de array muda de tipo no input → breaking [0.38ms]
+ci	Run bun test	2026-10-10T14:10:06.7873112Z (pass) semanticDiff > enum no input: valor removido → breaking; valor adicionado → behavioral [0.84ms]
+ci	Run bun test	2026-10-10T14:10:06.7878201Z (pass) semanticDiff > enum no output: valor adicionado → breaking [0.60ms]
+ci	Run bun test	2026-10-10T14:10:06.7883581Z (pass) semanticDiff > propriedade input chamada constructor removida → breaking [0.52ms]
+ci	Run bun test	2026-10-10T14:10:06.7894838Z (pass) semanticDiff > description muda + campo input opcional novo → behavioral (não docs) [0.52ms]
+ci	Run bun test	2026-10-10T14:10:06.7896478Z (pass) semanticDiff > enum removido de propriedade do input → behavioral [0.42ms]
+ci	Run bun test	2026-10-10T14:10:06.7898563Z (pass) semanticDiff > enum adicionado a propriedade do output → behavioral [0.44ms]
+ci	Run bun test	2026-10-10T14:10:06.7901318Z (pass) semanticDiff > enum adicionado a propriedade do input → breaking [0.37ms]
+ci	Run bun test	2026-10-10T14:10:06.7904687Z (pass) semanticDiff > enum removido de propriedade do output → breaking [0.34ms]
+ci	Run bun test	2026-10-10T14:10:06.7908975Z (pass) semanticDiff > array de objetos no input cujo item ganha campo opcional → behavioral [0.41ms]
+ci	Run bun test	2026-10-10T14:10:06.7912376Z (pass) semanticDiff > input array item perde campo → breaking [0.35ms]
+ci	Run bun test	2026-10-10T14:10:06.7916397Z (pass) semanticDiff > output array item perde campo → breaking [0.36ms]
+ci	Run bun test	2026-10-10T14:10:06.7919949Z (pass) semanticDiff > input array item ganha required em campo existente → breaking [0.37ms]
+ci	Run bun test	2026-10-10T14:10:06.7923072Z (pass) semanticDiff > input type string with enum → number → breaking [0.32ms]
+ci	Run bun test	2026-10-10T14:10:06.7926931Z (pass) semanticDiff > output type string → number with enum → breaking [0.34ms]
+ci	Run bun test	2026-10-10T14:10:06.7930663Z (pass) semanticDiff > transição de método > remover um estado do from → breaking [0.39ms]
+ci	Run bun test	2026-10-10T14:10:06.7933181Z (pass) semanticDiff > transição de método > trocar o from por outro estado → breaking [0.24ms]
+ci	Run bun test	2026-10-10T14:10:06.7935720Z (pass) semanticDiff > transição de método > mudar o to → breaking [0.25ms]
+ci	Run bun test	2026-10-10T14:10:06.7938558Z (pass) semanticDiff > transição de método > acrescentar um estado ao from → behavioral [0.26ms]
+ci	Run bun test	2026-10-10T14:10:06.7942218Z (pass) semanticDiff > obrigatoriedade de campo > output com required → sem required → breaking [0.35ms]
+ci	Run bun test	2026-10-10T14:10:06.7945242Z (pass) semanticDiff > obrigatoriedade de campo > output: campo sai do required e continua em properties → breaking [0.29ms]
+ci	Run bun test	2026-10-10T14:10:06.7949264Z (pass) semanticDiff > obrigatoriedade de campo > output: campo de objeto aninhado deixa de ser obrigatório → breaking [0.38ms]
+ci	Run bun test	2026-10-10T14:10:06.7952603Z (pass) semanticDiff > obrigatoriedade de campo > output: campo de item de array deixa de ser obrigatório → breaking [0.34ms]
+ci	Run bun test	2026-10-10T14:10:06.7956210Z (pass) semanticDiff > obrigatoriedade de campo > output: campo passa a ser obrigatório → behavioral [0.29ms]
+ci	Run bun test	2026-10-10T14:10:06.7959512Z (pass) semanticDiff > obrigatoriedade de campo > input: campo que deixa de ser obrigatório → behavioral [0.34ms]
+ci	Run bun test	2026-10-10T14:10:06.7960282Z 
+ci	Run bun test	2026-10-10T14:10:06.7960819Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.7961039Z 
+ci	Run bun test	2026-10-10T14:10:06.7961471Z ##[group]src/compiler/state.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.8026406Z (pass) precedência, bloqueios, falhas e skip respeitam todas as obrigações [4.10ms]
+ci	Run bun test	2026-10-10T14:10:06.8037258Z (pass) critério aberto retira done, resolve proprietário de invariante e inclui dependências pendentes [1.14ms]
+ci	Run bun test	2026-10-10T14:10:06.8043892Z (pass) G7 resolve fábrica e invariantes em um único proprietário, ignora eventos e removidos [0.70ms]
+ci	Run bun test	2026-10-10T14:10:06.8044572Z 
+ci	Run bun test	2026-10-10T14:10:06.8045019Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.8045143Z 
+ci	Run bun test	2026-10-10T14:10:06.8045411Z ##[group]src/compiler/json-schema.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.8558530Z (pass) JSON Schema gerado ≡ Zod > create_order input: aceita e rejeita as mesmas amostras [43.14ms]
+ci	Run bun test	2026-10-10T14:10:06.8579823Z (pass) JSON Schema gerado ≡ Zod > create_order output: aceita e rejeita as mesmas amostras [2.75ms]
+ci	Run bun test	2026-10-10T14:10:06.8593603Z (pass) JSON Schema gerado ≡ Zod > confirm_order input: aceita e rejeita as mesmas amostras [1.33ms]
+ci	Run bun test	2026-10-10T14:10:06.8611976Z (pass) JSON Schema gerado ≡ Zod > OrderCreated payload: aceita e rejeita as mesmas amostras [1.88ms]
+ci	Run bun test	2026-10-10T14:10:06.8633427Z (pass) JSON Schema gerado ≡ Zod > input com default e transform: aceita e rejeita as mesmas amostras [2.07ms]
+ci	Run bun test	2026-10-10T14:10:06.8646600Z 
+ci	Run bun test	2026-10-10T14:10:06.8647583Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.8647984Z 
+ci	Run bun test	2026-10-10T14:10:06.8648805Z ##[group]src/compiler/runtime-skill.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.8667793Z (pass) renderRuntimeSkill > gera SKILL.md e references na ordem fixa [0.08ms]
+ci	Run bun test	2026-10-10T14:10:06.8668935Z (pass) renderRuntimeSkill > frontmatter só com campos da especificação [0.07ms]
+ci	Run bun test	2026-10-10T14:10:06.8670292Z (pass) renderRuntimeSkill > documenta cada tool com parâmetros, uses, emits e aprovação [0.09ms]
+ci	Run bun test	2026-10-10T14:10:06.8671022Z (pass) renderRuntimeSkill > lista regras e transições das entidades envolvidas [0.03ms]
+ci	Run bun test	2026-10-10T14:10:06.8671875Z (pass) renderRuntimeSkill > tools.schema.json tem input e output de cada tool [0.05ms]
+ci	Run bun test	2026-10-10T14:10:06.8672470Z (pass) renderRuntimeSkill > typeLabel cobre enum, const, tipos, arrays e anyOf [0.16ms]
+ci	Run bun test	2026-10-10T14:10:06.8673168Z (pass) renderRuntimeSkill > SKILL.md contém legenda de aprovação e referência ao schema [0.03ms]
+ci	Run bun test	2026-10-10T14:10:06.8674316Z (pass) renderRuntimeSkill > snapshot dos arquivos [0.23ms]
+ci	Run bun test	2026-10-10T14:10:06.8677927Z (pass) renderRuntimeSkill > descrição com aspas, barra vertical e quebra de linha mantém o frontmatter numa linha [0.19ms]
+ci	Run bun test	2026-10-10T14:10:06.8679425Z (pass) renderRuntimeSkill > table escapa barra vertical e quebra de linha nas células [0.08ms]
+ci	Run bun test	2026-10-10T14:10:06.8680082Z 
+ci	Run bun test	2026-10-10T14:10:06.8680604Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.8680812Z 
+ci	Run bun test	2026-10-10T14:10:06.8681259Z ##[group]src/compiler/render-all.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.8700457Z (pass) renderAll > gera os arquivos das skills de dev e de runtime nos caminhos padrão [0.04ms]
+ci	Run bun test	2026-10-10T14:10:06.8701516Z (pass) renderAll > todas as skills carregam o mesmo ir-hash [0.16ms]
+ci	Run bun test	2026-10-10T14:10:06.8703259Z (pass) renderAll > o bloco do AGENTS.md tem marcadores, mapa e convenções [0.20ms]
+ci	Run bun test	2026-10-10T14:10:06.8704973Z (pass) renderAll > fidelidade: todo elemento da IR aparece em ao menos um arquivo gerado [0.17ms]
+ci	Run bun test	2026-10-10T14:10:06.8718459Z (pass) renderAll > é determinístico [1.27ms]
+ci	Run bun test	2026-10-10T14:10:06.8718905Z 
+ci	Run bun test	2026-10-10T14:10:06.8719377Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.8719593Z 
+ci	Run bun test	2026-10-10T14:10:06.8720048Z ##[group]src/compiler/implementation.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.8745923Z (pass) detecta funções individuais sem contaminar IR e gerados ao implementar corpos [2.09ms]
+ci	Run bun test	2026-10-10T14:10:06.8759062Z (pass) entidade sem fábrica usa obrigações; várias fábricas exigem todos os corpos [1.33ms]
+ci	Run bun test	2026-10-10T14:10:06.8759800Z 
+ci	Run bun test	2026-10-10T14:10:06.8760281Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.8760483Z 
+ci	Run bun test	2026-10-10T14:10:06.8760926Z ##[group]src/compiler/config.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.8772717Z (pass) validação do caminho dos módulos > resolveConfig rejeita "." (raiz do projeto) [0.64ms]
+ci	Run bun test	2026-10-10T14:10:06.8776336Z (pass) validação do caminho dos módulos > resolveConfig normaliza o caminho relativo à raiz [0.35ms]
+ci	Run bun test	2026-10-10T14:10:06.8779074Z (pass) validação do caminho dos módulos > resolveConfig rejeita caminho fora da raiz [0.32ms]
+ci	Run bun test	2026-10-10T14:10:06.8789699Z (pass) validação do caminho dos módulos > loadConfig rejeita caminho inexistente [1.03ms]
+ci	Run bun test	2026-10-10T14:10:06.8797766Z (pass) validação do caminho dos módulos > loadConfig rejeita caminho que é arquivo [0.80ms]
+ci	Run bun test	2026-10-10T14:10:06.8804040Z (pass) validação do caminho dos módulos > loadConfig rejeita "." [0.62ms]
+ci	Run bun test	2026-10-10T14:10:06.8813285Z (pass) validação do caminho dos módulos > loadConfig aceita diretório existente dentro da raiz [0.89ms]
+ci	Run bun test	2026-10-10T14:10:06.8814022Z 
+ci	Run bun test	2026-10-10T14:10:06.8814363Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.8814501Z 
+ci	Run bun test	2026-10-10T14:10:06.8814759Z ##[group]src/compiler/write.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.8850389Z (pass) mergeAgentsBlock > cria o arquivo quando não existe [0.45ms]
+ci	Run bun test	2026-10-10T14:10:06.8851776Z (pass) mergeAgentsBlock > anexa o bloco preservando texto manual sem marcadores [0.27ms]
+ci	Run bun test	2026-10-10T14:10:06.8854347Z (pass) mergeAgentsBlock > substitui só o bloco e preserva o resto [0.24ms]
+ci	Run bun test	2026-10-10T14:10:06.8856993Z (pass) mergeAgentsBlock > marcadores corrompidos (fim antes do início) fazem anexar [0.22ms]
+ci	Run bun test	2026-10-10T14:10:06.8859616Z (pass) mergeAgentsBlock > marcador citado no meio de uma frase não conta como bloco [0.28ms]
+ci	Run bun test	2026-10-10T14:10:06.8862206Z (pass) mergeAgentsBlock > é idempotente, inclusive com marcadores corrompidos [0.25ms]
+ci	Run bun test	2026-10-10T14:10:06.8890895Z (pass) writeOutputs / checkOutputs > cria o diretório de um CLAUDE.md em subpasta [2.81ms]
+ci	Run bun test	2026-10-10T14:10:06.8933667Z (pass) writeOutputs / checkOutputs > escreve tudo e o check fica limpo [4.29ms]
+ci	Run bun test	2026-10-10T14:10:06.8978780Z (pass) writeOutputs / checkOutputs > detecta arquivo alterado, removido e extra [4.50ms]
+ci	Run bun test	2026-10-10T14:10:06.9035700Z (pass) writeOutputs / checkOutputs > remove skill gerada órfã e nunca toca skill do usuário [5.57ms]
+ci	Run bun test	2026-10-10T14:10:06.9091261Z (pass) writeOutputs / checkOutputs > AGENTS.md: preserva texto manual e só o bloco conta para o check [5.61ms]
+ci	Run bun test	2026-10-10T14:10:06.9120266Z (pass) writeOutputs / checkOutputs > CLAUDE.md existente nunca é sobrescrito [2.92ms]
+ci	Run bun test	2026-10-10T14:10:06.9209763Z (pass) writeOutputs / checkOutputs > espelho: link errado vira drift; diretório real não é substituído [8.88ms]
+ci	Run bun test	2026-10-10T14:10:06.9259790Z (pass) writeOutputs / checkOutputs > espelho: remove só link órfão de skill gerada; link do usuário sobrevive [5.00ms]
+ci	Run bun test	2026-10-10T14:10:06.9295850Z (pass) writeOutputs / checkOutputs > skill do usuário com o mesmo nome não é sobrescrita e vira conflito [3.62ms]
+ci	Run bun test	2026-10-10T14:10:06.9349898Z (pass) writeOutputs / checkOutputs > pasta gerenciada existente sem SKILL.md é conflito e não perde arquivos do usuário [5.37ms]
+ci	Run bun test	2026-10-10T14:10:06.9394083Z (pass) writeOutputs / checkOutputs > a marca de gerado só vale no frontmatter [4.44ms]
+ci	Run bun test	2026-10-10T14:10:06.9394782Z 
+ci	Run bun test	2026-10-10T14:10:06.9395293Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.9395478Z 
+ci	Run bun test	2026-10-10T14:10:06.9395892Z ##[group]src/compiler/graph.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.9413374Z (pass) workItems > um item por entidade, método de instância, use-case e operator [0.02ms]
+ci	Run bun test	2026-10-10T14:10:06.9414670Z (pass) workItems > a entidade é dona da fábrica estática e das invariantes de classe [0.03ms]
+ci	Run bun test	2026-10-10T14:10:06.9416321Z (pass) workItems > método de instância depende da entidade e é dono das invariantes declaradas nele [0.03ms]
+ci	Run bun test	2026-10-10T14:10:06.9417812Z (pass) workItems > use-case depende do item de cada método em uses (fábrica resolve para a entidade) [0.02ms]
+ci	Run bun test	2026-10-10T14:10:06.9418816Z (pass) workItems > operator depende da allowlist [0.02ms]
+ci	Run bun test	2026-10-10T14:10:06.9420128Z (pass) workItems > regressão: fábricas estáticas são obrigações da entidade, métodos resolvem para entidade ou método [0.24ms]
+ci	Run bun test	2026-10-10T14:10:06.9420996Z 
+ci	Run bun test	2026-10-10T14:10:06.9421640Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.9421858Z 
+ci	Run bun test	2026-10-10T14:10:06.9422292Z ##[group]src/testing/fakes.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.9426641Z (pass) FakeLlm consumes responses/functions, records requests and preserves opaque payload [0.29ms]
+ci	Run bun test	2026-10-10T14:10:06.9429144Z (pass) FakeApproval supports allow, deny and asynchronous decisions with history [0.33ms]
+ci	Run bun test	2026-10-10T14:10:06.9502140Z (pass) bus awaits handlers in publication order, including concurrent batches, and unsubscribes [7.17ms]
+ci	Run bun test	2026-10-10T14:10:06.9506897Z (pass) bus rejects reentrant awaited publication without poisoning subsequent delivery [0.52ms]
+ci	Run bun test	2026-10-10T14:10:06.9507605Z 
+ci	Run bun test	2026-10-10T14:10:06.9508019Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.9508148Z 
+ci	Run bun test	2026-10-10T14:10:06.9508410Z ##[group]src/testing/testing.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.9512034Z (pass) covers > ordena, remove duplicatas e prefixa o título [0.03ms]
+ci	Run bun test	2026-10-10T14:10:06.9512813Z (pass) covers > rejeita lista vazia e ID malformado [0.10ms]
+ci	Run bun test	2026-10-10T14:10:06.9513543Z (pass) covers > parseCovers devolve os IDs do nome do teste [0.04ms]
+ci	Run bun test	2026-10-10T14:10:06.9516231Z (pass) createTestContext > carimba e acumula os eventos publicados [0.25ms]
+ci	Run bun test	2026-10-10T14:10:06.9516808Z 
+ci	Run bun test	2026-10-10T14:10:06.9517154Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.9517270Z 
+ci	Run bun test	2026-10-10T14:10:06.9517523Z ##[group]src/nestjs/agentic.module.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.9640713Z (pass) TestingModule resolves ports, repository, injected use-cases and runtime by name [11.69ms]
+ci	Run bun test	2026-10-10T14:10:06.9693769Z (pass) root defaults to deny approval and an in-memory bus [5.47ms]
+ci	Run bun test	2026-10-10T14:10:06.9694356Z 
+ci	Run bun test	2026-10-10T14:10:06.9694852Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.9695048Z 
+ci	Run bun test	2026-10-10T14:10:06.9695449Z ##[group]src/cli/args.test.ts:
+ci	Run bun test	2026-10-10T14:10:06.9701539Z (pass) parseArgs > separa flags, valores e posicionais [0.12ms]
+ci	Run bun test	2026-10-10T14:10:06.9702795Z (pass) parseArgs > erros de uso viram mensagem [0.06ms]
+ci	Run bun test	2026-10-10T14:10:06.9703222Z 
+ci	Run bun test	2026-10-10T14:10:06.9703633Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:10:06.9703822Z 
+ci	Run bun test	2026-10-10T14:10:06.9704188Z ##[group]src/cli/declaration-first.test.ts:
+ci	Run bun test	2026-10-10T14:11:00.1273360Z (pass) Order declarado: quatro ondas, packets, verify item RED→GREEN, gerados estáveis, hash protege decorators e G7 conclui [53155.59ms]
+ci	Run bun test	2026-10-10T14:11:00.1274039Z 
+ci	Run bun test	2026-10-10T14:11:00.1274395Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:11:00.1286835Z 
+ci	Run bun test	2026-10-10T14:11:00.1287424Z ##[group]src/cli/coordination.test.ts:
+ci	Run bun test	2026-10-10T14:11:00.9030103Z (pass) status static não executa testes; consultas dinâmicas coletam uma vez sem gerar arquivos [774.51ms]
+ci	Run bun test	2026-10-10T14:11:01.5211202Z (pass) novos comandos rejeitam uso inválido com 2 [618.10ms]
+ci	Run bun test	2026-10-10T14:11:03.7710176Z (pass) packet e verify item: hash, corpo, cobertura e typecheck; falha não relacionada é ignorada [2249.84ms]
+ci	Run bun test	2026-10-10T14:11:04.5540627Z (pass) status e verifyItem recusam JUnit parcial por erro de coleta [783.09ms]
+ci	Run bun test	2026-10-10T14:11:05.9112887Z (pass) projeto sem testes permite status, next e packet, mas não certifica done [1357.18ms]
+ci	Run bun test	2026-10-10T14:11:05.9113350Z 
+ci	Run bun test	2026-10-10T14:11:05.9113694Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:11:05.9113842Z 
+ci	Run bun test	2026-10-10T14:11:05.9114097Z ##[group]src/cli/cli.test.ts:
+ci	Run bun test	2026-10-10T14:11:06.5477594Z (pass) agentic-ddd compile (CLI) > escreve e depois --check sai com 0 [635.40ms]
+ci	Run bun test	2026-10-10T14:11:07.1686344Z (pass) agentic-ddd compile (CLI) > --check sai com 1 e lista o arquivo desatualizado [620.82ms]
+ci	Run bun test	2026-10-10T14:11:07.8179703Z (pass) agentic-ddd compile (CLI) > --check com diretório real no lugar do link do espelho dá dica de remover/renomear [649.35ms]
+ci	Run bun test	2026-10-10T14:11:08.4548411Z (pass) agentic-ddd compile (CLI) > --check com link do espelho ausente manda rodar o compile [636.87ms]
+ci	Run bun test	2026-10-10T14:11:09.0879770Z (pass) agentic-ddd compile (CLI) > --check com mudança sem proposta imprime pendente e sai com 1 [633.08ms]
+ci	Run bun test	2026-10-10T14:11:09.4132264Z (pass) agentic-ddd compile (CLI) > --draft-change pelo CLI cria a proposta e orienta o próximo passo [325.23ms]
+ci	Run bun test	2026-10-10T14:11:09.6314442Z (pass) agentic-ddd compile (CLI) > erro de declaração sai com 1 e aponta arquivo:linha [218.15ms]
+ci	Run bun test	2026-10-10T14:11:10.2642345Z (pass) agentic-ddd compile (CLI) > uso incorreto sai com 2 [632.89ms]
+ci	Run bun test	2026-10-10T14:11:10.5762188Z (pass) agentic-ddd compile (CLI) > --report imprime tokens por arquivo [311.92ms]
+ci	Run bun test	2026-10-10T14:11:10.8090667Z (pass) agentic-ddd compile (CLI) > erro de lint no modo write sai com 1 mas ainda escreve [232.84ms]
+ci	Run bun test	2026-10-10T14:11:11.2669984Z (pass) agentic-ddd compile (CLI) > erro de lint no modo --check sai com 1 [457.95ms]
+ci	Run bun test	2026-10-10T14:11:11.5709223Z (pass) agentic-ddd compile (CLI) > ir imprime a IR canônica [303.86ms]
+ci	Run bun test	2026-10-10T14:11:11.7793152Z (pass) agentic-ddd compile (CLI) > ir com erro de declaração sai com 1 [208.36ms]
+ci	Run bun test	2026-10-10T14:11:11.9874806Z (pass) agentic-ddd compile (CLI) > ir com argumento sobrando sai com 2 [208.22ms]
+ci	Run bun test	2026-10-10T14:11:11.9875264Z 
+ci	Run bun test	2026-10-10T14:11:11.9877911Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:11:11.9878162Z 
+ci	Run bun test	2026-10-10T14:11:11.9878587Z ##[group]src/cli/verify.test.ts:
+ci	Run bun test	2026-10-10T14:11:12.1918853Z (pass) agentic-ddd verify > uso incorreto sai com 2 [203.50ms]
+ci	Run bun test	2026-10-10T14:11:12.7147514Z (pass) agentic-ddd verify > número inválido sai com 2; proposta inexistente sai com 1 e explica [522.75ms]
+ci	Run bun test	2026-10-10T14:11:12.9286330Z (pass) agentic-ddd verify > domínio que não compila mostra a causa em vez de "não encontrada" [213.85ms]
+ci	Run bun test	2026-10-10T14:11:13.1487809Z (pass) agentic-ddd verify > proposta inválida mostra a dica do compile em vez de "não encontrada" [220.16ms]
+ci	Run bun test	2026-10-10T14:16:13.2478480Z killed 1 dangling process
+ci	Run bun test	2026-10-10T14:16:13.2547238Z 63 | 
+ci	Run bun test	2026-10-10T14:16:13.2551885Z 64 |   test.skipIf(insideVerify)(
+ci	Run bun test	2026-10-10T14:16:13.2552415Z 65 |     'verify 0001 do exemplo retorna done',
+ci	Run bun test	2026-10-10T14:16:13.2552824Z 66 |     () => {
+ci	Run bun test	2026-10-10T14:16:13.2553493Z 67 |       const result = run('verify', '0001');
+ci	Run bun test	2026-10-10T14:16:13.2554712Z 68 |       const report = JSON.parse(result.stdout) as {
+ci	Run bun test	2026-10-10T14:16:13.2555186Z                                ^
+ci	Run bun test	2026-10-10T14:16:13.2555585Z SyntaxError: JSON Parse error: Unexpected EOF
+ci	Run bun test	2026-10-10T14:16:13.2556876Z       at <anonymous> (/home/runner/work/nestjs-agentic-ddd-architecture/nestjs-agentic-ddd-architecture/src/cli/verify.test.ts:68:27)
+ci	Run bun test	2026-10-10T14:16:13.2558659Z 
+ci	Run bun test	2026-10-10T14:16:13.2588578Z ##[error]
+ci	Run bun test	      at <anonymous> (/home/runner/work/nestjs-agentic-ddd-architecture/nestjs-agentic-ddd-architecture/src/cli/verify.test.ts:68:27)
+ci	Run bun test	2026-10-10T14:16:13.2600433Z (fail) agentic-ddd verify > verify 0001 do exemplo retorna done [300104.53ms]
+ci	Run bun test	2026-10-10T14:16:13.2601163Z   ^ this test timed out after 300000ms.
+ci	Run bun test	2026-10-10T14:21:13.3178922Z killed 1 dangling process
+ci	Run bun test	2026-10-10T14:21:13.3211056Z 79 | 
+ci	Run bun test	2026-10-10T14:21:13.3211570Z 80 |   test.skipIf(insideVerify)(
+ci	Run bun test	2026-10-10T14:21:13.3212603Z 81 |     'verify 0002 do exemplo retorna needs-human por causa do critério manual',
+ci	Run bun test	2026-10-10T14:21:13.3213244Z 82 |     () => {
+ci	Run bun test	2026-10-10T14:21:13.3213761Z 83 |       const result = run('verify', '0002');
+ci	Run bun test	2026-10-10T14:21:13.3214403Z 84 |       const report = JSON.parse(result.stdout) as {
+ci	Run bun test	2026-10-10T14:21:13.3214944Z                                ^
+ci	Run bun test	2026-10-10T14:21:13.3215537Z SyntaxError: JSON Parse error: Unexpected EOF
+ci	Run bun test	2026-10-10T14:21:13.3216841Z       at <anonymous> (/home/runner/work/nestjs-agentic-ddd-architecture/nestjs-agentic-ddd-architecture/src/cli/verify.test.ts:84:27)
+ci	Run bun test	2026-10-10T14:21:13.3217386Z 
+ci	Run bun test	2026-10-10T14:21:13.3224937Z ##[error]
+ci	Run bun test	      at <anonymous> (/home/runner/work/nestjs-agentic-ddd-architecture/nestjs-agentic-ddd-architecture/src/cli/verify.test.ts:84:27)
+ci	Run bun test	2026-10-10T14:21:13.3229906Z (fail) agentic-ddd verify > verify 0002 do exemplo retorna needs-human por causa do critério manual [300067.96ms]
+ci	Run bun test	2026-10-10T14:21:13.3230822Z   ^ this test timed out after 300000ms.
+ci	Run bun test	2026-10-10T14:21:13.3231156Z 
+ci	Run bun test	2026-10-10T14:21:13.3231603Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.3231821Z 
+ci	Run bun test	2026-10-10T14:21:13.3232250Z ##[group]src/runtime/operator-runtime.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.3267259Z (pass) registration loads matching skill; request uses instructions, allowlist, schema and model [2.57ms]
+ci	Run bun test	2026-10-10T14:21:13.3278958Z (pass) registration rejects missing skill and recommends compile [1.36ms]
+ci	Run bun test	2026-10-10T14:21:13.3288965Z (pass) registration rejects stale skill and recommends compile [1.02ms]
+ci	Run bun test	2026-10-10T14:21:13.3298480Z (pass) registration rejects no-hash skill and recommends compile [0.95ms]
+ci	Run bun test	2026-10-10T14:21:13.3307436Z (pass) registration rejects changed-registry skill and recommends compile [0.88ms]
+ci	Run bun test	2026-10-10T14:21:13.3320371Z (pass) registration fails without injected allowlisted instance or for unknown operator [1.25ms]
+ci	Run bun test	2026-10-10T14:21:13.3335835Z (pass) concurrent registrations of the same operator reject one instead of overwriting instances [1.55ms]
+ci	Run bun test	2026-10-10T14:21:13.3336968Z 
+ci	Run bun test	2026-10-10T14:21:13.3337595Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.3337861Z 
+ci	Run bun test	2026-10-10T14:21:13.3338266Z ##[group]src/runtime/loop.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.3413534Z (pass) loop executes sequentially, validates/transmits outputs, groups tool results and preserves providerPayload [6.64ms]
+ci	Run bun test	2026-10-10T14:21:13.3433074Z (pass) unknown_tool, invalid_input and DomainError are recoverable results; invalid calls never execute [1.98ms]
+ci	Run bun test	2026-10-10T14:21:13.3448144Z (pass) approval false precedes execute and is recorded [1.54ms]
+ci	Run bun test	2026-10-10T14:21:13.3461498Z (pass) approval true precedes execute and is recorded [1.32ms]
+ci	Run bun test	2026-10-10T14:21:13.3474048Z (pass) missing ApprovalPort denies protected tools [1.25ms]
+ci	Run bun test	2026-10-10T14:21:13.3483435Z (pass) termination max_tokens starts no tools [0.94ms]
+ci	Run bun test	2026-10-10T14:21:13.3491983Z (pass) termination refusal starts no tools [0.83ms]
+ci	Run bun test	2026-10-10T14:21:13.3503574Z (pass) provider_error stops and records attempted request [0.98ms]
+ci	Run bun test	2026-10-10T14:21:13.3515444Z (pass) use_case_error (throw) prevents subsequent tool and LLM calls [1.22ms]
+ci	Run bun test	2026-10-10T14:21:13.3524608Z (pass) use_case_error (output) prevents subsequent tool and LLM calls [1.02ms]
+ci	Run bun test	2026-10-10T14:21:13.3538530Z (pass) step_limit counts LLM calls, not tools [1.39ms]
+ci	Run bun test	2026-10-10T14:21:13.3805714Z (pass) timeout bounds pending llm; late resolution starts no extra tools/publications [26.60ms]
+ci	Run bun test	2026-10-10T14:21:13.4074221Z (pass) timeout bounds pending approval; late resolution starts no extra tools/publications [26.79ms]
+ci	Run bun test	2026-10-10T14:21:13.4352887Z (pass) timeout bounds pending execute; late resolution starts no extra tools/publications [27.87ms]
+ci	Run bun test	2026-10-10T14:21:13.4618364Z (pass) timeout bounds pending bus; late resolution starts no extra tools/publications [26.56ms]
+ci	Run bun test	2026-10-10T14:21:13.4649662Z (pass) non-JSON context (bigint) returns failed without provider/tool/event side effects [3.15ms]
+ci	Run bun test	2026-10-10T14:21:13.4727781Z (pass) non-JSON context (circular reference) returns failed without provider/tool/event side effects [7.78ms]
+ci	Run bun test	2026-10-10T14:21:13.4737685Z (pass) non-JSON context (throwing toJSON) returns failed without provider/tool/event side effects [0.98ms]
+ci	Run bun test	2026-10-10T14:21:13.4745542Z (pass) non-JSON context (function) returns failed without provider/tool/event side effects [0.80ms]
+ci	Run bun test	2026-10-10T14:21:13.4752550Z (pass) non-JSON context (symbol) returns failed without provider/tool/event side effects [0.69ms]
+ci	Run bun test	2026-10-10T14:21:13.4767573Z (pass) non-JSON context (undefined JSON representation) returns failed without provider/tool/event side effects [0.78ms]
+ci	Run bun test	2026-10-10T14:21:13.4771219Z 
+ci	Run bun test	2026-10-10T14:21:13.4772057Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.4772608Z 
+ci	Run bun test	2026-10-10T14:21:13.4773242Z ##[group]src/decorators/registry.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.4807071Z (pass) captureSource > aponta o arquivo e a linha de quem chamou [0.04ms]
+ci	Run bun test	2026-10-10T14:21:13.4808374Z (pass) captureSource > chama captureSource direto dentro de registry.test.ts [0.08ms]
+ci	Run bun test	2026-10-10T14:21:13.4837585Z (pass) parseFrame > reconhece formato com parêntese: at <qualquer> (PATH:L:C) [0.04ms]
+ci	Run bun test	2026-10-10T14:21:13.4838827Z (pass) parseFrame > reconhece formato direto: at PATH:L:C [0.03ms]
+ci	Run bun test	2026-10-10T14:21:13.4840131Z (pass) parseFrame > extrai corretamente caminho com espaço [0.03ms]
+ci	Run bun test	2026-10-10T14:21:13.4841401Z (pass) parseFrame > extrai corretamente caminho com parêntese [0.03ms]
+ci	Run bun test	2026-10-10T14:21:13.4842203Z (pass) parseFrame > reconhece URL file:// [0.17ms]
+ci	Run bun test	2026-10-10T14:21:13.4842888Z (pass) parseFrame > retorna null para linha sem frame [0.03ms]
+ci	Run bun test	2026-10-10T14:21:13.4843737Z (pass) registry > withRegistry troca o registry ativo e restaura ao final [0.09ms]
+ci	Run bun test	2026-10-10T14:21:13.4844896Z (pass) registry > withRegistry restaura o registry mesmo quando a função lança [0.12ms]
+ci	Run bun test	2026-10-10T14:21:13.4846629Z (pass) registry > reset esvazia todas as listas [0.31ms]
+ci	Run bun test	2026-10-10T14:21:13.4847097Z 
+ci	Run bun test	2026-10-10T14:21:13.4847566Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.4847781Z 
+ci	Run bun test	2026-10-10T14:21:13.4848213Z ##[group]src/decorators/domain.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.4849136Z (pass) decorators de domínio > @AgentEntity registra descrição e estados [0.93ms]
+ci	Run bun test	2026-10-10T14:21:13.4850201Z (pass) decorators de domínio > @Invariant distingue classe e método [0.31ms]
+ci	Run bun test	2026-10-10T14:21:13.4851322Z (pass) decorators de domínio > @AgentMethod registra estático, transição, emits e a função [0.43ms]
+ci	Run bun test	2026-10-10T14:21:13.4852422Z (pass) decorators de domínio > @AgentEvent registra o evento [0.28ms]
+ci	Run bun test	2026-10-10T14:21:13.4853404Z (pass) decorators de domínio > a fonte aponta para este arquivo de teste [0.29ms]
+ci	Run bun test	2026-10-10T14:21:13.4854636Z (pass) decorators de domínio > decorators dentro de withRegistry não vazam para o registry default [0.33ms]
+ci	Run bun test	2026-10-10T14:21:13.4855367Z 
+ci	Run bun test	2026-10-10T14:21:13.4855752Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.4856290Z 
+ci	Run bun test	2026-10-10T14:21:13.4856751Z ##[group]src/decorators/application.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.4857715Z (pass) decorators de aplicação > @AgentUseCase registra contrato, uses e defaults [0.25ms]
+ci	Run bun test	2026-10-10T14:21:13.4859085Z (pass) decorators de aplicação > @Operator registra allowlist, aprovação e mescla limites com o default [0.15ms]
+ci	Run bun test	2026-10-10T14:21:13.4860167Z 
+ci	Run bun test	2026-10-10T14:21:13.4860551Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.4860749Z 
+ci	Run bun test	2026-10-10T14:21:13.4861139Z ##[group]src/core/core.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.4861790Z (pass) core > AggregateRoot acumula eventos e pullEvents os esvazia [0.17ms]
+ci	Run bun test	2026-10-10T14:21:13.4862564Z (pass) core > Entity compara por classe e id [0.07ms]
+ci	Run bun test	2026-10-10T14:21:13.4863322Z (pass) core > ValueObject compara estruturalmente e congela as props [0.44ms]
+ci	Run bun test	2026-10-10T14:21:13.4864443Z (pass) core > DomainEvent gera id e data e aceita um único carimbo de correlação [0.12ms]
+ci	Run bun test	2026-10-10T14:21:13.4865636Z (pass) core > DomainEvent sem meta gera eventId UUID [0.06ms]
+ci	Run bun test	2026-10-10T14:21:13.4866998Z (pass) core > DomainError carrega um code estável [0.05ms]
+ci	Run bun test	2026-10-10T14:21:13.4868260Z (pass) core > notImplemented lança NotImplementedError [0.05ms]
+ci	Run bun test	2026-10-10T14:21:13.4869321Z (pass) core > ValueObject com objeto aninhado e array compara estruturalmente [0.15ms]
+ci	Run bun test	2026-10-10T14:21:13.4870263Z (pass) core > ValueObject com Date compara por getTime() [0.08ms]
+ci	Run bun test	2026-10-10T14:21:13.4871204Z (pass) core > ValueObject com Set compara por conteúdo [0.27ms]
+ci	Run bun test	2026-10-10T14:21:13.4871963Z (pass) core > ValueObject.equals(null) retorna false [0.04ms]
+ci	Run bun test	2026-10-10T14:21:13.4872832Z (pass) core > ValueObject de classes diferentes com mesmas props retorna false [0.06ms]
+ci	Run bun test	2026-10-10T14:21:13.4873814Z (pass) core > Entity com mesmo id mas classes diferentes retorna false [0.07ms]
+ci	Run bun test	2026-10-10T14:21:13.4874388Z 
+ci	Run bun test	2026-10-10T14:21:13.4874921Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.4875138Z 
+ci	Run bun test	2026-10-10T14:21:13.4875572Z ##[group]src/core/value-object.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.4876890Z (pass) ValueObject: isolamento das props > mutar o objeto aninhado original não altera o VO [0.08ms]
+ci	Run bun test	2026-10-10T14:21:13.4878057Z (pass) ValueObject: isolamento das props > as props aninhadas ficam congeladas [0.09ms]
+ci	Run bun test	2026-10-10T14:21:13.4879552Z (pass) ValueObject: isolamento das props > VO aninhado é mantido por referência e continua comparando por equals [0.14ms]
+ci	Run bun test	2026-10-10T14:21:13.4881018Z (pass) ValueObject: isolamento das props > alterar o Date original não altera o VO [0.12ms]
+ci	Run bun test	2026-10-10T14:21:13.4882378Z (pass) ValueObject: isolamento das props > Map e Set são copiados, com os elementos copiados [0.14ms]
+ci	Run bun test	2026-10-10T14:21:13.4883800Z (pass) ValueObject: isolamento das props > objetos sem protótipo continuam sem protótipo [0.07ms]
+ci	Run bun test	2026-10-10T14:21:13.4885112Z (pass) ValueObject: equals > Set é igual independentemente da ordem de inserção [0.14ms]
+ci	Run bun test	2026-10-10T14:21:13.4886631Z (pass) ValueObject: equals > Map é igual independentemente da ordem das entradas [0.17ms]
+ci	Run bun test	2026-10-10T14:21:13.4887950Z (pass) ValueObject: equals > Set com elementos profundamente iguais não casa duas vezes o mesmo elemento [0.15ms]
+ci	Run bun test	2026-10-10T14:21:13.4889580Z (pass) ValueObject: equals > Set e Map diferentes continuam diferentes [0.16ms]
+ci	Run bun test	2026-10-10T14:21:13.4890089Z 
+ci	Run bun test	2026-10-10T14:21:13.4890477Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.4890652Z 
+ci	Run bun test	2026-10-10T14:21:13.4891051Z ##[group]examples/orders/test/order.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.4891874Z (pass) Order > [covers: method:Order.create] cria pedido pendente e emite OrderCreated [0.18ms]
+ci	Run bun test	2026-10-10T14:21:13.4893157Z (pass) Order > [covers: method:Order.create] isola os itens do pedido de mutações externas [0.14ms]
+ci	Run bun test	2026-10-10T14:21:13.4894220Z (pass) Order > [covers: invariant:Order/ao-menos-um-item] rejeita pedido sem itens [0.09ms]
+ci	Run bun test	2026-10-10T14:21:13.4895334Z (pass) Order > [covers: invariant:Order/total-nao-negativo] rejeita pedido com total negativo [0.06ms]
+ci	Run bun test	2026-10-10T14:21:13.4902294Z (pass) Order > [covers: method:Order.confirm] confirma pedido pendente e emite OrderConfirmed [1.23ms]
+ci	Run bun test	2026-10-10T14:21:13.4920649Z (pass) Order > [covers: method:Order.confirm] não confirma pedido cancelado [0.15ms]
+ci	Run bun test	2026-10-10T14:21:13.4923211Z (pass) Order > [covers: method:Order.cancel] cancela pedido pendente ou confirmado e emite OrderCancelled [0.13ms]
+ci	Run bun test	2026-10-10T14:21:13.4936287Z (pass) Order > [covers: method:Order.cancel] não cancela pedido já cancelado [0.08ms]
+ci	Run bun test	2026-10-10T14:21:13.4949748Z (pass) Order > [covers: criterion:0002/rejeita-cancelamento-sem-motivo, invariant:Order/cancelamento-exige-motivo] rejeita cancelamento sem motivo ou com motivo em branco [0.10ms]
+ci	Run bun test	2026-10-10T14:21:13.4951066Z 
+ci	Run bun test	2026-10-10T14:21:13.4957189Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.4957571Z 
+ci	Run bun test	2026-10-10T14:21:13.4958163Z ##[group]examples/orders/test/operator.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.5098550Z (pass) order-operator E2E > [covers: operator:order-operator] compile → skill → Nest → FakeLlm cria e confirma pedido [18.47ms]
+ci	Run bun test	2026-10-10T14:21:13.5159596Z (pass) order-operator E2E > [covers: operator:order-operator] cancelamento com aprovação negada [6.12ms]
+ci	Run bun test	2026-10-10T14:21:13.5213781Z (pass) order-operator E2E > [covers: operator:order-operator] cancelamento com aprovação concedida [5.40ms]
+ci	Run bun test	2026-10-10T14:21:13.5227427Z 
+ci	Run bun test	2026-10-10T14:21:13.5228246Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.5228730Z 
+ci	Run bun test	2026-10-10T14:21:13.5229388Z ##[group]examples/orders/test/use-cases.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.5230590Z (pass) use-cases de orders > [covers: usecase:create_order] cria, persiste e publica OrderCreated carimbado [0.34ms]
+ci	Run bun test	2026-10-10T14:21:13.5232329Z (pass) use-cases de orders > [covers: usecase:create_order] recusa id de pedido já existente [0.32ms]
+ci	Run bun test	2026-10-10T14:21:13.5233869Z (pass) use-cases de orders > [covers: usecase:confirm_order] confirma pedido existente e publica OrderConfirmed [0.17ms]
+ci	Run bun test	2026-10-10T14:21:13.5235487Z (pass) use-cases de orders > [covers: usecase:confirm_order] falha com ORDER_NOT_FOUND para pedido inexistente [0.07ms]
+ci	Run bun test	2026-10-10T14:21:13.5237604Z (pass) use-cases de orders > [covers: criterion:0002/cancela-com-motivo, usecase:cancel_order] cancela pedido com motivo e publica OrderCancelled [0.14ms]
+ci	Run bun test	2026-10-10T14:21:13.5238843Z 
+ci	Run bun test	2026-10-10T14:21:13.5239403Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.5239762Z 
+ci	Run bun test	2026-10-10T14:21:13.5240350Z ##[group]src/compiler/verify/gates.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.5248157Z (pass) evaluateGates > tudo coberto e sem critério manual → done [0.66ms]
+ci	Run bun test	2026-10-10T14:21:13.5249409Z (pass) evaluateGates > com critério manual → needs-human e G6 lista o critério [0.15ms]
+ci	Run bun test	2026-10-10T14:21:13.5250956Z (pass) evaluateGates > critério sem teste → failed com instrução acionável [0.14ms]
+ci	Run bun test	2026-10-10T14:21:13.5253072Z (pass) evaluateGates > teste do critério falhando aparece com arquivo:linha [0.16ms]
+ci	Run bun test	2026-10-10T14:21:13.5255443Z (pass) evaluateGates > G4: regra sem teste, regra modificada vira aviso e covers com ID desconhecido falha [0.25ms]
+ci	Run bun test	2026-10-10T14:21:13.5258186Z (pass) evaluateGates > G1: proposta arquivada editada ou com mudança de domínio depois dela [0.28ms]
+ci	Run bun test	2026-10-10T14:21:13.5261499Z (pass) evaluateGates > G1: proposta aberta compara delta e diff [0.34ms]
+ci	Run bun test	2026-10-10T14:21:13.5263875Z (pass) evaluateGates > G2 e G5: check sujo, comando e suíte falhando [0.22ms]
+ci	Run bun test	2026-10-10T14:21:13.5266584Z (pass) evaluateGates > G4: findings de testes com covers desconhecido saem em ordem estável (arquivo, linha, nome) [0.16ms]
+ci	Run bun test	2026-10-10T14:21:13.5268266Z (pass) G7 reprova um finding por proprietário de ADDED/MODIFIED, preserva needs-human quando done [0.22ms]
+ci	Run bun test	2026-10-10T14:21:13.5269066Z 
+ci	Run bun test	2026-10-10T14:21:13.5269495Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.5269705Z 
+ci	Run bun test	2026-10-10T14:21:13.5270254Z ##[group]src/compiler/verify/test-run.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.5281450Z (pass) parseJUnit > extrai nome, arquivo, linha, status e covers, inclusive em describe aninhado [0.84ms]
+ci	Run bun test	2026-10-10T14:21:13.5297499Z (pass) parseJUnit > unescapeXml trata entidades nomeadas e numéricas [0.27ms]
+ci	Run bun test	2026-10-10T14:21:13.5298912Z (pass) parseJUnit > XML vazio dá lista vazia [0.54ms]
+ci	Run bun test	2026-10-10T14:21:13.5385865Z (pass) runTests > roda a suíte num diretório, devolve o exit code e marca o ambiente do verify [9.53ms]
+ci	Run bun test	2026-10-10T14:21:13.5452660Z (pass) coleta ausente não pode certificar conclusão [6.72ms]
+ci	Run bun test	2026-10-10T14:21:13.5634830Z (pass) JUnit parcial por falha de import não certifica conclusão, mesmo com outra assertion falhando [18.16ms]
+ci	Run bun test	2026-10-10T14:21:13.5635432Z 
+ci	Run bun test	2026-10-10T14:21:13.5635772Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.5636520Z 
+ci	Run bun test	2026-10-10T14:21:13.5636827Z ##[group]src/compiler/changes/reconcile.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.5659912Z (pass) reconcile > sem lock e sem proposta: nada é aplicado e fica pendente [0.13ms]
+ci	Run bun test	2026-10-10T14:21:13.5664962Z (pass) reconcile > proposta que bate com o diff é aplicada e entra no lock [0.52ms]
+ci	Run bun test	2026-10-10T14:21:13.5667933Z (pass) reconcile > Motivo vazio e divergências de delta ficam pendentes [0.28ms]
+ci	Run bun test	2026-10-10T14:21:13.5674627Z (pass) reconcile > diff só de docs atualiza o lock sem proposta [0.65ms]
+ci	Run bun test	2026-10-10T14:21:13.5679325Z (pass) reconcile > proposta aberta sem mudança no código fica pendente [0.47ms]
+ci	Run bun test	2026-10-10T14:21:13.5685359Z (pass) reconcile > proposta arquivada editada, ausente ou não registrada é erro duro [0.58ms]
+ci	Run bun test	2026-10-10T14:21:13.5689630Z (pass) reconcile > duas propostas abertas e status incoerente são erro duro [0.42ms]
+ci	Run bun test	2026-10-10T14:21:13.5694833Z (pass) reconcile > status não reescrevível vira erro de reconciliação em vez de exceção [0.51ms]
+ci	Run bun test	2026-10-10T14:21:13.5703094Z (pass) reconcile > mudanças de documentação com proposta aberta > delta que declara a mudança só de docs aplica e registra o item [0.77ms]
+ci	Run bun test	2026-10-10T14:21:13.5710428Z (pass) reconcile > mudanças de documentação com proposta aberta > item docs não declarado fica fora do histórico da change [0.73ms]
+ci	Run bun test	2026-10-10T14:21:13.5716285Z (pass) reconcile > mudanças de documentação com proposta aberta > delta que não bate com o diff só de docs continua pendente [0.56ms]
+ci	Run bun test	2026-10-10T14:21:13.5717135Z 
+ci	Run bun test	2026-10-10T14:21:13.5717411Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.5717534Z 
+ci	Run bun test	2026-10-10T14:21:13.5717803Z ##[group]src/compiler/changes/proposal.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.5729278Z (pass) parseProposal > lê uma proposta válida [0.61ms]
+ci	Run bun test	2026-10-10T14:21:13.5735101Z (pass) parseProposal > sem frontmatter, YAML inválido ou pasta fora do padrão [0.59ms]
+ci	Run bun test	2026-10-10T14:21:13.5740485Z (pass) parseProposal > id sem aspas (lido como número) dá erro com dica [0.54ms]
+ci	Run bun test	2026-10-10T14:21:13.5743429Z (pass) parseProposal > campos obrigatórios e IDs do delta são validados [0.29ms]
+ci	Run bun test	2026-10-10T14:21:13.5746648Z (pass) parseProposal > critérios: id repetido, automático sem covers/given/when [0.28ms]
+ci	Run bun test	2026-10-10T14:21:13.5749445Z (pass) Motivo, rascunho e numeração > extractMotivo ignora comentários HTML e para no próximo ## [0.28ms]
+ci	Run bun test	2026-10-10T14:21:13.5751657Z (pass) Motivo, rascunho e numeração > summarize devolve o primeiro parágrafo numa linha [0.21ms]
+ci	Run bun test	2026-10-10T14:21:13.5755091Z (pass) Motivo, rascunho e numeração > renderDraft gera uma proposta code-first que o parser aceita, com Motivo vazio [0.32ms]
+ci	Run bun test	2026-10-10T14:21:13.5757389Z (pass) Motivo, rascunho e numeração > markApplied troca só a linha de status [0.24ms]
+ci	Run bun test	2026-10-10T14:21:13.5759691Z (pass) Motivo, rascunho e numeração > markApplied com aspas duplas [0.23ms]
+ci	Run bun test	2026-10-10T14:21:13.5762818Z (pass) Motivo, rascunho e numeração > markApplied com aspas simples [0.23ms]
+ci	Run bun test	2026-10-10T14:21:13.5764390Z (pass) Motivo, rascunho e numeração > markApplied com comentário [0.22ms]
+ci	Run bun test	2026-10-10T14:21:13.5767497Z (pass) Motivo, rascunho e numeração > markApplied preserva CRLF [0.29ms]
+ci	Run bun test	2026-10-10T14:21:13.5770823Z (pass) Motivo, rascunho e numeração > markApplied preserva linha vazia após status [0.24ms]
+ci	Run bun test	2026-10-10T14:21:13.5772463Z (pass) Motivo, rascunho e numeração > markApplied não toca em status: proposed no corpo [0.23ms]
+ci	Run bun test	2026-10-10T14:21:13.5774937Z (pass) Motivo, rascunho e numeração > markApplied sem linha de status lança erro [0.24ms]
+ci	Run bun test	2026-10-10T14:21:13.5778842Z (pass) Motivo, rascunho e numeração > nextChangeId usa o maior número + 1, com 4 dígitos [0.35ms]
+ci	Run bun test	2026-10-10T14:21:13.5800423Z (pass) listProposals > lê abertas e arquivadas; acusa proposal.md ausente e número repetido [2.10ms]
+ci	Run bun test	2026-10-10T14:21:13.5803470Z (pass) listProposals > pasta changes inexistente não é erro [0.38ms]
+ci	Run bun test	2026-10-10T14:21:13.5808699Z (pass) listProposals > listProposals com arquivo no lugar de pasta lança erro [0.50ms]
+ci	Run bun test	2026-10-10T14:21:13.5809332Z 
+ci	Run bun test	2026-10-10T14:21:13.5809766Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.5809972Z 
+ci	Run bun test	2026-10-10T14:21:13.5810717Z ##[group]src/compiler/render/history.test.ts:
+ci	Run bun test	2026-10-10T14:21:13.5825418Z (pass) renderHistory > sem changes [0.03ms]
+ci	Run bun test	2026-10-10T14:21:13.5828006Z (pass) renderHistory > agrupa por entidade, ignora outros módulos e linka a proposta arquivada [0.28ms]
+ci	Run bun test	2026-10-10T14:21:13.5828721Z 
+ci	Run bun test	2026-10-10T14:21:13.5829150Z ##[endgroup]
+ci	Run bun test	2026-10-10T14:21:13.5829545Z 
+ci	Run bun test	2026-10-10T14:21:13.5829970Z 2 tests failed:
+ci	Run bun test	2026-10-10T14:21:13.5830388Z (fail) agentic-ddd verify > verify 0001 do exemplo retorna done [300104.53ms]
+ci	Run bun test	2026-10-10T14:21:13.5830838Z   ^ this test timed out after 300000ms.
+ci	Run bun test	2026-10-10T14:21:13.5831506Z (fail) agentic-ddd verify > verify 0002 do exemplo retorna needs-human por causa do critério manual [300067.96ms]
+ci	Run bun test	2026-10-10T14:21:13.5832071Z   ^ this test timed out after 300000ms.
+ci	Run bun test	2026-10-10T14:21:13.5832259Z 
+ci	Run bun test	2026-10-10T14:21:13.5832340Z  453 pass
+ci	Run bun test	2026-10-10T14:21:13.5832528Z  2 fail
+ci	Run bun test	2026-10-10T14:21:13.5832725Z  14 snapshots, 2395 expect() calls
+ci	Run bun test	2026-10-10T14:21:13.5833005Z Ran 455 tests across 56 files. [1814.22s]
+ci	Run bun test	2026-10-10T14:21:13.6038895Z ##[error]Process completed with exit code 1.

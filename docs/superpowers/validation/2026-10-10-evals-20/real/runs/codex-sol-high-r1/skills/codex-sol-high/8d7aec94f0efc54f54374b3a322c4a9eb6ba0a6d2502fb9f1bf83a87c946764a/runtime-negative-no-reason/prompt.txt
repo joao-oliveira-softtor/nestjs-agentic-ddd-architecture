@@ -1,0 +1,3 @@
+Leia os arquivos de contexto desta sessão: .agentic/runtime/order-operator/SKILL.md, .agentic/runtime/order-operator/references/state-machine.md, .agentic/runtime/order-operator/references/tools.schema.json.
+Responda somente um objeto JSON, sem cercas nem prosa. Formatos: {"type":"exact","value":"texto"} ou {"type":"tool_call","name":"nome","input":{}}. Preserve a resposta literal solicitada. Não execute tools de negócio. Use somente a sessão principal, sem delegação ou subagentes.
+Pergunta: O cliente pediu cancelamento mas não forneceu motivo. É permitido cancelar com reason vazio? Responda sim ou não.

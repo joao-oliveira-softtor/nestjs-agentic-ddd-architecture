@@ -1,0 +1,96 @@
+{
+  "configuration": "scripted-double-stamp",
+  "dataset": "evals/skills/orders.extended.yaml",
+  "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+  "id": "runtime-positive-create",
+  "audience": "runtime",
+  "question": "Crie um pedido o-21 para o cliente c-21 com dois itens: SKU cafe, quantidade 2, preço unitário 12.5; SKU filtro, quantidade 1, preço unitário 7. Qual tool e todos os argumentos?",
+  "expect": {
+    "type": "tool_call",
+    "name": "create_order",
+    "input": {
+      "order_id": "o-21",
+      "customer_id": "c-21",
+      "items": [
+        {
+          "sku": "cafe",
+          "quantity": 2,
+          "unit_price": 12.5
+        },
+        {
+          "sku": "filtro",
+          "quantity": 1,
+          "unit_price": 7
+        }
+      ]
+    }
+  },
+  "answer": {
+    "type": "tool_call",
+    "name": "create_order",
+    "input": {
+      "order_id": "o-21",
+      "customer_id": "c-21",
+      "items": [
+        {
+          "sku": "cafe",
+          "quantity": 2,
+          "unit_price": 12.5
+        },
+        {
+          "sku": "filtro",
+          "quantity": 1,
+          "unit_price": 7
+        }
+      ]
+    }
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "a03318a3c8def8b9dbb2ca09163471f8f291b9b887c5158cc6bfee0f4d5cdb3d",
+  "execution": {
+    "sessionId": {
+      "status": "available",
+      "value": "scripted-16",
+      "source": "scripted_fixture"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "scripted",
+      "source": "scripted_fixture"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "synthetic"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 42.61712500000067,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/skills/scripted-double-stamp/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/skills/scripted-double-stamp/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/offline-double-stamp-reproduction/skills/scripted-double-stamp/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/runtime-positive-create/process.json"
+    ],
+    "transport": "finished",
+    "finalText": "{\"type\":\"tool_call\",\"name\":\"create_order\",\"input\":{\"order_id\":\"o-21\",\"customer_id\":\"c-21\",\"items\":[{\"sku\":\"cafe\",\"quantity\":2,\"unit_price\":12.5},{\"sku\":\"filtro\",\"quantity\":1,\"unit_price\":7}]}}",
+    "diagnostic": null
+  }
+}

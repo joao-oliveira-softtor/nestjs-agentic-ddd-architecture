@@ -1,0 +1,37 @@
+import { readdir, mkdir, chmod, writeFile } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
+import { auditSubmission, TASK_ITEMS } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/audit';
+const root=process.argv[2],out=process.argv[3];
+if(!root||!out||out.startsWith(process.cwd()+'/'))throw Error('Captured root and fresh EXTERNAL replay workspace required');
+async function find(path:string):Promise<string[]>{const output=[];for(const entry of await readdir(path,{withFileTypes:true})){const child=join(path,entry.name);if(entry.isDirectory())output.push(...await find(child));else if(entry.name==='attempt.json')output.push(child);}return output;}
+await mkdir(out);
+const results=[];
+for(const run of await readdir(join(root,'runs'))){
+  let paths:string[];
+  try{paths=await find(join(root,'runs',run,'implementation'));}catch{continue;}
+  for(const path of paths){
+    const captured=await Bun.file(path).json();
+    if(captured.reason!=='submission_boundary_violation')continue;
+    const assignment=TASK_ITEMS.find(i=>i.id===captured.handoff.item);
+    if(!assignment)throw Error('Unknown assignment');
+    const name=run+'-'+captured.handoff.item.replaceAll(':','-')+'-'+captured.number;
+    const baseline=join(out,name,'baseline'),submission=join(out,name,'submission');
+    await mkdir(baseline,{recursive:true});await mkdir(submission,{recursive:true});
+    for(const patch of JSON.parse(captured.audit.patch)){
+      if(![assignment.file,assignment.test,'app/test'].includes(patch.path))throw Error('Captured change outside allowed replay paths');
+      for(const [tree,entry] of [[baseline,patch.before],[submission,patch.after]] as const){
+        if(!entry)continue;
+        const target=join(tree,patch.path);
+        if(entry.kind==='directory')await mkdir(target,{recursive:true});
+        else if(entry.kind==='file'){await mkdir(dirname(target),{recursive:true});await writeFile(target,entry.content);}
+        else throw Error('Unexpected captured file type');
+        await chmod(target,entry.mode&0o777);
+      }
+    }
+    const replay=await auditSubmission(baseline,submission,captured.handoff.item);
+    if(replay.ok||JSON.stringify(replay.findings)!==JSON.stringify(captured.audit.findings))throw Error('Captured rejection differs offline');
+    results.push({run,item:captured.handoff.item,attempt:captured.number,recordedAccepted:captured.accepted,replayedAudit:replay.ok,findings:replay.findings});
+  }
+}
+await Bun.write(join(root,'boundary-offline-replays.json'),JSON.stringify({schemaVersion:1,rejectedSubmissions:results.length,results},null,2)+'\n');
+console.log(JSON.stringify(results,null,2));

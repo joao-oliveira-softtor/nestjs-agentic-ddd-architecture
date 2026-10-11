@@ -1,0 +1,64 @@
+{
+  "configuration": "scripted-control",
+  "dataset": "evals/skills/orders.extended.yaml",
+  "datasetSha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+  "id": "dev-negative-old-hash",
+  "audience": "dev",
+  "question": "O specHash atual do item difere do hash de um packet antigo. verify --item com esse hash antigo pode certificar done? Responda sim ou não.",
+  "expect": {
+    "type": "exact",
+    "value": "não"
+  },
+  "answer": {
+    "type": "exact",
+    "value": "não"
+  },
+  "verdict": "correct",
+  "reason": null,
+  "contextHash": "98097266430f058ad035c2f65aa4138b3e8c3b1d94c9f6d3f60e1f90fe7b398d",
+  "execution": {
+    "sessionId": {
+      "status": "available",
+      "value": "scripted-12",
+      "source": "scripted_fixture"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "scripted",
+      "source": "scripted_fixture"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "synthetic"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 36.184000999999625,
+    "evidence": [
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/scripted-control/skills/scripted-control/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/stdout.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/scripted-control/skills/scripted-control/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/stderr.log",
+      "/tmp/agentic-evals-20-real-20261010-C3X5an/scripted-control/skills/scripted-control/8d7aec94f0efc54f54374b3a322c4a9eb6ba0a6d2502fb9f1bf83a87c946764a/dev-negative-old-hash/process.json"
+    ],
+    "transport": "finished",
+    "finalText": "{\"type\":\"exact\",\"value\":\"não\"}",
+    "diagnostic": null
+  }
+}

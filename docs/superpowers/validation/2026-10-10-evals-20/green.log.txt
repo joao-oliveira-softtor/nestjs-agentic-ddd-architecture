@@ -1,0 +1,13 @@
+test/evals-aggregate.test.ts:
+Error: Output already exists
+Error: Output already exists
+Error: Output already exists
+(pass) complete and partial campaigns preserve planned/executed denominators and deterministic output [2405.18ms]
+(pass) recomputes answer correctness and acceptance rather than trusting derived metrics and flags [1225.86ms]
+(pass) separates requested configuration, source/runner/adapter/environment/context/packet and observed metadata [7376.93ms]
+(pass) rejects duplicate slots, report IDs, case IDs, incompatible schema and declared hash mismatches [1186.15ms]
+(pass) incomplete token measurements and distinct currencies remain unavailable [2038.61ms]
+(pass) item completion and certification derive from executed gates and both test suites [2911.53ms]
+(pass) rejects evidence references even when missing files are also removed from hash ledger [95.12ms]
+(pass) offline aggregator dependency graph contains no inference adapter or runner import [2.08ms]
+(pass) accepts a checksummed current-schema report with derived metrics omitted [770.98ms]

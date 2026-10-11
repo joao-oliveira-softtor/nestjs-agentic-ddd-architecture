@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado o corpo de `Task.complete` em `app/domain/task.ts` com transição `pending -> completed`, emissão de `TaskCompleted` e erro `TASK_ALREADY_COMPLETED` em repetição, preservando o escopo permitido. Criado `app/test/method-Task-complete.test.ts` com `covers(['criterion:0001/conclusao','method:Task.complete'], ...)` cobrindo conclusão, evento emitido, estado final e rejeição de segunda conclusão. Verificação executada com `bun run agentic verify --item method:Task.complete --spec-hash eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364 --config /tmp/agentic-eval-nokLAK/attempt-8v5hfA/workspace/agentic.config.ts --json` retornou status `done` (I1-I5 passed).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "43349027-f7c2-499a-a4f4-a1c8c3ab17ea",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 47232.62940800004,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/implementation/cursor-codex-medium/method-Task-complete/attempt-1/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/implementation/cursor-codex-medium/method-Task-complete/attempt-1/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3/implementation/cursor-codex-medium/method-Task-complete/attempt-1/process.json"
+  ],
+  "diagnostic": null
+}

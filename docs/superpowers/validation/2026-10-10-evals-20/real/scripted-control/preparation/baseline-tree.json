@@ -1,0 +1,500 @@
+{
+  "hash": "b510a39f1b0d57a4301a4fe847d9d4fd974110124c1f4010aa028fa6f273c87a",
+  "entries": [
+    [
+      ".agentic",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".agentic/domain.lock.json",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "f3775ca942a007c2656dce0e4baa0967923ef531c80db73bd5b97ad3e8d912b0",
+        "content": "{\n  \"changes\": [\n    {\n      \"hash\": \"f9f57ddcab6e3246287b6be310e7f0348d76e3992e0f03492b1c35a34ba77bcc\",\n      \"id\": \"0001\",\n      \"items\": [\n        {\n          \"classification\": \"behavioral\",\n          \"id\": \"entity:Task\",\n          \"kind\": \"added\",\n          \"module\": \"tasks\"\n        },\n        {\n          \"classification\": \"behavioral\",\n          \"id\": \"event:TaskCompleted\",\n          \"kind\": \"added\",\n          \"module\": \"tasks\"\n        },\n        {\n          \"classification\": \"behavioral\",\n          \"id\": \"event:TaskCreated\",\n          \"kind\": \"added\",\n          \"module\": \"tasks\"\n        },\n        {\n          \"classification\": \"behavioral\",\n          \"id\": \"invariant:Task/titulo-obrigatorio\",\n          \"kind\": \"added\",\n          \"module\": \"tasks\"\n        },\n        {\n          \"classification\": \"behavioral\",\n          \"id\": \"method:Task.complete\",\n          \"kind\": \"added\",\n          \"module\": \"tasks\"\n        },\n        {\n          \"classification\": \"behavioral\",\n          \"id\": \"method:Task.create\",\n          \"kind\": \"added\",\n          \"module\": \"tasks\"\n        },\n        {\n          \"classification\": \"behavioral\",\n          \"id\": \"operator:task-operator\",\n          \"kind\": \"added\",\n          \"module\": \"tasks\"\n        },\n        {\n          \"classification\": \"behavioral\",\n          \"id\": \"usecase:complete_task\",\n          \"kind\": \"added\",\n          \"module\": \"tasks\"\n        },\n        {\n          \"classification\": \"behavioral\",\n          \"id\": \"usecase:create_task\",\n          \"kind\": \"added\",\n          \"module\": \"tasks\"\n        }\n      ],\n      \"path\": \"changes/archive/0001-tasks/proposal.md\",\n      \"summary\": \"Exercitar o fluxo declaração primeiro com um domínio isolado, sem alterar orders nem pressupor testes ou corpos já implementados.\",\n      \"title\": \"Criar e concluir tarefas\"\n    }\n  ],\n  \"ir\": {\n    \"entities\": [\n      {\n        \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n        \"id\": \"entity:Task\",\n        \"invariants\": [\n          {\n            \"id\": \"invariant:Task/titulo-obrigatorio\",\n            \"on\": null,\n            \"source\": \"app/domain/task.ts:6\",\n            \"text\": \"Toda tarefa precisa de título não vazio.\"\n          }\n        ],\n        \"methods\": [\n          {\n            \"description\": \"Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.\",\n            \"emits\": [\n              \"event:TaskCompleted\"\n            ],\n            \"id\": \"method:Task.complete\",\n            \"name\": \"complete\",\n            \"source\": \"app/domain/task.ts:30\",\n            \"static\": false,\n            \"transition\": {\n              \"from\": [\n                \"pending\"\n              ],\n              \"to\": \"completed\"\n            }\n          },\n          {\n            \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n            \"emits\": [\n              \"event:TaskCreated\"\n            ],\n            \"id\": \"method:Task.create\",\n            \"name\": \"create\",\n            \"source\": \"app/domain/task.ts:12\",\n            \"static\": true,\n            \"transition\": null\n          }\n        ],\n        \"module\": \"tasks\",\n        \"name\": \"Task\",\n        \"source\": \"app/domain/task.ts:5\",\n        \"states\": [\n          \"pending\",\n          \"completed\"\n        ]\n      }\n    ],\n    \"events\": [\n      {\n        \"description\": \"Uma tarefa foi concluída.\",\n        \"id\": \"event:TaskCompleted\",\n        \"module\": \"tasks\",\n        \"name\": \"TaskCompleted\",\n        \"payloadSchema\": {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"taskId\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"taskId\"\n          ],\n          \"type\": \"object\"\n        },\n        \"source\": \"app/domain/task.events.ts:8\"\n      },\n      {\n        \"description\": \"Uma tarefa foi criada.\",\n        \"id\": \"event:TaskCreated\",\n        \"module\": \"tasks\",\n        \"name\": \"TaskCreated\",\n        \"payloadSchema\": {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"taskId\": {\n              \"type\": \"string\"\n            },\n            \"title\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"taskId\",\n            \"title\"\n          ],\n          \"type\": \"object\"\n        },\n        \"source\": \"app/domain/task.events.ts:5\"\n      }\n    ],\n    \"irVersion\": 1,\n    \"modules\": [\n      {\n        \"name\": \"tasks\",\n        \"path\": \"app\"\n      }\n    ],\n    \"operators\": [\n      {\n        \"description\": \"Cria e conclui tarefas conforme pedido do usuário.\",\n        \"id\": \"operator:task-operator\",\n        \"instructions\": \"Use as tools para criar e concluir tarefas. Identifique a tarefa pelo id e responda em português.\",\n        \"limits\": {\n          \"maxSteps\": 8,\n          \"timeoutMs\": 30000\n        },\n        \"model\": \"default\",\n        \"module\": \"tasks\",\n        \"name\": \"task-operator\",\n        \"requiresApproval\": [],\n        \"source\": \"app/operators/task.operator.ts:5\",\n        \"useCases\": [\n          \"usecase:complete_task\",\n          \"usecase:create_task\"\n        ]\n      }\n    ],\n    \"useCases\": [\n      {\n        \"description\": \"Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.\",\n        \"emits\": [\n          \"event:TaskCompleted\"\n        ],\n        \"id\": \"usecase:complete_task\",\n        \"inputSchema\": {\n          \"properties\": {\n            \"task_id\": {\n              \"minLength\": 1,\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"task_id\"\n          ],\n          \"type\": \"object\"\n        },\n        \"module\": \"tasks\",\n        \"name\": \"complete_task\",\n        \"outputSchema\": {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"status\": {\n              \"const\": \"completed\",\n              \"type\": \"string\"\n            },\n            \"task_id\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"task_id\",\n            \"status\"\n          ],\n          \"type\": \"object\"\n        },\n        \"source\": \"app/application/complete-task.ts:12\",\n        \"uses\": [\n          \"method:Task.complete\"\n        ],\n        \"whenNotToUse\": \"Para criar uma nova tarefa.\",\n        \"whenToUse\": \"Quando o usuário terminou uma tarefa.\"\n      },\n      {\n        \"description\": \"Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.\",\n        \"emits\": [\n          \"event:TaskCreated\"\n        ],\n        \"id\": \"usecase:create_task\",\n        \"inputSchema\": {\n          \"properties\": {\n            \"task_id\": {\n              \"minLength\": 1,\n              \"type\": \"string\"\n            },\n            \"title\": {\n              \"minLength\": 1,\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"task_id\",\n            \"title\"\n          ],\n          \"type\": \"object\"\n        },\n        \"module\": \"tasks\",\n        \"name\": \"create_task\",\n        \"outputSchema\": {\n          \"additionalProperties\": false,\n          \"properties\": {\n            \"status\": {\n              \"const\": \"pending\",\n              \"type\": \"string\"\n            },\n            \"task_id\": {\n              \"type\": \"string\"\n            },\n            \"title\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"task_id\",\n            \"title\",\n            \"status\"\n          ],\n          \"type\": \"object\"\n        },\n        \"source\": \"app/application/create-task.ts:13\",\n        \"uses\": [\n          \"method:Task.create\"\n        ],\n        \"whenNotToUse\": \"Para concluir tarefa existente.\",\n        \"whenToUse\": \"Quando o usuário deseja criar uma tarefa.\"\n      }\n    ]\n  },\n  \"lockVersion\": 1\n}\n"
+      }
+    ],
+    [
+      ".agentic/runtime",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".agentic/runtime/task-operator",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".agentic/runtime/task-operator/SKILL.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "f164b863cf0b51bdcbaccbc92ea3f7f8247d612cdd0feee3e9cfbb9a19f38e2e",
+        "content": "---\nname: task-operator\ndescription: \"Cria e conclui tarefas conforme pedido do usuário.\"\nmetadata:\n  agentic-ddd.audience: runtime\n  agentic-ddd.generated: \"true\"\n  agentic-ddd.ir-hash: \"3170245d68e01b7b05be4a5f93403688a4b4537883302cb972350406241b8f29\"\n---\n<!-- GERADO por agentic-ddd compile — não edite. Fonte: app/operators/task.operator.ts:5 -->\n\n# Operator `task-operator`\n\nCria e conclui tarefas conforme pedido do usuário.\n\n## Tools\n\nTools marcadas com **Exige aprovação humana: sim** só executam depois de uma pessoa aprovar; se a aprovação for negada, a tool devolve o erro `approval_denied` e nada é alterado.\n\n### `complete_task`\n\nCarrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.\n\n- **Quando usar:** Quando o usuário terminou uma tarefa.\n- **Quando não usar:** Para criar uma nova tarefa.\n- **Aciona:** `Task.complete`\n- **Emite:** `TaskCompleted`\n- **Exige aprovação humana:** não\n\n| Parâmetro | Tipo | Obrigatório | Descrição |\n|---|---|---|---|\n| `task_id` | string | sim | — |\n\nSchema completo (restrições, campos aninhados e saída): `references/tools.schema.json` → `complete_task`.\n\n### `create_task`\n\nCria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.\n\n- **Quando usar:** Quando o usuário deseja criar uma tarefa.\n- **Quando não usar:** Para concluir tarefa existente.\n- **Aciona:** `Task.create`\n- **Emite:** `TaskCreated`\n- **Exige aprovação humana:** não\n\n| Parâmetro | Tipo | Obrigatório | Descrição |\n|---|---|---|---|\n| `task_id` | string | sim | — |\n| `title` | string | sim | — |\n\nSchema completo (restrições, campos aninhados e saída): `references/tools.schema.json` → `create_task`.\n\n## Regras de negócio\n\n| Invariante | Regra | Garantida por |\n|---|---|---|\n| `invariant:Task/titulo-obrigatorio` | Toda tarefa precisa de título não vazio. | construção |\n\n## Estados e transições\n\n| Método | De | Para |\n|---|---|---|\n| `Task.complete` | `pending` | `completed` |\n\nDetalhes: [schemas das tools](references/tools.schema.json) · [máquina de estados](references/state-machine.md)\n"
+      }
+    ],
+    [
+      ".agentic/runtime/task-operator/references",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".agentic/runtime/task-operator/references/state-machine.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "88ede28236e7402bfd82264a7d1d97a453ccb063be25531b777cd09dfc228cb3",
+        "content": "<!-- GERADO por agentic-ddd compile — não edite. Fonte: app/operators/task.operator.ts:5 -->\n\n# Máquina de estados\n\n## Task\n\nEstados: `pending`, `completed`\n\n| Método | De | Para | Emite |\n|---|---|---|---|\n| `Task.complete` | `pending` | `completed` | `TaskCompleted` |\n"
+      }
+    ],
+    [
+      ".agentic/runtime/task-operator/references/tools.schema.json",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "a474718bc43804f55226a9499e6d9865d1d17ff4a34aa180d04a26eb4b786bbc",
+        "content": "{\n  \"complete_task\": {\n    \"input\": {\n      \"properties\": {\n        \"task_id\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\"\n      ],\n      \"type\": \"object\"\n    },\n    \"output\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"status\": {\n          \"const\": \"completed\",\n          \"type\": \"string\"\n        },\n        \"task_id\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"status\"\n      ],\n      \"type\": \"object\"\n    }\n  },\n  \"create_task\": {\n    \"input\": {\n      \"properties\": {\n        \"task_id\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        },\n        \"title\": {\n          \"minLength\": 1,\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"title\"\n      ],\n      \"type\": \"object\"\n    },\n    \"output\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"status\": {\n          \"const\": \"pending\",\n          \"type\": \"string\"\n        },\n        \"task_id\": {\n          \"type\": \"string\"\n        },\n        \"title\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"task_id\",\n        \"title\",\n        \"status\"\n      ],\n      \"type\": \"object\"\n    }\n  }\n}\n"
+      }
+    ],
+    [
+      ".agents",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".agents/skills",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".agents/skills/agentic-ddd",
+      {
+        "kind": "link",
+        "mode": 41471,
+        "hash": "018b74d3584730201954798b2364816a0c6c32c9d2d12e893d2743f6d9e8d1a8",
+        "content": "../../../../framework/skills/agentic-ddd"
+      }
+    ],
+    [
+      ".agents/skills/tasks-dev",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".agents/skills/tasks-dev/SKILL.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "ad1bfba5c7afd49aaef1933e83c794554f1d20560a42b652d0c51f335fecbc2a",
+        "content": "---\nname: tasks-dev\ndescription: \"Domínio tasks: entidades Task; use-cases complete_task, create_task; operators task-operator. Use quando for implementar, alterar, testar ou revisar código em app.\"\nmetadata:\n  agentic-ddd.audience: dev\n  agentic-ddd.generated: \"true\"\n  agentic-ddd.ir-hash: \"3170245d68e01b7b05be4a5f93403688a4b4537883302cb972350406241b8f29\"\n---\n<!-- GERADO por agentic-ddd compile — não edite. Fonte: app -->\n\n# Módulo `tasks`\n\nCódigo em `app`. Esta skill descreve o domínio declarado (requisitos, regras e contratos); ela não registra estado de implementação.\n\n## Entidades\n\n### Task — `entity:Task`\n\nTarefa com título e ciclo de vida pendente ou concluído.\n\nFonte: `app/domain/task.ts:5` · Estados: `pending`, `completed`\n\n| Invariante | Regra | Garantida por | Fonte |\n|---|---|---|---|\n| `invariant:Task/titulo-obrigatorio` | Toda tarefa precisa de título não vazio. | construção | `app/domain/task.ts:6` |\n\n| Método | Descrição | Transição | Emite | Fonte |\n|---|---|---|---|---|\n| `Task.complete` | Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED. | `pending` → `completed` | `TaskCompleted` | `app/domain/task.ts:30` |\n| `Task.create` | Cria uma tarefa pendente e remove espaços nas extremidades do título. | — | `TaskCreated` | `app/domain/task.ts:12` |\n\n## Eventos\n\n| Evento | Descrição | Fonte |\n|---|---|---|\n| `TaskCompleted` | Uma tarefa foi concluída. | `app/domain/task.events.ts:8` |\n| `TaskCreated` | Uma tarefa foi criada. | `app/domain/task.events.ts:5` |\n\n## Use-cases\n\n| Use-case | Descrição | Aciona | Emite | Fonte |\n|---|---|---|---|---|\n| `complete_task` | Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND. | `Task.complete` | `TaskCompleted` | `app/application/complete-task.ts:12` |\n| `create_task` | Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS. | `Task.create` | `TaskCreated` | `app/application/create-task.ts:13` |\n\n## Operators\n\n| Operator | Use-cases | Exige aprovação | Fonte |\n|---|---|---|---|\n| `task-operator` | `complete_task`, `create_task` | — | `app/operators/task.operator.ts:5` |\n\n## Dependências entre itens\n\n| Item | Camada | Depende de |\n|---|---|---|\n| `entity:Task` | domain | — |\n| `method:Task.complete` | domain | `entity:Task` |\n| `operator:task-operator` | operators | `usecase:complete_task`, `usecase:create_task` |\n| `usecase:complete_task` | application | `method:Task.complete` |\n| `usecase:create_task` | application | `entity:Task` |\n\n## Obrigações de teste\n\nCada ID abaixo precisa de ao menos um teste nomeado com `covers([...ids], título)` de `@agentic-ddd/testing`.\n\n| Item | IDs a cobrir |\n|---|---|\n| `entity:Task` | `invariant:Task/titulo-obrigatorio`, `method:Task.create` |\n| `method:Task.complete` | `method:Task.complete` |\n| `operator:task-operator` | `operator:task-operator` |\n| `usecase:complete_task` | `usecase:complete_task` |\n| `usecase:create_task` | `usecase:create_task` |\n\n## Como estender\n\n| Artefato | Onde criar | Como declarar |\n|---|---|---|\n| Entidade | `app/domain/<nome>.ts` | `@AgentEntity({ description, states })` + `@Invariant({ id, text })` na classe |\n| Método de entidade | na classe da entidade | `@AgentMethod({ description, transition?, emits? })`; regra garantida pelo método: `@Invariant` no método; auxiliares: `#privado` |\n| Evento | `app/domain/<agregado>.events.ts` | `@AgentEvent({ description, payload })` estendendo `DomainEvent` |\n| Use-case | `app/application/<nome>.ts` | `@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entidade>.<método>'], emits? })` |\n| Operator | `app/operators/<nome>.operator.ts` | `@Operator({ name, description, instructions, useCases, requiresApproval? })` |\n\nCorpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.\n\n## Referências\n\n- [Histórico de mudanças](references/history.md)\n- [Schemas de eventos e use-cases](references/schemas.json)\n- [Máquina de estados](references/state-machine.md)\n"
+      }
+    ],
+    [
+      ".agents/skills/tasks-dev/references",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".agents/skills/tasks-dev/references/history.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "dbacb751305fa4dda4cc4d3908aefe39030b3f0202536ce50f3018a12db50f43",
+        "content": "<!-- GERADO por agentic-ddd compile — não edite. Fonte: app -->\n\n# Histórico do módulo `tasks`\n\n## Task\n\n| Change | Título | Mudanças | Motivo |\n|---|---|---|---|\n| [0001](../../../../changes/archive/0001-tasks/proposal.md) | Criar e concluir tarefas | added `entity:Task` (behavioral); added `invariant:Task/titulo-obrigatorio` (behavioral); added `method:Task.complete` (behavioral); added `method:Task.create` (behavioral) | Exercitar o fluxo declaração primeiro com um domínio isolado, sem alterar orders nem pressupor testes ou corpos já implementados. |\n\n## Eventos, use-cases e operators\n\n| Change | Título | Mudanças | Motivo |\n|---|---|---|---|\n| [0001](../../../../changes/archive/0001-tasks/proposal.md) | Criar e concluir tarefas | added `event:TaskCompleted` (behavioral); added `event:TaskCreated` (behavioral); added `operator:task-operator` (behavioral); added `usecase:complete_task` (behavioral); added `usecase:create_task` (behavioral) | Exercitar o fluxo declaração primeiro com um domínio isolado, sem alterar orders nem pressupor testes ou corpos já implementados. |\n"
+      }
+    ],
+    [
+      ".agents/skills/tasks-dev/references/schemas.json",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "7c23c90a2001a5b18cf5fbc86c1332b97138237d7a6250133d4f024dd87d2d21",
+        "content": "{\n  \"events\": {\n    \"TaskCompleted\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"taskId\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"taskId\"\n      ],\n      \"type\": \"object\"\n    },\n    \"TaskCreated\": {\n      \"additionalProperties\": false,\n      \"properties\": {\n        \"taskId\": {\n          \"type\": \"string\"\n        },\n        \"title\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"taskId\",\n        \"title\"\n      ],\n      \"type\": \"object\"\n    }\n  },\n  \"useCases\": {\n    \"complete_task\": {\n      \"input\": {\n        \"properties\": {\n          \"task_id\": {\n            \"minLength\": 1,\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\"\n        ],\n        \"type\": \"object\"\n      },\n      \"output\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"status\": {\n            \"const\": \"completed\",\n            \"type\": \"string\"\n          },\n          \"task_id\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\",\n          \"status\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    \"create_task\": {\n      \"input\": {\n        \"properties\": {\n          \"task_id\": {\n            \"minLength\": 1,\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"minLength\": 1,\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      },\n      \"output\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"status\": {\n            \"const\": \"pending\",\n            \"type\": \"string\"\n          },\n          \"task_id\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"task_id\",\n          \"title\",\n          \"status\"\n        ],\n        \"type\": \"object\"\n      }\n    }\n  }\n}\n"
+      }
+    ],
+    [
+      ".agents/skills/tasks-dev/references/state-machine.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "b5d52186e62a3fcc1d86dbcbaa9ede8cf3972c6d4d7d751dff8ca6c8ef24698a",
+        "content": "<!-- GERADO por agentic-ddd compile — não edite. Fonte: app -->\n\n# Máquina de estados\n\n## Task\n\nEstados: `pending`, `completed`\n\n| Método | De | Para | Emite |\n|---|---|---|---|\n| `Task.complete` | `pending` | `completed` | `TaskCompleted` |\n"
+      }
+    ],
+    [
+      ".claude",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".claude/agents",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".claude/agents/agentic-ddd-executor.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "0c84815bf5da508e64a37e255822c16dfac023b2f40a1f368633cc1c1e69a871",
+        "content": "---\nname: agentic-ddd-executor\ndescription: \"Implementa somente corpos atribuídos e testes agentic-ddd, preservando contratos e o hash do packet.\"\nmodel: inherit\nskills:\n  - agentic-ddd\n---\n\n<!-- Instalado por skills:install; instruções compartilhadas na fonte autoral. -->\n\nVocê é o executor agentic-ddd. Leia [skill](.claude/skills/agentic-ddd/SKILL.md) e [instruções do papel](.claude/skills/agentic-ddd/references/executor.md) antes de agir. Caminhos relativos são resolvidos a partir da raiz do projeto. Consulte também a skill gerada do módulo indicado pela configuração. Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.\n"
+      }
+    ],
+    [
+      ".claude/agents/agentic-ddd-manager.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "ad821431e0c83618611ca97243ad29eae5fe68d5134478e21c917bea9e7e2501",
+        "content": "---\nname: agentic-ddd-manager\ndescription: \"Prepara propostas e contratos agentic-ddd e coordena execução sequencial por packet e verify.\"\nmodel: inherit\nskills:\n  - agentic-ddd\n---\n\n<!-- Instalado por skills:install; instruções compartilhadas na fonte autoral. -->\n\nVocê é o gerente agentic-ddd. Leia [skill](.claude/skills/agentic-ddd/SKILL.md) e [instruções do papel](.claude/skills/agentic-ddd/references/manager.md) antes de agir. Caminhos relativos são resolvidos a partir da raiz do projeto. Consulte também a skill gerada do módulo indicado pela configuração. Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.\n"
+      }
+    ],
+    [
+      ".claude/skills",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".claude/skills/agentic-ddd",
+      {
+        "kind": "link",
+        "mode": 41471,
+        "hash": "018b74d3584730201954798b2364816a0c6c32c9d2d12e893d2743f6d9e8d1a8",
+        "content": "../../../../framework/skills/agentic-ddd"
+      }
+    ],
+    [
+      ".claude/skills/tasks-dev",
+      {
+        "kind": "link",
+        "mode": 41471,
+        "hash": "7b4888bef4f4a5ce97fcfadae49ea08c1185c8ff76cca9244725ea30639666ee",
+        "content": "../../.agents/skills/tasks-dev"
+      }
+    ],
+    [
+      ".codex",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".codex/agents",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".codex/agents/agentic-ddd-executor.toml",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "54649e7878873b02ee1bb9eece2b7db9557884f9013f047ea8925081c86b6ce4",
+        "content": "# Instalado por skills:install; instruções compartilhadas na fonte autoral.\nname = \"agentic-ddd-executor\"\ndescription = \"Implementa somente corpos atribuídos e testes agentic-ddd, preservando contratos e o hash do packet.\"\ndeveloper_instructions = \"Você é o executor agentic-ddd. Leia [skill](.agents/skills/agentic-ddd/SKILL.md) e [instruções do papel](.agents/skills/agentic-ddd/references/executor.md) antes de agir. Caminhos relativos são resolvidos a partir da raiz do projeto. Consulte também a skill gerada do módulo indicado pela configuração. Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.\"\n"
+      }
+    ],
+    [
+      ".codex/agents/agentic-ddd-manager.toml",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "946f2c17a1e2abf0045fd7ed4a676fb87731f4411ee83b8d202b0ea68edb4f58",
+        "content": "# Instalado por skills:install; instruções compartilhadas na fonte autoral.\nname = \"agentic-ddd-manager\"\ndescription = \"Prepara propostas e contratos agentic-ddd e coordena execução sequencial por packet e verify.\"\ndeveloper_instructions = \"Você é o gerente agentic-ddd. Leia [skill](.agents/skills/agentic-ddd/SKILL.md) e [instruções do papel](.agents/skills/agentic-ddd/references/manager.md) antes de agir. Caminhos relativos são resolvidos a partir da raiz do projeto. Consulte também a skill gerada do módulo indicado pela configuração. Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.\"\n"
+      }
+    ],
+    [
+      ".cursor",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".cursor/agents",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      ".cursor/agents/agentic-ddd-executor.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "75157379693f710280fe11dadb7bc21b20e54ce1602a65b77aa431694001e5f5",
+        "content": "---\nname: agentic-ddd-executor\ndescription: \"Implementa somente corpos atribuídos e testes agentic-ddd, preservando contratos e o hash do packet.\"\nmodel: inherit\n---\n\n<!-- Instalado por skills:install; instruções compartilhadas na fonte autoral. -->\n\nVocê é o executor agentic-ddd. Leia [skill](.agents/skills/agentic-ddd/SKILL.md) e [instruções do papel](.agents/skills/agentic-ddd/references/executor.md) antes de agir. Caminhos relativos são resolvidos a partir da raiz do projeto. Consulte também a skill gerada do módulo indicado pela configuração. Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.\n"
+      }
+    ],
+    [
+      ".cursor/agents/agentic-ddd-manager.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "3b60b359c637b9765db79ebb45a34dc02479c0d893cb1fc83b5ccc299ba86b7e",
+        "content": "---\nname: agentic-ddd-manager\ndescription: \"Prepara propostas e contratos agentic-ddd e coordena execução sequencial por packet e verify.\"\nmodel: inherit\n---\n\n<!-- Instalado por skills:install; instruções compartilhadas na fonte autoral. -->\n\nVocê é o gerente agentic-ddd. Leia [skill](.agents/skills/agentic-ddd/SKILL.md) e [instruções do papel](.agents/skills/agentic-ddd/references/manager.md) antes de agir. Caminhos relativos são resolvidos a partir da raiz do projeto. Consulte também a skill gerada do módulo indicado pela configuração. Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.\n"
+      }
+    ],
+    [
+      ".gitignore",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "4d56952b0fb13bf8f9b6c13a6d4c34a075bac3af447636a1df4335d7576e2f97",
+        "content": "node_modules/\n"
+      }
+    ],
+    [
+      "AGENTS.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "df16c1acd0b87d86c8e494926c174000280dac8182c7bd8ff5acd4b714366020",
+        "content": "# Tutorial tasks\n\nUse a skill autoral agentic-ddd instalada e a skill gerada tasks-dev após compile. Executor altera somente corpo atribuído e testes; preserve imports, contratos, propostas e gerados.\n\n<!-- agentic-ddd:begin -->\n<!-- GERADO por agentic-ddd compile — não edite este bloco; o texto fora dele é seu. -->\n\n## Domínio (agentic-ddd)\n\n| Módulo | Código | Skill de dev |\n|---|---|---|\n| tasks | `app` | `.agents/skills/tasks-dev/SKILL.md` |\n\n| Operator | Skill de runtime |\n|---|---|\n| task-operator | `.agentic/runtime/task-operator/SKILL.md` |\n\n### Convenções\n\n- Entidades, métodos, eventos, use-cases e operators são declarados com `@AgentEntity`, `@AgentMethod`, `@AgentEvent`, `@AgentUseCase` e `@Operator` de `@agentic-ddd/decorators`; cada regra de negócio é um `@Invariant({ id, text })` com ID estável.\n- Onde criar: `<caminho do módulo>/domain` (entidades, eventos, ports), `<caminho do módulo>/application` (use-cases, sempre com `uses`), `<caminho do módulo>/operators` (operators). A skill de dev do módulo tem os caminhos exatos.\n- Todo método público de entidade tem `@AgentMethod`; métodos auxiliares usam `#privado`.\n- Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.\n- Coordenação: consulte `bun run agentic status` ou `next` (ondas); execute cada item a partir de `bun run agentic packet <item>` e valide com `bun run agentic verify --item <item> --spec-hash <hash>`. `status --static` lê declarações de teste sem executá-las e nunca certifica `done`.\n- O sinal de esqueleto reconhece só a chamada literal `notImplemented()`; corpo vazio conta como implementado. Estado é calculado sob demanda e não entra nos arquivos gerados.\n- Testes declaram o que cobrem com `covers([...ids], título)` de `@agentic-ddd/testing`.\n- Mudança de regra de negócio: escreva antes a proposta em `changes/NNNN-<slug>/proposal.md` (delta, critérios de aceite e `## Motivo`), implemente e rode `bun run agentic compile`; para mudança já feita no código, `bun run agentic compile --draft-change <slug>` gera o rascunho.\n- Uma tarefa só está concluída quando `bun run agentic verify <NNNN>` retorna `done` ou `needs-human`.\n- Gerados (não edite): `.agents/skills`, `.agentic/runtime`, os espelhos de skills e este bloco. Altere o código decorado e rode `bun run agentic compile`; o CI roda `bun run agentic compile --check`.\n<!-- agentic-ddd:end -->\n"
+      }
+    ],
+    [
+      "CLAUDE.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49",
+        "content": "@AGENTS.md\n"
+      }
+    ],
+    [
+      "agentic.config.ts",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "3255b5f62bee48aa2c62bdb0bc6f0d78706f77b23f1327e6af93bf1916959e74",
+        "content": "import { defineConfig } from '@agentic-ddd/compiler';\nexport default defineConfig({ modules: [{ name: 'tasks', path: 'app' }], verify: { test: ['bun', 'test'], commands: { typecheck: ['bun', \"/tmp/agentic-eval-3gxTR3/framework/node_modules/typescript/bin/tsc\", '--noEmit', '--project', 'tsconfig.json'] } } });\n"
+      }
+    ],
+    [
+      "app",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      "app/application",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      "app/application/complete-task.ts",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "97b9b46b9218c7d0a7f318deab69481eee561173f47059bf4c530f8137c10b99",
+        "content": "import { z } from 'zod';\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\nimport { AgentUseCase } from '@agentic-ddd/decorators';\nimport { TaskCompleted } from '../domain/task.events';\nimport type { TaskRepository } from '../domain/task.repository';\n\nexport const completeTaskInput = z.object({ task_id: z.string().min(1) });\nexport const completeTaskOutput = z.object({ task_id: z.string(), status: z.literal('completed') });\nexport type CompleteTaskInput = z.infer<typeof completeTaskInput>;\nexport type CompleteTaskOutput = z.infer<typeof completeTaskOutput>;\n\n@AgentUseCase({ name: 'complete_task', description: 'Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.', whenToUse: 'Quando o usuário terminou uma tarefa.', whenNotToUse: 'Para criar uma nova tarefa.', input: completeTaskInput, output: completeTaskOutput, uses: ['method:Task.complete'], emits: [TaskCompleted] })\nexport class CompleteTask implements UseCase<CompleteTaskInput, CompleteTaskOutput> {\n  constructor(private readonly tasks: TaskRepository) {}\n  async execute(input: CompleteTaskInput, ctx: UseCaseContext): Promise<CompleteTaskOutput> {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+      }
+    ],
+    [
+      "app/application/create-task.ts",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "9bba8436aba10556da636d97fa5096b7a612f2e2ce1b6793c49114a69af187af",
+        "content": "import { z } from 'zod';\nimport { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';\nimport { AgentUseCase } from '@agentic-ddd/decorators';\nimport { Task } from '../domain/task';\nimport { TaskCreated } from '../domain/task.events';\nimport type { TaskRepository } from '../domain/task.repository';\n\nexport const createTaskInput = z.object({ task_id: z.string().min(1), title: z.string().min(1) });\nexport const createTaskOutput = z.object({ task_id: z.string(), title: z.string(), status: z.literal('pending') });\nexport type CreateTaskInput = z.infer<typeof createTaskInput>;\nexport type CreateTaskOutput = z.infer<typeof createTaskOutput>;\n\n@AgentUseCase({ name: 'create_task', description: 'Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.', whenToUse: 'Quando o usuário deseja criar uma tarefa.', whenNotToUse: 'Para concluir tarefa existente.', input: createTaskInput, output: createTaskOutput, uses: ['method:Task.create'], emits: [TaskCreated] })\nexport class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {\n  constructor(private readonly tasks: TaskRepository) {}\n  async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+      }
+    ],
+    [
+      "app/domain",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      "app/domain/task.events.ts",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "91eb2f021aed35160c5e3e4bf54764300f703f7ffd6b735ecd9f1f923a31040e",
+        "content": "import { z } from 'zod';\nimport { DomainEvent } from '@agentic-ddd/core';\nimport { AgentEvent } from '@agentic-ddd/decorators';\n\n@AgentEvent({ description: 'Uma tarefa foi criada.', payload: z.object({ taskId: z.string(), title: z.string() }) })\nexport class TaskCreated extends DomainEvent<{ readonly taskId: string; readonly title: string }> {}\n\n@AgentEvent({ description: 'Uma tarefa foi concluída.', payload: z.object({ taskId: z.string() }) })\nexport class TaskCompleted extends DomainEvent<{ readonly taskId: string }> {}\n"
+      }
+    ],
+    [
+      "app/domain/task.repository.ts",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "c3e2067ca27978ee31aff84a548542884bccfc3f6ee54c6d5c34369a9ba2ccdb",
+        "content": "import type { Repository } from '@agentic-ddd/core';\nimport type { Task } from './task';\nexport type TaskRepository = Repository<Task, string>;\n"
+      }
+    ],
+    [
+      "app/domain/task.ts",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "17f303d04ef10815f03a1a0a97d7653843d5afed0a567b8061c1676bb94e3a96",
+        "content": "import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\nimport { TaskCreated, TaskCompleted } from './task.events';\n\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\nexport class Task extends AggregateRoot<string> {\n  #status: 'pending' | 'completed' = 'pending';\n  private constructor(id: string, readonly title: string) { super(id); }\n  get status(): 'pending' | 'completed' { return this.#status; }\n\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\n  static create(id: string, title: string): Task {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\n  complete(): void {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+      }
+    ],
+    [
+      "app/infrastructure",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      "app/infrastructure/in-memory-task.repository.ts",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "1a91ae98ef8c8e1af4be66d955c449795924e3defec05c8d39b7341a4d450e64",
+        "content": "import type { TaskRepository } from '../domain/task.repository';\nimport type { Task } from '../domain/task';\n\nexport class InMemoryTaskRepository implements TaskRepository {\n  readonly #tasks = new Map<string, Task>();\n  async findById(id: string): Promise<Task | null> { return this.#tasks.get(id) ?? null; }\n  async save(task: Task): Promise<void> { this.#tasks.set(task.id, task); }\n}\n"
+      }
+    ],
+    [
+      "app/operators",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      "app/operators/task.operator.ts",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "060303b03886064dfdca8172da9dd212b8c17243a6cf877d65548bd79d4051e3",
+        "content": "import { Operator } from '@agentic-ddd/decorators';\nimport { CreateTask } from '../application/create-task';\nimport { CompleteTask } from '../application/complete-task';\n\n@Operator({ name: 'task-operator', description: 'Cria e conclui tarefas conforme pedido do usuário.', instructions: 'Use as tools para criar e concluir tarefas. Identifique a tarefa pelo id e responda em português.', useCases: [CreateTask, CompleteTask] })\nexport class TaskOperator {}\n"
+      }
+    ],
+    [
+      "changes",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      "changes/archive",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      "changes/archive/0001-tasks",
+      {
+        "kind": "directory",
+        "mode": 16877,
+        "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    ],
+    [
+      "changes/archive/0001-tasks/proposal.md",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "f9f57ddcab6e3246287b6be310e7f0348d76e3992e0f03492b1c35a34ba77bcc",
+        "content": "---\nid: \"0001\"\ntitle: Criar e concluir tarefas\nstatus: applied\norigin: proposal-first\ndelta:\n  added:\n    - \"entity:Task\"\n    - \"invariant:Task/titulo-obrigatorio\"\n    - \"method:Task.create\"\n    - \"method:Task.complete\"\n    - \"event:TaskCreated\"\n    - \"event:TaskCompleted\"\n    - \"usecase:create_task\"\n    - \"usecase:complete_task\"\n    - \"operator:task-operator\"\n  modified: []\n  removed: []\nacceptance:\n  - id: titulo-invalido\n    covers: [\"invariant:Task/titulo-obrigatorio\"]\n    given: um título vazio ou com apenas espaços\n    when: criar uma tarefa\n    then: rejeita com TASK_TITLE_REQUIRED\n  - id: criacao\n    covers: [\"method:Task.create\"]\n    given: id t1 e título com espaços nas extremidades\n    when: criar a tarefa\n    then: fica pending, normaliza o título e registra TaskCreated\n  - id: conclusao\n    covers: [\"method:Task.complete\"]\n    given: uma tarefa pending\n    when: concluir e tentar concluir novamente\n    then: registra TaskCompleted, fica completed e rejeita repetição com TASK_ALREADY_COMPLETED\n  - id: persistencia-criacao\n    covers: [\"usecase:create_task\"]\n    given: repositório vazio e id t1\n    when: executar create_task e repetir o mesmo id\n    then: salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS\n  - id: persistencia-conclusao\n    covers: [\"usecase:complete_task\"]\n    given: tarefa t1 persistida e um id inexistente\n    when: executar complete_task\n    then: salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND\n  - id: tools\n    covers: [\"operator:task-operator\"]\n    given: FakeLlm solicitando create_task e complete_task\n    when: executar task-operator com repositório em memória\n    then: conclui a tarefa usando somente suas duas tools e publica os dois eventos\n---\n\n## Motivo\n\nExercitar o fluxo declaração primeiro com um domínio isolado, sem alterar orders nem pressupor testes ou corpos já implementados.\n"
+      }
+    ],
+    [
+      "node_modules",
+      {
+        "kind": "link",
+        "mode": 41471,
+        "hash": "eea3716a173f9253ed4fdcf7a5a724f9bc26cd6354d044d9b74e7dce54752687",
+        "content": "/tmp/agentic-eval-3gxTR3/framework/node_modules"
+      }
+    ],
+    [
+      "package.json",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "2877fa23db847c27165d2eac52d99883358e9c918d4d8f56c7a38e3d1806cbce",
+        "content": "{\n  \"name\": \"agentic-ddd-tasks-tutorial\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"agentic\": \"bun /tmp/agentic-eval-3gxTR3/framework/src/cli/main.ts\",\n    \"typecheck\": \"bun /tmp/agentic-eval-3gxTR3/framework/node_modules/typescript/bin/tsc --noEmit --project tsconfig.json\",\n    \"test\": \"bun test\"\n  }\n}\n"
+      }
+    ],
+    [
+      "tsconfig.json",
+      {
+        "kind": "file",
+        "mode": 33188,
+        "hash": "e66ad69bb7284bd4cb36f094d004f37115adf13c899022eece56a5f47d9be1a0",
+        "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2023\",\n    \"module\": \"preserve\",\n    \"moduleResolution\": \"bundler\",\n    \"strict\": true,\n    \"experimentalDecorators\": true,\n    \"emitDecoratorMetadata\": true,\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"noEmit\": true,\n    \"types\": [\n      \"bun\"\n    ],\n    \"paths\": {\n      \"@agentic-ddd/*\": [\n        \"/tmp/agentic-eval-3gxTR3/framework/src/*/index.ts\"\n      ],\n      \"zod\": [\n        \"/tmp/agentic-eval-3gxTR3/framework/node_modules/zod\"\n      ]\n    }\n  },\n  \"include\": [\n    \"app/**/*.ts\",\n    \"agentic.config.ts\"\n  ]\n}\n"
+      }
+    ]
+  ]
+}

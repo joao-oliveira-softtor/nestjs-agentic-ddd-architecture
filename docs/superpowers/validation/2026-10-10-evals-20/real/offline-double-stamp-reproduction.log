@@ -1,0 +1,15 @@
+{
+  "capturedRun": "codex-sol-high-r1",
+  "capturedAttempt": 1,
+  "item": "usecase:complete_task",
+  "state": "failed",
+  "audit": true,
+  "executorTests": 0,
+  "referenceTests": 1,
+  "reason": "independent_verification_failed",
+  "findings": [
+    "Private behavior oracle failed for criteria persistencia-conclusao: conclui, persiste, publica e rejeita id ausente; conclui, persiste, publica e rejeita id ausente"
+  ],
+  "mode": "scripted",
+  "invocations": 29
+}

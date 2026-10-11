@@ -1,0 +1,45 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado somente o corpo de `Task.create` em `app/domain/task.ts` preservando a contagem de linhas do corpo (normaliza `title`, rejeita vazio com `DomainError` código `TASK_TITLE_REQUIRED`, cria `Task` pending e registra `TaskCreated`), criado `app/test/entity-Task.test.ts` com `covers` para `invariant:Task/titulo-obrigatorio`, `method:Task.create`, `criterion:0001/titulo-invalido` e `criterion:0001/criacao`; verificação executada com hash original e config atual retornou `done` (I1-I5 passed).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "c81894ac-5af6-48d0-9ed9-00b4e6e53418",
+    "source": "cursor.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "Codex 5.3 Medium",
+    "source": "cursor.init.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "outputTokens": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 42793.56418699998,
+  "evidence": [
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/entity-Task/attempt-2/stdout.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/entity-Task/attempt-2/stderr.log",
+    "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2/implementation/cursor-codex-medium/entity-Task/attempt-2/process.json"
+  ],
+  "diagnostic": null
+}

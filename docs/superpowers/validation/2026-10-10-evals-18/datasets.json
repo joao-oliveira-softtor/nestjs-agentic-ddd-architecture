@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "datasets": [
+    {
+      "path": "evals/skills/orders.yaml",
+      "sha256": "19c615ee4569427ff4ff8d3d40fe20a6702b79fa3fdb5c4a6f5386354efef6a6",
+      "bytes": 1158,
+      "cases": [
+        {
+          "id": "confirmar-pedido",
+          "audience": "runtime"
+        },
+        {
+          "id": "cancelar-com-motivo",
+          "audience": "runtime"
+        },
+        {
+          "id": "cancelar-exige-aprovacao",
+          "audience": "runtime"
+        },
+        {
+          "id": "confirmar-cancelado",
+          "audience": "dev"
+        },
+        {
+          "id": "onde-criar-use-case",
+          "audience": "dev"
+        }
+      ]
+    },
+    {
+      "path": "evals/skills/orders.extended.yaml",
+      "sha256": "d22088516d0e36df33eeec33b7686de5c8563ec0ab339e4473fc3ac0a45b5ec0",
+      "bytes": 5060,
+      "cases": [
+        {
+          "id": "dev-positive-entity",
+          "audience": "dev"
+        },
+        {
+          "id": "dev-positive-usecase",
+          "audience": "dev"
+        },
+        {
+          "id": "dev-positive-uses",
+          "audience": "dev"
+        },
+        {
+          "id": "dev-positive-public-method",
+          "audience": "dev"
+        },
+        {
+          "id": "dev-positive-proposal",
+          "audience": "dev"
+        },
+        {
+          "id": "dev-negative-static-done",
+          "audience": "dev"
+        },
+        {
+          "id": "dev-negative-old-hash",
+          "audience": "dev"
+        },
+        {
+          "id": "dev-negative-unexecuted-coverage",
+          "audience": "dev"
+        },
+        {
+          "id": "dev-negative-empty-skeleton",
+          "audience": "dev"
+        },
+        {
+          "id": "dev-negative-generated-edit",
+          "audience": "dev"
+        },
+        {
+          "id": "runtime-positive-create",
+          "audience": "runtime"
+        },
+        {
+          "id": "runtime-positive-confirm",
+          "audience": "runtime"
+        },
+        {
+          "id": "runtime-positive-cancel",
+          "audience": "runtime"
+        },
+        {
+          "id": "runtime-positive-approval",
+          "audience": "runtime"
+        },
+        {
+          "id": "runtime-positive-transition",
+          "audience": "runtime"
+        },
+        {
+          "id": "runtime-negative-cancelled",
+          "audience": "runtime"
+        },
+        {
+          "id": "runtime-negative-confirmed",
+          "audience": "runtime"
+        },
+        {
+          "id": "runtime-negative-denied",
+          "audience": "runtime"
+        },
+        {
+          "id": "runtime-negative-no-reason",
+          "audience": "runtime"
+        },
+        {
+          "id": "runtime-negative-no-items",
+          "audience": "runtime"
+        }
+      ]
+    }
+  ]
+}

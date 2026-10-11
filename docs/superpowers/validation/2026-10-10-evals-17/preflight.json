@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "status": "offline_preflight_only",
+  "realRuns": 0,
+  "reason": "inference_budget_not_authorized",
+  "manifests": [
+    {
+      "path": "evals/run.certify.codex-sol-high.json",
+      "sha256": "111428bc02bd9b07556f094a96a71a61a480ef716840b255dd00f52bc4f472c2",
+      "manifest": {
+        "schemaVersion": 1,
+        "sourceRef": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425",
+        "skillDatasets": [
+          {
+            "path": "evals/skills/orders.yaml",
+            "contextRoots": {
+              "dev": [
+                "AGENTS.md",
+                ".agents/skills/orders-dev"
+              ],
+              "runtime": [
+                ".agentic/runtime/order-operator"
+              ]
+            }
+          }
+        ],
+        "benchmark": "tasks",
+        "configurations": [
+          {
+            "id": "codex-sol-high",
+            "adapter": "codex-cli",
+            "authentication": "local-login",
+            "model": "gpt-6.1-sol",
+            "parameters": {
+              "reasoningEffort": "high"
+            }
+          }
+        ],
+        "budget": {
+          "maxInvocations": 15,
+          "skillTimeoutMs": 120000,
+          "implementationTimeoutMs": 600000,
+          "totalTimeoutMs": 2700000,
+          "maxCorrectionsPerItem": 1,
+          "repetitions": 1,
+          "concurrency": 1
+        }
+      }
+    },
+    {
+      "path": "evals/run.certify.cursor-codex-medium.json",
+      "sha256": "1016856e3a2b1dcc189aedffdb5d49ad02623e196abeb63a1da538b2406a2b49",
+      "manifest": {
+        "schemaVersion": 1,
+        "sourceRef": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425",
+        "skillDatasets": [
+          {
+            "path": "evals/skills/orders.yaml",
+            "contextRoots": {
+              "dev": [
+                "AGENTS.md",
+                ".agents/skills/orders-dev"
+              ],
+              "runtime": [
+                ".agentic/runtime/order-operator"
+              ]
+            }
+          }
+        ],
+        "benchmark": "tasks",
+        "configurations": [
+          {
+            "id": "cursor-codex-medium",
+            "adapter": "cursor-cli",
+            "authentication": "local-login",
+            "model": "gpt-5.3-codex",
+            "parameters": {}
+          }
+        ],
+        "budget": {
+          "maxInvocations": 15,
+          "skillTimeoutMs": 120000,
+          "implementationTimeoutMs": 600000,
+          "totalTimeoutMs": 2700000,
+          "maxCorrectionsPerItem": 1,
+          "repetitions": 1,
+          "concurrency": 1
+        }
+      }
+    }
+  ],
+  "sourceCommit": "0cbd74bcdaf662f1eb07afc613b3b89b08c2d425",
+  "observedModels": {
+    "status": "unavailable",
+    "reason": "not_run"
+  },
+  "plannedSessions": 30,
+  "plannedTotalTimeoutMs": 5400000,
+  "certification": "pending_real_runs",
+  "offlineControl": "test/evals-run.test.ts: full run answers five questions, accepts five packets and independently certifies change"
+}

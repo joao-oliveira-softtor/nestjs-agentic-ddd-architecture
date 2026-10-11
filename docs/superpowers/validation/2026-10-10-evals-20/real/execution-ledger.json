@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "executions": [
+    {
+      "id": "codex-sol-high-r1",
+      "command": [
+        "bun",
+        "run",
+        "evals",
+        "--config",
+        "evals/campaigns/cycle-20/manifests/codex-sol-high-r1.json",
+        "--out",
+        "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r1",
+        "--real",
+        "--trusted-source"
+      ],
+      "startedAt": "2026-10-10T19:51:37.121Z",
+      "finishedAt": "2026-10-10T20:03:52.731Z",
+      "exitCode": 0
+    },
+    {
+      "id": "codex-sol-high-r2",
+      "command": [
+        "bun",
+        "run",
+        "evals",
+        "--config",
+        "evals/campaigns/cycle-20/manifests/codex-sol-high-r2.json",
+        "--out",
+        "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r2",
+        "--real",
+        "--trusted-source"
+      ],
+      "startedAt": "2026-10-10T20:03:52.822Z",
+      "finishedAt": "2026-10-10T20:15:50.521Z",
+      "exitCode": 0
+    },
+    {
+      "id": "codex-sol-high-r3",
+      "command": [
+        "bun",
+        "run",
+        "evals",
+        "--config",
+        "evals/campaigns/cycle-20/manifests/codex-sol-high-r3.json",
+        "--out",
+        "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/codex-sol-high-r3",
+        "--real",
+        "--trusted-source"
+      ],
+      "startedAt": "2026-10-10T20:15:50.605Z",
+      "finishedAt": "2026-10-10T20:27:25.944Z",
+      "exitCode": 0
+    },
+    {
+      "id": "cursor-codex-medium-r1",
+      "command": [
+        "bun",
+        "run",
+        "evals",
+        "--config",
+        "evals/campaigns/cycle-20/manifests/cursor-codex-medium-r1.json",
+        "--out",
+        "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r1",
+        "--real",
+        "--trusted-source"
+      ],
+      "startedAt": "2026-10-10T20:27:26.036Z",
+      "finishedAt": "2026-10-10T20:40:47.871Z",
+      "exitCode": 0
+    },
+    {
+      "id": "cursor-codex-medium-r2",
+      "command": [
+        "bun",
+        "run",
+        "evals",
+        "--config",
+        "evals/campaigns/cycle-20/manifests/cursor-codex-medium-r2.json",
+        "--out",
+        "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r2",
+        "--real",
+        "--trusted-source"
+      ],
+      "startedAt": "2026-10-10T20:40:47.988Z",
+      "finishedAt": "2026-10-10T20:54:41.600Z",
+      "exitCode": 0
+    },
+    {
+      "id": "cursor-codex-medium-r3",
+      "command": [
+        "bun",
+        "run",
+        "evals",
+        "--config",
+        "evals/campaigns/cycle-20/manifests/cursor-codex-medium-r3.json",
+        "--out",
+        "/tmp/agentic-evals-20-real-20261010-C3X5an/runs/cursor-codex-medium-r3",
+        "--real",
+        "--trusted-source"
+      ],
+      "startedAt": "2026-10-10T20:54:41.669Z",
+      "finishedAt": "2026-10-10T21:08:29.960Z",
+      "exitCode": 0
+    }
+  ]
+}

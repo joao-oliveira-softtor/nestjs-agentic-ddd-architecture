@@ -1,0 +1,282 @@
+{
+  "number": 1,
+  "handoff": {
+    "item": "method:Task.complete",
+    "packet": "# Identificação\n\n- ID: `method:Task.complete`\n- Camada: domain\n- Módulo: tasks\n- source: `app/domain/task.ts:30`\n- Estado: declared\n- specHash: `eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364`\n- Dependências: `entity:Task`\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi concluída.\",\n      \"id\": \"event:TaskCompleted\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCompleted\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\"\n        ],\n        \"type\": \"object\"\n      }\n    },\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.\",\n    \"emits\": [\n      \"event:TaskCompleted\"\n    ],\n    \"entity\": {\n      \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n      \"id\": \"entity:Task\",\n      \"invariants\": [\n        {\n          \"id\": \"invariant:Task/titulo-obrigatorio\",\n          \"on\": null,\n          \"text\": \"Toda tarefa precisa de título não vazio.\"\n        }\n      ],\n      \"methods\": [\n        {\n          \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n          \"emits\": [\n            \"event:TaskCreated\"\n          ],\n          \"id\": \"method:Task.create\",\n          \"name\": \"create\",\n          \"static\": true,\n          \"transition\": null\n        }\n      ],\n      \"module\": \"tasks\",\n      \"name\": \"Task\",\n      \"states\": [\n        \"pending\",\n        \"completed\"\n      ]\n    },\n    \"id\": \"method:Task.complete\",\n    \"invariants\": [],\n    \"name\": \"complete\",\n    \"static\": false,\n    \"transition\": {\n      \"from\": [\n        \"pending\"\n      ],\n      \"to\": \"completed\"\n    }\n  }\n}\n```\n\n## Obrigações de teste\n\n- `method:Task.complete` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item method:Task.complete --spec-hash eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364 --config /tmp/agentic-eval-ZK8DP3/attempt-rtLS1d/workspace/agentic.config.ts --json\n```\n",
+    "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364",
+    "configPath": "/tmp/agentic-eval-ZK8DP3/accepted-Qi3Gas/tasks/agentic.config.ts",
+    "testFile": "app/test/method-Task-complete.test.ts",
+    "criteria": [
+      {
+        "id": "conclusao",
+        "given": "uma tarefa pending",
+        "when": "concluir e tentar concluir novamente",
+        "then": "registra TaskCompleted, fica completed e rejeita repetição com TASK_ALREADY_COMPLETED"
+      }
+    ]
+  },
+  "baselineHash": "7f78ca63ed51081944ba08dc3492e448060ad9f37a00155dc6278d9d6f7c904a",
+  "execution": {
+    "transport": "finished",
+    "finalText": "{\"status\":\"done\",\"summary\":\"Implementado somente o corpo de `Task.complete` em `app/domain/task.ts` (mantendo assinatura/decorators/estrutura) para: concluir tarefa pendente, registrar `TaskCompleted` com `{ taskId }`, e rejeitar repetição com `DomainError` código `TASK_ALREADY_COMPLETED`. Adicionado `app/test/method-Task-complete.test.ts` com `covers(['method:Task.complete','criterion:0001/conclusao'], ...)` cobrindo fluxo de sucesso (status `completed` + evento) e falha na segunda conclusão. Verificação executada com o comando solicitado (paths da raiz atual e hash original) retornando `done` com I1–I5 `passed`.\"}",
+    "exitCode": 0,
+    "signal": null,
+    "sessionId": {
+      "status": "available",
+      "value": "0a29132d-d5e6-4e29-9e22-df9c3737b5ff",
+      "source": "cursor.result.session_id"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "Codex 5.3 Medium",
+      "source": "cursor.init.model"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "durationMs": 40409.189054999995,
+    "evidence": [
+      "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/stdout.log",
+      "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/stderr.log",
+      "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/process.json"
+    ],
+    "diagnostic": null
+  },
+  "reply": {
+    "status": "done",
+    "summary": "Implementado somente o corpo de `Task.complete` em `app/domain/task.ts` (mantendo assinatura/decorators/estrutura) para: concluir tarefa pendente, registrar `TaskCompleted` com `{ taskId }`, e rejeitar repetição com `DomainError` código `TASK_ALREADY_COMPLETED`. Adicionado `app/test/method-Task-complete.test.ts` com `covers(['method:Task.complete','criterion:0001/conclusao'], ...)` cobrindo fluxo de sucesso (status `completed` + evento) e falha na segunda conclusão. Verificação executada com o comando solicitado (paths da raiz atual e hash original) retornando `done` com I1–I5 `passed`."
+  },
+  "audit": {
+    "ok": true,
+    "findings": [],
+    "changedFiles": [
+      "app/domain/task.ts",
+      "app/test/method-Task-complete.test.ts"
+    ],
+    "patch": "[\n  {\n    \"path\": \"app/domain/task.ts\",\n    \"before\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"997f92078eba1ca5057b5fbc4786eaadf5df242c08209ab9be7f3a87244e4998\",\n      \"content\": \"import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\\nimport { TaskCreated, TaskCompleted } from './task.events';\\n\\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\\nexport class Task extends AggregateRoot<string> {\\n  #status: 'pending' | 'completed' = 'pending';\\n  private constructor(id: string, readonly title: string) { super(id); }\\n  get status(): 'pending' | 'completed' { return this.#status; }\\n\\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\\n  static create(id: string, title: string): Task {\\n    const normalizedTitle = title.trim(); if (normalizedTitle.length === 0) throw new DomainError('TASK_TITLE_REQUIRED', 'Task title is required'); const task = new Task(id, normalizedTitle); task.record(new TaskCreated({ taskId: id, title: normalizedTitle })); return task;\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n\\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\\n  complete(): void {\\n    return notImplemented();\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    },\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"c2ee5cf457110b255d3e4d4f7b645da114a3e8c0bd10612c4d2e4ecdd8b41851\",\n      \"content\": \"import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\\nimport { TaskCreated, TaskCompleted } from './task.events';\\n\\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\\nexport class Task extends AggregateRoot<string> {\\n  #status: 'pending' | 'completed' = 'pending';\\n  private constructor(id: string, readonly title: string) { super(id); }\\n  get status(): 'pending' | 'completed' { return this.#status; }\\n\\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\\n  static create(id: string, title: string): Task {\\n    const normalizedTitle = title.trim(); if (normalizedTitle.length === 0) throw new DomainError('TASK_TITLE_REQUIRED', 'Task title is required'); const task = new Task(id, normalizedTitle); task.record(new TaskCreated({ taskId: id, title: normalizedTitle })); return task;\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n\\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\\n  complete(): void {\\n    if (this.#status === 'completed') throw new DomainError('TASK_ALREADY_COMPLETED', 'Task is already completed'); this.#status = 'completed'; this.record(new TaskCompleted({ taskId: this.id }));\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n\\n  }\\n}\\n\"\n    }\n  },\n  {\n    \"path\": \"app/test/method-Task-complete.test.ts\",\n    \"before\": null,\n    \"after\": {\n      \"kind\": \"file\",\n      \"mode\": 33188,\n      \"hash\": \"dc5c8dc31d49cf803d1a17721c82c06ee26f242897d372cee34512dc9b369210\",\n      \"content\": \"import { expect, test } from 'bun:test';\\nimport { DomainError } from '@agentic-ddd/core';\\nimport { covers } from '@agentic-ddd/testing';\\nimport { Task } from '../domain/task';\\nimport { TaskCompleted } from '../domain/task.events';\\n\\ntest(covers(['method:Task.complete', 'criterion:0001/conclusao'], 'Task.complete conclui tarefa e bloqueia repeticao'), () => {\\n  const task = Task.create('t1', 'pagar contas');\\n  task.pullEvents();\\n  task.complete();\\n  expect(task.status).toBe('completed');\\n  const events = task.pullEvents();\\n  expect(events).toHaveLength(1);\\n  expect(events[0]).toBeInstanceOf(TaskCompleted);\\n  expect((events[0] as TaskCompleted).payload).toEqual({ taskId: 't1' });\\n  const act = () => task.complete();\\n  expect(act).toThrow(DomainError);\\n  try {\\n    act();\\n  } catch (error) {\\n    expect(error).toBeInstanceOf(DomainError);\\n    expect((error as DomainError).code).toBe('TASK_ALREADY_COMPLETED');\\n    return;\\n  }\\n  throw new Error('expected Task.complete to throw');\\n});\\n\"\n    }\n  }\n]"
+  },
+  "verification": {
+    "ok": true,
+    "findings": [],
+    "commands": [
+      {
+        "name": "verify-item",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-ZK8DP3/framework/src/cli/main.ts",
+          "verify",
+          "--item",
+          "method:Task.complete",
+          "--spec-hash",
+          "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364",
+          "--json",
+          "--config",
+          "/tmp/agentic-eval-ZK8DP3/attempt-f9WEab/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "{\n  \"item\": \"method:Task.complete\",\n  \"status\": \"done\",\n  \"gates\": [\n    {\n      \"id\": \"I1\",\n      \"name\": \"Dependências\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I2\",\n      \"name\": \"Implementação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I3\",\n      \"name\": \"Especificação\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I4\",\n      \"name\": \"Obrigações\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    },\n    {\n      \"id\": \"I5\",\n      \"name\": \"Typecheck\",\n      \"status\": \"passed\",\n      \"findings\": [],\n      \"warnings\": []\n    }\n  ]\n}\n",
+          "stderr": "I1 Dependências: passed\nI2 Implementação: passed\nI3 Especificação: passed\nI4 Obrigações: passed\nI5 Typecheck: passed\nagentic-ddd: item method:Task.complete — done\n",
+          "durationMs": 2493.42687700002,
+          "evidence": [
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/verify-item/stdout.log",
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/verify-item/stderr.log",
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/verify-item/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "executor-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-ZK8DP3/attempt-f9WEab/workspace/.executor-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\napp/test/entity-Task.test.ts:\n(pass) [covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] Task.create rejeita titulo vazio [0.11ms]\n(pass) [covers: criterion:0001/criacao, method:Task.create] Task.create normaliza titulo e registra TaskCreated [0.17ms]\n\napp/test/method-Task-complete.test.ts:\n(pass) [covers: criterion:0001/conclusao, method:Task.complete] Task.complete conclui tarefa e bloqueia repeticao [0.12ms]\n\n 3 pass\n 0 fail\n 15 expect() calls\nRan 3 tests across 2 files. [86.00ms]\n",
+          "durationMs": 112.88376199998311,
+          "evidence": [
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/executor-tests/stdout.log",
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/executor-tests/stderr.log",
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/executor-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "reference-tests",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "test",
+          "/tmp/agentic-eval-ZK8DP3/attempt-f9WEab/workspace/.eval-reference/behavior.test.ts",
+          "--reporter=junit",
+          "--reporter-outfile=/tmp/agentic-eval-ZK8DP3/attempt-f9WEab/workspace/.reference-junit.xml"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "bun test v1.4.2 (744846f84)\n",
+          "stderr": "\n.eval-reference/behavior.test.ts:\n(pass) conclui, emite e rejeita repetição [0.32ms]\n(pass) conclui, emite e rejeita repetição [0.03ms]\n\n 2 pass\n 0 fail\n 10 expect() calls\nRan 2 tests across 1 file. [62.00ms]\n",
+          "durationMs": 88.58741700000246,
+          "evidence": [
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/reference-tests/stdout.log",
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/reference-tests/stderr.log",
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/reference-tests/process.json"
+          ],
+          "diagnostic": null
+        }
+      },
+      {
+        "name": "compile-check",
+        "argv": [
+          "/home/jvtuta/.bun/bin/bun",
+          "/tmp/agentic-eval-ZK8DP3/framework/src/cli/main.ts",
+          "compile",
+          "--check",
+          "--config",
+          "/tmp/agentic-eval-ZK8DP3/attempt-f9WEab/workspace/agentic.config.ts"
+        ],
+        "result": {
+          "transport": "finished",
+          "exitCode": 0,
+          "signal": null,
+          "stdout": "agentic-ddd: arquivos gerados estão em dia\n",
+          "stderr": "",
+          "durationMs": 421.55424699999276,
+          "evidence": [
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/compile-check/stdout.log",
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/compile-check/stderr.log",
+            "/tmp/agentic-evals-17-real-20261010-CxAASz/cursor-codex-medium/implementation/cursor-codex-medium/method-Task-complete/attempt-1/verification/compile-check/process.json"
+          ],
+          "diagnostic": null
+        }
+      }
+    ],
+    "itemReport": {
+      "item": "method:Task.complete",
+      "status": "done",
+      "gates": [
+        {
+          "id": "I1",
+          "name": "Dependências",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I2",
+          "name": "Implementação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I3",
+          "name": "Especificação",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I4",
+          "name": "Obrigações",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        },
+        {
+          "id": "I5",
+          "name": "Typecheck",
+          "status": "passed",
+          "findings": [],
+          "warnings": []
+        }
+      ]
+    },
+    "executorTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio, method:Task.create] Task.create rejeita titulo vazio",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 7,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/titulo-invalido",
+            "invariant:Task/titulo-obrigatorio",
+            "method:Task.create"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/criacao, method:Task.create] Task.create normaliza titulo e registra TaskCreated",
+          "file": "app/test/entity-Task.test.ts",
+          "line": 20,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/criacao",
+            "method:Task.create"
+          ]
+        },
+        {
+          "name": "[covers: criterion:0001/conclusao, method:Task.complete] Task.complete conclui tarefa e bloqueia repeticao",
+          "file": "app/test/method-Task-complete.test.ts",
+          "line": 7,
+          "status": "passed",
+          "covers": [
+            "criterion:0001/conclusao",
+            "method:Task.complete"
+          ]
+        }
+      ]
+    },
+    "referenceTests": {
+      "exitCode": 0,
+      "cases": [
+        {
+          "name": "conclui, emite e rejeita repetição",
+          "file": ".eval-reference/behavior.test.ts",
+          "line": 4,
+          "status": "passed",
+          "covers": []
+        },
+        {
+          "name": "conclui, emite e rejeita repetição",
+          "file": ".eval-reference/behavior.test.ts",
+          "line": 4,
+          "status": "passed",
+          "covers": []
+        }
+      ]
+    }
+  },
+  "accepted": true,
+  "reason": null
+}

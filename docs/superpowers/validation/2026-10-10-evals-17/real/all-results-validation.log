@@ -1,0 +1,28 @@
+[
+  {
+    "configuration": "codex-sol-high",
+    "status": "completed",
+    "certified": true,
+    "questions": "4/5",
+    "packets": "5/5",
+    "verify": "done",
+    "invocations": 10,
+    "corrections": 0,
+    "durationMs": 496224.838632,
+    "artifactsChecked": 246,
+    "sourceUnchanged": true
+  },
+  {
+    "configuration": "cursor-codex-medium",
+    "status": "completed",
+    "certified": true,
+    "questions": "3/5",
+    "packets": "5/5",
+    "verify": "done",
+    "invocations": 10,
+    "corrections": 0,
+    "durationMs": 441626.19648299995,
+    "artifactsChecked": 236,
+    "sourceUnchanged": true
+  }
+]

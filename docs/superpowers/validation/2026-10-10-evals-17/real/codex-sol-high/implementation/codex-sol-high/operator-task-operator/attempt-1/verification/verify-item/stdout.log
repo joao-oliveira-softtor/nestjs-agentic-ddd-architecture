@@ -1,0 +1,41 @@
+{
+  "item": "operator:task-operator",
+  "status": "done",
+  "gates": [
+    {
+      "id": "I1",
+      "name": "Dependências",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I2",
+      "name": "Implementação",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I3",
+      "name": "Especificação",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I4",
+      "name": "Obrigações",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I5",
+      "name": "Typecheck",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Task.create implementado com título normalizado, rejeição TASK_TITLE_REQUIRED, estado pending e evento TaskCreated. Contagem de linhas preservada. Novo teste cobre obrigações e critérios com covers. Verificação com specHash original retornou done, código 0 e todos os gates aprovados.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "01a1261e-bf38-7211-b421-9dfd940e617d",
+    "source": "codex.thread.started.thread_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "gpt-6.1-sol",
+    "source": "codex.rollout.turn_context.model"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 199590,
+      "source": "codex.turn.completed.usage.input_tokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 183168,
+      "source": "codex.turn.completed.usage.cached_input_tokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 2814,
+      "source": "codex.turn.completed.usage.output_tokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "not_reported"
+    }
+  },
+  "durationMs": 88474.52840200001,
+  "evidence": [
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high/implementation/codex-sol-high/entity-Task/attempt-1/stdout.log",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high/implementation/codex-sol-high/entity-Task/attempt-1/stderr.log",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high/implementation/codex-sol-high/entity-Task/attempt-1/process.json",
+    "/tmp/agentic-evals-17-real-20261010-CxAASz/codex-sol-high/implementation/codex-sol-high/entity-Task/attempt-1/model-metadata.json"
+  ],
+  "diagnostic": null
+}

@@ -1,0 +1,171 @@
+Packet:
+# Identificação
+
+- ID: `usecase:complete_task`
+- Camada: application
+- Módulo: tasks
+- source: `app/application/complete-task.ts:12`
+- Estado: declared
+- specHash: `c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d`
+- Dependências: `method:Task.complete`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi concluída.",
+      "id": "event:TaskCompleted",
+      "module": "tasks",
+      "name": "TaskCompleted",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.",
+      "emits": [
+        "event:TaskCompleted"
+      ],
+      "entity": {
+        "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+        "id": "entity:Task",
+        "invariants": [
+          {
+            "id": "invariant:Task/titulo-obrigatorio",
+            "on": null,
+            "text": "Toda tarefa precisa de título não vazio."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+            "emits": [
+              "event:TaskCreated"
+            ],
+            "id": "method:Task.create",
+            "name": "create",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "tasks",
+        "name": "Task",
+        "states": [
+          "pending",
+          "completed"
+        ]
+      },
+      "id": "method:Task.complete",
+      "invariants": [],
+      "name": "complete",
+      "static": false,
+      "transition": {
+        "from": [
+          "pending"
+        ],
+        "to": "completed"
+      }
+    }
+  ],
+  "declaration": {
+    "description": "Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.",
+    "emits": [
+      "event:TaskCompleted"
+    ],
+    "id": "usecase:complete_task",
+    "inputSchema": {
+      "properties": {
+        "task_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id"
+      ],
+      "type": "object"
+    },
+    "module": "tasks",
+    "name": "complete_task",
+    "outputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "completed",
+          "type": "string"
+        },
+        "task_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "status"
+      ],
+      "type": "object"
+    },
+    "uses": [
+      "method:Task.complete"
+    ],
+    "whenNotToUse": "Para criar uma nova tarefa.",
+    "whenToUse": "Quando o usuário terminou uma tarefa."
+  }
+}
+```
+
+## Obrigações de teste
+
+- `usecase:complete_task` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item usecase:complete_task --spec-hash c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d --config /tmp/agentic-eval-XeH5vv/attempt-XUSRNp/workspace/agentic.config.ts --json
+```
+
+End packet
+Root atual: /tmp/agentic-eval-XeH5vv/attempt-mgJjH8/workspace; configuração atual: /tmp/agentic-eval-XeH5vv/attempt-mgJjH8/workspace/agentic.config.ts. Use esses paths no lugar de paths temporários do packet; conserve o specHash original c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d.
+Edite somente app/application/complete-task.ts CompleteTask.execute (somente interior do corpo, mesma quantidade de linhas) e o novo teste app/test/usecase-complete_task.test.ts. Preserve imports, contratos, decorators, outros corpos, testes existentes, configurações, propostas e gerados.
+Critérios adicionais arquivados: [{"id":"criterion:0001/persistencia-conclusao","given":"tarefa t1 persistida e um id inexistente","when":"executar complete_task","then":"salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND"}]. Cubra-os com covers do executor.
+Leia .agents/skills/agentic-ddd/SKILL.md e referências de executor pertinentes. Use só a sessão principal, sem delegação ou subagentes. Neste benchmark, este protocolo de resposta final substitui o handoff normal da skill/referência de executor. Resposta final: objeto JSON com exatamente duas propriedades, status e summary; sem propriedades adicionais. Exemplo {"status":"done","summary":"texto"}; status deve ser done, blocked ou failed, sem prosa ou cercas.

@@ -1,0 +1,83 @@
+{
+  "number": 1,
+  "handoff": {
+    "item": "entity:Task",
+    "packet": "# Identificação\n\n- ID: `entity:Task`\n- Camada: domain\n- Módulo: tasks\n- source: `app/domain/task.ts:5`\n- Estado: declared\n- specHash: `e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c`\n- Dependências: —\n\n## Especificação\n\nDeclaração, regras de construção e contratos referenciados:\n\n```json\n{\n  \"contracts\": [\n    {\n      \"description\": \"Uma tarefa foi criada.\",\n      \"id\": \"event:TaskCreated\",\n      \"module\": \"tasks\",\n      \"name\": \"TaskCreated\",\n      \"payloadSchema\": {\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"taskId\": {\n            \"type\": \"string\"\n          },\n          \"title\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"taskId\",\n          \"title\"\n        ],\n        \"type\": \"object\"\n      }\n    }\n  ],\n  \"declaration\": {\n    \"description\": \"Tarefa com título e ciclo de vida pendente ou concluído.\",\n    \"id\": \"entity:Task\",\n    \"invariants\": [\n      {\n        \"id\": \"invariant:Task/titulo-obrigatorio\",\n        \"on\": null,\n        \"text\": \"Toda tarefa precisa de título não vazio.\"\n      }\n    ],\n    \"methods\": [\n      {\n        \"description\": \"Cria uma tarefa pendente e remove espaços nas extremidades do título.\",\n        \"emits\": [\n          \"event:TaskCreated\"\n        ],\n        \"id\": \"method:Task.create\",\n        \"name\": \"create\",\n        \"static\": true,\n        \"transition\": null\n      }\n    ],\n    \"module\": \"tasks\",\n    \"name\": \"Task\",\n    \"states\": [\n      \"pending\",\n      \"completed\"\n    ]\n  }\n}\n```\n\n## Obrigações de teste\n\n- `invariant:Task/titulo-obrigatorio` — teste com `covers`.\n- `method:Task.create` — teste com `covers`.\n\n## Regras do executor\n\n- Altere só o corpo deste item e arquivos de teste.\n- Não altere decorators, declarações, propostas nem arquivos gerados.\n- Não implemente outros itens. Preserve os contratos e IDs de invariantes.\n\n## Comando de verificação\n\n```bash\nbun run agentic verify --item entity:Task --spec-hash e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c --config /tmp/agentic-eval-Z978Kw/attempt-QpiAju/workspace/agentic.config.ts --json\n```\n",
+    "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c",
+    "configPath": "/tmp/agentic-eval-Z978Kw/accepted-GYQguh/tasks/agentic.config.ts",
+    "testFile": "app/test/entity-Task.test.ts",
+    "criteria": [
+      {
+        "id": "titulo-invalido",
+        "given": "um título vazio ou com apenas espaços",
+        "when": "criar uma tarefa",
+        "then": "rejeita com TASK_TITLE_REQUIRED"
+      },
+      {
+        "id": "criacao",
+        "given": "id t1 e título com espaços nas extremidades",
+        "when": "criar a tarefa",
+        "then": "fica pending, normaliza o título e registra TaskCreated"
+      }
+    ]
+  },
+  "baselineHash": "7d53047a734423083a6fb62cade526d2163204e08ee6b1a61bc5d635991f7a4d",
+  "execution": {
+    "sessionId": {
+      "status": "available",
+      "value": "scripted-6",
+      "source": "scripted_fixture"
+    },
+    "observedModel": {
+      "status": "available",
+      "value": "scripted",
+      "source": "scripted_fixture"
+    },
+    "modelRevision": {
+      "status": "unavailable",
+      "reason": "synthetic"
+    },
+    "usage": {
+      "inputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cachedInputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "outputTokens": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      },
+      "cost": {
+        "status": "unavailable",
+        "reason": "not_reported"
+      }
+    },
+    "exitCode": 0,
+    "signal": null,
+    "durationMs": 42.77273100000093,
+    "evidence": [
+      "/tmp/evals-cycle-17-scripted-control/implementation/scripted-control/entity-Task/attempt-1/stdout.log",
+      "/tmp/evals-cycle-17-scripted-control/implementation/scripted-control/entity-Task/attempt-1/stderr.log",
+      "/tmp/evals-cycle-17-scripted-control/implementation/scripted-control/entity-Task/attempt-1/process.json"
+    ],
+    "transport": "finished",
+    "finalText": "{\"status\":\"blocked\",\"summary\":\"scripted fixture does not implement code\"}",
+    "diagnostic": null
+  },
+  "reply": {
+    "status": "blocked",
+    "summary": "scripted fixture does not implement code"
+  },
+  "audit": {
+    "ok": true,
+    "findings": [],
+    "changedFiles": [],
+    "patch": "[]"
+  },
+  "verification": null,
+  "accepted": false,
+  "reason": "declared_blocked"
+}

@@ -1,0 +1,28 @@
+import { mkdir, chmod, writeFile } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
+import { auditSubmission } from '/home/jvtuta/code/nestjs-agentic-ddd-architecture/scripts/evals/audit';
+const root=process.argv[2];
+const results=[];
+for(const number of [1,2]){
+  const captured=await Bun.file(join(root,`runs/cursor-codex-medium-r1/implementation/cursor-codex-medium/entity-Task/attempt-${number}/attempt.json`)).json();
+  const patches=JSON.parse(captured.audit.patch);
+  const folder=join(root,'offline-line-count-reproduction',`attempt-${number}`);
+  const baseline=join(folder,'baseline'),submission=join(folder,'submission');
+  await mkdir(baseline,{recursive:true});await mkdir(submission,{recursive:true});
+  for(const patch of patches){
+    if(!['app/domain/task.ts','app/test','app/test/entity-Task.test.ts'].includes(patch.path))throw Error('Unexpected captured path');
+    for(const [tree,entry] of [[baseline,patch.before],[submission,patch.after]] as const){
+      if(!entry)continue;
+      const path=join(tree,patch.path);
+      if(entry.kind==='directory')await mkdir(path,{recursive:true});
+      else if(entry.kind==='file'){await mkdir(dirname(path),{recursive:true});await writeFile(path,entry.content);}
+      else throw Error('Unexpected captured file type');
+      await chmod(path,entry.mode&0o777);
+    }
+  }
+  const replay=await auditSubmission(baseline,submission,'entity:Task');
+  if(replay.ok!==captured.audit.ok||JSON.stringify(replay.findings)!==JSON.stringify(captured.audit.findings))throw Error('Captured boundary audit did not reproduce');
+  results.push({capturedRun:'cursor-codex-medium-r1',attempt:number,recordedAccepted:captured.accepted,recordedAudit:captured.audit.ok,replayedAudit:replay.ok,findings:replay.findings});
+}
+await Bun.write(join(root,'offline-line-count-reproduction/results.json'),JSON.stringify({schemaVersion:1,results},null,2)+'\n');
+console.log(JSON.stringify(results,null,2));
