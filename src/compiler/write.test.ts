@@ -268,6 +268,29 @@ describe('writeOutputs / checkOutputs', () => {
     );
   });
 
+  test('check acusa link de espelho órfão que a escrita removeria', async () => {
+    await writeOutputs(config, rendered);
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+    const skills = join(out, '.claude/skills');
+    // pendente sob .agents/skills: a escrita remove, então o check acusa
+    await symlink('../../.agents/skills/sumiu', join(skills, 'sumiu'));
+    // pendente fora de .agents/skills (ex.: link autoral para skills/): não é órfão
+    await symlink('../../skills/agentic-ddd', join(skills, 'agentic-ddd'));
+    await symlink('../../fora/nao-existe', join(skills, 'fora'));
+    // skill do usuário existente: não é órfão
+    const mine = join(out, '.agents/skills/minha');
+    await mkdir(mine, { recursive: true });
+    await writeFile(join(mine, 'SKILL.md'), '---\nname: minha\n---\n');
+    await symlink('../../.agents/skills/minha', join(skills, 'minha'));
+
+    expect(await checkOutputs(config, rendered)).toEqual([
+      { path: '.claude/skills/sumiu', reason: 'extra' },
+    ]);
+
+    await writeOutputs(config, rendered);
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+  });
+
   test('skill do usuário com o mesmo nome não é sobrescrita e vira conflito', async () => {
     const dir = join(out, '.agents/skills/shop-dev');
     await mkdir(dir, { recursive: true });
