@@ -361,6 +361,22 @@ describe('validate', () => {
     expect(errors[0]).toContain('transition precisa de from (não vazio) e to');
   });
 
+  test('transition com estado vazio em from é rejeitado', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'Porta.', states: ['closed', 'open'] })
+      class Door extends AggregateRoot<string> {
+        @AgentMethod({
+          description: 'Abre.',
+          transition: { from: [''], to: 'open' },
+        })
+        open(): void {}
+      }
+      void Door;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain('transition não aceita estado vazio');
+  });
+
   test('@Operator com useCases vazio', () => {
     const errors = errorsOf(() => {
       @Operator({

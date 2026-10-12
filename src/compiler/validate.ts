@@ -74,6 +74,11 @@ export function validate(
           `${method.id}: transition precisa de from (não vazio) e to`,
           method.source,
         );
+      } else if (method.transition.from.some((state) => state.trim() === '')) {
+        err(
+          `${method.id}: transition não aceita estado vazio em from`,
+          method.source,
+        );
       }
       if (entity.states.length === 0) continue;
       for (const state of [...method.transition.from, method.transition.to]) {
