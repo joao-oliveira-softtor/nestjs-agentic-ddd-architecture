@@ -2,7 +2,20 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseJUnit, runTests, unescapeXml } from './test-run';
+import { isEmptySuite, parseJUnit, runTests, unescapeXml } from './test-run';
+
+// Empty-suite phrases observed on Bun 1.4.2+744846f84 (`bun --revision`).
+// These are synthetic; src/cli/coordination.test.ts and
+// test/skills-example.test.ts run the real Bun against a project with no tests.
+const NO_FILES_LINE =
+  'error: 0 test files matching **{.test,.spec,_test_,_spec_}.{js,ts,jsx,tsx} in --cwd="/abs/path"';
+const CASE = {
+  name: '[covers: method:A.x] passa',
+  file: 'a.test.ts',
+  line: 1,
+  status: 'passed' as const,
+  covers: ['method:A.x'],
+};
 
 const XML = `<?xml version="1.0" encoding="UTF-8"?>
 <testsuites name="bun test" tests="3" failures="1" skipped="1">
@@ -64,6 +77,95 @@ describe('parseJUnit', () => {
 
   test('XML vazio dá lista vazia', () => {
     expect(parseJUnit('')).toEqual([]);
+  });
+});
+
+describe('isEmptySuite', () => {
+  test('`No tests found!` é suíte vazia', () => {
+    expect(isEmptySuite({ stderr: 'No tests found!\n', cases: [] })).toBe(true);
+  });
+
+  test('`Ran 0 tests across 1 file.` (singular) é suíte vazia', () => {
+    expect(
+      isEmptySuite({
+        stderr: 'Ran 0 tests across 1 file.\n',
+        cases: [],
+      }),
+    ).toBe(true);
+  });
+
+  test('`Ran 0 tests across 3 files.` (plural) é suíte vazia', () => {
+    expect(
+      isEmptySuite({
+        stderr: 'Ran 0 tests across 3 files.\n',
+        cases: [],
+      }),
+    ).toBe(true);
+  });
+
+  test('`error: 0 test files matching …` (exit 1, sem arquivos de teste) é suíte vazia', () => {
+    expect(
+      isEmptySuite({
+        stderr: `${NO_FILES_LINE}\n`,
+        cases: [],
+      }),
+    ).toBe(true);
+  });
+
+  test('filtro de caminho sem match (`Test filter … had no matches`) não é suíte vazia', () => {
+    expect(
+      isEmptySuite({
+        stderr: 'Test filter "./x" had no matches in --cwd="/abs/path"\n',
+        cases: [],
+      }),
+    ).toBe(false);
+  });
+
+  test('frase vazia acompanhada de `# Unhandled error between tests` não é suíte vazia', () => {
+    for (const phrase of [
+      'No tests found!',
+      'Ran 0 tests across 1 file.',
+      NO_FILES_LINE,
+    ]) {
+      expect(
+        isEmptySuite({
+          stderr: `# Unhandled error between tests\n${phrase}\n`,
+          cases: [],
+        }),
+      ).toBe(false);
+    }
+  });
+
+  test('erro de import (`Cannot find module` + `Ran 1 test`) não é suíte vazia', () => {
+    expect(
+      isEmptySuite({
+        stderr: [
+          '# Unhandled error between tests',
+          'error: Cannot find module "./nao-existe" from "/abs/path/a.test.ts"',
+          '',
+          'Ran 1 test across 1 file.',
+        ].join('\n'),
+        cases: [],
+      }),
+    ).toBe(false);
+  });
+
+  test('`cases.length > 0` nunca é suíte vazia, mesmo com frase vazia no stderr', () => {
+    expect(
+      isEmptySuite({
+        stderr: 'Ran 0 tests across 1 file.\n',
+        cases: [CASE],
+      }),
+    ).toBe(false);
+  });
+
+  test('frase vazia precisa começar a linha (não casa no meio de texto)', () => {
+    expect(
+      isEmptySuite({
+        stderr: 'algo qualquer: No tests found!\n',
+        cases: [],
+      }),
+    ).toBe(false);
   });
 });
 

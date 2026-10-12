@@ -72,6 +72,26 @@ export function parseJUnit(xml: string): TestCaseResult[] {
   return cases;
 }
 
+const UNHANDLED_ERROR = /(?:^|\n)# Unhandled error between tests\b/;
+// Bun 1.4.2+744846f84 prints `error: 0 test files matching` when no test file
+// exists; other builds print `Ran 0 tests across N file(s).` or `No tests found!`.
+const EMPTY_SUITE_PHRASES: readonly RegExp[] = [
+  /(?:^|\n)No tests found!/,
+  /(?:^|\n)Ran 0 tests across \d+ files?\./,
+  /(?:^|\n)error: 0 test files matching /,
+];
+
+export function isEmptySuite(run: {
+  readonly stderr: string;
+  readonly cases: readonly TestCaseResult[];
+}): boolean {
+  return (
+    run.cases.length === 0 &&
+    !UNHANDLED_ERROR.test(run.stderr) &&
+    EMPTY_SUITE_PHRASES.some((phrase) => phrase.test(run.stderr))
+  );
+}
+
 export async function runTests(
   command: readonly string[],
   cwd: string,
@@ -98,13 +118,9 @@ export async function runTests(
       /<testsuites?\b/.test(xml) && /<\/testsuites?>\s*$/.test(xml.trim());
     // Bun omits import/setup errors from JUnit, even when other tests pass.
     const incomplete =
-      /(?:^|\n)# Unhandled error between tests\b/.test(stderr) ||
+      UNHANDLED_ERROR.test(stderr) ||
       (exitCode !== 0 && !cases.some((c) => c.status === 'failed'));
-    const emptySuite =
-      cases.length === 0 &&
-      !/(?:^|\n)# Unhandled error between tests\b/.test(stderr) &&
-      (/(?:^|\n)No tests found!/.test(stderr) ||
-        /(?:^|\n)Ran 0 tests across \d+ files\./.test(stderr));
+    const emptySuite = isEmptySuite({ stderr, cases });
     return {
       exitCode,
       cases,
