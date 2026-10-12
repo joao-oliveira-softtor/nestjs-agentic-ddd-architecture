@@ -408,6 +408,7 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 ### Decisão para a Fase 3 (usuário, 2026-10-12)
 
 - Risco residual da forja do resumo do Bun: adotar o `--preload` que neutraliza `process.exit` (o resumo final sempre é impresso) e exigir esse resumo com contagem igual à do JUnit e à do oráculo. Deixa de ser opcional no brief da Fase 3.
+- **F4, `cancelled` (decidido na implementação):** `verdictOf` adota a semântica do agregador, então um caso cancelado no meio da execução vira `infra_error` também no runner (antes ficava `not_run`). Efeito: os agregados publicados não mudam (o agregador já fazia assim); em `classifyRunStatus`, a execução só muda quando não há motivo de parada (vira `infra_error` em vez de `completed`), porque com motivo vale o motivo; em `report.ts`, esses casos saem de "não executados" e entram em "infraestrutura". Para comparar configurações (por exemplo, uma futura com Haiku), separe pelo campo `reason`: interrupção traz o motivo de parada (`cancelled`, `budget_exhausted`…), falha de infraestrutura traz o diagnóstico do adapter.
 
 ### D2 — O código avaliado pode adulterar o `expect` no mesmo processo (achado na Fase 3, 2026-10-12)
 

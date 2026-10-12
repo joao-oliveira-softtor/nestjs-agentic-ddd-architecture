@@ -5,6 +5,12 @@ import { join } from 'node:path';
 import { buildSkillContext, evaluateSkills } from '../scripts/evals/skills';
 import { createScriptedAdapter } from '../scripts/evals/adapters/scripted';
 import { loadDataset } from '../scripts/evals/dataset';
+import {
+  emptyUsage,
+  unavailable,
+  type AdapterResult,
+  type EvalAdapter,
+} from '../scripts/evals/contracts';
 import { evalManifest, frozenSource } from './helpers/evals';
 let fixture: Awaited<ReturnType<typeof frozenSource>>;
 let out: string;
@@ -88,6 +94,55 @@ test('wrong, malformed, timeout, infrastructure remain distinct and do not stop 
     'timeout',
     'infra_error',
     'correct',
+  ]);
+});
+// The bundled adapters already turn a non-zero exit into infra_error; an
+// adapter that reports it as finished must not get its answer judged.
+test('right answers from a non-zero exit or a cancelled run are infrastructure failures, as in the aggregate', async () => {
+  const directory = join(out, 'nonzero-exit');
+  await mkdir(directory);
+  const dataset = await loadDataset(
+    join(fixture.source.snapshotRoot, 'evals/skills/orders.yaml'),
+  );
+  const outcomes: Pick<AdapterResult, 'transport' | 'exitCode'>[] = [
+    { transport: 'finished', exitCode: 1 },
+    { transport: 'cancelled', exitCode: null },
+  ];
+  let index = 0;
+  const adapter: EvalAdapter = {
+    probe: async () => ({
+      id: 'scripted',
+      version: 'raw',
+      executableSha256: '',
+    }),
+    run: async () => {
+      const outcome = outcomes[index] ?? {
+        transport: 'infra_error',
+        exitCode: null,
+      };
+      return {
+        ...outcome,
+        finalText: JSON.stringify(dataset[index++]!.expect),
+        signal: null,
+        sessionId: unavailable(),
+        observedModel: unavailable(),
+        modelRevision: unavailable(),
+        usage: emptyUsage(),
+        durationMs: 1,
+        evidence: [],
+        diagnostic: null,
+      };
+    },
+  };
+  const result = await evaluateSkills(
+    evalManifest,
+    fixture.source,
+    new Map([['scripted', adapter]]),
+    { outDir: directory, real: false, signal: new AbortController().signal },
+  );
+  expect(result.slice(0, 2).map((c) => [c.verdict, c.answer])).toEqual([
+    ['infra_error', null],
+    ['infra_error', null],
   ]);
 });
 test('bundle hashes independent of temporary paths; dangerous context roots rejected', async () => {

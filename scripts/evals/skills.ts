@@ -18,7 +18,7 @@ import type {
   RunOptions,
 } from './contracts';
 import { loadDataset } from './dataset';
-import { judge, parseAnswer } from './judge';
+import { parseAnswer, verdictOf } from './judge';
 import {
   createAttemptWorkspace,
   disposeWorkspace,
@@ -218,23 +218,19 @@ export async function evaluateSkills(
             { signal: options.control?.signal ?? options.signal },
           );
           result.execution = execution;
-          if (execution.transport === 'timeout') {
-            result.verdict = 'timeout';
-            result.reason = execution.diagnostic;
-          } else if (execution.transport === 'cancelled') {
+          result.verdict = verdictOf(execution, entry.expect);
+          if (result.verdict === 'correct' || result.verdict === 'incorrect')
+            result.answer = parseAnswer(execution.finalText ?? '');
+          else if (result.verdict === 'malformed')
+            result.reason = 'invalid_answer_json';
+          else if (execution.transport === 'cancelled')
             result.reason = options.control?.stopReason() ?? 'cancelled';
-          } else if (execution.transport === 'infra_error') {
-            result.verdict = 'infra_error';
-            result.reason = execution.diagnostic;
-          } else {
-            try {
-              result.answer = parseAnswer(execution.finalText ?? '');
-              result.verdict = judge(entry.expect, result.answer);
-            } catch {
-              result.verdict = 'malformed';
-              result.reason = 'invalid_answer_json';
-            }
-          }
+          else
+            result.reason =
+              execution.diagnostic ??
+              (execution.transport === 'finished'
+                ? `exit_code_${execution.exitCode}`
+                : null);
         } catch (error) {
           result.verdict = 'infra_error';
           result.reason = String(error);
