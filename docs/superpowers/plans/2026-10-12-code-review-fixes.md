@@ -392,3 +392,12 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 - **Dividir fase:** quando o diff passar de ~400 linhas ou misturar achados. Crie N.a/N.b, cada uma com o seu PR, e registre aqui.
 - **Pular ou adiar:** só com aprovação do usuário. Registre o motivo na tabela de status.
 - **Descoberta nova:** não entra na fase corrente. Vira item no fim deste arquivo e é levada ao usuário.
+
+## Descobertas novas
+
+### D1 — Job paralelo de CI para `test/evals-*` (aprovado como PR separado, 2026-10-12)
+
+- **Origem:** medições da Fase 2. Na suíte completa local (985 s depois da F2), `test/evals-run.test.ts` leva ~694 s e `test/evals-implementation.test.ts` ~129 s. A F2 só tira ~4–7 min.
+- **Proposta:** dividir o job `ci` em dois jobs paralelos: (1) `bun test` sem `test/evals-*` + `build`, `test:package`, `compile --check`, `skills:install --check` e o passo `verify 0001`; (2) só `test/evals-*`, com o probe do bubblewrap. Nenhum teste pode deixar de rodar: compare a lista de testcases dos dois jobs somados com a da suíte completa.
+- **Critério:** CI verde, com tempo total menor que o do PR da Fase 2. Sem perda de cobertura.
+- **Quando:** PR próprio, depois do merge da Fase 2 e antes da Fase 3, ou em paralelo a ela, se o usuário preferir.
