@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const insideVerify = process.env.AGENTIC_DDD_VERIFY === '1';
+// Same project, nested collection limited to the domain tests; CI runs the
+// root-scoped `agentic verify 0001` as its own step.
+const ORDERS = ['--config', 'test/fixtures/orders-verify/agentic.config.ts'];
 
 function run(...args: string[]) {
   const result = Bun.spawnSync(['bun', 'src/cli/main.ts', ...args], {
@@ -64,7 +67,7 @@ describe('agentic-ddd verify', () => {
   test.skipIf(insideVerify)(
     'verify 0001 do exemplo retorna done',
     () => {
-      const result = run('verify', '0001');
+      const result = run('verify', '0001', ...ORDERS);
       const report = JSON.parse(result.stdout) as {
         status: string;
         gates: { id: string; status: string; findings: unknown[] }[];
@@ -80,7 +83,7 @@ describe('agentic-ddd verify', () => {
   test.skipIf(insideVerify)(
     'verify 0002 do exemplo retorna needs-human por causa do critério manual',
     () => {
-      const result = run('verify', '0002');
+      const result = run('verify', '0002', ...ORDERS);
       const report = JSON.parse(result.stdout) as {
         status: string;
         gates: {
