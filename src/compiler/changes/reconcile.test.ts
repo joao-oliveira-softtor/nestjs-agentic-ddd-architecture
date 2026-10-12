@@ -30,11 +30,24 @@ function proposal(
     motivo?: string;
     archived?: boolean;
     applied?: boolean;
+    covers?: string[];
   } = {},
 ): Proposal {
   const id = options.id ?? '0001';
   const slug = 'estado-inicial';
   let raw = renderDraft({ id, slug, delta: options.delta ?? allAdded });
+  if (options.covers)
+    raw = raw.replace(
+      'acceptance: []',
+      [
+        'acceptance:',
+        '  - id: criterio',
+        `    covers: ${JSON.stringify(options.covers)}`,
+        '    given: um estado',
+        '    when: uma ação',
+        '    then: um resultado',
+      ].join('\n'),
+    );
   if (options.motivo !== undefined)
     raw = raw.replace(/<!--[\s\S]*?-->/, options.motivo);
   if (options.applied) raw = markApplied(raw);
@@ -216,6 +229,49 @@ describe('reconcile', () => {
         (e) => e.message,
       ),
     ).toEqual(['proposta com status applied fora de archive']);
+  });
+
+  describe('covers dos critérios de aceite da proposta aberta', () => {
+    const messages = (plan: ReturnType<typeof reconcile>) =>
+      plan.errors.map((e) => e.message);
+
+    test('ID que não está na IR nem em delta.added é erro', () => {
+      const open = proposal({
+        motivo: 'Base.',
+        covers: ['usecase:fantasma'],
+      });
+      const plan = reconcile(input(null, [open]));
+      expect(messages(plan)).toEqual([
+        'critério criterio: covers cita usecase:fantasma, que não está na IR nem em delta.added',
+      ]);
+      expect(plan.errors[0]?.source).toBe(open.path);
+      expect(plan.apply).toBeNull();
+    });
+
+    test('ID da IR ou de delta.added (proposal-first) é aceito', () => {
+      const nova = 'invariant:Product/nova-regra';
+      const delta: Delta = { ...allAdded, added: [...allAdded.added, nova] };
+      const open = proposal({
+        motivo: 'Base.',
+        delta,
+        covers: ['invariant:Product/preco-positivo', nova],
+      });
+      expect(messages(reconcile(input(null, [open])))).toEqual([]);
+    });
+
+    test('proposta arquivada não é validada contra a IR atual', () => {
+      const archived = proposal({
+        motivo: 'Base.',
+        archived: true,
+        applied: true,
+        covers: ['usecase:fantasma'],
+      });
+      expect(
+        messages(reconcile(input(null, [archived]))).some((m) =>
+          m.includes('covers'),
+        ),
+      ).toBe(false);
+    });
   });
 
   test('status não reescrevível vira erro de reconciliação em vez de exceção', () => {
