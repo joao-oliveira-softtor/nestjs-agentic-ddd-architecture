@@ -1,4 +1,5 @@
 import type { Registry } from '@agentic-ddd/decorators';
+import { limitsError } from '../contracts/limits';
 import { sourceOf, type CompileError, type IR, type IRMethod } from './ir';
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -144,6 +145,9 @@ export function validate(
     );
     if (operator.useCases.length === 0)
       err(`${operator.id}: useCases não pode ser vazio`, operator.source);
+    const limitsProblem = limitsError(operator.limits);
+    if (limitsProblem !== null)
+      err(`${operator.id}: limits inválidos (${limitsProblem})`, operator.source);
     for (const approval of operator.requiresApproval) {
       if (!operator.useCases.includes(approval)) {
         err(

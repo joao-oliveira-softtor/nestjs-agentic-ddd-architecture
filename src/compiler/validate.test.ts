@@ -417,6 +417,38 @@ describe('validate', () => {
     );
   });
 
+  test('operator com limits inválidos é rejeitado na compilação', () => {
+    const invalid = [
+      { maxSteps: 0 },
+      { maxSteps: 1.5 },
+      { timeoutMs: 0 },
+      { timeoutMs: Number.POSITIVE_INFINITY },
+    ];
+    for (const limits of invalid) {
+      const errors = errorsOf(() => {
+        @AgentUseCase({
+          name: 'do_it',
+          description: 'Faz.',
+          whenToUse: 'Sempre.',
+          ...io,
+          uses: [],
+        })
+        class DoIt {}
+        @Operator({
+          name: 'op',
+          description: 'Op.',
+          instructions: 'Op.',
+          useCases: [DoIt],
+          limits,
+        })
+        class Op {}
+        void Op;
+      });
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toContain('operator:op: limits inválidos');
+    }
+  });
+
   test('método estático público sem @AgentMethod', () => {
     const errors = errorsOf(() => {
       @AgentEntity({ description: 'Conta.' })
