@@ -55,14 +55,21 @@ export function resolveConfig(
       'agentic.config.ts: modules precisa listar ao menos um módulo',
     );
   }
+  const names = new Set<string>();
   for (const module of config.modules) {
     if (!MODULE_NAME.test(module.name))
       throw new Error(
         `agentic.config.ts: o nome do módulo "${module.name}" deve ser kebab-case`,
       );
+    if (names.has(module.name))
+      throw new Error(
+        `agentic.config.ts: o nome do módulo "${module.name}" está repetido`,
+      );
+    names.add(module.name);
   }
   const root = resolve(configDir, config.root ?? '.');
   const modulePaths = new Map<ModuleConfig, string>();
+  const owners = new Map<string, string>();
   for (const module of config.modules) {
     const fromRoot = relative(root, resolve(root, module.path));
     modulePaths.set(module, toPosix(fromRoot));
@@ -74,6 +81,13 @@ export function resolveConfig(
       throw new Error(
         `agentic.config.ts: o módulo "${module.name}" não pode apontar para fora da raiz do projeto`,
       );
+    const posix = toPosix(fromRoot);
+    const owner = owners.get(posix);
+    if (owner !== undefined)
+      throw new Error(
+        `agentic.config.ts: os módulos "${owner}" e "${module.name}" apontam para o mesmo caminho "${posix}"`,
+      );
+    owners.set(posix, module.name);
   }
   return {
     root,
