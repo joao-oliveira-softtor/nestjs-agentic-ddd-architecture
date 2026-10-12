@@ -129,9 +129,14 @@ bun run agentic verify 0001        # esperado: done
 
 Já existe um mecanismo de escopo: `runTests` define `AGENTIC_DDD_VERIFY=1` (`VERIFY_ENV`) e os `test/evals-*.test.ts` usam `skipIf`. `test/evals-verification-scope.test.ts` fiscaliza isso. O novo bloco tem de conviver com esse mecanismo, não duplicá-lo. Ajuste o teste de escopo só se ele passar a ser redundante, e justifique.
 
-**Só os `test/evals-*` têm `skipIf`.** `test/package*.test.ts`, `test/skills-install.test.ts` e `test/skills-example.test.ts` rodam aninhados em cada verify, e o verify ainda roda typecheck e lint (`src/compiler/verify/index.ts:59-66`). Excluir só os evals mantém quase todo o custo. Mantém também o acoplamento que fez a F1 derrubar o G5 do domínio. **Escopo-alvo:** `./src` + `./examples/orders`, ou só `./examples/orders`, como já faz `test/evals-verification-scope.test.ts`. Justifique arquivo a arquivo o que ficar de `test/`.
+**Só os `test/evals-*` têm `skipIf`.** `test/package*.test.ts`, `test/skills-install.test.ts` e `test/skills-example.test.ts` rodam aninhados em cada verify, e o verify ainda roda typecheck e lint (`src/compiler/verify/index.ts:59-66`). **Escopo-alvo (pedido do usuário):** framework + orders, ou seja, **toda a suíte, exceto `test/evals-*`** (`./src`, `./examples/orders` e cada `test/*.test.ts` que não seja `evals-*`, listados explicitamente). O G5 reprova quando a suíte do escopo falha. Por isso **não** retire do escopo `test/architecture.test.ts` (regra "`src/core` só importa `zod`"), `test/app.test.ts` nem os testes de pacote e de skills: sem eles, um change poderia dar `done` com a arquitetura quebrada. Esses testes não têm `covers`, e a comparação de `covers` não detectaria a perda. Um escopo mais estreito (ex.: só `./src` + `./examples/orders`) reduziria mais o custo, mas enfraquece o `done`. Só com decisão explícita do usuário, registrada no PR.
 
 **Cuidado:** um filtro de caminho que não casa com nada produz `Test filter "…" had no matches` (exit 1), que pela F1 é erro, não suíte vazia. Todo caminho do escopo precisa existir.
+
+**Decisão do usuário (2026-10-12): opção C + passo no CI.**
+1. `agentic.config.ts` ganha `verify.test` = `./src`, `./examples/orders` e cada `test/*.test.ts` que não seja `evals-*`, numa lista explícita. Um teste em `test/evals-verification-scope.test.ts` exige que a lista seja exatamente essa, para que um arquivo novo em `test/` não saia do `done` em silêncio.
+2. `src/cli/verify.test.ts` roda `verify 0001`/`0002` com `--config test/fixtures/orders-verify/agentic.config.ts`, uma fixture de config sobre o projeto real (`root: ../../..`), com o verify aninhado restrito a `./examples/orders`. É dessa troca que vem o ganho de tempo, já que os evals já se pulavam via `AGENTIC_DDD_VERIFY`.
+3. `.github/workflows/ci.yml` ganha o passo `bun run agentic verify 0001`, exigindo `status == done` (checado com `bun -e`, sem depender de `jq`). Ele preserva a prova de ponta a ponta do exemplo com o escopo da raiz.
 
 ### Tarefas
 1. **Medir antes**, no worktree limpo, já com F1:
@@ -144,11 +149,13 @@ Já existe um mecanismo de escopo: `runTests` define `AGENTIC_DDD_VERIFY=1` (`VE
    ```bash
    AGENTIC_DDD_VERIFY=1 bun test --reporter=junit --reporter-outfile=$SCRATCH/f2-before-nested.xml
    bun $SCRATCH/extract-covers.ts $SCRATCH/f2-before-nested.xml | sort -u > $SCRATCH/covers-before.txt
+   bun $SCRATCH/extract-cases.ts $SCRATCH/f2-before-nested.xml | sort > $SCRATCH/cases-before.txt   # file + name dos casos não pulados
    ```
 2. Adicione em `agentic.config.ts` um bloco `verify: { test: ['bun','test', …escopo-alvo] }`.
 3. Faça `verify.test.ts` usar esse escopo, que já vem do config, ou uma fixture. Não mude asserções de status.
 4. **Medir depois** com os mesmos comandos. No passo dos `covers`, use o novo comando do config (`AGENTIC_DDD_VERIFY=1 bun test <escopo> --reporter=junit …`) e grave em `covers-after.txt`. Para provar que não houve perda de cobertura:
    - `covers-before.txt` e `covers-after.txt` são **idênticos**, e é esse conjunto que G4/G5 enxergam em `verify 0001`/`0002`;
+   - a lista de testcases **não pulados** (`status !== 'skipped'`, `file` + `name`) do JUnit aninhado é **idêntica** antes e depois (`$SCRATCH/cases-before.txt` vs `cases-after.txt`). Esse é o check que pega a perda de testes sem `covers`, como o de arquitetura;
    - o diff das listas de testcases da suíte completa (`bun test`) é vazio. O escopo restringe só o verify aninhado, não o CI.
 5. Registre as medições no corpo do PR. O tempo real do CI só se mede depois do push, já com aprovação.
 
@@ -157,6 +164,7 @@ Já existe um mecanismo de escopo: `runTests` define `AGENTIC_DDD_VERIFY=1` (`VE
 bun test src/cli/verify.test.ts test/evals-verification-scope.test.ts src/compiler/config*.test.ts
 bun run agentic verify 0001 && bun run agentic verify 0002   # done / needs-human
 diff $SCRATCH/covers-before.txt $SCRATCH/covers-after.txt     # vazio
+diff $SCRATCH/cases-before.txt $SCRATCH/cases-after.txt       # vazio (testes não pulados)
 ```
 + o gate mínimo.
 
@@ -371,8 +379,8 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 
 | Fase | Branch | Estado | PR |
 |---|---|---|---|
-| 1 — F1 | `fix/verify-empty-suite` | commitado; aguarda aprovação de push/PR (bun test 471/471; verify 0001 done) | — |
-| 2 — F2 | `ci/verify-test-scope` | pendente | — |
+| 1 — F1 | `fix/verify-empty-suite` | mergeada (`4982b4b`); o commit `b8ebe3d` do plano entrou depois do merge e foi reaplicado na Fase 2 | #23 |
+| 2 — F2 | `ci/verify-test-scope` | em andamento | — |
 | 3 — F3+F4 | `fix/evals-evidence-integrity` | pendente | — |
 | 4 — F5 | `fix/compiler-validation-hardening` | pendente | — |
 | 5 — F6 | `fix/core-value-object-equality` | pendente | — |
@@ -384,3 +392,12 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 - **Dividir fase:** quando o diff passar de ~400 linhas ou misturar achados. Crie N.a/N.b, cada uma com o seu PR, e registre aqui.
 - **Pular ou adiar:** só com aprovação do usuário. Registre o motivo na tabela de status.
 - **Descoberta nova:** não entra na fase corrente. Vira item no fim deste arquivo e é levada ao usuário.
+
+## Descobertas novas
+
+### D1 — Job paralelo de CI para `test/evals-*` (aprovado como PR separado, 2026-10-12)
+
+- **Origem:** medições da Fase 2. Na suíte completa local (985 s depois da F2), `test/evals-run.test.ts` leva ~694 s e `test/evals-implementation.test.ts` ~129 s. A F2 só tira ~4–7 min.
+- **Proposta:** dividir o job `ci` em dois jobs paralelos: (1) `bun test` sem `test/evals-*` + `build`, `test:package`, `compile --check`, `skills:install --check` e o passo `verify 0001`; (2) só `test/evals-*`, com o probe do bubblewrap. Nenhum teste pode deixar de rodar: compare a lista de testcases dos dois jobs somados com a da suíte completa.
+- **Critério:** CI verde, com tempo total menor que o do PR da Fase 2. Sem perda de cobertura.
+- **Quando:** PR próprio, depois do merge da Fase 2 e antes da Fase 3, ou em paralelo a ela, se o usuário preferir.

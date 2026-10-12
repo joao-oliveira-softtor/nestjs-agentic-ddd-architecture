@@ -2,4 +2,23 @@ import { defineConfig } from '@agentic-ddd/compiler';
 
 export default defineConfig({
   modules: [{ name: 'orders', path: 'examples/orders' }],
+  verify: {
+    // Framework + orders. test/evals-* runs only in the outer suite; the
+    // scope test in test/evals-verification-scope.test.ts keeps this list
+    // in sync with test/.
+    test: [
+      'bun',
+      'test',
+      './src',
+      './examples/orders',
+      './test/app.test.ts',
+      './test/architecture.test.ts',
+      './test/evals.test.ts',
+      './test/package-audit.test.ts',
+      './test/package-transform.test.ts',
+      './test/package.test.ts',
+      './test/skills-example.test.ts',
+      './test/skills-install.test.ts',
+    ],
+  },
 });
