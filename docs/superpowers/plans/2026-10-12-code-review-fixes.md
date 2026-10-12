@@ -129,7 +129,7 @@ bun run agentic verify 0001        # esperado: done
 
 Já existe um mecanismo de escopo: `runTests` define `AGENTIC_DDD_VERIFY=1` (`VERIFY_ENV`) e os `test/evals-*.test.ts` usam `skipIf`. `test/evals-verification-scope.test.ts` fiscaliza isso. O novo bloco tem de conviver com esse mecanismo, não duplicá-lo. Ajuste o teste de escopo só se ele passar a ser redundante, e justifique.
 
-**Só os `test/evals-*` têm `skipIf`.** `test/package*.test.ts`, `test/skills-install.test.ts` e `test/skills-example.test.ts` rodam aninhados em cada verify, e o verify ainda roda typecheck e lint (`src/compiler/verify/index.ts:59-66`). Excluir só os evals mantém quase todo o custo. Mantém também o acoplamento que fez a F1 derrubar o G5 do domínio. **Escopo-alvo:** `./src` + `./examples/orders`, ou só `./examples/orders`, como já faz `test/evals-verification-scope.test.ts`. Justifique arquivo a arquivo o que ficar de `test/`.
+**Só os `test/evals-*` têm `skipIf`.** `test/package*.test.ts`, `test/skills-install.test.ts` e `test/skills-example.test.ts` rodam aninhados em cada verify, e o verify ainda roda typecheck e lint (`src/compiler/verify/index.ts:59-66`). **Escopo-alvo (pedido do usuário):** framework + orders, ou seja, **toda a suíte, exceto `test/evals-*`** (`./src`, `./examples/orders` e cada `test/*.test.ts` que não seja `evals-*`, listados explicitamente). O G5 reprova quando a suíte do escopo falha. Por isso **não** retire do escopo `test/architecture.test.ts` (regra "`src/core` só importa `zod`"), `test/app.test.ts` nem os testes de pacote e de skills: sem eles, um change poderia dar `done` com a arquitetura quebrada. Esses testes não têm `covers`, e a comparação de `covers` não detectaria a perda. Um escopo mais estreito (ex.: só `./src` + `./examples/orders`) reduziria mais o custo, mas enfraquece o `done`. Só com decisão explícita do usuário, registrada no PR.
 
 **Cuidado:** um filtro de caminho que não casa com nada produz `Test filter "…" had no matches` (exit 1), que pela F1 é erro, não suíte vazia. Todo caminho do escopo precisa existir.
 
@@ -144,11 +144,13 @@ Já existe um mecanismo de escopo: `runTests` define `AGENTIC_DDD_VERIFY=1` (`VE
    ```bash
    AGENTIC_DDD_VERIFY=1 bun test --reporter=junit --reporter-outfile=$SCRATCH/f2-before-nested.xml
    bun $SCRATCH/extract-covers.ts $SCRATCH/f2-before-nested.xml | sort -u > $SCRATCH/covers-before.txt
+   bun $SCRATCH/extract-cases.ts $SCRATCH/f2-before-nested.xml | sort > $SCRATCH/cases-before.txt   # file + name dos casos não pulados
    ```
 2. Adicione em `agentic.config.ts` um bloco `verify: { test: ['bun','test', …escopo-alvo] }`.
 3. Faça `verify.test.ts` usar esse escopo, que já vem do config, ou uma fixture. Não mude asserções de status.
 4. **Medir depois** com os mesmos comandos. No passo dos `covers`, use o novo comando do config (`AGENTIC_DDD_VERIFY=1 bun test <escopo> --reporter=junit …`) e grave em `covers-after.txt`. Para provar que não houve perda de cobertura:
    - `covers-before.txt` e `covers-after.txt` são **idênticos**, e é esse conjunto que G4/G5 enxergam em `verify 0001`/`0002`;
+   - a lista de testcases **não pulados** (`status !== 'skipped'`, `file` + `name`) do JUnit aninhado é **idêntica** antes e depois (`$SCRATCH/cases-before.txt` vs `cases-after.txt`). Esse é o check que pega a perda de testes sem `covers`, como o de arquitetura;
    - o diff das listas de testcases da suíte completa (`bun test`) é vazio. O escopo restringe só o verify aninhado, não o CI.
 5. Registre as medições no corpo do PR. O tempo real do CI só se mede depois do push, já com aprovação.
 
@@ -157,6 +159,7 @@ Já existe um mecanismo de escopo: `runTests` define `AGENTIC_DDD_VERIFY=1` (`VE
 bun test src/cli/verify.test.ts test/evals-verification-scope.test.ts src/compiler/config*.test.ts
 bun run agentic verify 0001 && bun run agentic verify 0002   # done / needs-human
 diff $SCRATCH/covers-before.txt $SCRATCH/covers-after.txt     # vazio
+diff $SCRATCH/cases-before.txt $SCRATCH/cases-after.txt       # vazio (testes não pulados)
 ```
 + o gate mínimo.
 
