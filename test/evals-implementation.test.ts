@@ -282,6 +282,7 @@ test('archived coverage must come from executor; missing JUnit and verification 
     });
     expect(first.itemReport?.status).toBe('done');
     expect(first.referenceTests?.exitCode).toBe(0);
+    expect(first.referenceTests?.collectionError).toBeUndefined();
     expect(first.ok).toBe(false);
     expect(first.findings.join()).toContain('Missing executor coverage');
     await writeFile(path, 'process.exit(0);\n');
@@ -406,6 +407,159 @@ test('submitted tests cannot disclose host files through either JUnit output sym
     await disposeWorkspace(workspace);
   }
 }, 30000);
+
+// The oracle imports the submitted module in the same `bun test` process. The
+// forged JUnit carries the oracle's own names and count, so only the run itself
+// can tell it apart.
+const ENTITY_ORACLE = [
+  'cria tarefa normalizada e registra evento',
+  'cria tarefa normalizada e registra evento',
+  'rejeita título vazio ou só espaços',
+  'rejeita título vazio ou só espaços',
+];
+const FORGED_JUNIT = `<?xml version="1.0" encoding="UTF-8"?>\n<testsuites name="bun test" tests="4" failures="0">\n<testsuite name="behavior.test.ts" file="behavior.test.ts" tests="4" failures="0">\n${ENTITY_ORACLE.map(
+  (n) => `<testcase name="${n}" classname="" file="behavior.test.ts" />`,
+).join('\n')}\n</testsuite>\n</testsuites>\n`;
+const FORGED_SUMMARY = ' 4 pass\n 0 fail\nRan 4 tests across 1 file. [1.00ms]';
+async function verifyForged(
+  name: string,
+  prepare: (root: string) => Promise<void>,
+) {
+  const { createAttemptWorkspace, disposeWorkspace } =
+    await import('../scripts/evals/isolation');
+  const { verifySubmission } = await import('../scripts/evals/reference');
+  const workspace = await createAttemptWorkspace(
+    fixture.source,
+    baseline,
+    'implementation',
+  );
+  try {
+    // entity:Task stays notImplemented(): a real oracle run must fail.
+    await prepare(workspace.root);
+    const status = JSON.parse(
+      await readFile(join(out, 'preparation/status/stdout.log'), 'utf8'),
+    ) as { items: { id: string; specHash: string }[] };
+    return await verifySubmission(
+      fixture.source,
+      workspace,
+      {
+        item: IDS[0]!,
+        packet: 'frozen',
+        specHash: status.items.find((i) => i.id === IDS[0])!.specHash,
+        configPath: workspace.configPath,
+        testFile: 'app/test/entity-Task.test.ts',
+        criteria: [],
+      },
+      { signal: new AbortController().signal, outDir: join(out, name) },
+    );
+  } finally {
+    await disposeWorkspace(workspace);
+  }
+}
+async function forgeOracleFrom(root: string, terminate: string) {
+  const path = join(root, 'app/domain/task.ts');
+  await writeFile(
+    path,
+    `import { readFileSync as __read, writeFileSync as __write } from 'node:fs';
+{
+  const __argv = __read('/proc/self/cmdline', 'utf8').split('\\0');
+  const __out = __argv
+    .find((a) => a.startsWith('--reporter-outfile='))
+    ?.slice('--reporter-outfile='.length);
+  if (__out?.endsWith('.reference-junit.xml')) {
+    __write(__out, ${JSON.stringify(FORGED_JUNIT)});
+    console.error(${JSON.stringify(FORGED_SUMMARY)});
+    ${terminate};
+  }
+}
+` + (await readFile(path, 'utf8')),
+  );
+}
+const expectOracleRejected = (
+  evidence: Awaited<ReturnType<typeof verifyForged>>,
+) => {
+  expect(evidence.ok).toBe(false);
+  expect(evidence.findings.join('\n')).toContain(
+    'Private behavior oracle failed',
+  );
+};
+test('forged oracle JUnit read from /proc/self/cmdline is rejected when the module exits cleanly', async () => {
+  for (const terminate of ['process.exit(0)', 'process.reallyExit(0)'])
+    expectOracleRejected(
+      await verifyForged(`forge-${terminate.slice(8, 12)}`, (root) =>
+        forgeOracleFrom(root, terminate),
+      ),
+    );
+}, 60000);
+test('forged oracle JUnit is rejected when the module aborts or kills itself', async () => {
+  for (const terminate of [
+    'process.abort()',
+    "process.kill(process.pid, 'SIGKILL')",
+  ])
+    expectOracleRejected(
+      await verifyForged(`forge-${terminate.slice(8, 12)}`, (root) =>
+        forgeOracleFrom(root, terminate),
+      ),
+    );
+}, 60000);
+test('a JUnit present before either run is an explicit failure, not evidence', async () => {
+  const planted = await verifyForged('planted-junit', async (root) => {
+    // The executor suite plants the oracle's fixed outfile; the module then
+    // leaves the oracle run before Bun writes its own report.
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(join(root, 'app/test'), { recursive: true });
+    await writeFile(
+      join(root, 'app/test/entity-Task.test.ts'),
+      `import { writeFileSync } from 'node:fs';
+import { test } from 'bun:test';
+writeFileSync('.reference-junit.xml', ${JSON.stringify(FORGED_JUNIT)});
+test('planta o relatório do oráculo', () => {});
+`,
+    );
+    const path = join(root, 'app/domain/task.ts');
+    await writeFile(
+      path,
+      `if (require('node:fs').readFileSync('/proc/self/cmdline', 'utf8').includes('behavior.test.ts')) process.exit(0);\n` +
+        (await readFile(path, 'utf8')),
+    );
+    await writeFile(join(root, '.executor-junit.xml'), FORGED_JUNIT);
+  });
+  expect(planted.ok).toBe(false);
+  expect(planted.executorTests?.collectionError).toContain('before the run');
+  expect(planted.referenceTests?.collectionError).toContain('before the run');
+  expectOracleRejected(planted);
+}, 60000);
+
+test('a bunfig.toml planted by the executor suite cannot preload code ahead of the guard', async () => {
+  const evidence = await verifyForged('planted-bunfig', async (root) => {
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(join(root, 'app/test'), { recursive: true });
+    // Its preload would keep the original reallyExit before the guard locks it.
+    await writeFile(
+      join(root, 'app/test/entity-Task.test.ts'),
+      `import { writeFileSync } from 'node:fs';
+import { test } from 'bun:test';
+writeFileSync('bunfig.toml', '[test]\\npreload = ["./keep-exit.ts"]\\n');
+writeFileSync('keep-exit.ts', 'globalThis.__exit = process.reallyExit;\\n');
+test('planta a configuração', () => {});
+`,
+    );
+    const path = join(root, 'app/domain/task.ts');
+    await writeFile(
+      path,
+      `import { rmSync as __rm, writeFileSync as __write } from 'node:fs';
+if (process.argv.some((a) => a.endsWith('behavior.test.ts'))) {
+  __rm('bunfig.toml', { force: true });
+  __rm('keep-exit.ts', { force: true });
+  __write('.reference-junit.xml', ${JSON.stringify(FORGED_JUNIT)});
+  console.error(${JSON.stringify(FORGED_SUMMARY)});
+  (globalThis as { __exit?: (code: number) => never }).__exit?.(0);
+}
+` + (await readFile(path, 'utf8')),
+    );
+  });
+  expectOracleRejected(evidence);
+}, 60000);
 
 test('private oracle detects omitted save even when shared in-memory references make executor tests pass', async () => {
   let omit = true;

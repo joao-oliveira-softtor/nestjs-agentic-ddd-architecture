@@ -1,13 +1,22 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import {
+  copyFile,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parseJUnit, type TestRun } from '@agentic-ddd/compiler';
 import type {
   AttemptWorkspace,
   ItemHandoff,
   PreparedSource,
+  ProcessResult,
   RunOptions,
   VerificationEvidence,
-  CommandEvidence,
 } from './contracts';
 import { createAttemptWorkspace, disposeWorkspace } from './isolation';
 import { workspaceCommand, cliArgv } from './commands';
@@ -15,25 +24,66 @@ import { TASK_ITEMS, readTree } from './audit';
 import { readPrivateFile } from './private-files';
 import { OUTPUT_LIMIT_BYTES } from './process';
 
-function tests(command: CommandEvidence, xml: string): TestRun {
+/** Private oracle test names per item, as a multiset: each template loops over two ids. */
+export const ORACLE_CASES: Readonly<Record<string, readonly string[]>> = {
+  'entity:Task': [
+    'cria tarefa normalizada e registra evento',
+    'cria tarefa normalizada e registra evento',
+    'rejeita título vazio ou só espaços',
+    'rejeita título vazio ou só espaços',
+  ],
+  'method:Task.complete': Array(2).fill('conclui, emite e rejeita repetição'),
+  'usecase:create_task': Array(2).fill('persiste, publica e rejeita duplicado'),
+  'usecase:complete_task': Array(2).fill(
+    'conclui, persiste, publica e rejeita id ausente',
+  ),
+  'operator:task-operator': Array(2).fill(
+    'operator executa tools reais e publica eventos',
+  ),
+};
+// Bun prints this summary last; a run left early has none of its own.
+const SUMMARY = /(?:^|\n)Ran (\d+) tests? across \d+ files?\./g;
+const multiset = (names: readonly string[]) => [...names].sort().join('\n');
+
+export function testRunOf(
+  result: ProcessResult,
+  xml: string,
+  expected?: readonly string[],
+): TestRun {
   const cases = parseJUnit(xml);
   const valid =
     /<testsuites?\b/.test(xml) && /<\/testsuites?>\s*$/.test(xml.trim());
+  const ran = [...result.stderr.matchAll(SUMMARY)].at(-1)?.[1];
   const incomplete =
-    command.result.transport !== 'finished' ||
+    result.transport !== 'finished' ||
     !valid ||
     !cases.length ||
-    /(?:^|\n)# Unhandled error between tests\b/.test(command.result.stderr) ||
-    (command.result.exitCode !== 0 &&
-      !cases.some((c) => c.status === 'failed'));
+    /(?:^|\n)# Unhandled error between tests\b/.test(result.stderr) ||
+    (result.exitCode !== 0 && !cases.some((c) => c.status === 'failed')) ||
+    Number(ran) !== cases.length ||
+    (expected !== undefined &&
+      multiset(cases.map((c) => c.name)) !== multiset(expected));
   return {
-    exitCode: command.result.exitCode ?? 1,
+    exitCode: result.exitCode ?? 1,
     cases,
     ...(incomplete
       ? { collectionError: 'JUnit missing, invalid or incomplete' }
       : {}),
   };
 }
+/** Removes a JUnit outfile before its run; true when one was already there. */
+async function clearOutfile(path: string): Promise<boolean> {
+  const existed = await lstat(path).then(
+    () => true,
+    (error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return false;
+      throw error;
+    },
+  );
+  await rm(path, { force: true, recursive: true });
+  return existed;
+}
+const PLANTED = { collectionError: 'JUnit output existed before the run' };
 export async function verifySubmission(
   source: PreparedSource,
   submitted: AttemptWorkspace,
@@ -61,6 +111,7 @@ export async function verifySubmission(
     referenceTests: null,
   };
   const originalTree = await readTree(submitted.root);
+  let guardDir: string | undefined;
   const record = async (
     name: string,
     argv: readonly string[],
@@ -78,6 +129,14 @@ export async function verifySubmission(
     return command;
   };
   try {
+    // Outside the workspace and mounted read-only, so submitted code cannot
+    // edit it. The empty config keeps Bun from reading a bunfig.toml the
+    // executor suite may plant in the workspace, whose preload would run first.
+    guardDir = await mkdtemp(join(tmpdir(), 'eval-guard-'));
+    const guard = join(guardDir, 'preload-guard.ts');
+    const config = join(guardDir, 'bunfig.toml');
+    await copyFile(join(import.meta.dir, 'preload-guard.ts'), guard);
+    await writeFile(config, '');
     const verify = await record(
       'verify-item',
       cliArgv(workspace, [
@@ -111,19 +170,29 @@ export async function verifySubmission(
     )
       evidence.findings.push('Individual verify did not certify done');
     const junit = join(workspace.root, '.executor-junit.xml');
-    const executor = await record('executor-tests', [
-      process.execPath,
-      'test',
-      '--reporter=junit',
-      `--reporter-outfile=${junit}`,
-    ]);
+    const plantedExecutor = await clearOutfile(junit);
+    const executor = await record(
+      'executor-tests',
+      [
+        process.execPath,
+        'test',
+        `--config=${config}`,
+        `--preload=${guard}`,
+        '--reporter=junit',
+        `--reporter-outfile=${junit}`,
+      ],
+      [guardDir],
+    );
     const xml = await readPrivateFile(
       workspace.root,
       junit,
       OUTPUT_LIMIT_BYTES,
     ).catch(() => '');
     await writeFile(join(evidenceDir, 'executor-junit.xml'), xml);
-    evidence.executorTests = tests(executor, xml);
+    evidence.executorTests = {
+      ...testRunOf(executor.result, xml),
+      ...(plantedExecutor ? PLANTED : {}),
+    };
     if (
       evidence.executorTests.collectionError ||
       executor.result.exitCode !== 0 ||
@@ -159,16 +228,20 @@ export async function verifySubmission(
       template.replaceAll('__WORKSPACE__', workspace.root),
     );
     const oracleJunit = join(workspace.root, '.reference-junit.xml');
+    // The executor suite ran in this workspace and may have left it there.
+    const plantedOracle = await clearOutfile(oracleJunit);
     const oracle = await record(
       'reference-tests',
       [
         process.execPath,
         'test',
+        `--config=${config}`,
+        `--preload=${guard}`,
         referencePath,
         '--reporter=junit',
         `--reporter-outfile=${oracleJunit}`,
       ],
-      [referenceDir],
+      [referenceDir, guardDir],
     );
     const oracleXml = await readPrivateFile(
       workspace.root,
@@ -176,7 +249,10 @@ export async function verifySubmission(
       OUTPUT_LIMIT_BYTES,
     ).catch(() => '');
     await writeFile(join(evidenceDir, 'reference-junit.xml'), oracleXml);
-    evidence.referenceTests = tests(oracle, oracleXml);
+    evidence.referenceTests = {
+      ...testRunOf(oracle.result, oracleXml, ORACLE_CASES[handoff.item] ?? []),
+      ...(plantedOracle ? PLANTED : {}),
+    };
     if (
       evidence.referenceTests.collectionError ||
       oracle.result.exitCode !== 0 ||
@@ -230,5 +306,6 @@ export async function verifySubmission(
     return evidence;
   } finally {
     await disposeWorkspace(workspace);
+    if (guardDir) await rm(guardDir, { recursive: true, force: true });
   }
 }

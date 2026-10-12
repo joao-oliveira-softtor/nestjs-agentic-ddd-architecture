@@ -15,7 +15,7 @@ import {
 import { reportSchema } from './report-schema';
 import { sha256 } from './isolation';
 import { readPrivateBytes } from './private-files';
-import { judge, parseAnswer, parseImplementationReply } from './judge';
+import { parseImplementationReply, verdictOf } from './judge';
 import { finalVerificationState } from './final-verification';
 import { TASK_ITEMS } from './audit';
 
@@ -268,17 +268,6 @@ function accepted(attempt: ItemAttempt | undefined) {
     )
   );
 }
-function verdict(c: EvalReport['cases'][number]) {
-  if (!c.execution) return 'not_run';
-  const e = c.execution;
-  if (e.transport === 'timeout') return 'timeout';
-  if (e.transport !== 'finished' || e.exitCode !== 0) return 'infra_error';
-  try {
-    return judge(c.expect, parseAnswer(e.finalText ?? ''));
-  } catch {
-    return 'malformed';
-  }
-}
 const rate = (numerator: number, denominator: number) => ({
   numerator,
   denominator,
@@ -346,7 +335,7 @@ function summarize(executed: Executed[], planned: Slot[]) {
     for (const c of report.cases.filter(
       (c) => c.configuration === slot.configuration,
     )) {
-      const v = verdict(c);
+      const v = verdictOf(c.execution, c.expect);
       if (c.execution) usage.push(c.execution.usage);
       if (['correct', 'incorrect', 'malformed', 'timeout'].includes(v))
         evaluableCases++;
