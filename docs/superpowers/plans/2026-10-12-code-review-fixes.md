@@ -133,6 +133,11 @@ Já existe um mecanismo de escopo: `runTests` define `AGENTIC_DDD_VERIFY=1` (`VE
 
 **Cuidado:** um filtro de caminho que não casa com nada produz `Test filter "…" had no matches` (exit 1), que pela F1 é erro, não suíte vazia. Todo caminho do escopo precisa existir.
 
+**Decisão do usuário (2026-10-12): opção C + passo no CI.**
+1. `agentic.config.ts` ganha `verify.test` = `./src`, `./examples/orders` e cada `test/*.test.ts` que não seja `evals-*`, numa lista explícita. Um teste em `test/evals-verification-scope.test.ts` exige que a lista seja exatamente essa, para que um arquivo novo em `test/` não saia do `done` em silêncio.
+2. `src/cli/verify.test.ts` roda `verify 0001`/`0002` com `--config test/fixtures/orders-verify/agentic.config.ts`, uma fixture de config sobre o projeto real (`root: ../../..`), com o verify aninhado restrito a `./examples/orders`. É dessa troca que vem o ganho de tempo, já que os evals já se pulavam via `AGENTIC_DDD_VERIFY`.
+3. `.github/workflows/ci.yml` ganha o passo `bun run agentic verify 0001`, exigindo `status == done` (checado com `bun -e`, sem depender de `jq`). Ele preserva a prova de ponta a ponta do exemplo com o escopo da raiz.
+
 ### Tarefas
 1. **Medir antes**, no worktree limpo, já com F1:
    ```bash
@@ -374,8 +379,8 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 
 | Fase | Branch | Estado | PR |
 |---|---|---|---|
-| 1 — F1 | `fix/verify-empty-suite` | commitado; aguarda aprovação de push/PR (bun test 471/471; verify 0001 done) | — |
-| 2 — F2 | `ci/verify-test-scope` | pendente | — |
+| 1 — F1 | `fix/verify-empty-suite` | mergeada (`4982b4b`); o commit `b8ebe3d` do plano entrou depois do merge e foi reaplicado na Fase 2 | #23 |
+| 2 — F2 | `ci/verify-test-scope` | em andamento | — |
 | 3 — F3+F4 | `fix/evals-evidence-integrity` | pendente | — |
 | 4 — F5 | `fix/compiler-validation-hardening` | pendente | — |
 | 5 — F6 | `fix/core-value-object-equality` | pendente | — |
