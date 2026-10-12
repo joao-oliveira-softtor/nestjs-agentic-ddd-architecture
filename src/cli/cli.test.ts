@@ -9,6 +9,7 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { MOTIVO_PLACEHOLDER } from '@agentic-ddd/compiler';
 import { bootstrapChanges } from '../../test/helpers/bootstrap';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -158,6 +159,42 @@ describe('agentic-ddd compile (CLI)', () => {
     } catch {
       expect.unreachable('File should exist');
     }
+  });
+
+  test('erro de lint no modo write não arquiva a proposta nem grava o lock', async () => {
+    const longConfig = 'test/fixtures/long-description/agentic.config.ts';
+    const draft = run(
+      'compile',
+      '--config',
+      longConfig,
+      '--out-root',
+      out,
+      '--draft-change',
+      'estado-inicial',
+    );
+    expect(draft.code).toBe(1);
+    const proposalPath = join(out, 'changes/0001-estado-inicial/proposal.md');
+    await writeFile(
+      proposalPath,
+      (await readFile(proposalPath, 'utf8')).replace(
+        MOTIVO_PLACEHOLDER,
+        'Estado inicial do domínio.',
+      ),
+    );
+    const result = run('compile', '--config', longConfig, '--out-root', out);
+    expect(result.code).toBe(1);
+    expect(result.stderr).toContain('lint: description com');
+    const exists = (path: string) =>
+      access(join(out, path)).then(
+        () => true,
+        () => false,
+      );
+    // a proposta continua aberta e o lock não é gravado
+    expect(await exists('changes/0001-estado-inicial/proposal.md')).toBe(true);
+    expect(await exists('changes/archive/0001-estado-inicial')).toBe(false);
+    expect(await exists('.agentic/domain.lock.json')).toBe(false);
+    // os artefatos gerados continuam sendo escritos (decisão do c9b29b9)
+    expect(await exists('.agentic/runtime/long-operator/SKILL.md')).toBe(true);
   });
 
   test('erro de lint no modo --check sai com 1', () => {
