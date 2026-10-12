@@ -187,11 +187,11 @@ diff $SCRATCH/cases-before.txt $SCRATCH/cases-after.txt       # vazio (testes n�
 - **Por que mover o JUnit não basta:** o código submetido roda **no mesmo processo** `bun test`. Ele lê o caminho do outfile em `process.argv` e escreve onde o Bun escreveria. O template do oráculo também é legível, então conferir nomes e contagem é uma camada a mais, não um segredo. Fato verificado no 1.4.2: com `process.exit(0)` no meio da suíte, o Bun **não** imprime o resumo (`N pass`, `Ran N tests across M file(s)`).
 - **Mecanismo principal (decidido):**
   1. apagar o JUnit antes de rodar e falhar se ele existir no início;
-  2. exigir no stderr o resumo final do Bun, com contagem igual à do JUnit e à do oráculo;
+  2. exigir no stderr o resumo final do Bun, com contagem igual à do JUnit e à do oráculo (depende do item 4: sem o preload, `process.exit` suprime o resumo);
   3. exigir nomes e contagem do oráculo;
-  4. opcional: um `--preload` do harness que neutralize `process.exit` (decida pelo custo).
+  4. um `--preload` do harness que neutralize `process.exit`, para que o resumo final sempre saia (decidido pelo usuário em 2026-10-12; ver "Decisão para a Fase 3" no fim).
 
-  Mover o JUnit para fora do workspace, via `extraWritable`, é defesa em profundidade, não a correção. O risco residual (código no mesmo processo forjando também o resumo) fica registrado no PR e na spec das evals.
+  Mover o JUnit para fora do workspace, via `extraWritable`, é defesa em profundidade, não a correção. O risco residual (código no mesmo processo forjando também o resumo depois de contornar o preload) fica registrado no PR e na spec das evals.
 - **Oráculo:** `evals/implementation/tasks/reference/*.test.ts.txt` (5 arquivos: `entity-Task`, `method-Task-complete`, `usecase-create_task`, `usecase-complete_task`, `operator-task-operator`).
 - **F4:** veredito divergente.
   - `scripts/evals/aggregate.ts:271-281` trata `finished && exitCode ≠ 0` como `infra_error`, e `cancelled` também como `infra_error`.
@@ -213,6 +213,7 @@ diff $SCRATCH/cases-before.txt $SCRATCH/cases-after.txt       # vazio (testes n�
    - JUnit com casos a menos, a mais ou com nomes trocados em relação ao oráculo → rejeitado;
    - JUnit pré-existente no workspace antes da execução → falha explícita;
    - stderr sem o resumo final do Bun, ou com contagem divergente do JUnit → rejeitado;
+   - com o preload ativo, `process.exit(0)` chamado pelo corpo submetido não interrompe a suíte: o resumo final sai e a forja é rejeitada;
    - positivo: a submissão de referência legítima continua aprovada.
 3. Implemente o mecanismo principal decidido acima. `tests()` passa a receber os nomes e a contagem esperados, extraídos do oráculo.
 4. **F4:** extraia uma única função `verdictOf(execution, expect)`, usada pelo runner (`skills.ts`) e pelo agregador (`aggregate.ts`). Adote a **semântica do agregador**, que é a mais segura: exit ≠ 0 → `infra_error`. Para `cancelled`, decida entre `not_run` e `infra_error` e documente o efeito em `classifyRunStatus` e em `report.ts`. Teste em tabela cobrindo `timeout`, `cancelled`, `infra_error`, `finished` com exit ≠ 0, JSON inválido e acerto/erro, mais um teste de `classifyRunStatus` com os casos que mudam.
@@ -380,7 +381,8 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 | Fase | Branch | Estado | PR |
 |---|---|---|---|
 | 1 — F1 | `fix/verify-empty-suite` | mergeada (`4982b4b`); o commit `b8ebe3d` do plano entrou depois do merge e foi reaplicado na Fase 2 | #23 |
-| 2 — F2 | `ci/verify-test-scope` | em andamento | — |
+| 2 — F2 | `ci/verify-test-scope` | mergeada (`117b45b`); CI do PR em 17m57s (linha de base 25m54s) | #24 |
+| D1 | `ci/evals-parallel-job` | commitado; aguarda aprovação de push/PR | — |
 | 3 — F3+F4 | `fix/evals-evidence-integrity` | pendente | — |
 | 4 — F5 | `fix/compiler-validation-hardening` | pendente | — |
 | 5 — F6 | `fix/core-value-object-equality` | pendente | — |
@@ -400,4 +402,9 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 - **Origem:** medições da Fase 2. Na suíte completa local (985 s depois da F2), `test/evals-run.test.ts` leva ~694 s e `test/evals-implementation.test.ts` ~129 s. A F2 só tira ~4–7 min.
 - **Proposta:** dividir o job `ci` em dois jobs paralelos: (1) `bun test` sem `test/evals-*` + `build`, `test:package`, `compile --check`, `skills:install --check` e o passo `verify 0001`; (2) só `test/evals-*`, com o probe do bubblewrap. Nenhum teste pode deixar de rodar: compare a lista de testcases dos dois jobs somados com a da suíte completa.
 - **Critério:** CI verde, com tempo total menor que o do PR da Fase 2. Sem perda de cobertura.
-- **Quando:** PR próprio, depois do merge da Fase 2 e antes da Fase 3, ou em paralelo a ela, se o usuário preferir.
+- **Quando:** PR próprio, depois do merge da Fase 2 e antes da Fase 3 (escolha do usuário).
+- **Feito:** o job `ci` roda `bun test --path-ignore-patterns='test/evals-*'` e não instala mais o bubblewrap (só `test/evals-*` importa `scripts/evals/isolation`); o job `evals` roda `bun test ./test/evals-*.test.ts` com o probe. Partição conferida com filtro vazio e JUnit: 387 + 85 = 472 casos, união por arquivo+suíte+nome igual à suíte completa, interseção vazia. `test/evals-verification-scope.test.ts` fica no job `evals`; `test/evals.test.ts` (sem hífen) fica no job `ci`. A `main` não tem proteção de branch; para um `evals` vermelho bloquear merge, os dois checks precisam virar obrigatórios.
+
+### Decisão para a Fase 3 (usuário, 2026-10-12)
+
+- Risco residual da forja do resumo do Bun: adotar o `--preload` que neutraliza `process.exit` (o resumo final sempre é impresso) e exigir esse resumo com contagem igual à do JUnit e à do oráculo. Deixa de ser opcional no brief da Fase 3.
