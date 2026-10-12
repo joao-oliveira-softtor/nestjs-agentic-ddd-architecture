@@ -184,7 +184,7 @@ diff $SCRATCH/cases-before.txt $SCRATCH/cases-after.txt       # vazio (testes n�
 ### Contexto
 - **F3:** em `scripts/evals/reference.ts`, o código submetido roda no mesmo processo que gera a evidência. O JUnit é gravado dentro do workspace sem ser apagado antes: `.executor-junit.xml` em `:113-125` e `.reference-junit.xml` em `:158-178`. O diff de árvore ignora esses arquivos (`:210-217`), e `tests()` (`:18-36`) não confere nomes nem contagem esperados. Um corpo que grava XML falso e chama `process.exit(0)` forja aprovação (reproduzido). As 65 evidências publicadas estão íntegras: o risco é latente.
 - **Restrição de isolamento:** os comandos rodam sob bubblewrap (`scripts/evals/isolation.ts:307-360`). O workspace é `--bind` e o resto é `--ro-bind`. `sandboxCommand` aceita `extraWritable` (`isolation.ts:349-352`), mas `workspaceCommand` só repassa `extraReadOnly` (`scripts/evals/commands.ts:16-20`). O `bwrap` está instalado nesta máquina, então os testes de evals rodam localmente.
-- **Por que mover o JUnit não basta:** o código submetido roda **no mesmo processo** `bun test`. Ele lê o caminho do outfile em `process.argv` e escreve onde o Bun escreveria. O template do oráculo também é legível, então conferir nomes e contagem é uma camada a mais, não um segredo. Fato verificado no 1.4.2: com `process.exit(0)` no meio da suíte, o Bun **não** imprime o resumo (`N pass`, `Ran N tests across M file(s)`).
+- **Por que mover o JUnit não basta:** o código submetido roda **no mesmo processo** `bun test`. Ele lê o caminho do outfile em `/proc/self/cmdline` (no 1.4.2 o `process.argv` do `bun test` não traz as flags do reporter; o `/proc` está montado no sandbox), ou usa direto os caminhos fixos `.executor-junit.xml`/`.reference-junit.xml`, e escreve onde o Bun escreveria. O template do oráculo também é legível, então conferir nomes e contagem é uma camada a mais, não um segredo. Fato verificado no 1.4.2: com `process.exit(0)` no meio da suíte, o Bun **não** imprime o resumo (`N pass`, `Ran N tests across M file(s)`).
 - **Mecanismo principal (decidido):**
   1. apagar o JUnit antes de rodar e falhar se ele existir no início;
   2. exigir no stderr o resumo final do Bun, com contagem igual à do JUnit e à do oráculo (depende do item 4: sem o preload, `process.exit` suprime o resumo);
@@ -208,12 +208,12 @@ diff $SCRATCH/cases-before.txt $SCRATCH/cases-after.txt       # vazio (testes n�
    ```
    Se `agg-before` já divergir do publicado em `main`, isso é achado novo: PARE e reporte.
 2. Testes de regressão (red):
-   - um corpo submetido que lê o caminho do outfile em `process.argv`, grava XML falso nele e chama `process.exit(0)` tem de ser **REJEITADO**;
+   - um corpo submetido que lê o caminho do outfile em `/proc/self/cmdline`, grava XML falso nele e chama `process.exit(0)` tem de ser **REJEITADO**;
    - a mesma forja gravando no caminho fixo `.executor-junit.xml` → rejeitada;
    - JUnit com casos a menos, a mais ou com nomes trocados em relação ao oráculo → rejeitado;
    - JUnit pré-existente no workspace antes da execução → falha explícita;
    - stderr sem o resumo final do Bun, ou com contagem divergente do JUnit → rejeitado;
-   - com o preload ativo, `process.exit(0)` chamado pelo corpo submetido não interrompe a suíte: o resumo final sai e a forja é rejeitada;
+   - com o preload ativo, `process.exit(0)`, `process.reallyExit(0)`, `process.abort()` ou `process.kill` do próprio processo chamados pelo corpo submetido não interrompem a suíte: lançam erro dentro do run, o resumo final real sai e a forja é rejeitada;
    - positivo: a submissão de referência legítima continua aprovada.
 3. Implemente o mecanismo principal decidido acima. `tests()` passa a receber os nomes e a contagem esperados, extraídos do oráculo.
 4. **F4:** extraia uma única função `verdictOf(execution, expect)`, usada pelo runner (`skills.ts`) e pelo agregador (`aggregate.ts`). Adote a **semântica do agregador**, que é a mais segura: exit ≠ 0 → `infra_error`. Para `cancelled`, decida entre `not_run` e `infra_error` e documente o efeito em `classifyRunStatus` e em `report.ts`. Teste em tabela cobrindo `timeout`, `cancelled`, `infra_error`, `finished` com exit ≠ 0, JSON inválido e acerto/erro, mais um teste de `classifyRunStatus` com os casos que mudam.
@@ -229,7 +229,7 @@ diff $SCRATCH/cases-before.txt $SCRATCH/cases-after.txt       # vazio (testes n�
 `bun test test/evals-*.test.ts`, os dois `diff` acima e o gate mínimo.
 
 ### Critérios de saída
-- Os testes de forja passam, ou seja, a forja é rejeitada, inclusive a variante via `argv`. O risco residual está documentado.
+- Os testes de forja passam, ou seja, a forja é rejeitada, inclusive a variante via `/proc/self/cmdline`. O risco residual está documentado.
 - Uma única função de veredito, com teste em tabela e efeito em `classifyRunStatus` testado.
 - Agregados reproduzidos idênticos; evidências publicadas intocadas.
 
@@ -382,8 +382,8 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 |---|---|---|---|
 | 1 — F1 | `fix/verify-empty-suite` | mergeada (`4982b4b`); o commit `b8ebe3d` do plano entrou depois do merge e foi reaplicado na Fase 2 | #23 |
 | 2 — F2 | `ci/verify-test-scope` | mergeada (`117b45b`); CI do PR em 17m57s (linha de base 25m54s) | #24 |
-| D1 | `ci/evals-parallel-job` | commitado; aguarda aprovação de push/PR | — |
-| 3 — F3+F4 | `fix/evals-evidence-integrity` | pendente | — |
+| D1 | `ci/evals-parallel-job` | mergeado (`546081b`); job `ci` 4m09s, job `evals` 17m39s | #25 |
+| 3 — F3+F4 | `fix/evals-evidence-integrity` | em andamento | — |
 | 4 — F5 | `fix/compiler-validation-hardening` | pendente | — |
 | 5 — F6 | `fix/core-value-object-equality` | pendente | — |
 | 6 — F7 | `feat/orders-cancellation-reason` | pendente | — |
@@ -408,3 +408,12 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 ### Decisão para a Fase 3 (usuário, 2026-10-12)
 
 - Risco residual da forja do resumo do Bun: adotar o `--preload` que neutraliza `process.exit` (o resumo final sempre é impresso) e exigir esse resumo com contagem igual à do JUnit e à do oráculo. Deixa de ser opcional no brief da Fase 3.
+
+### D2 — O código avaliado pode adulterar o `expect` no mesmo processo (achado na Fase 3, 2026-10-12)
+
+- **Origem:** sondas no Bun 1.4.2 durante a Fase 3. O corpo submetido roda no mesmo processo do oráculo e pode trocar matchers sem sair do run: `require('bun:test').expect.extend({ toBe: () => ({ pass: true, ... }) })`, ou `Object.getPrototypeOf(expect(0)).toBe = () => {}`. Nos dois casos o oráculo passa com o JUnit real e o resumo final real do Bun, então nem o preload da Fase 3 (que só bloqueia saídas do processo) nem a conferência de resumo, nomes e contagem detectam. O audit não impede: basta o `require` dentro do corpo do método.
+- **Sondas:** com um preload que redefine `expect.extend` para lançar erro, a primeira variante é bloqueada; a troca pelo protótipo continua passando. Congelar o protótipo fecha essa segunda, mas a superfície (protótipos globais, internals do runtime) não tem fim dentro do mesmo processo.
+- **Opções (decisão do usuário):**
+  1. Bloquear `expect.extend` e congelar o protótipo dos matchers no mesmo preload, com teste próprio. Efeito colateral: um executor legítimo que use `expect.extend` nos próprios testes passa a ser reprovado, o que muda a régua da avaliação. Risco residual documentado.
+  2. Oráculo fora do processo: o código submetido roda num processo e as asserções no outro, comunicando por RPC. É o fechamento definitivo, mas exige reescrever os templates em `evals/implementation/tasks/reference/`, que a Fase 3 proíbe tocar; vira plano próprio.
+- **Estado:** não implementado. Risco latente, como o da F3: nenhuma das 43 `submission.json` publicadas em `docs/superpowers/validation/2026-10-10-evals-20` referencia `bun:test`, `expect`, `process.exit/reallyExit/abort/kill` ou `/proc/self` fora de `app/test/` (conferido em 2026-10-12).
