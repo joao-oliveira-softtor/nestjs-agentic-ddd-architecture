@@ -127,7 +127,19 @@ export function parseProposal(
   if (origin !== 'proposal-first' && origin !== 'code-first')
     err('origin deve ser proposal-first ou code-first');
 
-  const deltaData = (data.delta ?? {}) as Record<string, unknown>;
+  const rawDelta = data.delta ?? {};
+  let deltaData: Record<string, unknown> = {};
+  if (typeof rawDelta !== 'object' || Array.isArray(rawDelta)) {
+    err('delta deve ser um objeto');
+  } else {
+    deltaData = rawDelta as Record<string, unknown>;
+    for (const key of Object.keys(deltaData)) {
+      if (key !== 'added' && key !== 'modified' && key !== 'removed')
+        err(
+          `delta: chave desconhecida "${key}" (esperado added, modified ou removed)`,
+        );
+    }
+  }
   const delta: Delta = {
     added: stringList(deltaData.added, 'delta.added', err),
     modified: stringList(deltaData.modified, 'delta.modified', err),
