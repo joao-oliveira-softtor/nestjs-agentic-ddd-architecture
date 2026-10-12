@@ -75,7 +75,10 @@ export function testRunOf(
 async function clearOutfile(path: string): Promise<boolean> {
   const existed = await lstat(path).then(
     () => true,
-    () => false,
+    (error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return false;
+      throw error;
+    },
   );
   await rm(path, { force: true, recursive: true });
   return existed;
@@ -108,10 +111,7 @@ export async function verifySubmission(
     referenceTests: null,
   };
   const originalTree = await readTree(submitted.root);
-  // Outside the workspace and mounted read-only, so submitted code cannot edit it.
-  const guardDir = await mkdtemp(join(tmpdir(), 'eval-guard-'));
-  const guard = join(guardDir, 'preload-guard.ts');
-  await copyFile(join(import.meta.dir, 'preload-guard.ts'), guard);
+  let guardDir: string | undefined;
   const record = async (
     name: string,
     argv: readonly string[],
@@ -129,6 +129,14 @@ export async function verifySubmission(
     return command;
   };
   try {
+    // Outside the workspace and mounted read-only, so submitted code cannot
+    // edit it. The empty config keeps Bun from reading a bunfig.toml the
+    // executor suite may plant in the workspace, whose preload would run first.
+    guardDir = await mkdtemp(join(tmpdir(), 'eval-guard-'));
+    const guard = join(guardDir, 'preload-guard.ts');
+    const config = join(guardDir, 'bunfig.toml');
+    await copyFile(join(import.meta.dir, 'preload-guard.ts'), guard);
+    await writeFile(config, '');
     const verify = await record(
       'verify-item',
       cliArgv(workspace, [
@@ -168,6 +176,7 @@ export async function verifySubmission(
       [
         process.execPath,
         'test',
+        `--config=${config}`,
         `--preload=${guard}`,
         '--reporter=junit',
         `--reporter-outfile=${junit}`,
@@ -226,6 +235,7 @@ export async function verifySubmission(
       [
         process.execPath,
         'test',
+        `--config=${config}`,
         `--preload=${guard}`,
         referencePath,
         '--reporter=junit',
@@ -296,6 +306,6 @@ export async function verifySubmission(
     return evidence;
   } finally {
     await disposeWorkspace(workspace);
-    await rm(guardDir, { recursive: true, force: true });
+    if (guardDir) await rm(guardDir, { recursive: true, force: true });
   }
 }

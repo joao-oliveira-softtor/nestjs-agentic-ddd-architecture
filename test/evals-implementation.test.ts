@@ -530,6 +530,37 @@ test('planta o relatório do oráculo', () => {});
   expectOracleRejected(planted);
 }, 60000);
 
+test('a bunfig.toml planted by the executor suite cannot preload code ahead of the guard', async () => {
+  const evidence = await verifyForged('planted-bunfig', async (root) => {
+    const { mkdir } = await import('node:fs/promises');
+    await mkdir(join(root, 'app/test'), { recursive: true });
+    // Its preload would keep the original reallyExit before the guard locks it.
+    await writeFile(
+      join(root, 'app/test/entity-Task.test.ts'),
+      `import { writeFileSync } from 'node:fs';
+import { test } from 'bun:test';
+writeFileSync('bunfig.toml', '[test]\\npreload = ["./keep-exit.ts"]\\n');
+writeFileSync('keep-exit.ts', 'globalThis.__exit = process.reallyExit;\\n');
+test('planta a configuração', () => {});
+`,
+    );
+    const path = join(root, 'app/domain/task.ts');
+    await writeFile(
+      path,
+      `import { rmSync as __rm, writeFileSync as __write } from 'node:fs';
+if (process.argv.some((a) => a.endsWith('behavior.test.ts'))) {
+  __rm('bunfig.toml', { force: true });
+  __rm('keep-exit.ts', { force: true });
+  __write('.reference-junit.xml', ${JSON.stringify(FORGED_JUNIT)});
+  console.error(${JSON.stringify(FORGED_SUMMARY)});
+  (globalThis as { __exit?: (code: number) => never }).__exit?.(0);
+}
+` + (await readFile(path, 'utf8')),
+    );
+  });
+  expectOracleRejected(evidence);
+}, 60000);
+
 test('private oracle detects omitted save even when shared in-memory references make executor tests pass', async () => {
   let omit = true;
   const adapter = createScriptedAdapter(

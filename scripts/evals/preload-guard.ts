@@ -18,8 +18,9 @@ function lock(name: string, value: unknown) {
 lock('exit', blocked('process.exit'));
 lock('reallyExit', blocked('process.reallyExit'));
 lock('abort', blocked('process.abort'));
+lock('_kill', blocked('process._kill'));
 lock('kill', (pid: number, signal?: string | number) =>
-  pid <= 0 || pid === process.pid
+  Number(pid) <= 0 || Number(pid) === process.pid
     ? blocked('process.kill of this process')()
     : kill(pid, signal),
 );
