@@ -85,7 +85,7 @@ Os contratos são fortes e determinísticos para **entidades e métodos de domí
 **Contratos que tornam a spec "Haiku-friendly"**
 - Packet determinístico com IDs de obrigação, critérios G/W/T e comando de verificação exato (`packet.ts:44-69`).
 - `covers([...ids], título)` (`src/testing/covers.ts`, doc em `AGENTS.md`/`CONTRIBUTING.md:71`) liga testes a IDs; `status` calcula `missingObligations` (`state.ts:133-136`).
-- Gate I4/I5 detectam falso done superficial; o runner de avaliação ainda adiciona oráculos privados que rejeitam 25 regressões (`docs/superpowers/specs/2026-10-10-evals-19-regressoes-run.md`).
+- Os gates I4/I5 **não** detectam falso done superficial: I4 só exige que as obrigações declaradas tenham testes `covers` passando e I5 só roda o typecheck. As 19 regressões de `test/evals-run.test.ts:128-268` trocam os testes atribuídos por cobertura `expect(true)`, passam em `verify --item` e só são rejeitadas pelo oráculo privado do runner de avaliação (`docs/superpowers/specs/2026-10-10-evals-19-regressoes-run.md`), que não existe no fluxo de produção.
 - Teste de arquitetura: `domain` e `application` do exemplo não importam Nest nem runtime (`test/architecture.test.ts`, teste "domain e application do exemplo não importam Nest nem runtime de LLM"); `src/core` só importa `zod` (`AGENTS.md`; teste logo acima no mesmo arquivo). Isso é um **guard-rail verificável** para um executor de domínio isolado.
 
 **Lacunas de modelagem relevantes ao recorte (a)**

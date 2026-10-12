@@ -29,6 +29,7 @@ Razão de preços atual (12/10/2026, entrada por MTok): Haiku 5.5 US$ 0,10, Sonn
 4. `packet`, `status`, `next` e `verify --item` rodam a suíte inteira (~110 s por packet vs ~1,2 s com `verify.test` escopado).
 5. Value objects, eventos e ports não são itens do grafo; incluí-los muda o IR (exige ADR).
 6. O harness de evals não tem adapter Claude, repetições fixas em 1 e política de nunca estimar tokens.
+7. Os gates I4/I5 não detectam teste verde superficial (só o oráculo privado do harness de avaliação o faz); em produção, o falso verde só é pego pela revisão, o que torna o papel de revisor (B06) mais importante, não dispensável.
 
 ## Decisões de desenho (D1–D15, ver relatório, Parte A.2)
 
@@ -45,11 +46,11 @@ Razão de preços atual (12/10/2026, entrada por MTok): Haiku 5.5 US$ 0,10, Sonn
 
 ## Estrutura mínima do brief
 
-Ordem estável (estático primeiro, para cache): regras do papel; formato de resposta; item e `specHash` copiados do packet; packet integral (inclui critérios arquivados de `changes/archive/`); arquivos permitidos/proibidos; comando literal de `verify --item`; ponteiros preguiçosos. Ponto de partida: `scripts/evals/implementation.ts:278-336`.
+Ordem estável (estático primeiro, para cache): regras do papel; formato de resposta; item e `specHash` copiados do packet; packet integral como emitido antes do `compile` (critérios de propostas arquivadas não entram no packet nem no `specHash`: `applicableCriteria` filtra `!p.archived`, `src/compiler/item-spec.ts:43`; se forem anexados ao brief, ficam em seção própria com hash próprio e sem alegar cobertura pelo `specHash`); arquivos permitidos/proibidos; comando literal de `verify --item`; ponteiros preguiçosos. Ponto de partida: `scripts/evals/implementation.ts:278-336`.
 
 ## Backlog (issues)
 
-B01 spec/plano/ADR-0002 · B02 `packet --static` · B03 gerador de briefs · B04 executor de domínio isolado · B05 gates de fronteira · B06 papel de revisor · B07 perfil de modelos opt-in no instalador · B08 driver de orquestração com escalação · B09 adapter Claude no harness · B10 campanha de comparação por nível · B11 benchmark de revisão · B12 spike de value object · B13 docs e CI. Escopo, critérios de aceite, dependências e riscos de cada um estão nas issues e na Parte B do relatório. Ordem de menor risco: B01–B06, depois B09/B10 com orçamento autorizado, e só então B07/B08.
+B01 spec/plano/ADR-0002 · B02 `packet --static` · B03 gerador de briefs · B04 executor de domínio isolado · B05 gates de fronteira · B06 papel de revisor · B07 perfil de modelos opt-in no instalador · B08 driver de orquestração com escalação · B09 adapter Claude no harness · B10 campanha de comparação por nível · B11 benchmark de revisão · B12 spike de value object · B13 docs e CI. Escopo, critérios de aceite, dependências e riscos de cada um estão nas issues e na Parte B do relatório. Ordem de menor risco, respeitando as dependências: B01–B06 (não invasivos), B09 (adapter Claude), B08 (driver, necessário para executar os braços A3–A5), B10/B11 (campanhas, com orçamento autorizado) e, por último, B07 (perfil de modelos no instalador, só após o resultado de B10).
 
 ## Plano de experimentos (resumo; Parte C do relatório)
 
