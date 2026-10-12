@@ -10,6 +10,32 @@ permissions:
 
 jobs:
   ci:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run lint
+      # test/evals-* runs in the evals job, which selects the same files.
+      - run: bun test --path-ignore-patterns='test/evals-*'
+      # src/cli/verify.test.ts uses a domain-only fixture; this keeps the
+      # end-to-end check of the example with the root verify scope.
+      - name: Verify example change 0001 is done
+        env:
+          VERIFY_JSON: ${{ runner.temp }}/verify-0001.json
+        run: |
+          bun run agentic verify 0001 > "$VERIFY_JSON"
+          test "$(bun -e 'console.log((await Bun.file(process.env.VERIFY_JSON).json()).status)')" = done
+      - run: bun run build
+      - name: Validate packed framework in an isolated consumer
+        run: bun run test:package
+      - run: bun run agentic compile --check
+      - run: bun run skills:install --check
+
+  evals:
     # ubuntu-latest rejected the bubblewrap uid map; keep the required probe.
     runs-on: ubuntu-22.04
     steps:
@@ -24,19 +50,6 @@ jobs:
           sudo apt-get install --no-install-recommends -y bubblewrap
           bwrap --version
           bwrap --ro-bind / / --unshare-pid --unshare-ipc --die-with-parent -- /bin/true
-      - run: bun run typecheck
-      - run: bun run lint
-      - run: bun test
-      # src/cli/verify.test.ts uses a domain-only fixture; this keeps the
-      # end-to-end check of the example with the root verify scope.
-      - name: Verify example change 0001 is done
-        env:
-          VERIFY_JSON: ${{ runner.temp }}/verify-0001.json
-        run: |
-          bun run agentic verify 0001 > "$VERIFY_JSON"
-          test "$(bun -e 'console.log((await Bun.file(process.env.VERIFY_JSON).json()).status)')" = done
-      - run: bun run build
-      - name: Validate packed framework in an isolated consumer
-        run: bun run test:package
-      - run: bun run agentic compile --check
-      - run: bun run skills:install --check
+      # Bun path filter, not a shell glob: it matches every test file form Bun
+      # discovers (.test, .spec, _test, ts/tsx/js), as the ci job ignore does.
+      - run: bun test test/evals-
