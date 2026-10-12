@@ -50,4 +50,6 @@ jobs:
           sudo apt-get install --no-install-recommends -y bubblewrap
           bwrap --version
           bwrap --ro-bind / / --unshare-pid --unshare-ipc --die-with-parent -- /bin/true
-      - run: bun test ./test/evals-*.test.ts
+      # Bun path filter, not a shell glob: it matches every test file form Bun
+      # discovers (.test, .spec, _test, ts/tsx/js), as the ci job ignore does.
+      - run: bun test test/evals-
