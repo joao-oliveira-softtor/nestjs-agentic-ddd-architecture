@@ -23,6 +23,7 @@ import { TASK_ITEMS } from './audit';
 import { loadDataset } from './dataset';
 import { createScriptedAdapter } from './adapters/scripted';
 import { createCodexAdapter } from './adapters/codex';
+import { createClaudeAdapter } from './adapters/claude';
 import { createCursorAdapter } from './adapters/cursor';
 import { writeReport } from './report';
 import { finalVerificationState } from './final-verification';
@@ -120,9 +121,11 @@ export async function runEvaluation(
   let report: EvalReport | undefined;
   let outDir: string | undefined;
   const secrets = new Set(
-    [process.env.CODEX_API_KEY, process.env.CURSOR_API_KEY].filter(
-      (s): s is string => Boolean(s),
-    ),
+    [
+      process.env.CODEX_API_KEY,
+      process.env.CURSOR_API_KEY,
+      process.env.ANTHROPIC_API_KEY,
+    ].filter((s): s is string => Boolean(s)),
   );
   try {
     outDir = await reserveOutput(options.outDir, sourceRoot);
@@ -272,16 +275,18 @@ export async function runEvaluation(
           ? createCodexAdapter(config, nativeOptions)
           : config.adapter === 'cursor-cli'
             ? createCursorAdapter(config, nativeOptions)
-            : createScriptedAdapter([
-                ...Array.from({ length: count }, () => ({
-                  finalText:
-                    '{"type":"exact","value":"scripted offline response"}',
-                })),
-                ...Array.from({ length: 10 }, () => ({
-                  finalText:
-                    '{"status":"blocked","summary":"scripted fixture does not implement code"}',
-                })),
-              ]));
+            : config.adapter === 'claude-cli'
+              ? createClaudeAdapter(config, nativeOptions)
+              : createScriptedAdapter([
+                  ...Array.from({ length: count }, () => ({
+                    finalText:
+                      '{"type":"exact","value":"scripted offline response"}',
+                  })),
+                  ...Array.from({ length: 10 }, () => ({
+                    finalText:
+                      '{"status":"blocked","summary":"scripted fixture does not implement code"}',
+                  })),
+                ]));
       adapters.set(config.id, adapter);
       report.provenance.adapters[config.id] = await adapter.probe();
     }

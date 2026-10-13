@@ -258,7 +258,7 @@ export const reportSchema = z.strictObject({
     adapters: z.record(
       z.string(),
       z.strictObject({
-        id: z.enum(['scripted', 'codex-cli', 'cursor-cli']),
+        id: z.enum(['scripted', 'codex-cli', 'cursor-cli', 'claude-cli']),
         version: z.string(),
         executableSha256: hash,
         companions: z
