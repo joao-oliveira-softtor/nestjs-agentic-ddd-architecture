@@ -11,6 +11,7 @@ export default defineConfig({
       'test',
       './src',
       './examples/orders',
+      './test/agent-briefs.test.ts',
       './test/app.test.ts',
       './test/architecture.test.ts',
       './test/evals.test.ts',
