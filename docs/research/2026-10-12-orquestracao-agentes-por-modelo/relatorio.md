@@ -92,11 +92,11 @@ Campos em ordem estável, os dois primeiros estáticos para favorecer cache: (1)
 
 ## Parte B. Backlog candidato
 
-Convenções do repositório a seguir: issues em português com prefixo "Melhoria — ..." (próximas numeradas #23+), corpo com Resultado esperado, Escopo, Critérios de aceite, Dependências, Limite de escopo; spec em `docs/superpowers/specs/AAAA-MM-DD-<slug>.md`, plano em `docs/superpowers/plans/` e ADR em `docs/adr/ADR-0002.md`; `changes/` é só para regras de negócio, não para esta feature de tooling. Nada abaixo autoriza gasto de inferência: o harness exige orçamento autorizado por ciclo.
+Convenções do repositório a seguir: issues em português com prefixo "Melhoria — ..." (próximas numeradas #23+), corpo com Resultado esperado, Escopo, Critérios de aceite, Dependências, Limite de escopo; spec em `docs/superpowers/specs/AAAA-MM-DD-<slug>.md`, plano em `docs/superpowers/plans/` e ADR em `docs/adr/ADR-0003.md`; `changes/` é só para regras de negócio, não para esta feature de tooling. Nada abaixo autoriza gasto de inferência: o harness exige orçamento autorizado por ciclo.
 
-**B01. Spec, plano e ADR-0002 da orquestração por camada de modelo**
+**B01. Spec, plano e ADR-0003 da orquestração por camada de modelo**
 - Escopo: registrar as decisões D1-D15, a topologia plana e a política de escalação; marcar tudo que é hipótese.
-- Aceite: spec e plano versionados em `docs/superpowers/specs|plans/`; `docs/adr/ADR-0002.md` com tabela de decisões (`D1...`); entrada em `docs/ROADMAP.md`; declara explicitamente que não há benchmark direto.
+- Aceite: spec e plano versionados em `docs/superpowers/specs|plans/`; `docs/adr/ADR-0003.md` com tabela de decisões (`D1...`); entrada em `docs/ROADMAP.md`; declara explicitamente que não há benchmark direto.
 - Dependências: nenhuma.
 - Riscos: ADR sem numeração acordada (o repo só tem `ADR-0001`); escopo crescer para o compilador.
 
@@ -216,7 +216,7 @@ Limites conhecidos da evidência: grande parte é de fornecedores (Anthropic, Co
 3. **A2:** Opus sozinho, esforço baixo.
 4. **A3, proposta:** Haiku (domínio) → Sonnet (aplicação, integração) → Opus (revisão).
 5. **A4:** como A3 sem revisão Opus (isola o valor do revisor).
-6. **A5:** Sonnet no domínio com o mesmo brief mínimo, Sonnet na aplicação (isola o valor do Haiku).
+6. **A5:** mesmo pipeline, política de escalação e revisão Opus de A3, trocando só o worker de domínio por Sonnet (isola o valor do Haiku; sem revisão em A5 a comparação com A3 misturaria o efeito do revisor).
 7. **A6:** brief mínimo versus contexto atual do executor, no mesmo modelo (isola o efeito do contexto e do isolamento de camadas).
 8. **A7:** Haiku com política de escalação alternativa (reiniciar no Sonnet versus continuar com log de falha).
 9. **A8 (opcional):** revisor de outra família via adapter Codex já existente, para testar autopreferência.

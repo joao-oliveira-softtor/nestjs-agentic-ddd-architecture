@@ -40,6 +40,10 @@ O ciclo preserva o dataset original e a referência real anterior. Manifestos de
 
 [Release](releases/0.4.0.md), [PR #21](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/21) e [#13](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/13): exports públicos, CLI instalável, biblioteca/declarações/maps e smoke do tarball real em consumidor externo. Tarball disponível no GitHub; publicação no registro npm segue bloqueada até definir nome e permissões. Planos 7–8 permanecem próximos trabalhos.
 
+## Frente proposta — Orquestração de agentes por camada e modelo
+
+Épico [#26](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/26) (sub-issues #27–#39). Objetivo: reduzir tokens e custo com briefs determinísticos por tarefa e distribuição do trabalho por camada entre Haiku (domínio), Sonnet (application, operators e integração) e Opus (aprovação e revisão), cada um em contexto limpo. Não há benchmark publicado para essa divisão em três níveis: ela é hipótese a medir, com Sonnet e Opus sozinhos como controles. [Spec](superpowers/specs/2026-10-12-orquestracao-agentes-por-modelo.md), [ADR-0003](adr/ADR-0003.md), [plano](superpowers/plans/2026-10-13-orquestracao-agentes-por-modelo.md) e [pesquisa](research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md). Nada implementado; inferência real exige orçamento próprio.
+
 ## Backlog — Extensões e distribuição
 
 [Milestone](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/milestone/2). Sem versão ou prazo comprometidos.
