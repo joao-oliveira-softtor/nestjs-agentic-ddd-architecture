@@ -17,6 +17,7 @@ export default defineConfig({
       './test/boundary-gates.test.ts',
       './test/evals.test.ts',
       './test/executor-roles.test.ts',
+      './test/orchestrate.test.ts',
       './test/package-audit.test.ts',
       './test/package-transform.test.ts',
       './test/package.test.ts',
