@@ -74,13 +74,15 @@ describe('core', () => {
     expect(new Counter('a').equals(null)).toBe(false);
   });
 
-  // Caracterização (ADR-0002, proposto): o id é comparado com `===`, então ids
-  // que são value objects só igualam pela mesma referência.
-  test('Entity com id value object compara o id por referência', () => {
+  // ADR-0002 (aceito): quando os dois ids são value objects, a igualdade é por valor.
+  test('Entity com id value object compara o id por valor', () => {
     const id = new Money(1, 'BRL');
     expect(new Wallet(id).equals(new Wallet(id))).toBe(true);
     expect(
       new Wallet(new Money(1, 'BRL')).equals(new Wallet(new Money(1, 'BRL'))),
+    ).toBe(true);
+    expect(
+      new Wallet(new Money(1, 'BRL')).equals(new Wallet(new Money(2, 'BRL'))),
     ).toBe(false);
   });
 
