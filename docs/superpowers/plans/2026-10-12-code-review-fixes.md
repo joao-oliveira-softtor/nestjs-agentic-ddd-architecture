@@ -385,7 +385,7 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 | D1 | `ci/evals-parallel-job` | mergeado (`546081b`); job `ci` 4m09s, job `evals` 17m39s | #25 |
 | 3 — F3+F4 | `fix/evals-evidence-integrity` | mergeada (`5fa59c0`); CI `ci` e `evals` verdes; D2 aguarda decisão | #41 |
 | 4 — F5 | `fix/compiler-validation-hardening` | mergeada (`681f7ec`); 7 itens (a–g) mais 2 ajustes da revisão; CI `ci` 3m46s e `evals` 11m9s verdes | #42 |
-| 5 — F6 | `fix/core-value-object-equality` | (a) documentada: Date/Map/Set seguem mutáveis, com teste de caracterização; (b) ADR-0002 "proposto" (opção B), `Entity.equals` inalterado, com teste de caracterização; aguarda aprovação de push/PR e o aceite do ADR | — |
+| 5 — F6 | `fix/core-value-object-equality` | mergeada (`9f6f587`): (a) documentada, Date/Map/Set seguem mutáveis, com teste de caracterização; (b) ADR-0002 proposto (opção B). Aceite em 2026-10-13 e `Entity.equals` por valor no PR `fix/core-entity-equals-vo-id` | #43 |
 | 6 — F7 | `feat/orders-cancellation-reason` | pendente | — |
 | 7 — Plano 7 | `docs/plan7-llm-adapter-spec` | pendente | — |
 
@@ -420,4 +420,4 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 - **Opções (decisão do usuário):**
   1. Bloquear `expect.extend` e congelar o protótipo dos matchers no mesmo preload, com teste próprio. Efeito colateral: um executor legítimo que use `expect.extend` nos próprios testes passa a ser reprovado, o que muda a régua da avaliação. Risco residual documentado.
   2. Oráculo fora do processo: o código submetido roda num processo e as asserções no outro, comunicando por RPC, com o veredito decidido pelo processo confiável (não por arquivo e exit que o avaliado controla). É o único fechamento para a saída nativa e para a adulteração do `expect`, mas exige reescrever os templates em `evals/implementation/tasks/reference/`, que a Fase 3 proíbe tocar; vira plano próprio. Mesmo assim, entradas e expectativas legíveis continuam um limite.
-- **Estado:** não implementado. Risco latente, como o da F3: nenhuma das 43 `submission.json` publicadas em `docs/superpowers/validation/2026-10-10-evals-20` referencia `bun:test`, `expect`, `process.exit/reallyExit/abort/kill` ou `/proc/self` fora de `app/test/`, e nenhuma (testes incluídos) referencia `bun:ffi`, `dlopen`, `bunfig`, `_exit` ou `junit` (conferido em 2026-10-12).
+- **Estado:** aceito como risco documentado (decisão do usuário, 2026-10-13); reabrir junto com #35/#36, quando entrar código de agente não confiável. Não implementado. Risco latente, como o da F3: nenhuma das 43 `submission.json` publicadas em `docs/superpowers/validation/2026-10-10-evals-20` referencia `bun:test`, `expect`, `process.exit/reallyExit/abort/kill` ou `/proc/self` fora de `app/test/`, e nenhuma (testes incluídos) referencia `bun:ffi`, `dlopen`, `bunfig`, `_exit` ou `junit` (conferido em 2026-10-12).
