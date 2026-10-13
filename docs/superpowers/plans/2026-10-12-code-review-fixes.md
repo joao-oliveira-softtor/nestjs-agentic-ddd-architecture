@@ -19,6 +19,7 @@
 7. **"65 evidências"** vem do prompt do code review. `docs/superpowers/validation` tem 245 `result.json`. O critério operacional é "nenhum arquivo sob `docs/superpowers/validation` e `evals/` muda" (`git diff --exit-code`), mais a reprodução dos agregados da Fase 3.
 8. **Revisão adversarial (2026-10-12):** um subagente Opus revisou o plano. Os achados CRITICAL e IMPORTANT já estão incorporados às fases.
 9. **Fora de escopo:** adapter real de LLM, CLI do Plano 8, backlog #9–#12, publicação no npm, edição manual de arquivos gerados, alteração de evidências em `docs/superpowers/validation`.
+10. **`examples/orders` não é produto (regra permanente, 2026-10-13).** É exemplo didático, fixture e benchmark do framework. Achados de code review sobre regra de negócio do exemplo viram "won't fix: exemplo". Só se edita `examples/orders` quando o framework exigir (build, snapshot, fixture ou benchmark), com mudança mínima, sem proposta em `changes/` e sem invariantes novas, declarando a necessidade antes de editar. Para validar a skill ou o fluxo agentic, usar o workspace isolado de `bun run skills:example`.
 
 ## Grafo de dependências e paralelismo
 
@@ -31,7 +32,7 @@ Fase 7 (spec, só docs) depende só de main; última por ordem do usuário.
 ```
 
 - **Ordem de execução: serial, 1 → 7**, como pedido. Cada fase parte de `main` *depois do merge da anterior*. Se a anterior ainda não tiver merge, parta do branch dela e anote isso no PR (rebase após o merge).
-- Dependências reais: F2 precisa de F1 (sem F1 a medição de tempo e a comparação de cobertura de `verify 0001` saem `failed`). F7 precisa de F5(a) (compile não pode gravar lock com erro de lint enquanto a proposta 0003 é escrita). F3 é independente em código, mas usa a suíte mais rápida da F2.
+- Dependências reais: F2 precisa de F1 (sem F1 a medição de tempo e a comparação de cobertura de `verify 0001` saem `failed`). F7 precisava de F5(a) (compile não pode gravar lock com erro de lint enquanto a proposta 0003 é escrita); sem efeito desde que F7 virou "won't fix: exemplo". F3 é independente em código, mas usa a suíte mais rápida da F2.
 - **Paralelizáveis em tese** (sem arquivos em comum): Fase 5 (`src/core`) com a Fase 3 (`scripts/evals`). Não paraleliza por padrão: o usuário pediu ordem fixa.
 
 ## Invariantes verificados ao fim de toda fase (quality gate mínimo)
@@ -374,7 +375,7 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 - CI verde e mais rápido que 25m54s.
 - Nenhum caminho novo de falso done: cada fase que amplia uma aceitação traz um teste negativo.
 - Evidências publicadas inalteradas e reproduzíveis.
-- Cada achado F1–F7 fechado com teste ou registrado como decisão documentada.
+- Cada achado F1–F7 fechado com teste ou registrado como decisão documentada. F7 (a)–(d) fica registrado como "won't fix: exemplo" pela premissa 10.
 
 ## Status
 
@@ -386,8 +387,8 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 | 3 — F3+F4 | `fix/evals-evidence-integrity` | mergeada (`5fa59c0`); CI `ci` e `evals` verdes; D2 aguarda decisão | #41 |
 | 4 — F5 | `fix/compiler-validation-hardening` | mergeada (`681f7ec`); 7 itens (a–g) mais 2 ajustes da revisão; CI `ci` 3m46s e `evals` 11m9s verdes | #42 |
 | 5 — F6 | `fix/core-value-object-equality` | mergeada (`9f6f587`): (a) documentada, Date/Map/Set seguem mutáveis, com teste de caracterização; (b) ADR-0002 proposto (opção B). Aceite em 2026-10-13 e `Entity.equals` por valor no PR `fix/core-entity-equals-vo-id` | #43 |
-| 6 — F7 | `feat/orders-cancellation-reason` | pendente | — |
-| 7 — Plano 7 | `docs/plan7-llm-adapter-spec` | pendente | — |
+| 6 — F7 | `feat/orders-cancellation-reason` | won't fix: exemplo (decisão do usuário, 2026-10-13). F7 (a)–(d) são regra de negócio de `examples/orders`, que é exemplo didático e não produto. Commit local `e2ce9ab` descartado; recuperável pelo reflog até o gc | — |
+| 7 — Plano 7 | `docs/plan7-llm-adapter-spec` | adiada (decisão do usuário, 2026-10-13): o foco passa a ser validar os agentes de desenvolvimento (épico #26); Plano 7 em pausa; Mastra candidato à camada de provider (ADR-0004, proposto). Spec e plano escritos nesse dia foram descartados e ficam no branch local `backup/plan7-spec` (`dc1b711`) | — |
 
 ## Protocolo de mutação do plano
 
