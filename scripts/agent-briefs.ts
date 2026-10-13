@@ -31,12 +31,13 @@ export const GENERATED_PATHS = [
   '.agents/skills',
   '.agentic',
   '.claude/skills',
+  '.claude/agents',
   '.cursor',
   '.codex',
 ] as const;
 
 const RESPONSE_FORMAT =
-  'Resposta final: um objeto JSON `{"item","specHash","status":"done|blocked|failed","verifyExitCode","changedFiles":[],"findings":[]}`, sem prosa. `specHash` é o do packet, nunca recalculado.';
+  'Resposta final: apenas um objeto JSON, sem prosa, no formato do exemplo: `{"item":"entity:Order","specHash":"<hash do packet>","status":"done","verifyExitCode":0,"changedFiles":["examples/orders/domain/order.ts"],"findings":[]}`. `status` é `done`, `blocked` ou `failed`. `specHash` é o do packet, nunca recalculado.';
 
 export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
   domain: [
@@ -79,7 +80,7 @@ export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
     '- Confira se só o corpo e os testes mudaram e se nenhuma camada importa em direção proibida.',
     '- No máximo 2 ciclos de revisão por item; depois, devolva o que continua aberto.',
     '',
-    'Resposta final: um objeto JSON `{"status":"approved|changes_requested","findings":[{"ref","message"}]}`, sem prosa.',
+    'Resposta final: apenas um objeto JSON, sem prosa, no formato do exemplo: `{"status":"changes_requested","findings":[{"ref":"I4","message":"o teste não exercita a regra"}]}`. `status` é `approved` ou `changes_requested`; `ref` é o ID da invariante, do critério ou do gate.',
   ].join('\n'),
 };
 
@@ -206,8 +207,9 @@ export function renderReviewerBrief(input: ReviewerInput): string {
   );
 }
 
+/** `_` é válido em IDs (ex.: `usecase:a_b`) e fica; o resto vira `-`, para não colidir. */
 export function briefFileName(id: string): string {
-  return `${id.replaceAll(/[^a-zA-Z0-9]+/g, '-')}.md`;
+  return `${id.replaceAll(/[^a-zA-Z0-9_]+/g, '-')}.md`;
 }
 
 export function assertOutsideGenerated(root: string, out: string): string {
@@ -280,6 +282,14 @@ export async function main(argv: readonly string[]): Promise<number> {
   try {
     const root = process.cwd();
     const out = assertOutsideGenerated(root, options.out);
+    const names = new Map<string, string>();
+    for (const item of options.items) {
+      const name = briefFileName(item);
+      const other = names.get(name);
+      if (other)
+        throw new Error(`${item} e ${other} gerariam o mesmo arquivo: ${name}`);
+      names.set(name, item);
+    }
     await mkdir(out, { recursive: true });
     for (const item of options.items) {
       const packet = options.packetFile

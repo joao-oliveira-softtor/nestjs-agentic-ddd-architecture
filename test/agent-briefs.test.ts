@@ -146,6 +146,7 @@ test('saída nunca cai em caminho gerado', () => {
     '.agentic/briefs',
     '.agents/skills/x',
     '.claude/skills',
+    '.claude/agents',
     '.cursor/agents',
     '.codex/agents',
   ])
@@ -154,6 +155,7 @@ test('saída nunca cai em caminho gerado', () => {
     join(ROOT, '.agentic-tasks/briefs'),
   );
   expect(briefFileName('method:Order.cancel')).toBe('method-Order-cancel.md');
+  expect(briefFileName('usecase:a_b')).not.toBe(briefFileName('usecase:a__b'));
 });
 
 test('CLI grava um brief por item e recusa saída em caminho gerado', async () => {
@@ -170,6 +172,41 @@ test('CLI grava um brief por item e recusa saída em caminho gerado', async () =
     expect(await main(['entity:Order', '--out', '.agentic/briefs'])).toBe(1);
     expect(await main(['--out', out])).toBe(2);
     expect(await main(['entity:Inexistente', '--out', out])).toBe(1);
+  } finally {
+    process.chdir(cwd);
+  }
+});
+
+test('os exemplos de resposta dos papéis são JSON válido com as chaves do contrato', () => {
+  const example = (core: string): Record<string, unknown> => {
+    const match = /no formato do exemplo: `(\{.*?\})`\./.exec(core);
+    expect(match).not.toBeNull();
+    return JSON.parse(match![1]!);
+  };
+  for (const role of ['domain', 'application'] as const)
+    expect(Object.keys(example(ROLE_CORES[role]))).toEqual([
+      'item',
+      'specHash',
+      'status',
+      'verifyExitCode',
+      'changedFiles',
+      'findings',
+    ]);
+  const reviewer = example(ROLE_CORES.reviewer);
+  expect(reviewer.status).toBe('changes_requested');
+  expect(reviewer.findings).toEqual([
+    { ref: 'I4', message: 'o teste não exercita a regra' },
+  ]);
+});
+
+test('CLI recusa dois itens que gerariam o mesmo arquivo, sem escrever nada', async () => {
+  const out = await mkdtemp(join(tmpdir(), 'agentic-briefs-'));
+  dirs.push(out);
+  const cwd = process.cwd();
+  process.chdir(ROOT);
+  try {
+    expect(await main(['usecase:a-b', 'usecase:a:b', '--out', out])).toBe(1);
+    expect(await readdir(out)).toEqual([]);
   } finally {
     process.chdir(cwd);
   }

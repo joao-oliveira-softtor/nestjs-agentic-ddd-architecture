@@ -12,7 +12,7 @@ Implemente UM item da camada de domínio a partir do packet abaixo. Você não c
 - Não rode \`compile\` nem altere o hash. Se faltar contrato ou dependência, devolva o item com o dado faltante em vez de improvisar.
 - Após duas correções sem progresso nos findings, encerre e devolva o diagnóstico.
 
-Resposta final: um objeto JSON \`{"item","specHash","status":"done|blocked|failed","verifyExitCode","changedFiles":[],"findings":[]}\`, sem prosa. \`specHash\` é o do packet, nunca recalculado.
+Resposta final: apenas um objeto JSON, sem prosa, no formato do exemplo: \`{"item":"entity:Order","specHash":"<hash do packet>","status":"done","verifyExitCode":0,"changedFiles":["examples/orders/domain/order.ts"],"findings":[]}\`. \`status\` é \`done\`, \`blocked\` ou \`failed\`. \`specHash\` é o do packet, nunca recalculado.
 
 ## Arquivos
 
