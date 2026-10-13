@@ -53,6 +53,12 @@ class OtherMoney extends ValueObject<{ amount: number; currency: string }> {
   }
 }
 
+class Wallet extends AggregateRoot<Money> {
+  constructor(id: Money) {
+    super(id);
+  }
+}
+
 describe('core', () => {
   test('AggregateRoot acumula eventos e pullEvents os esvazia', () => {
     const counter = new Counter('c1');
@@ -66,6 +72,16 @@ describe('core', () => {
     expect(new Counter('a').equals(new Counter('a'))).toBe(true);
     expect(new Counter('a').equals(new Counter('b'))).toBe(false);
     expect(new Counter('a').equals(null)).toBe(false);
+  });
+
+  // Caracterização (ADR-0002, proposto): o id é comparado com `===`, então ids
+  // que são value objects só igualam pela mesma referência.
+  test('Entity com id value object compara o id por referência', () => {
+    const id = new Money(1, 'BRL');
+    expect(new Wallet(id).equals(new Wallet(id))).toBe(true);
+    expect(
+      new Wallet(new Money(1, 'BRL')).equals(new Wallet(new Money(1, 'BRL'))),
+    ).toBe(false);
   });
 
   test('ValueObject compara estruturalmente e congela as props', () => {
