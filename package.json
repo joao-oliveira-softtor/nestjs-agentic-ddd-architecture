@@ -18,6 +18,7 @@
     "test": "bun test",
     "test:cov": "bun test --coverage",
     "agentic": "bun src/cli/main.ts",
+    "agent-briefs": "bun scripts/agent-briefs.ts",
     "skills:install": "bun scripts/install-skills.ts",
     "skills:example": "bun scripts/create-skills-example.ts",
     "evals": "bun scripts/evals/main.ts",
