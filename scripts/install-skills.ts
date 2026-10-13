@@ -59,12 +59,17 @@ function artifacts(options: InstallOptions): Artifact[] {
         role === 'reviewer'
           ? ''
           : ' Consulte também a skill gerada do módulo indicado pela configuração.';
-      const instructions = `Você é o ${ROLE_NAMES[role]} agentic-ddd. Leia [skill](${base}/SKILL.md) e [instruções do papel](${base}/references/${role}.md) antes de agir. Caminhos relativos são resolvidos a partir da raiz do projeto.${moduleSkill} Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.`;
+      // O revisor lê só a própria referência: a skill geral manda ler configuração e skill do módulo.
+      const reading =
+        role === 'reviewer'
+          ? `Leia só as [instruções do papel](${base}/references/reviewer.md) antes de agir`
+          : `Leia [skill](${base}/SKILL.md) e [instruções do papel](${base}/references/${role}.md) antes de agir`;
+      const instructions = `Você é o ${ROLE_NAMES[role]} agentic-ddd. ${reading}. Caminhos relativos são resolvidos a partir da raiz do projeto.${moduleSkill} Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.`;
       const name = `agentic-ddd-${role}`;
       const content =
         target === 'codex'
           ? `# Instalado por skills:install; instruções compartilhadas na fonte autoral.\nname = ${JSON.stringify(name)}\ndescription = ${JSON.stringify(DESCRIPTIONS[role])}\ndeveloper_instructions = ${JSON.stringify(instructions)}\n`
-          : `---\nname: ${name}\ndescription: ${JSON.stringify(DESCRIPTIONS[role])}\nmodel: inherit\n${target === 'claude' ? 'skills:\n  - agentic-ddd\n' : ''}---\n\n<!-- Instalado por skills:install; instruções compartilhadas na fonte autoral. -->\n\n${instructions}\n`;
+          : `---\nname: ${name}\ndescription: ${JSON.stringify(DESCRIPTIONS[role])}\nmodel: inherit\n${target === 'claude' && role !== 'reviewer' ? 'skills:\n  - agentic-ddd\n' : ''}---\n\n<!-- Instalado por skills:install; instruções compartilhadas na fonte autoral. -->\n\n${instructions}\n`;
       result.push({
         path: join(
           options.root,

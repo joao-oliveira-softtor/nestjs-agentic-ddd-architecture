@@ -63,12 +63,17 @@ for (const scope of ['project', 'user'])
           >;
           expect(fm.name).toBe(`agentic-ddd-${role}`);
           expect(fm.model).toBe('inherit');
-          if (target === 'claude') expect(fm.skills).toEqual(['agentic-ddd']);
+          if (target === 'claude')
+            expect(fm.skills).toEqual(
+              role === 'reviewer' ? undefined : ['agentic-ddd'],
+            );
           instructions = text;
         }
         const reference = /\[instruções do papel\]\(([^)]+)\)/.exec(
           instructions,
         )![1]!;
+        // O revisor não lê a skill geral (ela manda ler configuração e skill do módulo).
+        expect(instructions.includes('/SKILL.md')).toBe(role !== 'reviewer');
         expect(await readFile(resolve(root, reference), 'utf8')).toContain(
           {
             manager: 'next --change',
