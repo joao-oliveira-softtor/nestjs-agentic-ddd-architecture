@@ -184,7 +184,7 @@ bun run skills:install --check                      # verifica sem escrever
 bun run skills:example --root ./scratch/agentic-tasks     # destino inexistente
 ```
 
-O instalador cria links para a mesma fonte e agentes nativos `agentic-ddd-manager`/`agentic-ddd-executor`, com modelo herdado. Verifica conflitos antes de escrever, preserva instalações idênticas e não altera configurações/permissões globais. A instalação global depende da permanência do checkout. Veja [instalação](skills/agentic-ddd/references/installation.md) e [tutorial completo](skills/agentic-ddd/references/tutorial.md).
+O instalador cria links para a mesma fonte e agentes nativos `agentic-ddd-manager`/`agentic-ddd-executor`/`agentic-ddd-reviewer`, com modelo herdado. Verifica conflitos antes de escrever, preserva instalações idênticas e não altera configurações/permissões globais. A instalação global depende da permanência do checkout. Veja [instalação](skills/agentic-ddd/references/installation.md) e [tutorial completo](skills/agentic-ddd/references/tutorial.md).
 
 O gerente prepara proposta/contratos e despacha um item por vez; o executor altera só corpo atribuído e testes, verificando com o hash original do packet. O gerente revisa o diff, repete a verificação e encerra com `verify NNNN`. O tutorial tasks começa sem testes e com corpos pendentes, usando aliases para este checkout e typecheck real. [Spec do Plano 5](docs/superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [validação com smokes reais](docs/superpowers/validation/2026-10-08-plan5.md).
 

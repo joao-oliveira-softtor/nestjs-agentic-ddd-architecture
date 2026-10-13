@@ -45,7 +45,7 @@ for (const scope of ['project', 'user'])
         join(ROOT, 'skills/agentic-ddd'),
       );
     for (const target of ['cursor', 'codex', 'claude'])
-      for (const role of ['manager', 'executor']) {
+      for (const role of ['manager', 'executor', 'reviewer']) {
         const ext = target === 'codex' ? 'toml' : 'md';
         const path = join(root, `.${target}/agents/agentic-ddd-${role}.${ext}`);
         const text = await readFile(path, 'utf8');
@@ -63,14 +63,23 @@ for (const scope of ['project', 'user'])
           >;
           expect(fm.name).toBe(`agentic-ddd-${role}`);
           expect(fm.model).toBe('inherit');
-          if (target === 'claude') expect(fm.skills).toEqual(['agentic-ddd']);
+          if (target === 'claude')
+            expect(fm.skills).toEqual(
+              role === 'reviewer' ? undefined : ['agentic-ddd'],
+            );
           instructions = text;
         }
         const reference = /\[instruções do papel\]\(([^)]+)\)/.exec(
           instructions,
         )![1]!;
+        // O revisor não lê a skill geral (ela manda ler configuração e skill do módulo).
+        expect(instructions.includes('/SKILL.md')).toBe(role !== 'reviewer');
         expect(await readFile(resolve(root, reference), 'utf8')).toContain(
-          role === 'manager' ? 'next --change' : '--spec-hash',
+          {
+            manager: 'next --change',
+            executor: '--spec-hash',
+            reviewer: 'changes_requested',
+          }[role]!,
         );
         expect(install(root, '--scope', scope).code).toBe(0);
         expect(await readFile(path, 'utf8')).toBe(text);

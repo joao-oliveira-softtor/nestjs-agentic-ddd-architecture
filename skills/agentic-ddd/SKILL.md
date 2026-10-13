@@ -11,6 +11,7 @@ Carregue somente as referências necessárias:
 - [Gerente](references/manager.md): preparar contratos e coordenar execução sequencial.
 - [Executor](references/executor.md): executar um packet sem mudar a especificação.
 - [Executor de domínio](references/executor-domain.md): item `domain` em contexto isolado, só com o packet.
+- [Revisor](references/reviewer.md): revisar o diff contra o contrato e os gates, sem editar.
 - [Instalação](references/installation.md): instalar/verificar links e adaptadores locais ou globais.
 - [Tutorial](references/tutorial.md): praticar em um workspace tasks isolado.
 

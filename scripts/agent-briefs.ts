@@ -46,6 +46,12 @@ export const DOMAIN_CORE = resolve(
   '../skills/agentic-ddd/references/executor-domain.md',
 );
 
+/** Fonte única do núcleo do revisor. */
+export const REVIEWER_CORE = resolve(
+  import.meta.dir,
+  '../skills/agentic-ddd/references/reviewer.md',
+);
+
 export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
   domain: readFileSync(DOMAIN_CORE, 'utf8').trimEnd(),
   application: [
@@ -63,19 +69,7 @@ export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
     '',
     RESPONSE_FORMAT,
   ].join('\n'),
-  reviewer: [
-    '# Papel: revisor',
-    '',
-    'Você vê só o diff, os packets e os resultados dos gates abaixo, sem o histórico de quem implementou. Revise se a mudança cumpre o contrato.',
-    '',
-    '- Cada achado cita o ID de uma invariante ou critério do packet, ou o gate que falhou. Sem ID ou gate, não é achado.',
-    '- Não relate lacunas fora do escopo do packet nem proponha engenharia adicional.',
-    '- Os gates verdes não provam que um teste verifica comportamento: confira se cada teste `covers` exercita a regra e não apenas passa (por exemplo, `expect(true)`).',
-    '- Confira se só o corpo e os testes mudaram e se nenhuma camada importa em direção proibida.',
-    '- No máximo 2 ciclos de revisão por item; depois, devolva o que continua aberto.',
-    '',
-    'Resposta final: apenas um objeto JSON, sem prosa, no formato do exemplo: `{"status":"changes_requested","findings":[{"ref":"I4","message":"o teste não exercita a regra"}]}`. `status` é `approved` ou `changes_requested`; `ref` é o ID da invariante, do critério ou do gate.',
-  ].join('\n'),
+  reviewer: readFileSync(REVIEWER_CORE, 'utf8').trimEnd(),
 };
 
 const FORBIDDEN = [
