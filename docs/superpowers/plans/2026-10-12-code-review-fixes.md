@@ -388,7 +388,7 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 | 4 — F5 | `fix/compiler-validation-hardening` | mergeada (`681f7ec`); 7 itens (a–g) mais 2 ajustes da revisão; CI `ci` 3m46s e `evals` 11m9s verdes | #42 |
 | 5 — F6 | `fix/core-value-object-equality` | mergeada (`9f6f587`): (a) documentada, Date/Map/Set seguem mutáveis, com teste de caracterização; (b) ADR-0002 proposto (opção B). Aceite em 2026-10-13 e `Entity.equals` por valor no PR `fix/core-entity-equals-vo-id` | #43 |
 | 6 — F7 | `feat/orders-cancellation-reason` | won't fix: exemplo (decisão do usuário, 2026-10-13). F7 (a)–(d) são regra de negócio de `examples/orders`, que é exemplo didático e não produto. Commit local `e2ce9ab` descartado; recuperável pelo reflog até o gc | — |
-| 7 — Plano 7 | `docs/plan7-llm-adapter-spec` | pendente | — |
+| 7 — Plano 7 | `docs/plan7-llm-adapter-spec` | adiada (decisão do usuário, 2026-10-13): o foco passa a ser validar os agentes de desenvolvimento (épico #26); Plano 7 em pausa; Mastra candidato à camada de provider (ADR-0004, proposto). Spec e plano escritos nesse dia foram descartados e ficam no branch local `backup/plan7-spec` (`dc1b711`) | — |
 
 ## Protocolo de mutação do plano
 
