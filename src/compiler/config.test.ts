@@ -78,6 +78,36 @@ describe('validação do caminho dos módulos', () => {
     );
   });
 
+  test('resolveConfig rejeita módulos com o mesmo nome', () => {
+    expect(() =>
+      resolveConfig(
+        {
+          modules: [
+            { name: 'x', path: 'src/a' },
+            { name: 'x', path: 'src/b' },
+          ],
+        },
+        dir,
+      ),
+    ).toThrow('agentic.config.ts: o nome do módulo "x" está repetido');
+  });
+
+  test('resolveConfig rejeita módulos com o mesmo caminho', () => {
+    expect(() =>
+      resolveConfig(
+        {
+          modules: [
+            { name: 'a', path: 'src/x' },
+            { name: 'b', path: './src/x/' },
+          ],
+        },
+        dir,
+      ),
+    ).toThrow(
+      'agentic.config.ts: os módulos "a" e "b" apontam para o mesmo caminho "src/x"',
+    );
+  });
+
   test('loadConfig aceita diretório existente dentro da raiz', async () => {
     await mkdir(join(dir, 'src/x'), { recursive: true });
     const file = await configFor('./src/x/');

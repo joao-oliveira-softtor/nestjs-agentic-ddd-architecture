@@ -135,6 +135,33 @@ describe('parseProposal', () => {
     ]);
   });
 
+  test('delta com chave desconhecida é rejeitado', () => {
+    const raw = VALID.replace('  removed: []', '  removed: []\n  renamed: []');
+    expect(messages(raw)).toEqual([
+      'delta: chave desconhecida "renamed" (esperado added, modified ou removed)',
+    ]);
+  });
+
+  test('proposta arquivada com delta fora da forma continua aceita (imutável)', () => {
+    const extra = VALID.replace(
+      '  removed: []',
+      '  removed: []\n  renamed: []',
+    );
+    const lista = VALID.replace(/delta:\n(?: {2}.*\n)+/, 'delta: [a, b]\n');
+    for (const raw of [extra, lista]) {
+      expect(
+        parseProposal(raw, '0002-cancelamento-exige-motivo', PATH, true).errors,
+      ).toEqual([]);
+    }
+  });
+
+  test('delta que não é objeto é rejeitado', () => {
+    const lista = VALID.replace(/delta:\n(?: {2}.*\n)+/, 'delta: [a, b]\n');
+    expect(messages(lista)).toEqual(['delta deve ser um objeto']);
+    const texto = VALID.replace(/delta:\n(?: {2}.*\n)+/, 'delta: nada\n');
+    expect(messages(texto)).toEqual(['delta deve ser um objeto']);
+  });
+
   test('critérios: id repetido, automático sem covers/given/when', () => {
     const raw = VALID.replace(
       'id: revisao-de-copy\n    manual: true',

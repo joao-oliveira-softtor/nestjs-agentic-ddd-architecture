@@ -1,4 +1,5 @@
 import type { Registry } from '@agentic-ddd/decorators';
+import { limitsError } from '../contracts/limits';
 import { sourceOf, type CompileError, type IR, type IRMethod } from './ir';
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -74,10 +75,15 @@ export function validate(
           `${method.id}: transition precisa de from (não vazio) e to`,
           method.source,
         );
+      } else if (method.transition.from.some((state) => state.trim() === '')) {
+        err(
+          `${method.id}: transition não aceita estado vazio em from`,
+          method.source,
+        );
       }
       if (entity.states.length === 0) continue;
       for (const state of [...method.transition.from, method.transition.to]) {
-        if (state !== '' && !entity.states.includes(state)) {
+        if (state.trim() !== '' && !entity.states.includes(state)) {
           err(
             `${method.id}: estado "${state}" não está em states de ${entity.name}`,
             method.source,
@@ -139,6 +145,12 @@ export function validate(
     );
     if (operator.useCases.length === 0)
       err(`${operator.id}: useCases não pode ser vazio`, operator.source);
+    const limitsProblem = limitsError(operator.limits);
+    if (limitsProblem !== null)
+      err(
+        `${operator.id}: limits inválidos (${limitsProblem})`,
+        operator.source,
+      );
     for (const approval of operator.requiresApproval) {
       if (!operator.useCases.includes(approval)) {
         err(

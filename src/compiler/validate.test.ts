@@ -361,6 +361,24 @@ describe('validate', () => {
     expect(errors[0]).toContain('transition precisa de from (não vazio) e to');
   });
 
+  test('transition com estado vazio em from é rejeitado', () => {
+    for (const empty of ['', '  ']) {
+      const errors = errorsOf(() => {
+        @AgentEntity({ description: 'Porta.', states: ['closed', 'open'] })
+        class Door extends AggregateRoot<string> {
+          @AgentMethod({
+            description: 'Abre.',
+            transition: { from: [empty], to: 'open' },
+          })
+          open(): void {}
+        }
+        void Door;
+      });
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toContain('transition não aceita estado vazio');
+    }
+  });
+
   test('@Operator com useCases vazio', () => {
     const errors = errorsOf(() => {
       @Operator({
@@ -399,6 +417,38 @@ describe('validate', () => {
     expect(errors[0]).toContain(
       'operator:Op Ruim: name deve ser kebab-case com até 64 caracteres',
     );
+  });
+
+  test('operator com limits inválidos é rejeitado na compilação', () => {
+    const invalid = [
+      { maxSteps: 0 },
+      { maxSteps: 1.5 },
+      { timeoutMs: 0 },
+      { timeoutMs: Number.POSITIVE_INFINITY },
+    ];
+    for (const limits of invalid) {
+      const errors = errorsOf(() => {
+        @AgentUseCase({
+          name: 'do_it',
+          description: 'Faz.',
+          whenToUse: 'Sempre.',
+          ...io,
+          uses: [],
+        })
+        class DoIt {}
+        @Operator({
+          name: 'op',
+          description: 'Op.',
+          instructions: 'Op.',
+          useCases: [DoIt],
+          limits,
+        })
+        class Op {}
+        void Op;
+      });
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toContain('operator:op: limits inválidos');
+    }
   });
 
   test('método estático público sem @AgentMethod', () => {

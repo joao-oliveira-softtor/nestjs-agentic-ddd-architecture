@@ -149,6 +149,18 @@ function managedBases(
   ];
 }
 
+function skillsRootOf(config: ResolvedConfig): string {
+  return `${resolve(config.outRoot, config.out.devSkills)}${sep}`;
+}
+
+// Mesma condição na escrita (remove o link) e no check (acusa o link).
+async function isDanglingSkillTarget(
+  target: string,
+  skillsRoot: string,
+): Promise<boolean> {
+  return target.startsWith(skillsRoot) && (await lstatOrNull(target)) === null;
+}
+
 function mirrorTarget(
   config: ResolvedConfig,
   mirror: string,
@@ -210,7 +222,7 @@ export async function writeOutputs(
     written.push(config.out.claudeMd);
   }
 
-  const skillsRoot = `${resolve(config.outRoot, config.out.devSkills)}${sep}`;
+  const skillsRoot = skillsRootOf(config);
   for (const mirror of config.mirrors) {
     const mirrorDir = join(config.outRoot, mirror);
     await mkdir(mirrorDir, { recursive: true });
@@ -220,8 +232,7 @@ export async function writeOutputs(
       if (!stat.isSymbolicLink() || rendered.devSkillDirs.includes(name))
         continue;
       const target = resolve(mirrorDir, await readlink(link));
-      const dangling =
-        target.startsWith(skillsRoot) && (await lstatOrNull(target)) === null;
+      const dangling = await isDanglingSkillTarget(target, skillsRoot);
       if (dangling || removedOrphans.has(target)) {
         await rm(link, { force: true });
         written.push(`${mirror}/${name} (link removido)`);
@@ -285,7 +296,18 @@ export async function checkOutputs(
     drift.push({ path: config.out.claudeMd, reason: 'missing' });
   }
 
+  const skillsRoot = skillsRootOf(config);
   for (const mirror of config.mirrors) {
+    const mirrorDir = join(config.outRoot, mirror);
+    const names = await readdir(mirrorDir).catch(() => [] as string[]);
+    for (const name of names.sort()) {
+      if (rendered.devSkillDirs.includes(name)) continue;
+      const link = join(mirrorDir, name);
+      if (!(await lstat(link)).isSymbolicLink()) continue;
+      const target = resolve(mirrorDir, await readlink(link));
+      if (await isDanglingSkillTarget(target, skillsRoot))
+        drift.push({ path: `${mirror}/${name}`, reason: 'extra' });
+    }
     for (const dir of rendered.devSkillDirs) {
       if (conflicts.has(`${config.out.devSkills}/${dir}`)) continue;
       const link = join(config.outRoot, mirror, dir);

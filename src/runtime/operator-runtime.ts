@@ -10,6 +10,7 @@ import {
   type UseCaseRecord,
 } from '@agentic-ddd/decorators';
 import { buildIR, irHash, type IRModule } from '../contracts/ir';
+import { limitsError } from '../contracts/limits';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import { InMemoryEventBus } from './event-bus';
 import type { LlmTool, OperatorRunResult, RunInput } from './types';
@@ -49,12 +50,7 @@ export class OperatorRuntime {
     if (!record) throw new Error(`Operator ${target.name} is not declared`);
     if (this.#operators.has(record.name))
       throw new Error(`Duplicate operator ${record.name}`);
-    if (
-      !Number.isInteger(record.limits.maxSteps) ||
-      record.limits.maxSteps <= 0 ||
-      !Number.isFinite(record.limits.timeoutMs) ||
-      record.limits.timeoutMs <= 0
-    )
+    if (limitsError(record.limits) !== null)
       throw new Error(`Invalid limits for ${record.name}`);
     const { ir, errors } = buildIR(registry, {
       root,

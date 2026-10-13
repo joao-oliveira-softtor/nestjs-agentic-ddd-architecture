@@ -185,18 +185,20 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
 
   const result = await writeOutputs(config, rendered);
   const written = [...result.written];
-  if (plan.apply && plan.archivedPath) {
+  // com erro de lint os artefatos são escritos, mas a proposta continua aberta e o lock não avança
+  const commit = lintErrors.length === 0;
+  if (commit && plan.apply && plan.archivedPath) {
     await archiveProposal(config, plan.apply, plan.archivedPath);
     written.push(plan.archivedPath);
   }
-  if (lockText !== null) {
+  if (commit && lockText !== null) {
     await mkdir(dirname(lockAbs), { recursive: true });
     await writeFile(lockAbs, lockText);
     written.push(config.out.lock);
   }
   return {
     ...empty,
-    ok: lintErrors.length === 0,
+    ok: commit,
     errors: lintErrors,
     written,
     warnings: [...warnings, ...result.warnings],
@@ -204,7 +206,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     rendered,
     diff: plan.diff,
     pending: plan.pending,
-    applied: plan.apply?.id ?? null,
+    applied: commit ? (plan.apply?.id ?? null) : null,
     drafted,
   };
 }

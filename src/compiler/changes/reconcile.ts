@@ -1,5 +1,5 @@
 import { sha256 } from '../canonical';
-import { EMPTY_IR, semanticDiff, type DiffItem } from '../diff';
+import { EMPTY_IR, elementsOf, semanticDiff, type DiffItem } from '../diff';
 import type { CompileError, IR } from '../ir';
 import type { DomainLock, LockChange } from '../lock';
 import { markApplied, summarize, type Proposal } from './proposal';
@@ -106,6 +106,22 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
       message: `há ${open.length} propostas abertas (${open.map((p) => p.id).join(', ')}); o v0 aceita uma por vez`,
       source: null,
     });
+  }
+
+  // covers só é conferido na proposta aberta: o archive é imutável e o parse
+  // não recebe a IR. Proposal-first cobre IDs que ainda não existem no código.
+  const known = new Set(elementsOf(input.ir).keys());
+  for (const proposal of open) {
+    const reachable = new Set([...known, ...proposal.delta.added]);
+    for (const criterion of proposal.acceptance) {
+      for (const id of criterion.covers) {
+        if (!reachable.has(id))
+          errors.push({
+            message: `critério ${criterion.id}: covers cita ${id}, que não está na IR nem em delta.added`,
+            source: proposal.path,
+          });
+      }
+    }
   }
 
   const appliedTexts = new Map<string, string>();
