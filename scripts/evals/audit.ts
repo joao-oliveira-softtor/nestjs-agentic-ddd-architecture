@@ -1,7 +1,7 @@
 import { lstat, opendir, readlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import ts from 'typescript';
 import type { AuditReport } from './contracts';
+import { bodyOnlyFindings } from '../boundary-gates';
 import { sha256 } from './isolation';
 import { readPrivateBytes } from './private-files';
 
@@ -128,45 +128,6 @@ export async function treeHash(root: string): Promise<string> {
     ),
   );
 }
-function body(
-  text: string,
-  className: string,
-  methodName: string,
-): { start: number; end: number } {
-  const parsed = ts.createSourceFile(
-    'submission.ts',
-    text,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS,
-  );
-  const diagnostics =
-    ts.transpileModule(text, {
-      reportDiagnostics: true,
-      compilerOptions: {
-        experimentalDecorators: true,
-        target: ts.ScriptTarget.ESNext,
-      },
-    }).diagnostics ?? [];
-  if (diagnostics.some((d) => d.category === ts.DiagnosticCategory.Error))
-    throw Error('Submission syntax invalid');
-  for (const statement of parsed.statements)
-    if (
-      ts.isClassDeclaration(statement) &&
-      statement.name?.text === className
-    ) {
-      const method = statement.members.find(
-        (m) =>
-          ts.isMethodDeclaration(m) && m.name.getText(parsed) === methodName,
-      );
-      if (method && ts.isMethodDeclaration(method) && method.body)
-        return {
-          start: method.body.getStart(parsed) + 1,
-          end: method.body.end - 1,
-        };
-    }
-  throw Error('Assigned method body missing');
-}
 export async function auditSubmission(
   baselineRoot: string,
   submissionRoot: string,
@@ -233,33 +194,15 @@ export async function auditSubmission(
       findings.push(`Forbidden file change: ${path}`);
       continue;
     }
-    try {
-      const oldBody = body(
+    findings.push(
+      ...bodyOnlyFindings(
         before.content,
-        assignment.className!,
-        assignment.method!,
-      );
-      const newBody = body(
         after.content,
         assignment.className!,
         assignment.method!,
-      );
-      if (
-        before.content.slice(0, oldBody.start) !==
-          after.content.slice(0, newBody.start) ||
-        before.content.slice(oldBody.end) !== after.content.slice(newBody.end)
-      )
-        findings.push(`Bytes outside assigned body changed: ${path}`);
-      if (
-        (before.content.slice(oldBody.start, oldBody.end).match(/\n/g) ?? [])
-          .length !==
-        (after.content.slice(newBody.start, newBody.end).match(/\n/g) ?? [])
-          .length
-      )
-        findings.push(`Body line count changed: ${path}`);
-    } catch (error) {
-      findings.push(String(error));
-    }
+        path,
+      ),
+    );
   }
   return {
     ok: findings.length === 0,
