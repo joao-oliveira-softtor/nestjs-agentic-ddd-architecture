@@ -198,3 +198,79 @@ test('CLI: imports e body-only devolvem 0, 1 ou 2', async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('require(), import = require() e import() não literal não contornam o gate', () => {
+  const file = 'src/orders/domain/order.ts';
+  const forbidden = [
+    `const a = require('../application/x');`,
+    `import a = require('../operators/x');`,
+    'const a = import(`../infra/x`);',
+    `const a = require('@nestjs/common');`,
+  ];
+  for (const line of forbidden)
+    expect(importDirectionFindings(file, line, 'domain')).toHaveLength(1);
+  expect(
+    importSpecifiers(`import a = require('./a'); const b = require('./b');`),
+  ).toEqual(['./a', './b']);
+  for (const line of [
+    `const p = '../application/x'; const a = import(p);`,
+    `const a = require(path);`,
+    `import a = require(path);`,
+  ])
+    expect(importDirectionFindings(file, line, 'domain')).toEqual([
+      expect.stringContaining('não literal'),
+    ]);
+  expect(
+    importDirectionFindings(file, `const a = require('./order-id');`, 'domain'),
+  ).toEqual([]);
+});
+
+test('diretório acima do módulo chamado infra/operators não gera falso positivo', () => {
+  for (const base of [
+    'src/infra',
+    'src/operators',
+    'packages/infrastructure/orders',
+  ]) {
+    const file = `${base}/domain/order.ts`;
+    expect(
+      importDirectionFindings(
+        file,
+        `import { a } from './order-id'; import { b } from '../shared/event'; import { c } from './sub/x';`,
+        'domain',
+      ),
+    ).toEqual([]);
+    expect(
+      importDirectionFindings(
+        `${base}/application/create.ts`,
+        `import { o } from '../domain/order';`,
+        'application',
+      ),
+    ).toEqual([]);
+    expect(
+      importDirectionFindings(
+        file,
+        `import { a } from '../application/create';`,
+        'domain',
+      ),
+    ).toHaveLength(1);
+    expect(
+      importDirectionFindings(
+        `${base}/domain/sub/deep.ts`,
+        `import { a } from '../../infrastructure/db';`,
+        'domain',
+      ),
+    ).toHaveLength(1);
+  }
+});
+
+test('limitação conhecida: especificadores não relativos (aliases) não são resolvidos', () => {
+  // Um alias de `paths` do tsconfig para uma camada externa não é detectado: só
+  // @nestjs/* e o runtime do framework são barrados fora de imports relativos.
+  expect(
+    importDirectionFindings(
+      'src/orders/domain/order.ts',
+      `import { a } from '@app/orders/application/create';`,
+      'domain',
+    ),
+  ).toEqual([]);
+});

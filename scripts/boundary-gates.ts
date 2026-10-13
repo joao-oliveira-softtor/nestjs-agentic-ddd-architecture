@@ -82,8 +82,14 @@ export function bodyOnlyFindings(
   return findings;
 }
 
-/** Especificadores de import, export-from e import() dinâmico. */
-export function importSpecifiers(text: string): string[] {
+export interface ImportScan {
+  /** Especificadores literais: import, export-from, import(), require() e import = require(). */
+  readonly specifiers: string[];
+  /** import()/require() com argumento não literal: não dá para resolver estaticamente. */
+  readonly unresolved: number;
+}
+
+export function scanImports(text: string): ImportScan {
   const source = ts.createSourceFile(
     'file.ts',
     text,
@@ -91,25 +97,42 @@ export function importSpecifiers(text: string): string[] {
     true,
     ts.ScriptKind.TS,
   );
-  const found: string[] = [];
+  const specifiers: string[] = [];
+  let unresolved = 0;
   const visit = (node: ts.Node): void => {
     if (
       (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
       node.moduleSpecifier &&
-      ts.isStringLiteral(node.moduleSpecifier)
+      ts.isStringLiteralLike(node.moduleSpecifier)
     )
-      found.push(node.moduleSpecifier.text);
+      specifiers.push(node.moduleSpecifier.text);
     else if (
+      ts.isImportEqualsDeclaration(node) &&
+      ts.isExternalModuleReference(node.moduleReference)
+    ) {
+      const expression = node.moduleReference.expression;
+      if (ts.isStringLiteralLike(expression)) specifiers.push(expression.text);
+      else unresolved++;
+    } else if (
       ts.isCallExpression(node) &&
-      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
-      node.arguments[0] &&
-      ts.isStringLiteral(node.arguments[0])
-    )
-      found.push(node.arguments[0].text);
+      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(node.expression) &&
+          node.expression.text === 'require'))
+    ) {
+      const argument = node.arguments[0];
+      if (argument && ts.isStringLiteralLike(argument))
+        specifiers.push(argument.text);
+      else unresolved++;
+    }
     ts.forEachChild(node, visit);
   };
   visit(source);
-  return found;
+  return { specifiers, unresolved };
+}
+
+/** Só os especificadores literais de {@link scanImports}. */
+export function importSpecifiers(text: string): string[] {
+  return scanImports(text).specifiers;
 }
 
 const FRAMEWORK_RUNTIME = new Set([
@@ -122,9 +145,23 @@ const OUTER_LAYERS: Readonly<Record<GateLayer, readonly string[]>> = {
   operators: [],
 };
 
+/** Diretório da camada: o último ancestral com o nome da camada; senão, o do próprio arquivo. */
+function layerRoot(path: string, layer: GateLayer): string {
+  const parts = posix.dirname(path).split('/');
+  const index = parts.lastIndexOf(layer);
+  return index === -1 ? parts.join('/') : parts.slice(0, index + 1).join('/');
+}
+
 /**
  * Direção de import por camada: domínio e aplicação não importam Nest nem o runtime do
- * framework, e nenhuma camada importa as camadas externas a ela.
+ * framework, e nenhuma camada importa as camadas externas a ela. A comparação usa o
+ * primeiro segmento do import relativo à raiz da camada do arquivo, então diretórios
+ * acima do módulo (por exemplo `src/infra/`) não geram falso positivo.
+ *
+ * Limitações conhecidas: especificadores não relativos (aliases de `paths` do tsconfig,
+ * auto-referência de pacote) não são resolvidos, só `@nestjs/*` e o runtime do framework
+ * são barrados; `import()`/`require()` com argumento não literal são acusados porque não
+ * podem ser verificados. O gate de corpo (`bodyOnlyFindings`) só localiza `Classe.método`.
  */
 export function importDirectionFindings(
   path: string,
@@ -133,7 +170,13 @@ export function importDirectionFindings(
 ): string[] {
   if (layer === 'operators') return [];
   const findings: string[] = [];
-  for (const specifier of importSpecifiers(text)) {
+  const { specifiers, unresolved } = scanImports(text);
+  if (unresolved)
+    findings.push(
+      `Forbidden import in ${path}: import()/require() com argumento não literal não é verificável (${unresolved})`,
+    );
+  const root = layerRoot(path, layer);
+  for (const specifier of specifiers) {
     if (specifier.startsWith('@nestjs/') || FRAMEWORK_RUNTIME.has(specifier)) {
       findings.push(
         `Forbidden import in ${path}: ${specifier} (${layer} não importa Nest nem o runtime)`,
@@ -141,11 +184,12 @@ export function importDirectionFindings(
       continue;
     }
     if (!specifier.startsWith('.')) continue;
-    const resolved = posix.join(posix.dirname(path), specifier);
-    const outer = resolved
-      .split('/')
-      .find((segment) => OUTER_LAYERS[layer].includes(segment));
-    if (outer)
+    const relative = posix.relative(
+      root,
+      posix.join(posix.dirname(path), specifier),
+    );
+    const outer = relative.split('/').find((segment) => segment !== '..');
+    if (outer && OUTER_LAYERS[layer].includes(outer))
       findings.push(
         `Forbidden import in ${path}: ${specifier} (${layer} não importa ${outer})`,
       );
