@@ -49,6 +49,9 @@ lerna-debug.log*
 .temp
 .tmp
 
+# briefs por tarefa (bun run agent-briefs)
+/.agentic-tasks
+
 # Runtime data
 pids
 *.pid
