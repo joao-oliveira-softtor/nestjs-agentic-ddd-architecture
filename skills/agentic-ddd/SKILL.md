@@ -10,6 +10,7 @@ Carregue somente as referências necessárias:
 - [Autoria](references/authoring.md): declarar ou alterar domínio, schemas e propostas.
 - [Gerente](references/manager.md): preparar contratos e coordenar execução sequencial.
 - [Executor](references/executor.md): executar um packet sem mudar a especificação.
+- [Executor de domínio](references/executor-domain.md): item `domain` em contexto isolado, só com o packet.
 - [Instalação](references/installation.md): instalar/verificar links e adaptadores locais ou globais.
 - [Tutorial](references/tutorial.md): praticar em um workspace tasks isolado.
 
