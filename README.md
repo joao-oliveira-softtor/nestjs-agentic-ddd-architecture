@@ -242,7 +242,7 @@ Exits: `0` para avaliação concluída, inclusive erros do agente; `1` para infr
 - **v0.1.0**: primeira release da base acima.
 - **v0.3.0**: skill e tutorial isolado, runner com Codex/Cursor, dataset ampliado, regressões contra falso done e campanhas com agregação offline.
 - **v0.4.0**: biblioteca ESM modular com exports públicos, CLI instalável e tarball validado em consumidor externo.
-- **Próximos planos**: adapter real de LlmPort (#7) e demonstração CLI com aprovação (#8).
+- **Foco atual**: validar o workflow de agentes de desenvolvimento por camada e modelo (épico #26, [ADR-0003](docs/adr/ADR-0003.md)). O adapter real de LlmPort (#7) e a demonstração CLI com aprovação (#8) estão **em pausa** ([ADR-0004](docs/adr/ADR-0004.md)).
 - **Backlog**: `reactsTo`, contratos gerados, canal HTTP, propostas paralelas e distribuição npm. Veja [issues, dependências e critérios de aceite](docs/ROADMAP.md).
 
 Design: [`docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md`](docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md) · Decisões: [`docs/adr/ADR-0001.md`](docs/adr/ADR-0001.md)
