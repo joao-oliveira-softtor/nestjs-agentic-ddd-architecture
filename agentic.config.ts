@@ -14,6 +14,7 @@ export default defineConfig({
       './test/agent-briefs.test.ts',
       './test/app.test.ts',
       './test/architecture.test.ts',
+      './test/boundary-gates.test.ts',
       './test/evals.test.ts',
       './test/executor-roles.test.ts',
       './test/package-audit.test.ts',
