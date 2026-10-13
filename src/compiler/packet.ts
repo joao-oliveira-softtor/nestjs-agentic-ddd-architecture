@@ -6,6 +6,8 @@ import type { WorkItemStatus } from './state';
 export interface PacketOptions {
   readonly configPath: string;
   readonly item: string;
+  /** Lê declarações de teste sem executá-los; nunca certifica `done`. */
+  readonly static?: boolean;
 }
 export const shellQuote = (value: string): string =>
   /^[a-zA-Z0-9_./:-]+$/.test(value)
@@ -16,9 +18,14 @@ export function renderPacket(
   item: WorkItemStatus,
   specification: ItemSpecification,
   configPath: string,
+  mode: 'dynamic' | 'static' = 'dynamic',
 ): string {
   const state =
-    item.state === 'blocked' ? `blocked(${item.baseState})` : item.state;
+    mode === 'static'
+      ? `${item.baseState} (estático: testes não executados; nunca certifica done)`
+      : item.state === 'blocked'
+        ? `blocked(${item.baseState})`
+        : item.state;
   return [
     '# Identificação',
     '',
@@ -72,13 +79,15 @@ export function renderPacket(
 
 export async function packet(options: PacketOptions): Promise<string> {
   const context = await stateContext(options.configPath);
-  const item = (await collectStatus(context, false, true)).items.find(
-    (i) => i.id === options.item,
-  );
+  const staticMode = options.static === true;
+  const item = (
+    await collectStatus(context, staticMode, !staticMode)
+  ).items.find((i) => i.id === options.item);
   if (!item) throw new Error(`work item ${options.item} não encontrado`);
   return renderPacket(
     item,
     itemSpecification(context.project.ir, item, context.proposals),
     options.configPath,
+    staticMode ? 'static' : 'dynamic',
   );
 }

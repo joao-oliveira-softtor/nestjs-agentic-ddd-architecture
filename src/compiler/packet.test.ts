@@ -37,6 +37,20 @@ test('pacotes determinísticos dos quatro tipos compartilham hash e especificaç
   }
 });
 
+test('modo estático rotula o estado, não promete done e mantém o restante do pacote', () => {
+  const item = report.items.find((i) => i.id === 'method:Product.publish')!;
+  const spec = itemSpecification(ir, item, []);
+  const dynamic = renderPacket(item, spec, 'agentic.config.ts');
+  const staticPacket = renderPacket(item, spec, 'agentic.config.ts', 'static');
+  expect(staticPacket).toContain(
+    `Estado: ${item.baseState} (estático: testes não executados; nunca certifica done)`,
+  );
+  expect(staticPacket).not.toContain('Estado: blocked');
+  const strip = (text: string) =>
+    text.split('\n').filter((l) => !l.startsWith('- Estado:'));
+  expect(strip(staticPacket)).toEqual(strip(dynamic));
+});
+
 test('hash exclui localização e mudanças independentes, inclui contratos e regras referenciados', () => {
   const item = workItems(ir).find((i) => i.id === 'usecase:publish_product')!;
   const hash = specHash(itemSpecification(ir, item, []));
