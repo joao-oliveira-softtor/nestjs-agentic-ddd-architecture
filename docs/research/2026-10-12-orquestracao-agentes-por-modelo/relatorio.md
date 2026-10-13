@@ -92,11 +92,11 @@ Campos em ordem estável, os dois primeiros estáticos para favorecer cache: (1)
 
 ## Parte B. Backlog candidato
 
-Convenções do repositório a seguir: issues em português com prefixo "Melhoria — ..." (próximas numeradas #23+), corpo com Resultado esperado, Escopo, Critérios de aceite, Dependências, Limite de escopo; spec em `docs/superpowers/specs/AAAA-MM-DD-<slug>.md`, plano em `docs/superpowers/plans/` e ADR em `docs/adr/ADR-0002.md`; `changes/` é só para regras de negócio, não para esta feature de tooling. Nada abaixo autoriza gasto de inferência: o harness exige orçamento autorizado por ciclo.
+Convenções do repositório a seguir: issues em português com prefixo "Melhoria — ..." (próximas numeradas #23+), corpo com Resultado esperado, Escopo, Critérios de aceite, Dependências, Limite de escopo; spec em `docs/superpowers/specs/AAAA-MM-DD-<slug>.md`, plano em `docs/superpowers/plans/` e ADR em `docs/adr/ADR-0003.md`; `changes/` é só para regras de negócio, não para esta feature de tooling. Nada abaixo autoriza gasto de inferência: o harness exige orçamento autorizado por ciclo.
 
-**B01. Spec, plano e ADR-0002 da orquestração por camada de modelo**
+**B01. Spec, plano e ADR-0003 da orquestração por camada de modelo**
 - Escopo: registrar as decisões D1-D15, a topologia plana e a política de escalação; marcar tudo que é hipótese.
-- Aceite: spec e plano versionados em `docs/superpowers/specs|plans/`; `docs/adr/ADR-0002.md` com tabela de decisões (`D1...`); entrada em `docs/ROADMAP.md`; declara explicitamente que não há benchmark direto.
+- Aceite: spec e plano versionados em `docs/superpowers/specs|plans/`; `docs/adr/ADR-0003.md` com tabela de decisões (`D1...`); entrada em `docs/ROADMAP.md`; declara explicitamente que não há benchmark direto.
 - Dependências: nenhuma.
 - Riscos: ADR sem numeração acordada (o repo só tem `ADR-0001`); escopo crescer para o compilador.
 

@@ -50,7 +50,7 @@ Ordem estável (estático primeiro, para cache): regras do papel; formato de res
 
 ## Backlog (issues)
 
-B01 spec/plano/ADR-0002 · B02 `packet --static` · B03 gerador de briefs · B04 executor de domínio isolado · B05 gates de fronteira · B06 papel de revisor · B07 perfil de modelos opt-in no instalador · B08 driver de orquestração com escalação · B09 adapter Claude no harness · B10 campanha de comparação por nível · B11 benchmark de revisão · B12 spike de value object · B13 docs e CI. Escopo, critérios de aceite, dependências e riscos de cada um estão nas issues e na Parte B do relatório. Ordem de menor risco, respeitando as dependências: B01–B06 (não invasivos), B09 (adapter Claude), B08 (driver, necessário para executar os braços A3–A5), B10/B11 (campanhas, com orçamento autorizado) e, por último, B07 (perfil de modelos no instalador, só após o resultado de B10).
+B01 spec/plano/ADR-0003 · B02 `packet --static` · B03 gerador de briefs · B04 executor de domínio isolado · B05 gates de fronteira · B06 papel de revisor · B07 perfil de modelos opt-in no instalador · B08 driver de orquestração com escalação · B09 adapter Claude no harness · B10 campanha de comparação por nível · B11 benchmark de revisão · B12 spike de value object · B13 docs e CI. Escopo, critérios de aceite, dependências e riscos de cada um estão nas issues e na Parte B do relatório. Ordem de menor risco, respeitando as dependências: B01–B06 (não invasivos), B09 (adapter Claude), B08 (driver, necessário para executar os braços A3–A5), B10/B11 (campanhas, com orçamento autorizado) e, por último, B07 (perfil de modelos no instalador, só após o resultado de B10).
 
 ## Plano de experimentos (resumo; Parte C do relatório)
 
