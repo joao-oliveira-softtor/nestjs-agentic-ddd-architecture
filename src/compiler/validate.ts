@@ -83,7 +83,7 @@ export function validate(
       }
       if (entity.states.length === 0) continue;
       for (const state of [...method.transition.from, method.transition.to]) {
-        if (state !== '' && !entity.states.includes(state)) {
+        if (state.trim() !== '' && !entity.states.includes(state)) {
           err(
             `${method.id}: estado "${state}" não está em states de ${entity.name}`,
             method.source,
@@ -147,7 +147,10 @@ export function validate(
       err(`${operator.id}: useCases não pode ser vazio`, operator.source);
     const limitsProblem = limitsError(operator.limits);
     if (limitsProblem !== null)
-      err(`${operator.id}: limits inválidos (${limitsProblem})`, operator.source);
+      err(
+        `${operator.id}: limits inválidos (${limitsProblem})`,
+        operator.source,
+      );
     for (const approval of operator.requiresApproval) {
       if (!operator.useCases.includes(approval)) {
         err(
