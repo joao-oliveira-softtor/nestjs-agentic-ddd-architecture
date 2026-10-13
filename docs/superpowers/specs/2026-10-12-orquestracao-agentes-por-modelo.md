@@ -54,7 +54,7 @@ B01 spec/plano/ADR-0003 · B02 `packet --static` · B03 gerador de briefs · B04
 
 ## Plano de experimentos (resumo; Parte C do relatório)
 
-Benchmark `tasks` do workspace isolado `skills:example` (sem tocar em `orders`). Braços: A0 Sonnet sozinho (médio), A1 Sonnet (baixo), A2 Opus (baixo), **A3 Haiku→Sonnet→Opus**, A4 sem revisor, A5 Sonnet no domínio com o mesmo brief, A6 brief mínimo vs contexto atual, A7 escalação alternativa, A8 revisor de outra família (opcional). Métricas: aceite no primeiro e final `verify --item`, falso verde, violações de fronteira, escalações, tokens medidos por tipo e nível, custo por item aceito (derivado, rotulado). Mínimo de 5 repetições por célula (hipótese; piloto com 2). Critérios de decisão pré-registrados antes de rodar:
+Benchmark `tasks` do workspace isolado `skills:example` (sem tocar em `orders`). Braços: A0 Sonnet sozinho (médio), A1 Sonnet (baixo), A2 Opus (baixo), **A3 Haiku→Sonnet→Opus**, A4 sem revisor, A5 mesmo pipeline de A3 (inclui revisão Opus) com Sonnet no domínio, A6 brief mínimo vs contexto atual, A7 escalação alternativa, A8 revisor de outra família (opcional). Métricas: aceite no primeiro e final `verify --item`, falso verde, violações de fronteira, escalações, tokens medidos por tipo e nível, custo por item aceito (derivado, rotulado). Mínimo de 5 repetições por célula (hipótese; piloto com 2). Critérios de decisão pré-registrados antes de rodar:
 
 - Adotar Haiku no domínio só se o aceite de A3 for não inferior a A5 e o custo por item aceito for menor (`p_aprovação > C_barato / C_forte`, com taxas medidas).
 - Adotar o revisor Opus só se A3 detectar regressões que A4 deixa passar, com precisão aceitável.

@@ -35,7 +35,7 @@ As fases 1, 3, 4 e 6 não dependem entre si e podem ser feitas em qualquer ordem
 
 ## Experimento (fase 8)
 
-Benchmark `tasks` (`entity:Task`, `method:Task.complete`, dois use-cases, um operator). Braços: A0 Sonnet sozinho (esforço médio); A1 Sonnet (baixo); A2 Opus (baixo); A3 Haiku→Sonnet→Opus; A4 como A3 sem revisão; A5 Sonnet no domínio com o mesmo brief; A6 brief mínimo vs contexto atual no mesmo modelo; A7 escalação alternativa; A8 revisor de outra família (opcional).
+Benchmark `tasks` (`entity:Task`, `method:Task.complete`, dois use-cases, um operator). Braços: A0 Sonnet sozinho (esforço médio); A1 Sonnet (baixo); A2 Opus (baixo); A3 Haiku→Sonnet→Opus; A4 como A3 sem revisão; A5 mesmo pipeline de A3 (brief, política de escalação e revisão Opus), trocando só o worker de domínio por Sonnet; A6 brief mínimo vs contexto atual no mesmo modelo; A7 escalação alternativa; A8 revisor de outra família (opcional).
 
 Métricas: aprovação no primeiro e no final `verify --item`; falso verde (gates verdes, oráculo privado reprova); violações de fronteira; escalações e retentativas; tokens de entrada, de entrada em cache e de saída por nível (medidos, nunca estimados); turnos; tempo; custo por item aceito (derivado da tabela de preços e rotulado como tal). Pelo menos 5 repetições por célula (hipótese de trabalho, a ajustar após um piloto de 2 repetições); relatar mediana, p90 e intervalos. O harness v1 fixa `repetitions` em 1, então repetições exigem mudança no harness ou várias campanhas. Os critérios de decisão estão pré-registrados no ADR-0003.
 

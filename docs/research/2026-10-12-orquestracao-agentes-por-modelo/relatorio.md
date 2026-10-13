@@ -216,7 +216,7 @@ Limites conhecidos da evidência: grande parte é de fornecedores (Anthropic, Co
 3. **A2:** Opus sozinho, esforço baixo.
 4. **A3, proposta:** Haiku (domínio) → Sonnet (aplicação, integração) → Opus (revisão).
 5. **A4:** como A3 sem revisão Opus (isola o valor do revisor).
-6. **A5:** Sonnet no domínio com o mesmo brief mínimo, Sonnet na aplicação (isola o valor do Haiku).
+6. **A5:** mesmo pipeline, política de escalação e revisão Opus de A3, trocando só o worker de domínio por Sonnet (isola o valor do Haiku; sem revisão em A5 a comparação com A3 misturaria o efeito do revisor).
 7. **A6:** brief mínimo versus contexto atual do executor, no mesmo modelo (isola o efeito do contexto e do isolamento de camadas).
 8. **A7:** Haiku com política de escalação alternativa (reiniciar no Sonnet versus continuar com log de falha).
 9. **A8 (opcional):** revisor de outra família via adapter Codex já existente, para testar autopreferência.
