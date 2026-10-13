@@ -1,4 +1,13 @@
 export abstract class ValueObject<P extends object> {
+  /**
+   * Cópia profunda das props passadas ao construtor: mutar o objeto original
+   * depois não altera o VO. Objetos simples e arrays ficam congelados.
+   *
+   * Limitação: `Date`, `Map` e `Set` são copiados, mas não protegidos, porque
+   * `Object.freeze` não impede `setFullYear`, `map.set` ou `set.add`. Quem lê
+   * `props` consegue mutá-los e isso altera o estado e o resultado de `equals`.
+   * Trate-os como somente leitura.
+   */
   readonly props: Readonly<P>;
 
   protected constructor(props: P) {
@@ -34,7 +43,8 @@ function copyRecord(
   return Object.freeze(copy);
 }
 
-// Copia objetos simples, arrays, Date, Map e Set e congela o que for copiado.
+// Copia objetos simples, arrays, Date, Map e Set. Congela só objetos simples e
+// arrays: Date, Map e Set não têm como ser congelados (ver `props`).
 // Instâncias de outras classes (como outro ValueObject) ficam por referência.
 function copyDeep(value: unknown, seen: WeakMap<object, unknown>): unknown {
   if (typeof value !== 'object' || value === null) return value;
