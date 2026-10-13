@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { approxTokens } from '@agentic-ddd/compiler';
@@ -39,21 +40,14 @@ export const GENERATED_PATHS = [
 const RESPONSE_FORMAT =
   'Resposta final: apenas um objeto JSON, sem prosa, no formato do exemplo: `{"item":"entity:Order","specHash":"<hash do packet>","status":"done","verifyExitCode":0,"changedFiles":["examples/orders/domain/order.ts"],"findings":[]}`. `status` é `done`, `blocked` ou `failed`. `specHash` é o do packet, nunca recalculado.';
 
+/** Fonte única do núcleo de domínio: a referência autoral da skill. */
+export const DOMAIN_CORE = resolve(
+  import.meta.dir,
+  '../skills/agentic-ddd/references/executor-domain.md',
+);
+
 export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
-  domain: [
-    '# Papel: executor de domínio',
-    '',
-    'Implemente UM item da camada de domínio a partir do packet abaixo. Você não conhece nem deve inferir outras camadas (application, operators, infraestrutura, Nest): trabalhe só com o contrato do packet.',
-    '',
-    '- Altere só o interior do corpo indicado em "Arquivos" e arquivos de teste. Preserve imports, assinaturas, decorators, schemas, IDs de regras, propostas, configuração e arquivos gerados.',
-    '- Preserve a quantidade de linhas do corpo (as coordenadas `source` entram nos gerados). Não reformate o arquivo.',
-    '- O domínio não importa application, operators, infraestrutura nem Nest.',
-    '- Cubra cada obrigação do packet com `covers([...ids], título)` de `@agentic-ddd/testing` em testes `bun:test`; teste regras e transições inválidas, não só o caminho feliz.',
-    '- Não rode `compile` nem altere o hash. Se faltar contrato ou dependência, devolva o item com o dado faltante em vez de improvisar.',
-    '- Após duas correções sem progresso nos findings, encerre e devolva o diagnóstico.',
-    '',
-    RESPONSE_FORMAT,
-  ].join('\n'),
+  domain: readFileSync(DOMAIN_CORE, 'utf8').trimEnd(),
   application: [
     '# Papel: executor de aplicação',
     '',
