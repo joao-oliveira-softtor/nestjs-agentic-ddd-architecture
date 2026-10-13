@@ -51,40 +51,51 @@ export function claudeArgv(
   ];
 }
 
-function tokens(value: unknown, source: string): Measured<number> {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
-    ? available(value, source)
-    : unavailable<number>();
-}
+const isCount = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 
 /**
- * `input_tokens` da API da Anthropic exclui o cache; a entrada total é a soma das três
- * parcelas, e `cachedInputTokens` é só a leitura de cache. Falta qualquer parcela → indisponível
- * (nunca estimar). O custo em dólar do CLI é derivado e não é adotado aqui.
+ * Uso total do `result`: soma de `modelUsage` de todos os modelos. O `usage` de nível superior
+ * é só do laço principal e por turno; `modelUsage` é cumulativo e cobre todas as chamadas
+ * (changelog do Claude Agent SDK 0.3.223), então só ele entra na contabilidade. A API exclui o
+ * cache de `inputTokens`: a entrada total soma as três parcelas e `cachedInputTokens` é só a
+ * leitura de cache. Campo ausente ou inválido em qualquer modelo → indisponível (nunca
+ * estimar). O custo em dólar do CLI é derivado e não é adotado aqui.
  */
-export function claudeUsage(value: unknown, source: string): Usage {
-  const usage = object(value);
+export function claudeUsage(modelUsage: unknown, source: string): Usage {
+  const entries = Object.values(object(modelUsage) ?? {}).map(object);
+  const sum = (key: string): Measured<number> => {
+    if (!entries.length) return unavailable<number>('model_usage_missing');
+    const values = entries.map((entry) => entry?.[key]);
+    return values.every(isCount)
+      ? available(
+          values.reduce((total, value) => total + value, 0),
+          `${source}.*.${key}`,
+        )
+      : unavailable<number>('model_usage_incomplete');
+  };
   const parts = [
-    tokens(usage?.input_tokens, `${source}.input_tokens`),
-    tokens(
-      usage?.cache_creation_input_tokens,
-      `${source}.cache_creation_input_tokens`,
-    ),
-    tokens(usage?.cache_read_input_tokens, `${source}.cache_read_input_tokens`),
+    sum('inputTokens'),
+    sum('cacheCreationInputTokens'),
+    sum('cacheReadInputTokens'),
   ];
-  const input = parts.every((p) => p.status === 'available')
+  const input = parts.every((part) => part.status === 'available')
     ? available(
         parts.reduce(
-          (sum, p) => sum + (p.status === 'available' ? p.value : 0),
+          (total, part) =>
+            total + (part.status === 'available' ? part.value : 0),
           0,
         ),
-        `${source}.input_tokens+cache_creation_input_tokens+cache_read_input_tokens`,
+        `${source}.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens`,
       )
-    : unavailable<number>('input_token_parts_incomplete');
+    : unavailable<number>(
+        parts.find((part) => part.status === 'unavailable')?.reason ??
+          'model_usage_incomplete',
+      );
   return {
     inputTokens: input,
     cachedInputTokens: parts[2]!,
-    outputTokens: tokens(usage?.output_tokens, `${source}.output_tokens`),
+    outputTokens: sum('outputTokens'),
     cost: unavailable('derived_cost_not_adopted'),
   };
 }
@@ -123,7 +134,10 @@ export function parseClaudeTranscript(process: ProcessResult): AdapterResult {
             'claude.result.session_id',
           );
         }
-        result.usage = claudeUsage(event.usage, 'claude.result.usage');
+        result.usage = claudeUsage(
+          event.modelUsage,
+          'claude.result.modelUsage',
+        );
         const served = Object.keys(object(event.modelUsage) ?? {});
         if (served.length === 1)
           result.observedModel = available(

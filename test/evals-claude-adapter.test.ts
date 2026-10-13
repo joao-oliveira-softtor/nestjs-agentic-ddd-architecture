@@ -138,22 +138,62 @@ test('parse: texto final do result, uso medido, modelo servido e custo não adot
   expect(parsed.modelRevision.status).toBe('unavailable');
 });
 
-test('uso: parcela ausente ou inválida fica indisponível, nunca estimada', () => {
-  const partial = claudeUsage(
-    { input_tokens: 5, output_tokens: 7 },
-    'claude.result.usage',
+test('uso: soma modelUsage de todos os modelos e ignora o usage de nível superior', async () => {
+  const parsed = parseClaudeTranscript(result(await transcript()));
+  // O usage de nível superior da fixture é só do laço principal (5 + 100 de entrada, 12 de saída).
+  expect(parsed.usage.inputTokens).toMatchObject({
+    status: 'available',
+    value: 208,
+  });
+  const many = claudeUsage(
+    {
+      a: {
+        inputTokens: 1,
+        outputTokens: 2,
+        cacheReadInputTokens: 3,
+        cacheCreationInputTokens: 4,
+      },
+      b: {
+        inputTokens: 10,
+        outputTokens: 20,
+        cacheReadInputTokens: 30,
+        cacheCreationInputTokens: 40,
+      },
+    },
+    'claude.result.modelUsage',
   );
+  expect(many.inputTokens).toEqual({
+    status: 'available',
+    value: 88,
+    source:
+      'claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens',
+  });
+  expect(many.cachedInputTokens).toMatchObject({ value: 33 });
+  expect(many.outputTokens).toMatchObject({ value: 22 });
+});
+
+test('uso: modelUsage ausente, parcela faltando ou inválida fica indisponível, nunca estimada', () => {
+  expect(claudeUsage(undefined, 'x').inputTokens).toEqual({
+    status: 'unavailable',
+    reason: 'model_usage_missing',
+  });
+  expect(claudeUsage({}, 'x').outputTokens.status).toBe('unavailable');
+  const partial = claudeUsage({ a: { inputTokens: 5, outputTokens: 7 } }, 'x');
   expect(partial.inputTokens).toEqual({
     status: 'unavailable',
-    reason: 'input_token_parts_incomplete',
+    reason: 'model_usage_incomplete',
   });
   expect(partial.cachedInputTokens.status).toBe('unavailable');
   expect(partial.outputTokens.status).toBe('available');
-  expect(
-    claudeUsage({ input_tokens: -1, output_tokens: 1.5 }, 'x').outputTokens
-      .status,
-  ).toBe('unavailable');
-  expect(claudeUsage(undefined, 'x').inputTokens.status).toBe('unavailable');
+  // Um modelo incompleto invalida a soma inteira.
+  const mixed = claudeUsage(
+    {
+      a: { outputTokens: 1 },
+      b: { outputTokens: -1 },
+    },
+    'x',
+  );
+  expect(mixed.outputTokens.status).toBe('unavailable');
 });
 
 test('modelo: sem modelUsage cai no init; vários modelos ficam indisponíveis', async () => {
