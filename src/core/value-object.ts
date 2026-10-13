@@ -1,12 +1,19 @@
 export abstract class ValueObject<P extends object> {
   /**
-   * Cópia profunda das props passadas ao construtor: mutar o objeto original
-   * depois não altera o VO. Objetos simples e arrays ficam congelados.
+   * Cópia das props passadas ao construtor: mutar o objeto original depois não
+   * altera o VO. Objetos simples e arrays são copiados em profundidade e
+   * ficam congelados; instâncias de outras classes (como outro `ValueObject`)
+   * ficam por referência. Em `Map` e `Set`, chaves e elementos que são objetos
+   * também são copiados, então `map.get(objetoOriginal)` não os encontra.
    *
    * Limitação: `Date`, `Map` e `Set` são copiados, mas não protegidos, porque
    * `Object.freeze` não impede `setFullYear`, `map.set` ou `set.add`. Quem lê
-   * `props` consegue mutá-los e isso altera o estado e o resultado de `equals`.
-   * Trate-os como somente leitura.
+   * `props` consegue mutá-los, o que altera o estado, o resultado de `equals`
+   * e pode violar invariantes validadas no construtor; se o VO servir de id ou
+   * de chave, muda a identidade. `Readonly<P>` é raso e não impede isso no
+   * tipo; declarar `ReadonlyMap`/`ReadonlySet` em `P` faz o TypeScript barrar
+   * `.set`/`.add` (para `Date` não há equivalente). Trate-os como somente
+   * leitura.
    */
   readonly props: Readonly<P>;
 
