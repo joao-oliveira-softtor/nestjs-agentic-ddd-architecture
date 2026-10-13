@@ -15,6 +15,7 @@ export default defineConfig({
       './test/app.test.ts',
       './test/architecture.test.ts',
       './test/evals.test.ts',
+      './test/executor-roles.test.ts',
       './test/package-audit.test.ts',
       './test/package-transform.test.ts',
       './test/package.test.ts',
