@@ -142,6 +142,19 @@ describe('parseProposal', () => {
     ]);
   });
 
+  test('proposta arquivada com delta fora da forma continua aceita (imutável)', () => {
+    const extra = VALID.replace(
+      '  removed: []',
+      '  removed: []\n  renamed: []',
+    );
+    const lista = VALID.replace(/delta:\n(?: {2}.*\n)+/, 'delta: [a, b]\n');
+    for (const raw of [extra, lista]) {
+      expect(
+        parseProposal(raw, '0002-cancelamento-exige-motivo', PATH, true).errors,
+      ).toEqual([]);
+    }
+  });
+
   test('delta que não é objeto é rejeitado', () => {
     const lista = VALID.replace(/delta:\n(?: {2}.*\n)+/, 'delta: [a, b]\n');
     expect(messages(lista)).toEqual(['delta deve ser um objeto']);

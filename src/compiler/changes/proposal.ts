@@ -129,12 +129,14 @@ export function parseProposal(
 
   const rawDelta = data.delta ?? {};
   let deltaData: Record<string, unknown> = {};
+  // Propostas arquivadas são imutáveis (o hash está no lock): a forma do delta
+  // só é exigida nas abertas, para não quebrar o que já foi aplicado.
   if (typeof rawDelta !== 'object' || Array.isArray(rawDelta)) {
-    err('delta deve ser um objeto');
+    if (!archived) err('delta deve ser um objeto');
   } else {
     deltaData = rawDelta as Record<string, unknown>;
     for (const key of Object.keys(deltaData)) {
-      if (key !== 'added' && key !== 'modified' && key !== 'removed')
+      if (!archived && !['added', 'modified', 'removed'].includes(key))
         err(
           `delta: chave desconhecida "${key}" (esperado added, modified ou removed)`,
         );
