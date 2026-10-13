@@ -384,8 +384,8 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 | 2 — F2 | `ci/verify-test-scope` | mergeada (`117b45b`); CI do PR em 17m57s (linha de base 25m54s) | #24 |
 | D1 | `ci/evals-parallel-job` | mergeado (`546081b`); job `ci` 4m09s, job `evals` 17m39s | #25 |
 | 3 — F3+F4 | `fix/evals-evidence-integrity` | mergeada (`5fa59c0`); CI `ci` e `evals` verdes; D2 aguarda decisão | #41 |
-| 4 — F5 | `fix/compiler-validation-hardening` | 7 itens commitados (a–g) mais 2 ajustes da revisão; suíte completa 508/509 (1 timeout de evals por carga, passa isolado), `verify 0001` = done; aguarda aprovação de push/PR | — |
-| 5 — F6 | `fix/core-value-object-equality` | pendente | — |
+| 4 — F5 | `fix/compiler-validation-hardening` | mergeada (`681f7ec`); 7 itens (a–g) mais 2 ajustes da revisão; CI `ci` 3m46s e `evals` 11m9s verdes | #42 |
+| 5 — F6 | `fix/core-value-object-equality` | (a) documentada: Date/Map/Set seguem mutáveis, com teste de caracterização; (b) ADR-0002 "proposto" (opção B), `Entity.equals` inalterado, com teste de caracterização; aguarda aprovação de push/PR e o aceite do ADR | — |
 | 6 — F7 | `feat/orders-cancellation-reason` | pendente | — |
 | 7 — Plano 7 | `docs/plan7-llm-adapter-spec` | pendente | — |
 

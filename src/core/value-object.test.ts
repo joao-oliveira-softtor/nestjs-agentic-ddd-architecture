@@ -57,6 +57,39 @@ describe('ValueObject: isolamento das props', () => {
     expect([...vo.props.map]).toEqual([['k', { n: 1 }]]);
   });
 
+  // Limitação documentada: Object.freeze não impede os métodos internos de
+  // Date, Map e Set. O VO só se isola de quem passou o objeto original.
+  test('Date, Map e Set expostos em props continuam mutáveis', () => {
+    const vo = new Bag({
+      date: new Date('2026-01-01T00:00:00Z'),
+      map: new Map([['k', 1]]),
+      set: new Set([1]),
+    });
+    expect(Object.isFrozen(vo.props.date)).toBe(false);
+    expect(Object.isFrozen(vo.props.map)).toBe(false);
+    expect(Object.isFrozen(vo.props.set)).toBe(false);
+
+    vo.props.date.setUTCFullYear(1999);
+    vo.props.map.set('outra', 2);
+    vo.props.set.add(2);
+
+    expect(vo.props.date.getUTCFullYear()).toBe(1999);
+    expect([...vo.props.map]).toEqual([
+      ['k', 1],
+      ['outra', 2],
+    ]);
+    expect([...vo.props.set]).toEqual([1, 2]);
+    expect(
+      vo.equals(
+        new Bag({
+          date: new Date('2026-01-01T00:00:00Z'),
+          map: new Map([['k', 1]]),
+          set: new Set([1]),
+        }),
+      ),
+    ).toBe(false);
+  });
+
   test('objetos sem protótipo continuam sem protótipo', () => {
     const bare = Object.create(null) as Record<string, number>;
     bare.a = 1;
