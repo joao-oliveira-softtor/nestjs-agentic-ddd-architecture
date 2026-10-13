@@ -383,8 +383,8 @@ Issue #7: primeiro adapter real de `LlmPort`, com um único provider justificado
 | 1 — F1 | `fix/verify-empty-suite` | mergeada (`4982b4b`); o commit `b8ebe3d` do plano entrou depois do merge e foi reaplicado na Fase 2 | #23 |
 | 2 — F2 | `ci/verify-test-scope` | mergeada (`117b45b`); CI do PR em 17m57s (linha de base 25m54s) | #24 |
 | D1 | `ci/evals-parallel-job` | mergeado (`546081b`); job `ci` 4m09s, job `evals` 17m39s | #25 |
-| 3 — F3+F4 | `fix/evals-evidence-integrity` | commitado (`ec9e1b9`, `66a2adb`, `201a711`); aguarda aprovação de push/PR; D2 aguarda decisão | — |
-| 4 — F5 | `fix/compiler-validation-hardening` | pendente | — |
+| 3 — F3+F4 | `fix/evals-evidence-integrity` | mergeada (`5fa59c0`); CI `ci` e `evals` verdes; D2 aguarda decisão | #41 |
+| 4 — F5 | `fix/compiler-validation-hardening` | 7 itens commitados (a–g) mais 2 ajustes da revisão; suíte completa 508/509 (1 timeout de evals por carga, passa isolado), `verify 0001` = done; aguarda aprovação de push/PR | — |
 | 5 — F6 | `fix/core-value-object-equality` | pendente | — |
 | 6 — F7 | `feat/orders-cancellation-reason` | pendente | — |
 | 7 — Plano 7 | `docs/plan7-llm-adapter-spec` | pendente | — |
