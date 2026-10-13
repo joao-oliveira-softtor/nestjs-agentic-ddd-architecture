@@ -12,4 +12,4 @@ Implemente UM item da camada de domínio a partir do packet recebido. Você não
 - Não rode `compile` nem altere o hash. Dependência pendente, divergência de hash ou necessidade de editar algo fora do contrato: devolva o item.
 - Após duas correções sem progresso nos findings, encerre e devolva o diagnóstico.
 
-Resposta final: um objeto JSON `{"item","specHash","status":"done|blocked|failed","verifyExitCode","changedFiles":[],"findings":[]}`, sem prosa. `specHash` é o do packet, nunca recalculado.
+Resposta final: apenas um objeto JSON, sem prosa, no formato do exemplo: `{"item":"entity:Order","specHash":"<hash do packet>","status":"done","verifyExitCode":0,"changedFiles":["examples/orders/domain/order.ts"],"findings":[]}`. `status` é `done`, `blocked` ou `failed`. `specHash` é o do packet, nunca recalculado.
