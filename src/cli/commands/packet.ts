@@ -4,7 +4,7 @@ import { USAGE } from '../usage';
 
 export async function packetCommand(args: readonly string[]): Promise<number> {
   const parsed = parseArgs(args, {
-    booleans: [],
+    booleans: ['--static'],
     values: ['--config'],
     positionals: 1,
   });
@@ -16,6 +16,7 @@ export async function packetCommand(args: readonly string[]): Promise<number> {
     await packet({
       configPath: parsed.values.get('--config') ?? 'agentic.config.ts',
       item: parsed.positionals[0]!,
+      static: parsed.flags.has('--static'),
     }),
   );
   return 0;

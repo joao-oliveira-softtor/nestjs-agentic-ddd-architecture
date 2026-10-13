@@ -212,6 +212,29 @@ test('status e verifyItem recusam JUnit parcial por erro de coleta', async () =>
   }
 });
 
+test('packet --static não executa testes e preserva specHash e comando de verificação', async () => {
+  const { dir, run } = await queryFixture();
+  try {
+    const staticPacket = run('packet', '--static', 'entity:Thing');
+    expect(staticPacket.code).toBe(0);
+    expect(await Bun.file(join(dir, 'runs')).exists()).toBe(false);
+    expect(staticPacket.stdout).toContain('Estado: covered (estático');
+    const dynamicPacket = run('packet', 'entity:Thing');
+    expect(dynamicPacket.code).toBe(0);
+    expect(await Bun.file(join(dir, 'runs')).exists()).toBe(true);
+    const hashOf = (out: string) => /specHash: `([a-f0-9]{64})`/.exec(out)![1]!;
+    expect(hashOf(staticPacket.stdout)).toBe(hashOf(dynamicPacket.stdout));
+    const verifyOf = (out: string) =>
+      /```bash\n([^\n]+)\n```/.exec(
+        out.split('## Comando de verificação')[1]!,
+      )![1]!;
+    expect(verifyOf(staticPacket.stdout)).toBe(verifyOf(dynamicPacket.stdout));
+    expect(run('packet', '--static', 'entity:Inexistente').code).toBe(1);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('projeto sem testes permite status, next e packet, mas não certifica done', async () => {
   const { dir, run } = await queryFixture();
   try {
