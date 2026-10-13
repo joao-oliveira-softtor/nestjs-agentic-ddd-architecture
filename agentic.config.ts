@@ -20,6 +20,7 @@ export default defineConfig({
       './test/package-audit.test.ts',
       './test/package-transform.test.ts',
       './test/package.test.ts',
+      './test/reviewer-report.test.ts',
       './test/skills-example.test.ts',
       './test/skills-install.test.ts',
     ],

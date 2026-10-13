@@ -71,3 +71,37 @@ test('Cursor, Codex e Claude leem o mesmo texto do executor de domínio', async 
       await readFile(join(root, base, 'references/executor-domain.md'), 'utf8'),
     ).toBe(expected);
 });
+
+test('o revisor lê só o diff, os packets e os gates, não edita e cita ID ou gate', async () => {
+  const [reviewer, skill] = await Promise.all([
+    read('references/reviewer.md'),
+    read('SKILL.md'),
+  ]);
+  expect(reviewer).toContain('Não edite arquivos');
+  expect(reviewer).toContain('Não leia a conversa nem o relatório do executor');
+  expect(reviewer).toContain('Sem ID ou gate, não é achado');
+  expect(reviewer).toContain('expect(true)');
+  expect(skill).toContain('(references/reviewer.md)');
+  expect(ROLE_CORES.reviewer).toBe(reviewer.trimEnd());
+});
+
+test('os adaptadores do revisor não mandam consultar a skill do módulo', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agentic-roles-'));
+  dirs.push(root);
+  await installSkills({ root, scope: 'project', target: 'all' });
+  for (const file of [
+    '.claude/agents/agentic-ddd-reviewer.md',
+    '.cursor/agents/agentic-ddd-reviewer.md',
+    '.codex/agents/agentic-ddd-reviewer.toml',
+  ]) {
+    const text = await readFile(join(root, file), 'utf8');
+    expect(text).toContain('Você é o revisor agentic-ddd');
+    expect(text).not.toContain('skill gerada do módulo');
+  }
+  expect(
+    await readFile(
+      join(root, '.claude/agents/agentic-ddd-executor.md'),
+      'utf8',
+    ),
+  ).toContain('skill gerada do módulo');
+});

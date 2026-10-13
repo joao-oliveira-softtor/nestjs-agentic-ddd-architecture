@@ -25,7 +25,14 @@ const DESCRIPTIONS = {
     'Prepara propostas e contratos agentic-ddd e coordena execução sequencial por packet e verify.',
   executor:
     'Implementa somente corpos atribuídos e testes agentic-ddd, preservando contratos e o hash do packet.',
+  reviewer:
+    'Revisa o diff contra o contrato e os gates agentic-ddd, citando IDs de regras ou gates, sem editar arquivos.',
 };
+const ROLE_NAMES = {
+  manager: 'gerente',
+  executor: 'executor',
+  reviewer: 'revisor',
+} as const;
 
 function artifacts(options: InstallOptions): Artifact[] {
   const targets: Target[] =
@@ -42,13 +49,17 @@ function artifacts(options: InstallOptions): Artifact[] {
       link: SKILL_SOURCE,
     });
   for (const target of targets)
-    for (const role of ['manager', 'executor'] as const) {
+    for (const role of ['manager', 'executor', 'reviewer'] as const) {
       const skill = join(
         target === 'claude' ? '.claude' : '.agents',
         'skills/agentic-ddd',
       );
       const base = options.scope === 'user' ? join(options.root, skill) : skill;
-      const instructions = `Você é o ${role === 'manager' ? 'gerente' : 'executor'} agentic-ddd. Leia [skill](${base}/SKILL.md) e [instruções do papel](${base}/references/${role}.md) antes de agir. Caminhos relativos são resolvidos a partir da raiz do projeto. Consulte também a skill gerada do módulo indicado pela configuração. Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.`;
+      const moduleSkill =
+        role === 'reviewer'
+          ? ''
+          : ' Consulte também a skill gerada do módulo indicado pela configuração.';
+      const instructions = `Você é o ${ROLE_NAMES[role]} agentic-ddd. Leia [skill](${base}/SKILL.md) e [instruções do papel](${base}/references/${role}.md) antes de agir. Caminhos relativos são resolvidos a partir da raiz do projeto.${moduleSkill} Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.`;
       const name = `agentic-ddd-${role}`;
       const content =
         target === 'codex'
