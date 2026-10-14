@@ -62,6 +62,38 @@ export const relativePathSchema = z
     'Expected safe relative POSIX path',
   );
 const contexts = z.array(relativePathSchema).min(1);
+const modelSchema = z
+  .string()
+  .min(1)
+  .refine((m) => m !== 'auto', 'Explicit model required');
+export const reasoningEffortSchema = z.enum([
+  'none',
+  'low',
+  'medium',
+  'high',
+  'xhigh',
+  'max',
+]);
+export type ReasoningEffort = z.infer<typeof reasoningEffortSchema>;
+const stepSchema = z.strictObject({
+  model: modelSchema,
+  reasoningEffort: reasoningEffortSchema.optional(),
+});
+/**
+ * Roteamento por camada (braços A3–A5 da #36): cada item começa no degrau do modelo da sua
+ * camada; esgotadas as retentativas (`budget.maxCorrectionsPerItem`), sobe um degrau da
+ * `ladder`. `reviewer` revisa o diff final em contexto limpo; o esforço é por degrau.
+ */
+export const routingSchema = z.strictObject({
+  byLayer: z.strictObject({
+    domain: modelSchema,
+    application: modelSchema,
+    operators: modelSchema,
+  }),
+  ladder: z.array(stepSchema).min(1),
+  reviewer: stepSchema.optional(),
+});
+export type Routing = z.infer<typeof routingSchema>;
 export const manifestSchema = z
   .strictObject({
     schemaVersion: z.literal(1),
@@ -72,14 +104,13 @@ export const manifestSchema = z
         (ref) => !ref.startsWith('-') && !/[\0\r\n]/.test(ref),
         'Invalid source ref',
       ),
-    skillDatasets: z
-      .array(
-        z.strictObject({
-          path: relativePathSchema,
-          contextRoots: z.strictObject({ dev: contexts, runtime: contexts }),
-        }),
-      )
-      .min(1),
+    /** Vazio = campanha só de implementação (piloto da #36). */
+    skillDatasets: z.array(
+      z.strictObject({
+        path: relativePathSchema,
+        contextRoots: z.strictObject({ dev: contexts, runtime: contexts }),
+      }),
+    ),
     benchmark: z.literal('tasks'),
     configurations: z
       .array(
@@ -95,17 +126,13 @@ export const manifestSchema = z
           authentication: z
             .enum(['api-key', 'local-login', 'oauth-token'])
             .optional(),
-          model: z
-            .string()
-            .min(1)
-            .refine((m) => m !== 'auto', 'Explicit model required'),
+          model: modelSchema,
           parameters: z.strictObject({
-            reasoningEffort: z
-              .enum(['none', 'low', 'medium', 'high', 'xhigh', 'max'])
-              .optional(),
+            reasoningEffort: reasoningEffortSchema.optional(),
           }),
           /** Ausente = `legacy`, para não mudar manifestos e relatórios já gerados. */
           promptMode: z.enum(['legacy', 'brief']).optional(),
+          routing: routingSchema.optional(),
         }),
       )
       .min(1),
@@ -144,6 +171,30 @@ export const manifestSchema = z
         (c) => c.adapter !== 'claude-cli' || c.authentication !== 'local-login',
       ),
     'claude-cli does not support local-login; use api-key or oauth-token',
+  )
+  .refine(
+    (m) =>
+      m.configurations.every(
+        (c) =>
+          !c.routing || c.adapter === 'claude-cli' || c.adapter === 'scripted',
+      ),
+    'routing requires the claude-cli or scripted adapter',
+  )
+  .refine(
+    (m) =>
+      m.configurations.every((c) => {
+        if (!c.routing) return true;
+        const models = c.routing.ladder.map((step) => step.model);
+        return (
+          new Set(models).size === models.length &&
+          Object.values(c.routing.byLayer).every((model) =>
+            models.includes(model),
+          ) &&
+          c.model === models[0] &&
+          c.parameters.reasoningEffort === undefined
+        );
+      }),
+    'routing: distinct ladder models covering byLayer, model equal to the first ladder step, effort only per step',
   );
 export type RunManifest = z.infer<typeof manifestSchema>;
 export type EvalConfiguration = RunManifest['configurations'][number];
@@ -174,7 +225,11 @@ export const emptyUsage = (): Usage => ({
 });
 export interface AdapterRequest {
   id: string;
-  mode: 'skills' | 'implementation';
+  /** `review`: revisor do roteamento, só leitura e sem o framework no sandbox. */
+  mode: 'skills' | 'implementation' | 'review';
+  /** Degrau do roteamento; ausente = o modelo e o esforço da configuração. */
+  model?: string;
+  reasoningEffort?: ReasoningEffort;
   cwd: string;
   prompt: string;
   timeoutMs: number;
@@ -301,6 +356,10 @@ export interface ItemAttempt {
   verification: VerificationEvidence | null;
   accepted: boolean;
   reason: string | null;
+  /** Só com `routing`: degrau (índice na `ladder`), modelo e esforço pedidos. */
+  tier?: number;
+  model?: string;
+  reasoningEffort?: ReasoningEffort;
 }
 export interface ItemResult {
   item: string;
@@ -317,6 +376,17 @@ export interface BenchmarkResult {
     report: VerifyReport | null;
     command: CommandEvidence;
   } | null;
+  /** Só com `routing.reviewer`: a revisão não muda o aceite; o custo dela é separado. */
+  review?: ReviewResult;
+}
+export interface ReviewResult {
+  outcome: 'approved' | 'changes_requested' | 'error' | 'not_run';
+  /** A invocação foi feita (entrou no teto); `false` com `error` = recusada antes, sem custo. */
+  dispatched: boolean;
+  execution: AdapterResult | null;
+  briefTokens: number | null;
+  findings: number;
+  reason: string | null;
 }
 export interface RunControl {
   signal: AbortSignal;

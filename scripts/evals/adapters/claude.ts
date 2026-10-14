@@ -39,10 +39,16 @@ export function claudeArgv(
   configuration: EvalConfiguration,
   request: AdapterRequest,
 ): string[] {
-  const effort = configuration.parameters.reasoningEffort;
+  // O degrau do roteamento (modelo e esforço do pedido) prevalece sobre a configuração.
+  const model = request.model ?? configuration.model;
+  const effort =
+    request.reasoningEffort ?? configuration.parameters.reasoningEffort;
   if (effort === 'none')
     throw Error('Claude reasoningEffort "none" not supported by this adapter');
-  const tools = request.mode === 'skills' ? READ_TOOLS : IMPLEMENTATION_TOOLS;
+  const tools = match(request.mode)
+    .with('skills', 'review', () => READ_TOOLS)
+    .with('implementation', () => IMPLEMENTATION_TOOLS)
+    .exhaustive();
   return [
     executable,
     '--print',
@@ -50,7 +56,7 @@ export function claudeArgv(
     'stream-json',
     '--verbose',
     '--model',
-    configuration.model,
+    model,
     ...(effort ? ['--effort', effort] : []),
     '--no-session-persistence',
     '--setting-sources',

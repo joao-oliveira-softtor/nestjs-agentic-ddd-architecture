@@ -111,7 +111,7 @@ export type TelemetryRecord =
       readonly attempt: number;
       readonly executor: ExecutorResult['status'];
       readonly gate: 'passed' | 'failed' | 'skipped';
-      readonly decision: 'accepted' | 'retry' | 'escalate' | 'needs-human';
+      readonly decision: AttemptDecision;
       readonly failure: string | null;
       readonly inputTokens: number | null;
       readonly outputTokens: number | null;
@@ -178,6 +178,27 @@ export function startTier(layer: string, policy: Policy = {}): Tier {
   const tier = policy.tiers?.[layer] ?? TIER_BY_LAYER[layer];
   if (!tier) throw new Error(`camada sem nível de modelo: ${layer}`);
   return tier;
+}
+
+export type AttemptDecision = 'accepted' | 'retry' | 'escalate' | 'needs-human';
+
+/**
+ * Política da escada, compartilhada com o harness de evals: aceito; senão retenta no mesmo
+ * nível enquanto houver retentativas (o driver não retenta um executor `blocked`); senão sobe
+ * um nível, e no topo devolve `needs-human`.
+ */
+export function decideAttempt(input: {
+  readonly accepted: boolean;
+  readonly executorBlocked: boolean;
+  /** Tentativas já feitas no nível atual, contando a que acabou de terminar. */
+  readonly tierAttempts: number;
+  readonly retries: number;
+  readonly lastTier: boolean;
+}): AttemptDecision {
+  if (input.accepted) return 'accepted';
+  if (!input.executorBlocked && input.tierAttempts <= input.retries)
+    return 'retry';
+  return input.lastTier ? 'needs-human' : 'escalate';
 }
 
 const FAILURE_LIMIT = 4000;
@@ -263,16 +284,13 @@ export async function orchestrate(input: OrchestrateInput): Promise<RunResult> {
       failure = accepted
         ? null
         : (gate?.report ?? result.diagnostic ?? `executor ${result.status}`);
-      const lastTier = tierIndex === ladder.length - 1;
-      const retry =
-        !accepted && result.status !== 'blocked' && tierAttempts <= retries;
-      const decision = accepted
-        ? 'accepted'
-        : retry
-          ? 'retry'
-          : lastTier
-            ? 'needs-human'
-            : 'escalate';
+      const decision = decideAttempt({
+        accepted,
+        executorBlocked: result.status === 'blocked',
+        tierAttempts,
+        retries,
+        lastTier: tierIndex === ladder.length - 1,
+      });
       await input.telemetry.write({
         kind: 'attempt',
         seq: ++seq,
