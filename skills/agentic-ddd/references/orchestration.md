@@ -15,3 +15,18 @@ bun scripts/orchestrate.ts --real --max-invocations 20 [--max-tokens N] [--revie
 - **Revisão (`--review`):** uma passada do Opus em contexto limpo, depois que todos os itens passam nos gates; o diff que ela recebe inclui os arquivos novos (testes criados pelo executor). O relatório é validado por `scripts/reviewer-report.ts`; `changes_requested` ou resposta inválida nunca conclui em silêncio. Não há reexecução automática por achado (ADR-0003 D12 segue adiada).
 - **Execução real:** exige `--real`, `--max-invocations`, `ANTHROPIC_API_KEY` e o CLI `claude`. Cada invocação usa `claude --bare` (sem `CLAUDE.md`, hooks nem configuração de usuário), `--max-turns`, `--max-budget-usd` e `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`; `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` nunca é repassado. `--max-tokens` usa tokens medidos; uso indisponível com esse teto ativo interrompe novas execuções.
 - **Telemetria:** `.agentic-tasks/runs/<id>/telemetry.jsonl`, uma linha por tentativa (nível, modelo, gate, decisão, tokens, tempo), uma por revisão e uma de fechamento. Custo em dólar não é calculado.
+
+## Benchmark de revisão
+
+Mede o que o revisor pega além dos gates (ADR-0003 D12). As 19 regressões plantadas do ciclo evals-19 (`scripts/evals/review-defects.ts`) passam em I1–I5 por construção, porque o teste foi trocado por cobertura superficial verde; só a revisão as detecta. Cada item do workspace `tasks` ganha também um controle limpo, onde o revisor deve aprovar (24 casos).
+
+```
+bun scripts/evals/review-benchmark.ts [--only defect:normalization,clean:entity:Task]
+bun scripts/evals/review-benchmark.ts --real --max-invocations 48 [--cycles 2] [--arms clean,authored] [--model <id>]
+```
+
+- **Padrão:** monta os casos (um workspace por caso, itens anteriores concluídos) e mostra o tamanho do brief. Não chama modelo.
+- **Isolamento:** o revisor real roda sem nenhuma ferramenta (`--tools=`) e em diretório vazio, vendo só packet, diff e gates. `defect`, `kind` e `expected` ficam no caso e nunca entram no brief; assim a solução de referência e os oráculos privados não alcançam o modelo.
+- **Braços:** `clean` (packet, diff e gates) e `authored` (soma o relato otimista do executor, para medir o viés de autoria). Um revisor de outra família entra como mais um braço quando houver adapter; hoje só há Claude.
+- **Métricas** (por ciclo e agregadas; `null` quando o denominador é zero): `recall` (defeito apontado pelo ID esperado), `weakRecall` (aceita `I4`, o teste superficial), `precision` (revisões `changes_requested` que apontam o defeito ou `I4`), falsos verdes (defeito aprovado), controles limpos apontados e achados espúrios (fora do esperado; no controle limpo, todos). Casos `not_run` ficam fora dos denominadores e são contados à parte.
+- **Orçamento:** `--real` exige `--max-invocations`; `--max-tokens` usa tokens medidos e uso indisponível interrompe. Resultados em `<work>/results/<id>/{scores.jsonl,summary.json}`.
