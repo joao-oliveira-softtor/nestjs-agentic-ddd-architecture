@@ -179,21 +179,22 @@ test('timeout: só a entrada das requisições recebidas, sem saída, como limit
 });
 
 test('indisponível: sem detalhamento, modelo sem preço, faixas sem requisições acima do limiar, leitura divergente', () => {
-  const reason = reasonOf;
-  expect(reason(emptyUsage())).toBe('no_usage_breakdown');
-  expect(reason(usage({ byModel: { 'outro-modelo': model(1, 1) } }))).toBe(
+  expect(reasonOf(emptyUsage())).toBe('no_usage_breakdown');
+  expect(reasonOf(usage({ byModel: { 'outro-modelo': model(1, 1) } }))).toBe(
     'model_without_price:outro-modelo',
   );
-  expect(reason(usage({ byModel: { [HAIKU]: model(100_001, 1) } }))).toBe(
+  expect(reasonOf(usage({ byModel: { [HAIKU]: model(100_001, 1) } }))).toBe(
     `tiered_model_without_requests:${HAIKU}`,
   );
   // Abaixo do limiar no total, o preço plano vale mesmo sem requisições.
-  expect(reason(usage({ byModel: { [HAIKU]: model(100_000, 1) } }))).toBeNull();
   expect(
-    reason(usage({ byModel: { [SONNET]: model(5_000_000, 1) } })),
+    reasonOf(usage({ byModel: { [HAIKU]: model(100_000, 1) } })),
   ).toBeNull();
   expect(
-    reason(
+    reasonOf(usage({ byModel: { [SONNET]: model(5_000_000, 1) } })),
+  ).toBeNull();
+  expect(
+    reasonOf(
       usage({
         byModel: { [HAIKU]: model(5, 1) },
         requests: {
