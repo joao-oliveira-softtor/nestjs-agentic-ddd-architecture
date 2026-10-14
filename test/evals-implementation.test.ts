@@ -137,6 +137,45 @@ test('complete scripted benchmark independently accepts all five frozen packets 
     expect(item.attempts[0]?.audit?.ok).toBe(true);
   }
 }, 120000);
+test('promptMode brief entrega o brief D5 nos cinco itens e mantém o mesmo critério de aceite', async () => {
+  const prompts: string[] = [];
+  const adapter = createScriptedAdapter(
+    IDS.map(() => ({
+      finalText: '{"status":"done","summary":"offline fixture"}',
+      before: async (req) => {
+        prompts.push(req.prompt);
+        await completeItem(req.cwd, req.id);
+      },
+    })),
+  );
+  const result = await evaluateImplementation(
+    {
+      ...evalManifest,
+      configurations: [
+        { ...evalManifest.configurations[0]!, promptMode: 'brief' },
+      ],
+    },
+    fixture.source,
+    new Map([['scripted', adapter]]),
+    {
+      outDir: join(out, 'brief'),
+      real: false,
+      signal: new AbortController().signal,
+    },
+  );
+  expect(prompts).toHaveLength(5);
+  for (const prompt of prompts) {
+    expect(prompt).toContain(
+      'Protocolo do benchmark (prevalece sobre o brief acima)',
+    );
+    expect(prompt).toContain('criterion:0001/');
+    expect(prompt).not.toContain('Leia .agents/skills/agentic-ddd/SKILL.md');
+  }
+  expect(result[0]!.items.map((i) => i.state)).toEqual(
+    Array(5).fill('accepted'),
+  );
+  expect(result[0]!.finalVerification?.report?.status).toBe('done');
+}, 120000);
 test('one fresh correction keeps packet/hash; failed method leaves independent create executable', async () => {
   const seen: { item: string; packet: string; cwd: string }[] = [];
   const script = [

@@ -101,6 +101,8 @@ export const manifestSchema = z
               .enum(['none', 'low', 'medium', 'high', 'xhigh', 'max'])
               .optional(),
           }),
+          /** Ausente = `legacy`, para não mudar manifestos e relatórios já gerados. */
+          promptMode: z.enum(['legacy', 'brief']).optional(),
         }),
       )
       .min(1),

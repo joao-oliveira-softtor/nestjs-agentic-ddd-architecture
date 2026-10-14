@@ -26,6 +26,7 @@ import type {
   RunOptions,
 } from './contracts';
 import { emptyUsage, unavailable } from './contracts';
+import { buildImplementationPrompt } from './implementation-prompt';
 import { createAttemptWorkspace, disposeWorkspace } from './isolation';
 import { TASK_ITEMS, auditSubmission, treeHash, readTree } from './audit';
 import { cliArgv, requireFinished, workspaceCommand } from './commands';
@@ -328,11 +329,21 @@ export async function evaluateImplementation(
         );
         await mkdir(evidenceDir, { recursive: true });
         const previous = item.attempts.at(-1);
-        const prompt =
-          `Packet:\n${packet}\nEnd packet\nRoot atual: ${workspace.root}; configuração atual: ${workspace.configPath}. Use esses paths no lugar de paths temporários do packet; conserve o specHash original ${item.specHash}.\nEdite somente ${assignment.file ? `${assignment.file} ${assignment.className}.${assignment.method} (somente interior do corpo, mesma quantidade de linhas)` : 'nenhum corpo'} e o novo teste ${assignment.test}. Preserve imports, contratos, decorators, outros corpos, testes existentes, configurações, propostas e gerados.\nCritérios adicionais arquivados: ${JSON.stringify(handoff.criteria.map((c) => ({ ...c, id: `criterion:0001/${c.id}` })))}. Cubra-os com covers do executor.\nLeia .agents/skills/agentic-ddd/SKILL.md e referências de executor pertinentes. Use só a sessão principal, sem delegação ou subagentes. Neste benchmark, este protocolo de resposta final substitui o handoff normal da skill/referência de executor. Resposta final: objeto JSON com exatamente duas propriedades, status e summary; sem propriedades adicionais. Exemplo {"status":"done","summary":"texto"}; status deve ser done, blocked ou failed, sem prosa ou cercas.` +
-          (previous
+        const prompt = buildImplementationPrompt({
+          mode: configuration.promptMode ?? 'legacy',
+          packet,
+          root: workspace.root,
+          configPath: workspace.configPath,
+          specHash: item.specHash!,
+          file: assignment.file,
+          className: assignment.className,
+          method: assignment.method,
+          test: assignment.test,
+          criteria: handoff.criteria,
+          correction: previous
             ? `\nCorrection: aplique uma nova submissão a partir deste baseline; nenhuma edição anterior foi reaplicada. Patch anterior: ${previous.audit?.patch ?? 'unavailable'}. Findings: ${JSON.stringify(previous.audit?.findings.length ? previous.audit.findings : (previous.verification?.findings ?? [previous.reason]))}`
-            : '');
+            : '',
+        });
         await writeFile(join(evidenceDir, 'prompt.txt'), prompt);
         await writeFile(
           join(evidenceDir, 'handoff.json'),
