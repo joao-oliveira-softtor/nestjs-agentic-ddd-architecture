@@ -349,6 +349,7 @@ function summarize(executed: Executed[], planned: Slot[]) {
     const b = report.benchmarks.find(
       (b) => b.configuration === slot.configuration,
     )!;
+    if (b.review?.execution) usage.push(b.review.execution.usage);
     let final = 0;
     for (const i of b.items) {
       if (accepted(i.attempts[0])) initialItems++;

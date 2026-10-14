@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { stableStringify } from '@agentic-ddd/compiler';
 import { aggregateCampaign, main } from '../scripts/evals/aggregate';
 import { sha256 } from '../scripts/evals/isolation';
-import { writeReport } from '../scripts/evals/report';
+import { computeMetrics, writeReport } from '../scripts/evals/report';
 import {
   available,
   emptyUsage,
@@ -378,6 +378,38 @@ test('incomplete token measurements and distinct currencies remain unavailable',
   ).toMatchObject({
     status: 'available',
     value: { amount: 15, currency: 'USD' },
+  });
+  // A revisão despachada entra no uso e no custo do braço.
+  await mutate(f, (r) => {
+    const execution = r.cases[0]!.execution!;
+    r.benchmarks[0]!.review = {
+      outcome: 'approved',
+      dispatched: true,
+      execution: {
+        ...execution,
+        usage: {
+          ...execution.usage,
+          inputTokens: available(7, 'native'),
+          cost: available({ amount: 2, currency: 'USD' }, 'native'),
+        },
+      },
+      briefTokens: 100,
+      findings: 0,
+      reason: null,
+    };
+  });
+  const reviewed = await aggregateCampaign(f.path);
+  expect(reviewed.configurations[0]!.usage.inputTokens).toMatchObject({
+    value: 157,
+  });
+  expect(reviewed.configurations[0]!.usage.cost).toMatchObject({
+    value: { amount: 17, currency: 'USD' },
+  });
+  const report = (await Bun.file(
+    join(f.root, 'run-1/report.json'),
+  ).json()) as EvalReport;
+  expect(computeMetrics(report).usage[f.config.id]!.inputTokens).toMatchObject({
+    value: 57,
   });
 });
 
