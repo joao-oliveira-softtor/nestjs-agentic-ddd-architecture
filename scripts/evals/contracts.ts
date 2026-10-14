@@ -85,7 +85,12 @@ export const manifestSchema = z
       .array(
         z.strictObject({
           id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
-          adapter: z.enum(['scripted', 'codex-cli', 'cursor-cli']),
+          adapter: z.enum([
+            'scripted',
+            'codex-cli',
+            'cursor-cli',
+            'claude-cli',
+          ]),
           authentication: z.enum(['api-key', 'local-login']).optional(),
           model: z
             .string()

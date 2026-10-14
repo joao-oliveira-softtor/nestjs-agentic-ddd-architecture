@@ -84,9 +84,11 @@ export interface NativeAdapterOptions {
   onSecrets?: (secrets: readonly string[]) => void;
 }
 interface NativeDefinition {
-  command: 'codex' | 'cursor-agent';
-  credential: 'CODEX_API_KEY' | 'CURSOR_API_KEY';
+  command: 'codex' | 'cursor-agent' | 'claude';
+  credential: 'CODEX_API_KEY' | 'CURSOR_API_KEY' | 'ANTHROPIC_API_KEY';
   bundle: boolean;
+  /** Variáveis fixas do processo, além das de credencial e de sandbox. */
+  env?: Readonly<Record<string, string>>;
   companions?: readonly string[];
   argv(
     executable: string,
@@ -184,6 +186,17 @@ export function createNativeAdapter(
             diagnostic: `Missing external ${definition.credential}`,
           }),
         };
+      if (local && definition.command === 'claude')
+        return processResult({
+          transport: 'infra_error',
+          exitCode: null,
+          signal: null,
+          stdout: '',
+          stderr: '',
+          durationMs: 0,
+          evidence: [],
+          diagnostic: 'claude adapter supports only api-key authentication',
+        });
       const path = await resolveExecutable();
       if (info && sha256(await readFile(path)) !== info.executableSha256)
         throw Error('CLI executable changed after probe');
@@ -193,7 +206,7 @@ export function createNativeAdapter(
           throw Error('CLI companion changed after probe');
       const workspace = getWorkspace(request.cwd);
       const home = await mkdtemp(join(dirname(request.cwd), 'session-home-'));
-      await mkdir(join(home, '.codex'));
+      if (definition.command !== 'claude') await mkdir(join(home, '.codex'));
       const relativeAuth =
         definition.command === 'codex'
           ? '.codex/auth.json'
@@ -275,9 +288,12 @@ export function createNativeAdapter(
             cwd: request.cwd,
             env: {
               HOME: '/home/eval',
-              CODEX_HOME: '/home/eval/.codex',
+              ...(definition.command !== 'claude'
+                ? { CODEX_HOME: '/home/eval/.codex' }
+                : {}),
               PATH: '/tools:/usr/bin:/bin',
               NO_COLOR: '1',
+              ...definition.env,
               ...(!local ? { [definition.credential]: key! } : {}),
             },
             timeoutMs: request.timeoutMs,
