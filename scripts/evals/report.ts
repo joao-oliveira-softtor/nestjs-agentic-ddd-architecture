@@ -126,9 +126,11 @@ export function computeMetrics(report: EvalReport) {
       ...cases.flatMap((c) => (c.execution ? [c.execution.usage] : [])),
       ...report.benchmarks
         .filter((b) => b.configuration === configuration)
-        .flatMap((b) =>
-          b.items.flatMap((i) => i.attempts.map((a) => a.execution.usage)),
-        ),
+        .flatMap((b) => [
+          ...b.items.flatMap((i) => i.attempts.map((a) => a.execution.usage)),
+          // A revisão despachada consome uma invocação e entra no custo do braço.
+          ...(b.review?.execution ? [b.review.execution.usage] : []),
+        ]),
     ]);
   }
   const benchmarks = report.benchmarks.map((b) => ({

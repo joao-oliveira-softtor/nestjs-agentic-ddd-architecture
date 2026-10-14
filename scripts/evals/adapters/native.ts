@@ -57,6 +57,28 @@ export function nativeUsage(value: unknown, source: string): Usage {
     cost: unavailable(),
   };
 }
+/**
+ * Adapters sem roteamento (Codex, Cursor): o pedido não pode trocar o modelo nem o esforço da
+ * configuração, nem pedir a revisão do roteamento. Nunca trocar de modelo em silêncio.
+ */
+export function assertFixedModel(
+  configuration: EvalConfiguration,
+  request: AdapterRequest,
+): void {
+  if (request.mode === 'review')
+    throw Error(`${configuration.adapter} does not support review requests`);
+  if (request.model !== undefined && request.model !== configuration.model)
+    throw Error(
+      `${configuration.adapter} cannot switch model per request (${request.model})`,
+    );
+  if (
+    request.reasoningEffort !== undefined &&
+    request.reasoningEffort !== configuration.parameters.reasoningEffort
+  )
+    throw Error(
+      `${configuration.adapter} cannot switch reasoningEffort per request (${request.reasoningEffort})`,
+    );
+}
 export function processResult(result: ProcessResult): AdapterResult {
   return {
     transport:

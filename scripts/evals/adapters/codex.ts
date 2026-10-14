@@ -16,6 +16,7 @@ import {
   nativeUsage,
   object,
   processResult,
+  assertFixedModel,
   type NativeAdapterOptions,
 } from './native';
 
@@ -24,6 +25,7 @@ export function codexArgv(
   configuration: EvalConfiguration,
   request: AdapterRequest,
 ): string[] {
+  assertFixedModel(configuration, request);
   return [
     executable,
     'exec',

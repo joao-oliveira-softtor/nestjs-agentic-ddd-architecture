@@ -13,7 +13,11 @@ import type {
   NextReport,
   Proposal,
 } from '@agentic-ddd/compiler';
-import { parseProposal } from '@agentic-ddd/compiler';
+import { approxTokens, parseProposal } from '@agentic-ddd/compiler';
+import { match } from 'ts-pattern';
+import { renderReviewerBrief } from '../agent-briefs';
+import { decideAttempt } from '../orchestrate';
+import { parseReviewerReport } from '../reviewer-report';
 import { parseFinalReport } from './final-verification';
 import type {
   AdapterResult,
@@ -22,6 +26,8 @@ import type {
   ItemAttempt,
   ItemHandoff,
   PreparedSource,
+  ReviewResult,
+  Routing,
   RunManifest,
   RunOptions,
 } from './contracts';
@@ -149,6 +155,179 @@ export async function prepareTasksBaseline(
     await disposeWorkspace(workspace);
   }
 }
+/** Limite provisório do brief do revisor (plano da #36); o PR-3 fixa o valor do piloto. */
+export const REVIEW_MAX_TOKENS = 50_000;
+
+/** Degrau inicial do item: o da camada dele em `routing.byLayer`. */
+function startStep(routing: Routing, layer: string): number {
+  const model = match(layer)
+    .with(
+      'domain',
+      'application',
+      'operators',
+      (known) => routing.byLayer[known],
+    )
+    .otherwise(() => {
+      throw Error(`routing sem modelo para a camada ${layer}`);
+    });
+  return routing.ladder.findIndex((step) => step.model === model);
+}
+
+/** Diff unificado de cada caminho entre o baseline inicial e o final (arquivos novos inclusos). */
+function unifiedDiff(
+  initial: string,
+  final: string,
+  paths: readonly string[],
+): string {
+  return paths
+    .map((path) => {
+      const before = join(initial, path);
+      const run = Bun.spawnSync(
+        [
+          'git',
+          'diff',
+          '--no-index',
+          '--no-color',
+          '--',
+          Bun.file(before).size ? before : '/dev/null',
+          join(final, path),
+        ],
+        { stdout: 'pipe', stderr: 'pipe' },
+      );
+      return run.stdout
+        .toString()
+        .replaceAll(`${initial}/`, '')
+        .replaceAll(`${final}/`, '');
+    })
+    .filter((part) => part.trim())
+    .join('\n');
+}
+
+async function reviewAcceptedItems(input: {
+  readonly source: PreparedSource;
+  readonly initial: string;
+  readonly baseline: string;
+  readonly result: BenchmarkResult;
+  readonly reviewer: NonNullable<Routing['reviewer']>;
+  readonly adapter: EvalAdapter;
+  readonly manifest: RunManifest;
+  readonly options: RunOptions;
+  readonly outDir: string;
+}): Promise<ReviewResult> {
+  const { options } = input;
+  const skipped = (
+    outcome: ReviewResult['outcome'],
+    reason: string,
+    briefTokens: number | null = null,
+  ): ReviewResult => ({
+    outcome,
+    dispatched: false,
+    execution: null,
+    briefTokens,
+    findings: 0,
+    reason,
+  });
+  const accepted = input.result.items.filter((i) => i.state === 'accepted');
+  if (!accepted.length) return skipped('not_run', 'no_accepted_items');
+  const winners = accepted.map((i) => i.attempts.find((a) => a.accepted)!);
+  const paths = [
+    ...new Set(
+      accepted.flatMap((i) => {
+        const task = TASK_ITEMS.find((t) => t.id === i.item)!;
+        return [...(task.file ? [task.file] : []), task.test];
+      }),
+    ),
+  ];
+  // Sem limite aqui: o tamanho é medido e comparado antes de gastar a invocação.
+  const brief = renderReviewerBrief({
+    packets: winners.map((a) => a.handoff.packet),
+    diff: unifiedDiff(input.initial, input.baseline, paths),
+    gates: accepted
+      .map(
+        (i) =>
+          `${i.item}: aceito pela verificação independente (${i.attempts.length} tentativa(s), degrau ${i.attempts.at(-1)?.tier ?? 0})`,
+      )
+      .join('\n'),
+    maxTokens: Number.POSITIVE_INFINITY,
+  });
+  const briefTokens = approxTokens(brief);
+  if (briefTokens > REVIEW_MAX_TOKENS)
+    return skipped('error', 'brief_over_budget', briefTokens);
+  if (options.control && !options.control.reserveInvocation())
+    return skipped('not_run', 'budget_exhausted', briefTokens);
+  const workspace = await createAttemptWorkspace(
+    input.source,
+    input.baseline,
+    'skills',
+  );
+  const evidenceDir = join(input.outDir, 'review');
+  await mkdir(evidenceDir, { recursive: true });
+  await writeFile(join(evidenceDir, 'prompt.txt'), brief);
+  let review: ReviewResult;
+  try {
+    const execution = await input.adapter.run(
+      {
+        id: 'review',
+        mode: 'review',
+        cwd: workspace.root,
+        prompt: brief,
+        model: input.reviewer.model,
+        ...(input.reviewer.reasoningEffort
+          ? { reasoningEffort: input.reviewer.reasoningEffort }
+          : {}),
+        timeoutMs: Math.min(
+          input.manifest.budget.implementationTimeoutMs,
+          options.control?.remainingMs() ?? Infinity,
+        ),
+        evidenceDir,
+      },
+      { signal: options.control?.signal ?? options.signal },
+    );
+    const dispatched = { dispatched: true, execution, briefTokens };
+    if (execution.transport !== 'finished')
+      review = {
+        ...dispatched,
+        outcome: 'error',
+        findings: 0,
+        reason: execution.diagnostic ?? execution.transport,
+      };
+    else
+      try {
+        const report = parseReviewerReport(execution.finalText ?? '');
+        review = {
+          ...dispatched,
+          outcome: report.status,
+          findings: report.findings.length,
+          reason: null,
+        };
+      } catch {
+        review = {
+          ...dispatched,
+          outcome: 'error',
+          findings: 0,
+          reason: 'invalid_reviewer_report',
+        };
+      }
+  } catch (error) {
+    // A invocação já foi reservada: entra no teto e no relatório como erro despachado.
+    review = {
+      outcome: 'error',
+      dispatched: true,
+      execution: null,
+      briefTokens,
+      findings: 0,
+      reason: String(error),
+    };
+  } finally {
+    await disposeWorkspace(workspace);
+  }
+  await writeFile(
+    join(evidenceDir, 'review.json'),
+    JSON.stringify(review, null, 2) + '\n',
+  );
+  return review;
+}
+
 function syntheticFailure(message: string): AdapterResult {
   return {
     transport: 'infra_error',
@@ -225,6 +404,14 @@ export async function evaluateImplementation(
     const terminal = new Set<string>();
     let queryIndex = 0;
     let infra = false;
+    const routing: Routing | undefined = configuration.routing;
+    const ladderLength = routing?.ladder.length ?? 1;
+    // Com revisor, a última invocação do teto fica para a revisão.
+    const reservedForReview = () =>
+      routing?.reviewer !== undefined &&
+      options.control !== undefined &&
+      options.control.invocations >= manifest.budget.maxInvocations - 1;
+    let itemsBudgetReserved = false;
     const runOptions = {
       ...options,
       outDir: join(options.outDir, 'implementation', configuration.id),
@@ -306,17 +493,17 @@ export async function evaluateImplementation(
           };
         }),
       };
-      for (
-        let number = 1;
-        number <= manifest.budget.maxCorrectionsPerItem + 1;
-        number++
-      ) {
-        if (
-          options.signal.aborted ||
-          options.control?.stopReason() ||
-          (options.control && !options.control.reserveInvocation())
-        )
+      const layer = status.items.find((i) => i.id === eligible)!.layer;
+      let tier = routing ? startStep(routing, layer) : 0;
+      let tierAttempts = 0;
+      for (let number = 1; ; number++) {
+        if (options.signal.aborted || options.control?.stopReason()) break;
+        if (reservedForReview()) {
+          itemsBudgetReserved = true;
           break;
+        }
+        if (options.control && !options.control.reserveInvocation()) break;
+        const step = routing?.ladder[tier];
         const workspace = await createAttemptWorkspace(
           source,
           baseline,
@@ -359,6 +546,15 @@ export async function evaluateImplementation(
           verification: null,
           accepted: false,
           reason: null,
+          ...(step
+            ? {
+                tier,
+                model: step.model,
+                ...(step.reasoningEffort
+                  ? { reasoningEffort: step.reasoningEffort }
+                  : {}),
+              }
+            : {}),
         };
         item.attempts.push(attempt);
         const agentStarted = performance.now();
@@ -367,6 +563,14 @@ export async function evaluateImplementation(
             {
               id: eligible,
               mode: 'implementation',
+              ...(step
+                ? {
+                    model: step.model,
+                    ...(step.reasoningEffort
+                      ? { reasoningEffort: step.reasoningEffort }
+                      : {}),
+                  }
+                : {}),
               cwd: workspace.root,
               prompt,
               timeoutMs: Math.min(
@@ -460,20 +664,42 @@ export async function evaluateImplementation(
           attempt.execution.transport === 'cancelled'
         )
           break;
+        // Mesma escada do driver; aqui `blocked` conta como tentativa falha em todos os braços.
+        tierAttempts++;
+        const stop = match(
+          decideAttempt({
+            accepted: false,
+            executorBlocked: false,
+            tierAttempts,
+            retries: manifest.budget.maxCorrectionsPerItem,
+            lastTier: tier >= ladderLength - 1,
+          }),
+        )
+          .with('retry', () => false)
+          .with('escalate', () => {
+            tier++;
+            tierAttempts = 0;
+            return false;
+          })
+          .with('accepted', 'needs-human', () => true)
+          .exhaustive();
+        if (stop) break;
       }
-      terminal.add(eligible);
+      // Item que nem chegou a tentar por causa da vaga da revisão não é falha terminal.
+      if (!itemsBudgetReserved || item.attempts.length) terminal.add(eligible);
       if (item.state !== 'accepted') {
         item.state = infra
           ? 'infra_error'
           : item.attempts.length
             ? 'failed'
             : 'not_run';
-        item.reason =
-          item.attempts.at(-1)?.reason ??
-          options.control?.stopReason() ??
-          'cancelled';
+        item.reason = itemsBudgetReserved
+          ? 'items_budget_reserved_for_review'
+          : (item.attempts.at(-1)?.reason ??
+            options.control?.stopReason() ??
+            'cancelled');
       }
-      if (infra) break;
+      if (infra || itemsBudgetReserved) break;
     }
     for (const item of result.items)
       if (item.state === 'not_run') {
@@ -484,14 +710,21 @@ export async function evaluateImplementation(
           !infra &&
           !options.signal.aborted &&
           !options.control?.stopReason() &&
-          deps.some((dep) => !done.has(dep))
+          // Com a vaga da revisão reservada, dependência que só não rodou não é falha.
+          deps.some(
+            (dep) =>
+              !done.has(dep) && (!itemsBudgetReserved || terminal.has(dep)),
+          )
         ) {
           item.state = 'blocked';
           item.reason = 'dependency_failed';
         } else
           item.reason = infra
             ? 'configuration_infrastructure_failed'
-            : (options.control?.stopReason() ?? 'cancelled');
+            : (options.control?.stopReason() ??
+              (itemsBudgetReserved
+                ? 'items_budget_reserved_for_review'
+                : 'cancelled'));
       }
     if (!infra && !options.signal.aborted && !options.control?.stopReason()) {
       const workspace = await createAttemptWorkspace(
@@ -521,6 +754,28 @@ export async function evaluateImplementation(
         await disposeWorkspace(workspace);
       }
     }
+    if (routing?.reviewer)
+      result.review =
+        infra || options.signal.aborted || options.control?.stopReason()
+          ? {
+              outcome: 'not_run',
+              dispatched: false,
+              execution: null,
+              briefTokens: null,
+              findings: 0,
+              reason: 'run_stopped',
+            }
+          : await reviewAcceptedItems({
+              source,
+              initial,
+              baseline,
+              result,
+              reviewer: routing.reviewer,
+              adapter,
+              manifest,
+              options,
+              outDir: runOptions.outDir,
+            });
   }
   return results;
 }

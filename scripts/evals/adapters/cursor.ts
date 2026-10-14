@@ -12,6 +12,7 @@ import {
   nativeUsage,
   object,
   processResult,
+  assertFixedModel,
   type NativeAdapterOptions,
 } from './native';
 
@@ -20,6 +21,7 @@ export function cursorArgv(
   configuration: EvalConfiguration,
   request: AdapterRequest,
 ): string[] {
+  assertFixedModel(configuration, request);
   if (configuration.parameters.reasoningEffort !== undefined)
     throw Error(
       'Cursor reasoningEffort override not supported by this adapter',

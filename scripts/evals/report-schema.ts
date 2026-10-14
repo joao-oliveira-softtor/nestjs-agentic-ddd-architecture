@@ -3,6 +3,7 @@ import {
   answerSchema,
   implementationReplySchema,
   manifestSchema,
+  reasoningEffortSchema,
   relativePathSchema,
 } from './contracts';
 const strings = z.array(z.string());
@@ -147,6 +148,9 @@ const attempt = z.strictObject({
   verification: verification.nullable(),
   accepted: z.boolean(),
   reason: z.string().nullable(),
+  tier: integer.optional(),
+  model: z.string().min(1).optional(),
+  reasoningEffort: reasoningEffortSchema.optional(),
 });
 const item = z.strictObject({
   item: z.string(),
@@ -162,6 +166,16 @@ const benchmark = z.strictObject({
   finalVerification: z
     .strictObject({ report: changeReportSchema.nullable(), command })
     .nullable(),
+  review: z
+    .strictObject({
+      outcome: z.enum(['approved', 'changes_requested', 'error', 'not_run']),
+      dispatched: z.boolean(),
+      execution: adapter.nullable(),
+      briefTokens: integer.nullable(),
+      findings: integer,
+      reason: z.string().nullable(),
+    })
+    .optional(),
 });
 const cases = z.strictObject({
   configuration: z.string(),
