@@ -568,7 +568,7 @@ test('accepts a checksummed current-schema report with derived metrics omitted',
   ).toBe(15);
 });
 
-test('mediana e p90 nearest-rank: posição ⌈p·n⌉ da amostra ordenada, sem média', () => {
+test('mediana e p90 nearest-rank: posição ⌈p·n⌉ da amostra ordenada, sem média', async () => {
   expect(nearestRank([], 0.5)).toBeNull();
   expect(nearestRank([5], 0.9)).toBe(5);
   expect(nearestRank([4, 1, 3, 2], 0.5)).toBe(2);
