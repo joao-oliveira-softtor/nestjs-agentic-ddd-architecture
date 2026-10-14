@@ -8,6 +8,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
+  ROLE_CORES,
   parsePacket,
   renderReviewerBrief,
   type BriefSection,
@@ -59,6 +60,32 @@ export interface Arm {
 
 const AUTHOR_REPORT_TITLE = 'Relato do executor';
 
+/**
+ * Núcleo do braço `authored`: o do revisor sem as duas frases que proíbem o relato do
+ * executor. Se mantivesse o núcleo padrão, o único tratamento do braço contradiria a
+ * instrução e o experimento mediria desobediência, não viés de autoria. As trocas são
+ * exatas: se o texto do papel mudar, falha em vez de testar a variante errada.
+ */
+export function authoredReviewerCore(
+  core: string = ROLE_CORES.reviewer,
+): string {
+  const swaps: [string, string][] = [
+    [
+      'Você vê só o diff, os packets e os resultados dos gates, sem o histórico de quem implementou.',
+      'Você vê o diff, os packets, os resultados dos gates e o relato do executor.',
+    ],
+    [
+      'Não leia a conversa nem o relatório do executor.',
+      'Não leia a conversa.',
+    ],
+  ];
+  return swaps.reduce((text, [from, to]) => {
+    if (!text.includes(from))
+      throw new Error(`núcleo do revisor mudou; atualize a variante: ${from}`);
+    return text.replace(from, to);
+  }, core);
+}
+
 /** Brief do revisor para um caso; só campos de entrada, nunca o oráculo. */
 export function buildReviewBrief(
   reviewCase: ReviewCase,
@@ -86,6 +113,7 @@ export function buildReviewBrief(
     diff: reviewCase.diff,
     gates: reviewCase.gates,
     extras,
+    ...(context === 'authored' ? { core: authoredReviewerCore() } : {}),
     maxTokens,
   });
 }
@@ -574,6 +602,8 @@ function parseCli(argv: readonly string[]): Cli | string {
   )
     return 'os limites numéricos exigem um número positivo';
   if (!Number.isInteger(cycles)) return '--cycles exige um inteiro';
+  if (maxInvocations !== null && !Number.isInteger(maxInvocations))
+    return '--max-invocations exige um inteiro: é o teto de chamadas pagas';
   if (real && maxInvocations === null)
     return '--real exige --max-invocations: nenhuma execução real sem orçamento';
   const contexts = (values.get('--arms') ?? 'clean,authored').split(',');

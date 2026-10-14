@@ -7,6 +7,7 @@ import { claudeRunArgv } from '../scripts/orchestrate-ports';
 import { REVIEW_DEFECTS } from '../scripts/evals/review-defects';
 import {
   TASK_ITEM_ORDER,
+  authoredReviewerCore,
   buildReviewBrief,
   buildReviewCases,
   listCaseIds,
@@ -163,6 +164,25 @@ test('o brief só leva packet, diff, gates e (se o braço pedir) o relato do aut
   expect(authored).toContain('Relato do executor');
   expect(authored).toContain('"status":"done"');
   expect(authored).toContain('"verifyExitCode":0');
+});
+
+test('o braço autoral troca as frases que proíbem o relato; sem isso o experimento mediria desobediência', () => {
+  const clean = buildReviewBrief(A, 'clean');
+  const authored = buildReviewBrief(A, 'authored');
+  const prohibition = 'Não leia a conversa nem o relatório do executor';
+  const history = 'sem o histórico de quem implementou';
+  expect(clean).toContain(prohibition);
+  expect(clean).toContain(history);
+  expect(authored).not.toContain(prohibition);
+  expect(authored).not.toContain(history);
+  expect(authored).toContain('Não leia a conversa.');
+  expect(authored).toContain('e o relato do executor');
+  // O resto do papel é idêntico: a única diferença entre os braços é o tratamento.
+  expect(authoredReviewerCore()).toContain('Não edite arquivos');
+  expect(authoredReviewerCore()).toContain('Sem ID ou gate, não é achado');
+  expect(() => authoredReviewerCore('núcleo de outro papel')).toThrow(
+    'núcleo do revisor mudou',
+  );
 });
 
 test('revisor perfeito: recall e precisão 1, nenhum achado espúrio; preguiçoso: falso verde em todos os defeitos', async () => {
@@ -362,6 +382,9 @@ test('CLI: --real exige orçamento e opções inválidas são recusadas', async 
     expect(await main(['--real'])).toBe(2);
     expect(await main(['--arms', 'outro'])).toBe(2);
     expect(await main(['--cycles', '1.5'])).toBe(2);
+    // O teto de chamadas pagas precisa ser inteiro: 1,5 autorizaria duas.
+    expect(await main(['--real', '--max-invocations', '1.5'])).toBe(2);
+    expect(await main(['--real', '--max-invocations', '0.5'])).toBe(2);
     expect(await main(['--max-tokens', '0'])).toBe(2);
     expect(await main(['--inexistente'])).toBe(2);
     expect(await main(['--only', 'defect:nao-existe'])).toBe(1);
@@ -387,6 +410,9 @@ test('casos reais: com defeito e limpo passam nos gates, o diff traz a regressã
     // Os gates estão verdes mesmo com a regressão: só a revisão a pega.
     for (const c of cases)
       expect(c!.gates).toContain('item entity:Task — done');
+    // O ref esperado é uma obrigação que o packet lista: o revisor consegue citá-lo.
+    for (const id of defect!.expected)
+      expect(defect!.packet).toContain(`\`${id}\``);
     expect(defect!.diff).toContain('+const normalized = title;');
     expect(defect!.diff).toContain('superficial green coverage');
     expect(clean!.diff).toContain('title.trim()');

@@ -529,6 +529,9 @@ function parseCli(argv: readonly string[]): Cli | string {
     [maxInvocations, maxTokens, maxTurns, maxUsd, timeoutMin].some(Number.isNaN)
   )
     return 'os limites numéricos exigem um número positivo';
+  if (maxInvocations !== null && !Number.isInteger(maxInvocations))
+    return '--max-invocations exige um inteiro: é o teto de chamadas pagas';
+  if (!Number.isInteger(maxTurns)) return '--max-turns exige um inteiro';
   if (flags.has('--real') && maxInvocations === null)
     return '--real exige --max-invocations: nenhuma execução real sem orçamento';
   const ladderRaw = values.get('--ladder');

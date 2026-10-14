@@ -172,6 +172,8 @@ export interface ReviewerInput {
   readonly gates: string;
   /** Seções adicionais, depois do diff e dos gates, cada uma com hash próprio. */
   readonly extras?: readonly BriefSection[];
+  /** Núcleo do papel no lugar do padrão (variantes de experimento). */
+  readonly core?: string;
   readonly maxTokens?: number;
 }
 
@@ -179,7 +181,7 @@ export function renderReviewerBrief(input: ReviewerInput): string {
   const facts = input.packets.map(parsePacket);
   return checkBudget(
     [
-      ROLE_CORES.reviewer,
+      input.core ?? ROLE_CORES.reviewer,
       '',
       '## Itens revisados',
       '',
