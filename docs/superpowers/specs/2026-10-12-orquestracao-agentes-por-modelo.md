@@ -1,6 +1,6 @@
 # Orquestração de agentes por camada e modelo — escopo de melhorias
 
-Status: proposta de escopo (nada implementado). Evidência completa em `docs/research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md`; notas por tema em `.../notas/`.
+Status: B01–B06, B08, B09 e B11 entregues (ver o [plano](../plans/2026-10-13-orquestracao-agentes-por-modelo.md) para o estado de cada fase); B07, B10 e B12 pendentes. Nenhuma inferência real foi executada. Evidência completa em `docs/research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md`; notas por tema em `.../notas/`.
 
 ## Objetivo
 
