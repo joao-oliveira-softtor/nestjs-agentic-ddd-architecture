@@ -781,6 +781,10 @@ test('CLI: --real exige orçamento; o plano roda sobre o grafo real sem executar
     expect(await main(['--real'])).toBe(2);
     expect(await main(['--tier', 'domain=gpt'])).toBe(2);
     expect(await main(['--max-turns', '0'])).toBe(2);
+    // O teto de chamadas pagas precisa ser inteiro: 1,5 autorizaria duas.
+    expect(await main(['--real', '--max-invocations', '1.5'])).toBe(2);
+    expect(await main(['--real', '--max-invocations', '0.5'])).toBe(2);
+    expect(await main(['--max-turns', '2.5'])).toBe(2);
     expect(await main(['--out', '.agentic/runs', '--static'])).toBe(1);
     expect(logs).toEqual([]);
     expect(await main(['--static', '--tier', 'domain=sonnet'])).toBe(0);

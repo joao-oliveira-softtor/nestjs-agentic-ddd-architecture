@@ -382,10 +382,14 @@ export function createClaudeExecutor(options: ClaudeRunOptions): Executor {
   };
 }
 
-export function createClaudeReviewer(options: ClaudeRunOptions): Reviewer {
+/** `tools` vazio desliga todas as ferramentas: o revisor só vê o brief (benchmark de revisão). */
+export function createClaudeReviewer(
+  options: ClaudeRunOptions,
+  tools: readonly string[] = REVIEWER_TOOLS,
+): Reviewer {
   return {
     async run(brief, model, signal): Promise<ReviewerResult> {
-      return runClaude(options, model, brief, REVIEWER_TOOLS, signal);
+      return runClaude(options, model, brief, tools, signal);
     },
   };
 }

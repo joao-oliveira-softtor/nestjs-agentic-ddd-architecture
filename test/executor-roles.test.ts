@@ -80,6 +80,8 @@ test('o revisor lê só o diff, os packets e os gates, não edita e cita ID ou g
   expect(reviewer).toContain('Não edite arquivos');
   expect(reviewer).toContain('Não leia a conversa nem o relatório do executor');
   expect(reviewer).toContain('Sem ID ou gate, não é achado');
+  // Os packets só listam obrigações (método, caso de uso, invariante); o revisor pode citá-las.
+  expect(reviewer).toContain('Obrigações de teste');
   expect(reviewer).toContain('expect(true)');
   expect(skill).toContain('(references/reviewer.md)');
   expect(ROLE_CORES.reviewer).toBe(reviewer.trimEnd());
