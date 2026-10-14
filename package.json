@@ -33,10 +33,12 @@
     "typescript": "^6.0.2"
   },
   "devDependencies": {
+    "@nestbun/platform": "^0.1.2",
     "@nestjs/cli": "^12.0.0",
     "@nestjs/mau": "^0.2.6",
     "@nestjs/schematics": "^12.0.0",
     "@nestjs/testing": "^12.0.1",
+    "@nestjs/typeorm": "^12.0.2",
     "@types/bun": "1.4.2",
     "@types/node": "^24.0.0",
     "ajv": "8.20.0",
@@ -44,8 +46,7 @@
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
-    "@nestbun/platform": "^0.1.2",
-    "@nestjs/typeorm": "^12.0.2",
+    "ts-pattern": "^5.9.2",
     "typeorm": "^1.1.1"
   },
   "exports": {

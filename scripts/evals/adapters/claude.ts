@@ -1,3 +1,4 @@
+import { match } from 'ts-pattern';
 import type {
   AdapterRequest,
   AdapterResult,
@@ -112,7 +113,33 @@ export function claudeUsage(modelUsage: unknown, source: string): Usage {
   };
 }
 
-export function parseClaudeTranscript(process: ProcessResult): AdapterResult {
+/**
+ * Origens aceitas com `oauth-token`: só a do token de assinatura. Uma chave de API no ambiente
+ * ou um `apiKeyHelper` nas settings vence o token no CLI e mudaria a cobrança em silêncio.
+ * `none` é o valor que o Claude Code 2.1.299 informou pela assinatura no smoke de 2026-10-14
+ * (harness e driver).
+ */
+const SUBSCRIPTION_SOURCES: readonly string[] = ['none'];
+
+export function authSourceMismatch(
+  authentication: EvalConfiguration['authentication'],
+  authSource: Measured<string> | undefined,
+): boolean {
+  return match(authentication ?? 'api-key')
+    .with(
+      'oauth-token',
+      () =>
+        authSource?.status === 'available' &&
+        !SUBSCRIPTION_SOURCES.includes(authSource.value),
+    )
+    .with('api-key', 'local-login', () => false)
+    .exhaustive();
+}
+
+export function parseClaudeTranscript(
+  process: ProcessResult,
+  configuration?: Pick<EvalConfiguration, 'authentication'>,
+): AdapterResult {
   const result = processResult(process);
   try {
     let terminal = false;
@@ -122,6 +149,11 @@ export function parseClaudeTranscript(process: ProcessResult): AdapterResult {
         throw Error('event after terminal result');
       if (event.type === 'system' && event.subtype === 'init') {
         if (typeof event.model === 'string') initModel = event.model;
+        if (typeof event.apiKeySource === 'string')
+          result.authSource = available(
+            event.apiKeySource,
+            'claude.init.apiKeySource',
+          );
         if (typeof event.session_id === 'string')
           result.sessionId = available(
             event.session_id,
@@ -168,6 +200,8 @@ export function parseClaudeTranscript(process: ProcessResult): AdapterResult {
       result.observedModel.reason === 'not_reported'
     )
       result.observedModel = available(initModel, 'claude.init.model');
+    if (authSourceMismatch(configuration?.authentication, result.authSource))
+      throw Error('auth_source_mismatch');
   } catch (error) {
     if (result.transport === 'finished') result.transport = 'infra_error';
     result.finalText = null;
@@ -186,6 +220,7 @@ export function createClaudeAdapter(
     {
       command: 'claude',
       credential: 'ANTHROPIC_API_KEY',
+      oauthCredential: 'CLAUDE_CODE_OAUTH_TOKEN',
       bundle: false,
       env: { DISABLE_AUTOUPDATER: '1' },
       argv: claudeArgv,

@@ -541,7 +541,7 @@ const USAGE = [
   '  padrão (sem modelo): monta os casos e mostra o tamanho do brief de cada um.',
   '  --work <dir>                   onde montar os workspaces (padrão: diretório temporário)',
   '  --only <id,id>                 só estes casos (defect:<nome> ou clean:<item>)',
-  '  --real --max-invocations <n>   chama o revisor de verdade (exige ANTHROPIC_API_KEY e o CLI claude)',
+  '  --real --max-invocations <n>   chama o revisor de verdade (exige o CLI claude e CLAUDE_CODE_OAUTH_TOKEN, da assinatura, ou ANTHROPIC_API_KEY)',
   '  --cycles <n>                   repetições do conjunto (padrão 1)',
   '  --arms <clean,authored>        contextos comparados (padrão clean,authored)',
   '  --model <id>                   modelo do revisor (padrão claude-opus-5-5)',
@@ -662,13 +662,12 @@ export async function main(argv: readonly string[]): Promise<number> {
       );
       return 0;
     }
-    if (!process.env.ANTHROPIC_API_KEY)
-      throw new Error(
-        'ANTHROPIC_API_KEY ausente: o modo real usa claude --bare',
-      );
+    const ports = await import('../orchestrate-ports');
+    const auth = ports.claudeAuth();
     const found = Bun.which('claude');
     if (!found) throw new Error('CLI claude não encontrado no PATH');
-    const ports = await import('../orchestrate-ports');
+    const { redactSecrets } = await import('../orchestrate');
+    const redact = (text: string) => redactSecrets(text, [auth.secret]);
     // Sem ferramentas e em diretório vazio: o revisor só enxerga o brief, então nada do
     // framework (inclusive a solução de referência e os oráculos privados) alcança o modelo.
     const empty = await mkdtemp(join(tmpdir(), 'review-benchmark-empty-'));
@@ -679,6 +678,7 @@ export async function main(argv: readonly string[]): Promise<number> {
         maxTurns: 3,
         maxUsdPerInvocation: cli.maxUsd,
         timeoutMs: cli.timeoutMin * 60_000,
+        authentication: auth.authentication,
       },
       [],
     );
@@ -698,11 +698,14 @@ export async function main(argv: readonly string[]): Promise<number> {
       cycles: cli.cycles,
       budget: { maxInvocations: cli.maxInvocations!, maxTokens: cli.maxTokens },
       onScore: (score) =>
-        appendFile(join(out, 'scores.jsonl'), `${JSON.stringify(score)}\n`),
+        appendFile(
+          join(out, 'scores.jsonl'),
+          `${redact(JSON.stringify(score))}\n`,
+        ),
     });
     await writeFile(
       join(out, 'summary.json'),
-      `${JSON.stringify({ status: result.status, invocations: result.invocations, tokens: result.tokens, tokensUnknown: result.tokensUnknown, summaries: result.summaries }, null, 2)}\n`,
+      `${redact(JSON.stringify({ status: result.status, invocations: result.invocations, tokens: result.tokens, tokensUnknown: result.tokensUnknown, summaries: result.summaries }, null, 2))}\n`,
     );
     console.log(
       JSON.stringify(

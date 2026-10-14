@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "sourceRef": "HEAD",
+  "skillDatasets": [
+    {
+      "path": "evals/skills/smoke.yaml",
+      "contextRoots": {
+        "dev": ["AGENTS.md", ".agents/skills/orders-dev"],
+        "runtime": [".agentic/runtime/order-operator"]
+      }
+    }
+  ],
+  "benchmark": "tasks",
+  "configurations": [
+    {
+      "id": "claude-haiku-oauth",
+      "adapter": "claude-cli",
+      "authentication": "oauth-token",
+      "model": "claude-haiku-5-5",
+      "parameters": {}
+    }
+  ],
+  "budget": {
+    "maxInvocations": 2,
+    "skillTimeoutMs": 120000,
+    "implementationTimeoutMs": 600000,
+    "totalTimeoutMs": 1200000,
+    "maxCorrectionsPerItem": 0,
+    "repetitions": 1,
+    "concurrency": 1
+  }
+}

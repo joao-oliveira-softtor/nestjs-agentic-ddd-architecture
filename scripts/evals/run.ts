@@ -125,6 +125,7 @@ export async function runEvaluation(
       process.env.CODEX_API_KEY,
       process.env.CURSOR_API_KEY,
       process.env.ANTHROPIC_API_KEY,
+      process.env.CLAUDE_CODE_OAUTH_TOKEN,
     ].filter((s): s is string => Boolean(s)),
   );
   try {

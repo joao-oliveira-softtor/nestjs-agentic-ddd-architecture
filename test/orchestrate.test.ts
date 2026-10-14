@@ -604,6 +604,239 @@ test('claude: argv com --bare, sem herdar o modelo forçado e com profundidade 1
   expect(env.PATH).toBe('/bin');
 });
 
+test('claude oauth-token: --safe-mode no lugar de --bare e nenhuma variável que cobre pela API', async () => {
+  const { claudeRunArgv, claudeRunEnv } =
+    await import('../scripts/orchestrate-ports');
+  const argv = claudeRunArgv(
+    {
+      executable: '/bin/claude',
+      root: '/repo',
+      maxTurns: 12,
+      maxUsdPerInvocation: 1.5,
+      timeoutMs: 1000,
+      authentication: 'oauth-token',
+    },
+    'claude-haiku-5-5',
+    'brief',
+    ['Read'],
+  );
+  expect(argv).not.toContain('--bare');
+  expect(argv).toContain('--safe-mode');
+  expect(argv).toContain('--strict-mcp-config');
+  expect(argv[argv.indexOf('--setting-sources') + 1]).toBe('project');
+  expect(argv.slice(-2)).toEqual(['--', 'brief']);
+  const base = {
+    PATH: '/bin',
+    HOME: '/home/real',
+    CLAUDE_CODE_OAUTH_TOKEN: 'token',
+    ANTHROPIC_API_KEY: 'key',
+    ANTHROPIC_AUTH_TOKEN: 'auth',
+    ANTHROPIC_BASE_URL: 'https://proxy',
+    CLAUDE_CODE_USE_BEDROCK: '1',
+    CLAUDE_CODE_USE_VERTEX: '1',
+    CLAUDE_CODE_USE_FOUNDRY: '1',
+    CLAUDE_CODE_USE_ANTHROPIC_AWS: '1',
+    CLAUDE_CODE_USE_MANTLE: '1',
+    CLAUDE_CONFIG_DIR: '/home/real/.claude-alt',
+  };
+  const env = claudeRunEnv(base, 'oauth-token', '/tmp/home');
+  for (const name of [
+    'CLAUDE_CODE_USE_ANTHROPIC_AWS',
+    'CLAUDE_CODE_USE_MANTLE',
+    'ANTHROPIC_API_KEY',
+    'ANTHROPIC_AUTH_TOKEN',
+    'ANTHROPIC_BASE_URL',
+    'CLAUDE_CODE_USE_BEDROCK',
+    'CLAUDE_CODE_USE_VERTEX',
+    'CLAUDE_CODE_USE_FOUNDRY',
+  ])
+    expect(env[name]).toBeUndefined();
+  expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBe('token');
+  expect(env.HOME).toBe('/tmp/home');
+  expect(env.CLAUDE_CONFIG_DIR).toBe('/tmp/home/.claude');
+  expect(env.BUN_INSTALL_CACHE_DIR).toBe('/home/real/.bun/install/cache');
+  // Sem token, o modo antigo continua igual: --bare e a chave intacta.
+  expect(claudeRunEnv(base).ANTHROPIC_API_KEY).toBe('key');
+  expect(
+    claudeRunArgv(
+      {
+        executable: '/bin/claude',
+        root: '/repo',
+        maxTurns: 1,
+        maxUsdPerInvocation: 1,
+        timeoutMs: 1000,
+      },
+      'm',
+      'p',
+      [],
+    ),
+  ).toContain('--bare');
+});
+
+test('telemetria jsonl troca a credencial por [REDACTED] antes de gravar', async () => {
+  const { jsonlTelemetry } = await import('../scripts/orchestrate');
+  const dir = await mkdtemp(join(tmpdir(), 'orchestrate-redact-'));
+  try {
+    const path = join(dir, 'telemetry.jsonl');
+    await jsonlTelemetry(path, ['segredo-xyz']).write({
+      kind: 'run',
+      status: 'needs-human',
+      invocations: 1,
+      tokens: 0,
+      tokensUnknown: true,
+    });
+    await jsonlTelemetry(path, ['segredo-xyz']).write({
+      kind: 'review',
+      seq: 1,
+      model: 'm',
+      outcome: 'error',
+      findings: 0,
+      diagnostic: 'falhou com segredo-xyz no stderr',
+      inputTokens: null,
+      outputTokens: null,
+      durationMs: 0,
+    });
+    const text = await readFile(path, 'utf8');
+    expect(text).not.toContain('segredo-xyz');
+    expect(text).toContain('[REDACTED]');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('claude: variáveis da sessão pai do Claude Code não chegam ao executor, nos dois modos', async () => {
+  const { claudeRunEnv } = await import('../scripts/orchestrate-ports');
+  const parent = {
+    PATH: '/bin',
+    CLAUDECODE: '1',
+    CLAUDE_PID: '42',
+    CLAUDE_EFFORT: 'max',
+    CLAUDE_CODE_PLUGIN_DIRS: '/home/user/mods/plugin',
+    CLAUDE_CODE_MESSAGING_TOKEN: 'socket-token',
+    CLAUDE_CODE_SESSION_ID: 'pai',
+    CLAUDE_CODE_ENTRYPOINT: 'cli',
+    CLAUDE_CODE_OAUTH_TOKEN: 'token',
+    CLAUDE_CODE_USE_BEDROCK: '1',
+  };
+  for (const env of [
+    claudeRunEnv(parent),
+    claudeRunEnv(parent, 'oauth-token', '/tmp/home'),
+  ]) {
+    for (const name of [
+      'CLAUDECODE',
+      'CLAUDE_PID',
+      'CLAUDE_EFFORT',
+      'CLAUDE_CODE_PLUGIN_DIRS',
+      'CLAUDE_CODE_MESSAGING_TOKEN',
+      'CLAUDE_CODE_SESSION_ID',
+      'CLAUDE_CODE_ENTRYPOINT',
+    ])
+      expect(env[name]).toBeUndefined();
+    expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBe('token');
+    expect(env.CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH).toBe('1');
+  }
+  // A escolha de provedor só sobrevive no modo de chave de API.
+  expect(claudeRunEnv(parent).CLAUDE_CODE_USE_BEDROCK).toBe('1');
+  expect(
+    claudeRunEnv(parent, 'oauth-token', '/tmp/home').CLAUDE_CODE_USE_BEDROCK,
+  ).toBeUndefined();
+});
+
+test('claudeAuth: o token de assinatura tem precedência; sem credencial nada roda', async () => {
+  const { claudeAuth } = await import('../scripts/orchestrate-ports');
+  expect(
+    claudeAuth({ CLAUDE_CODE_OAUTH_TOKEN: 't', ANTHROPIC_API_KEY: 'k' }),
+  ).toEqual({ authentication: 'oauth-token', secret: 't' });
+  expect(claudeAuth({ ANTHROPIC_API_KEY: 'k' })).toEqual({
+    authentication: 'api-key',
+    secret: 'k',
+  });
+  expect(() => claudeAuth({})).toThrow('CLAUDE_CODE_OAUTH_TOKEN');
+});
+
+test('claude oauth-token: o executor roda com HOME temporário, removido depois, e recusa cobrança por chave', async () => {
+  const { chmod, writeFile } = await import('node:fs/promises');
+  const { existsSync } = await import('node:fs');
+  const { createClaudeExecutor } = await import('../scripts/orchestrate-ports');
+  const dir = await mkdtemp(join(tmpdir(), 'orchestrate-oauth-'));
+  try {
+    const executable = join(dir, 'claude');
+    const seen = join(dir, 'home.txt');
+    const transcript = (source: string) =>
+      [
+        {
+          type: 'system',
+          subtype: 'init',
+          session_id: 's',
+          model: 'claude-haiku-5-5',
+          apiKeySource: source,
+        },
+        {
+          type: 'result',
+          subtype: 'success',
+          is_error: false,
+          session_id: 's',
+          result: '{"status":"done","findings":[]}',
+          modelUsage: {
+            'claude-haiku-5-5': {
+              inputTokens: 10,
+              cacheCreationInputTokens: 0,
+              cacheReadInputTokens: 0,
+              outputTokens: 5,
+            },
+          },
+        },
+      ]
+        .map((event) => JSON.stringify(event))
+        .join('\\n');
+    const fake = (source: string) =>
+      `#!/bin/sh\nif [ -n "$ANTHROPIC_API_KEY" ]; then exit 25; fi\nprintf '%s' "$HOME" > '${seen}'\nprintf '${transcript(source)}\\n'\n`;
+    const task = {
+      item: { id: 'entity:Task', layer: 'domain', dependsOn: [] },
+      facts: {} as never,
+      tier: 'haiku' as const,
+      model: 'claude-haiku-5-5',
+      attempt: 1,
+      brief: 'brief',
+    };
+    const options = {
+      executable,
+      root: dir,
+      maxTurns: 1,
+      maxUsdPerInvocation: 1,
+      timeoutMs: 5000,
+      authentication: 'oauth-token' as const,
+      env: {
+        PATH: '/usr/bin:/bin',
+        HOME: '/home/real',
+        ANTHROPIC_API_KEY: 'k',
+        CLAUDE_CODE_OAUTH_TOKEN: 't',
+      },
+    };
+    await writeFile(executable, fake('none'));
+    await chmod(executable, 0o700);
+    const ok = await createClaudeExecutor(options).run(
+      task,
+      new AbortController().signal,
+    );
+    expect(ok.status).toBe('done');
+    expect(ok.inputTokens).toBe(10);
+    const home = await readFile(seen, 'utf8');
+    expect(home).not.toBe('/home/real');
+    expect(existsSync(home)).toBe(false);
+
+    await writeFile(executable, fake('ANTHROPIC_API_KEY'));
+    const billed = await createClaudeExecutor(options).run(
+      task,
+      new AbortController().signal,
+    );
+    expect(billed.status).toBe('failed');
+    expect(billed.diagnostic).toContain('auth_source_mismatch');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('claude: a resposta final do executor só classifica; fora do formato é falha', async () => {
   const { parseExecutorResponse } =
     await import('../scripts/orchestrate-ports');
@@ -614,6 +847,12 @@ test('claude: a resposta final do executor só classifica; fora do formato é fa
   expect(
     parseExecutorResponse('{"status":"blocked","findings":["falta contrato"]}'),
   ).toEqual({ status: 'blocked', diagnostic: 'falta contrato' });
+  // Achado estruturado sai como JSON, nunca como [object Object].
+  expect(
+    parseExecutorResponse(
+      '{"status":"blocked","findings":[{"tipo":"dependencia-ausente"}]}',
+    ).diagnostic,
+  ).toBe('{"tipo":"dependencia-ausente"}');
   expect(parseExecutorResponse('pronto!').status).toBe('failed');
   expect(parseExecutorResponse('{"status":"ok"}').status).toBe('failed');
   expect(parseExecutorResponse(null).status).toBe('failed');

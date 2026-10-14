@@ -91,7 +91,10 @@ export const manifestSchema = z
             'cursor-cli',
             'claude-cli',
           ]),
-          authentication: z.enum(['api-key', 'local-login']).optional(),
+          /** `oauth-token`: assinatura do Claude Code via `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`). */
+          authentication: z
+            .enum(['api-key', 'local-login', 'oauth-token'])
+            .optional(),
           model: z
             .string()
             .min(1)
@@ -127,6 +130,20 @@ export const manifestSchema = z
       new Set(m.skillDatasets.map((d) => d.path)).size ===
       m.skillDatasets.length,
     'Duplicate datasets',
+  )
+  .refine(
+    (m) =>
+      m.configurations.every(
+        (c) => c.authentication !== 'oauth-token' || c.adapter === 'claude-cli',
+      ),
+    'oauth-token authentication requires the claude-cli adapter',
+  )
+  .refine(
+    (m) =>
+      m.configurations.every(
+        (c) => c.adapter !== 'claude-cli' || c.authentication !== 'local-login',
+      ),
+    'claude-cli does not support local-login; use api-key or oauth-token',
   );
 export type RunManifest = z.infer<typeof manifestSchema>;
 export type EvalConfiguration = RunManifest['configurations'][number];
@@ -177,6 +194,8 @@ export interface AdapterResult {
   sessionId: Measured<string>;
   observedModel: Measured<string>;
   modelRevision: Measured<string>;
+  /** Origem da credencial declarada pelo CLI (Claude: `apiKeySource` do `system/init`). */
+  authSource?: Measured<string>;
   usage: Usage;
   durationMs: number;
   evidence: string[];
