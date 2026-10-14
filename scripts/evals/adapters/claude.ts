@@ -4,8 +4,12 @@ import type {
   AdapterResult,
   EvalAdapter,
   EvalConfiguration,
+  InputParts,
   Measured,
+  ModelUsage,
   ProcessResult,
+  RequestUsage,
+  RequestsUsage,
   Usage,
 } from '../contracts';
 import { available, unavailable } from '../contracts';
@@ -111,11 +115,128 @@ export function claudeUsage(modelUsage: unknown, source: string): Usage {
         parts.find((part) => part.status === 'unavailable')?.reason ??
           'model_usage_incomplete',
       );
+  const byModel = claudeByModel(modelUsage);
   return {
     inputTokens: input,
     cachedInputTokens: parts[2]!,
     outputTokens: sum('outputTokens'),
     cost: unavailable('derived_cost_not_adopted'),
+    cacheWriteInputTokens: parts[1]!,
+    ...(byModel ? { byModel } : {}),
+  };
+}
+
+/** Uso por modelo servido, das mesmas parcelas de `modelUsage`; parcela inválida → ausente. */
+export function claudeByModel(
+  modelUsage: unknown,
+): Record<string, ModelUsage> | undefined {
+  const entries = Object.entries(object(modelUsage) ?? {});
+  if (!entries.length) return undefined;
+  const byModel: Record<string, ModelUsage> = {};
+  for (const [model, value] of entries) {
+    const entry = object(value);
+    const counts = [
+      entry?.inputTokens,
+      entry?.cacheCreationInputTokens,
+      entry?.cacheReadInputTokens,
+      entry?.outputTokens,
+    ];
+    if (!counts.every(isCount)) return undefined;
+    const [uncached, write, read, output] = counts as number[];
+    const cost = entry?.costUSD;
+    byModel[model] = {
+      uncachedInputTokens: uncached!,
+      cacheWriteInputTokens: write!,
+      cacheReadInputTokens: read!,
+      outputTokens: output!,
+      ...(typeof cost === 'number' && Number.isFinite(cost) && cost >= 0
+        ? { reportedCostUSD: cost }
+        : {}),
+    };
+  }
+  return byModel;
+}
+
+/**
+ * Entrada por requisição: `message.usage` do último evento `assistant` de cada `message.id`
+ * (os eventos parciais de um id repetem o mesmo uso de entrada e um `output_tokens`
+ * provisório, por isso a saída não é lida). Tolerante a linha inválida, porque no timeout o
+ * stdout pode terminar no meio de um evento; requisição com parcela inválida fica de fora e
+ * aparece como resíduo na reconciliação.
+ */
+export function claudeRequests(stdout: string): RequestUsage[] {
+  const byId = new Map<string, RequestUsage>();
+  for (const line of stdout.split('\n')) {
+    let event: Record<string, unknown> | null;
+    try {
+      event = object(JSON.parse(line));
+    } catch {
+      continue;
+    }
+    const message = object(event?.message);
+    const usage = object(message?.usage);
+    if (
+      event?.type !== 'assistant' ||
+      typeof message?.id !== 'string' ||
+      typeof message.model !== 'string' ||
+      !usage
+    )
+      continue;
+    const counts = [
+      usage.input_tokens,
+      usage.cache_creation_input_tokens ?? 0,
+      usage.cache_read_input_tokens ?? 0,
+    ];
+    if (!counts.every(isCount)) continue;
+    const [uncached, write, read] = counts as number[];
+    const longTtl = object(usage.cache_creation)?.ephemeral_1h_input_tokens;
+    byId.set(message.id, {
+      model: message.model,
+      uncachedInputTokens: uncached!,
+      cacheWriteInputTokens: write!,
+      cacheReadInputTokens: read!,
+      cacheWrite1hInputTokens: isCount(longTtl) ? longTtl : null,
+    });
+  }
+  return [...byId.values()];
+}
+
+const INPUT_KEYS = [
+  'uncachedInputTokens',
+  'cacheWriteInputTokens',
+  'cacheReadInputTokens',
+] as const;
+
+/**
+ * Compara a entrada por requisição com `byModel`, modelo a modelo. A diferença positiva são
+ * chamadas auxiliares do CLI sem evento `assistant`; a negativa, leitura divergente.
+ */
+export function reconcileRequests(
+  items: RequestUsage[],
+  byModel: Record<string, ModelUsage> | undefined,
+): RequestsUsage {
+  if (!byModel) return { status: 'unreconciled', items, residual: {} };
+  const residual: Record<string, InputParts> = {};
+  const models = new Set([
+    ...Object.keys(byModel),
+    ...items.map((i) => i.model),
+  ]);
+  for (const model of [...models].sort()) {
+    const parts = Object.fromEntries(
+      INPUT_KEYS.map((key) => [
+        key,
+        (byModel[model]?.[key] ?? 0) -
+          items
+            .filter((i) => i.model === model)
+            .reduce((total, i) => total + i[key], 0),
+      ]),
+    ) as unknown as InputParts;
+    if (INPUT_KEYS.some((key) => parts[key] !== 0)) residual[model] = parts;
+  }
+  return {
+    status: Object.keys(residual).length ? 'residual' : 'reconciled',
+    items,
+    residual,
   };
 }
 
@@ -147,6 +268,7 @@ export function parseClaudeTranscript(
   configuration?: Pick<EvalConfiguration, 'authentication'>,
 ): AdapterResult {
   const result = processResult(process);
+  const requests = claudeRequests(process.stdout);
   try {
     let terminal = false;
     let initModel: string | null = null;
@@ -188,6 +310,15 @@ export function parseClaudeTranscript(
           event.modelUsage,
           'claude.result.modelUsage',
         );
+        result.usage.requests = reconcileRequests(
+          requests,
+          result.usage.byModel,
+        );
+        if (isCount(event.num_turns))
+          result.numTurns = available(
+            event.num_turns,
+            'claude.result.num_turns',
+          );
         const served = Object.keys(object(event.modelUsage) ?? {});
         if (served.length === 1)
           result.observedModel = available(
@@ -213,6 +344,9 @@ export function parseClaudeTranscript(
     result.finalText = null;
     result.diagnostic ??= `claude_transport: ${String(error)}`;
   }
+  // Sem `result` (timeout, transcript truncado) a entrada por requisição ainda é medida.
+  if (!result.usage.requests && requests.length)
+    result.usage.requests = reconcileRequests(requests, undefined);
   if (result.transport !== 'finished') result.finalText = null;
   return result;
 }

@@ -5,6 +5,7 @@ import {
   claudeToolFlags,
   claudeUsage,
   parseClaudeTranscript,
+  reconcileRequests,
 } from '../scripts/evals/adapters/claude';
 import { manifestSchema } from '../scripts/evals/contracts';
 import type {
@@ -27,6 +28,15 @@ const transcript = () =>
   Bun.file(
     join(import.meta.dir, 'fixtures/evals/transcripts/claude-success.ndjson'),
   ).text();
+/** Eventos do smoke real de 2026-10-14 (Haiku, entity:Task), sem o conteúdo das mensagens. */
+const haikuTranscript = () =>
+  Bun.file(
+    join(
+      import.meta.dir,
+      'fixtures/evals/transcripts/claude-haiku-requests.ndjson',
+    ),
+  ).text();
+const HAIKU = 'claude-haiku-5-5';
 const configuration: EvalConfiguration = {
   id: 'claude-haiku',
   adapter: 'claude-cli',
@@ -562,4 +572,115 @@ test('adapters sem token de assinatura recusam oauth-token antes de executar', a
   ).run(request, { signal: new AbortController().signal });
   expect(outcome.transport).toBe('infra_error');
   expect(outcome.diagnostic).toContain('does not support oauth-token');
+});
+
+test('requests: entrada por requisição deduplicada por message.id bate com modelUsage; saída só do modelUsage', async () => {
+  const stdout = await haikuTranscript();
+  const assistantEvents = stdout
+    .split('\n')
+    .filter((l) => l.includes('"type":"assistant"')).length;
+  const parsed = parseClaudeTranscript(result(stdout));
+  expect(parsed.transport).toBe('finished');
+  const requests = parsed.usage.requests!;
+  // 29 eventos assistant de 15 requisições: os parciais repetem o mesmo id.
+  expect(assistantEvents).toBe(29);
+  expect(requests.items).toHaveLength(15);
+  expect(requests.status).toBe('reconciled');
+  expect(requests.residual).toEqual({});
+  const total = (
+    key:
+      'uncachedInputTokens' | 'cacheWriteInputTokens' | 'cacheReadInputTokens',
+  ) => requests.items.reduce((n, i) => n + i[key], 0);
+  expect([
+    total('uncachedInputTokens'),
+    total('cacheWriteInputTokens'),
+    total('cacheReadInputTokens'),
+  ]).toEqual([30, 26670, 308730]);
+  // A escrita de cache do smoke foi toda de 1 h.
+  expect(
+    requests.items.every(
+      (i) => i.cacheWrite1hInputTokens === i.cacheWriteInputTokens,
+    ),
+  ).toBe(true);
+  expect(
+    Math.max(
+      ...requests.items.map(
+        (i) =>
+          i.uncachedInputTokens +
+          i.cacheWriteInputTokens +
+          i.cacheReadInputTokens,
+      ),
+    ),
+  ).toBe(31_665);
+  expect(parsed.usage.byModel).toEqual({
+    [HAIKU]: {
+      uncachedInputTokens: 30,
+      cacheWriteInputTokens: 26670,
+      cacheReadInputTokens: 308730,
+      outputTokens: 9393,
+      reportedCostUSD: 0.013120799999999998,
+    },
+  });
+  expect(parsed.usage.cacheWriteInputTokens).toMatchObject({ value: 26670 });
+  expect(parsed.usage.inputTokens).toMatchObject({
+    value: 30 + 26670 + 308730,
+  });
+  expect(parsed.numTurns).toMatchObject({ status: 'available', value: 15 });
+});
+
+test('requests: chamada auxiliar sem evento assistant vira resíduo positivo; leitura a mais, negativo', async () => {
+  const stdout = await haikuTranscript();
+  const lines = stdout.trim().split('\n');
+  const last = JSON.parse(lines.at(-1)!) as {
+    modelUsage: Record<string, Record<string, number>>;
+  };
+  last.modelUsage[HAIKU]!.inputTokens! += 10;
+  last.modelUsage['claude-aux'] = {
+    inputTokens: 5,
+    cacheCreationInputTokens: 0,
+    cacheReadInputTokens: 7,
+    outputTokens: 3,
+  };
+  const parsed = parseClaudeTranscript(
+    result([...lines.slice(0, -1), JSON.stringify(last)].join('\n') + '\n'),
+  );
+  expect(parsed.usage.requests).toMatchObject({
+    status: 'residual',
+    residual: {
+      [HAIKU]: {
+        uncachedInputTokens: 10,
+        cacheWriteInputTokens: 0,
+        cacheReadInputTokens: 0,
+      },
+      'claude-aux': {
+        uncachedInputTokens: 5,
+        cacheWriteInputTokens: 0,
+        cacheReadInputTokens: 7,
+      },
+    },
+  });
+  const items = parsed.usage.requests!.items;
+  expect(
+    reconcileRequests(items, {
+      [HAIKU]: { ...parsed.usage.byModel![HAIKU]!, uncachedInputTokens: 0 },
+    }).residual[HAIKU]!.uncachedInputTokens,
+  ).toBe(-30);
+});
+
+test('requests: timeout com stdout truncado mede a entrada já recebida, sem reconciliar nem saída', async () => {
+  const stdout = await haikuTranscript();
+  const cut = stdout.lastIndexOf('"type":"assistant"');
+  const parsed = parseClaudeTranscript({
+    ...result(stdout.slice(0, cut + 40)),
+    transport: 'timeout',
+    exitCode: null,
+  });
+  expect(parsed.transport).toBe('timeout');
+  expect(parsed.finalText).toBeNull();
+  expect(parsed.usage.requests!.status).toBe('unreconciled');
+  // A última requisição ficou cortada no meio da linha e não entra.
+  expect(parsed.usage.requests!.items).toHaveLength(14);
+  expect(parsed.usage.byModel).toBeUndefined();
+  expect(parsed.usage.outputTokens.status).toBe('unavailable');
+  expect(parsed.numTurns).toBeUndefined();
 });
