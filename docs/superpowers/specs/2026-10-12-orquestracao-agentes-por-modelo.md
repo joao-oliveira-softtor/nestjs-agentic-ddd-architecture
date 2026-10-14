@@ -1,6 +1,6 @@
 # Orquestração de agentes por camada e modelo — escopo de melhorias
 
-Status: proposta de escopo (nada implementado). Evidência completa em `docs/research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md`; notas por tema em `.../notas/`.
+Status: B01–B06, B08, B09 e B11 entregues (ver o [plano](../plans/2026-10-13-orquestracao-agentes-por-modelo.md) para o estado de cada fase); B07, B10 e B12 pendentes. Nenhuma inferência real foi executada. Evidência completa em `docs/research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md`; notas por tema em `.../notas/`.
 
 ## Objetivo
 
@@ -23,13 +23,15 @@ Razão de preços atual (12/10/2026, entrada por MTok): Haiku 5.5 US$ 0,10, Sonn
 
 ## Lacunas
 
-1. Modelo por papel não existe: `scripts/install-skills.ts:56` grava `model: inherit` (`test/skills-install.test.ts:65`); a spec v0 previa `model: haiku` no executor.
-2. Não existe papel de revisor.
-3. O executor vaza contexto: `executor.md` manda ler a skill do módulo inteiro (~3,3k tokens fixos) e contradiz o `AGENTS.md` raiz sobre `compile`.
-4. `packet`, `status`, `next` e `verify --item` rodam a suíte inteira (~110 s por packet vs ~1,2 s com `verify.test` escopado).
-5. Value objects, eventos e ports não são itens do grafo; incluí-los muda o IR (exige ADR).
-6. O harness de evals não tem adapter Claude, repetições fixas em 1 e política de nunca estimar tokens.
-7. Os gates I4/I5 não detectam teste verde superficial (só o oráculo privado do harness de avaliação o faz); em produção, o falso verde só é pego pela revisão, o que torna o papel de revisor (B06) mais importante, não dispensável.
+Levantamento de 12/10/2026, antes da implementação. A coluna de situação reflete o estado atual; o texto de cada lacuna é histórico.
+
+1. Modelo por papel não existe: `scripts/install-skills.ts:56` grava `model: inherit` (`test/skills-install.test.ts:65`); a spec v0 previa `model: haiku` no executor. **Situação: aberta de propósito** (B07, depende do resultado de B10; ADR-0003 D15).
+2. Não existe papel de revisor. **Situação: resolvida (B06)**, com referência própria `references/reviewer.md` e agente instalado.
+3. O executor vaza contexto: `executor.md` manda ler a skill do módulo inteiro (~3,3k tokens fixos) e contradiz o `AGENTS.md` raiz sobre `compile`. **Situação: resolvida (B04)** para o executor de domínio isolado, que recebe só o brief e o núcleo do papel.
+4. `packet`, `status`, `next` e `verify --item` rodam a suíte inteira (~110 s por packet vs ~1,2 s com `verify.test` escopado). **Situação: resolvida (B02)** com `packet --static`; `verify --item` continua rodando testes, por desenho.
+5. Value objects, eventos e ports não são itens do grafo; incluí-los muda o IR (exige ADR). **Situação: aberta** (B12, spike opcional).
+6. O harness de evals não tem adapter Claude, repetições fixas em 1 e política de nunca estimar tokens. **Situação: adapter resolvido (B09)**, com tokens medidos por `modelUsage` e custo não derivado; repetições e política de custo seguem abertas e pertencem a B10.
+7. Os gates I4/I5 não detectam teste verde superficial (só o oráculo privado do harness de avaliação o faz); em produção, o falso verde só é pego pela revisão, o que torna o papel de revisor (B06) mais importante, não dispensável. **Situação: mantida**; B11 entrega o benchmark que mede o revisor, ainda sem execução real.
 
 ## Decisões de desenho (D1–D15, ver relatório, Parte A.2)
 

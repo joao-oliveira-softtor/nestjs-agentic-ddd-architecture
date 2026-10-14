@@ -2,25 +2,25 @@
 
 Spec: [escopo](../specs/2026-10-12-orquestracao-agentes-por-modelo.md). Decisões: [ADR-0003](../../adr/ADR-0003.md). Épico: [#26](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/26). Pesquisa: [relatório](../../research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md).
 
-Nenhuma fase abaixo autoriza inferência real. O harness exige orçamento autorizado por ciclo (política de nunca estimar tokens). Cada fase vira PR próprio, com testes offline.
+Estado em 2026-10-14: as fases 0–7 e 9 estão entregues e a fase 8 está preparada, mas **nenhuma inferência real foi executada** (as rotas `--real` do driver e do benchmark de revisão só foram exercitadas com CLIs falsos). Nenhuma fase abaixo autoriza inferência real. O harness exige orçamento autorizado por ciclo (política de nunca estimar tokens). Cada fase vira PR próprio, com testes offline.
 
 ## Fases
 
-| Fase | Issue | Entrega | Depende de |
-| ---- | ----- | ------- | ---------- |
-| 0 | [#27](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/27) | Este plano, ADR-0003 e entrada no ROADMAP | — |
-| 1 | [#28](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/28) | `packet --static` (e opcionalmente `packet --wave`) sem rodar a suíte | 0 |
-| 2 | [#29](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/29) | Gerador determinístico de briefs (`scripts/agent-briefs.ts`) | 0, 1 |
-| 3 | [#30](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/30) | Executor de domínio isolado (referência e papel) | 0 |
-| 4 | [#31](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/31) | Gates mecânicos de fronteira (corpo-só, contagem de linhas, direção de import) | 0 |
-| 5 | [#32](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/32) | Papel de revisor e schema de achados no instalador | 0, 3 |
-| 6 | [#35](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/35) | Adapter Claude no harness de avaliação | 0 |
-| 7 | [#34](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/34) | Driver de orquestração com política de camadas e escalação | 1, 2, 4, 5 |
-| 8 | [#36](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/36) | Campanha de comparação por nível (braços A0–A8) | 6, 7; orçamento autorizado |
-| 9 | [#37](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/37) | Benchmark de revisão com as 19 regressões plantadas | 5, 6 |
-| 10 | [#33](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/33) | Perfil de modelos por papel no instalador (opt-in) | 5, resultado da fase 8 |
-| — | [#38](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/38) | Spike de value object como item do grafo (opcional, com ADR) | 0 |
-| — | [#39](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/39) | Documentação e CI finais | demais |
+| Fase | Issue | Entrega | Depende de | Estado |
+| ---- | ----- | ------- | ---------- | ------ |
+| 0 | [#27](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/27) | Este plano, ADR-0003 e entrada no ROADMAP | — | Entregue ([#40](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/40)) |
+| 1 | [#28](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/28) | `packet --static` (e opcionalmente `packet --wave`) sem rodar a suíte | 0 | Entregue ([#45](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/45)) |
+| 2 | [#29](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/29) | Gerador determinístico de briefs (`scripts/agent-briefs.ts`) | 0, 1 | Entregue ([#46](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/46)) |
+| 3 | [#30](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/30) | Executor de domínio isolado (referência e papel) | 0 | Entregue ([#48](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/48)) |
+| 4 | [#31](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/31) | Gates mecânicos de fronteira (corpo-só, contagem de linhas, direção de import) | 0 | Entregue ([#49](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/49)) |
+| 5 | [#32](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/32) | Papel de revisor e schema de achados no instalador | 0, 3 | Entregue ([#51](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/51)) |
+| 6 | [#35](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/35) | Adapter Claude no harness de avaliação | 0 | Entregue ([#52](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/52), [#55](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/55)) |
+| 7 | [#34](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/34) | Driver de orquestração com política de camadas e escalação | 1, 2, 4, 5 | Entregue ([#54](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/54), [#55](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/55)) |
+| 8 | [#36](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/36) | Campanha de comparação por nível (braços A0–A8) | 6, 7; orçamento autorizado | Em andamento: `promptMode` `legacy`/`brief` no benchmark de implementação ([#53](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/53)); a campanha espera orçamento autorizado e a política de custo derivado |
+| 9 | [#37](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/37) | Benchmark de revisão com as 19 regressões plantadas | 5, 6 | Entregue ([#56](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/56)) |
+| 10 | [#33](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/33) | Perfil de modelos por papel no instalador (opt-in) | 5, resultado da fase 8 | Pendente: ADR-0003 D15 só libera depois do experimento |
+| — | [#38](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/38) | Spike de value object como item do grafo (opcional, com ADR) | 0 | Pendente (opcional) |
+| — | [#39](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/39) | Documentação e CI finais | demais | Em andamento: documentação e CI do que já foi entregue |
 
 As fases 1, 3, 4 e 6 não dependem entre si e podem ser feitas em qualquer ordem após a fase 0. A fase 7 só começa depois de 1, 2, 4 e 5, porque o driver consome packets estáticos, briefs, gates e o papel de revisor.
 

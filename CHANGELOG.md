@@ -1,5 +1,16 @@
 # Changelog
 
+## [Não lançado]
+
+Orquestração de agentes por camada e modelo (épico #26). Tudo offline: nenhuma inferência real foi executada, e as rotas `--real` exigem orçamento autorizado.
+
+- `agentic-ddd packet <item> --static` gera o packet sem executar a suíte de testes e nunca certifica `done`.
+- `scripts/agent-briefs.ts` renderiza, sem LLM, um brief determinístico por item a partir do packet; o executor de domínio recebe só o contrato do item, e o revisor tem relatório JSON validado (`scripts/reviewer-report.ts`).
+- `scripts/boundary-gates.ts` confere só-corpo, contagem de linhas e direção de import por camada.
+- `scripts/orchestrate.ts`: driver sequencial com roteamento por camada (Haiku no domínio, Sonnet em application e operators), uma retentativa por nível, escalação e `needs-human`, orçamento de invocações e de tokens medidos, revisão Opus opcional e telemetria JSONL. O modo padrão só planeja.
+- Harness de avaliação: adapter `claude-cli` (uso somado de `modelUsage`; custo derivado não adotado), `promptMode` `brief` no benchmark de implementação e benchmark de revisão com as 19 regressões plantadas e controles limpos.
+- Decisões em [ADR-0003](docs/adr/ADR-0003.md); pesquisa, spec e plano em `docs/research/` e `docs/superpowers/`. Os perfis de modelo no instalador (#33) e a campanha de comparação (#36) seguem pendentes.
+
 ## [0.4.0] — 2026-10-10
 
 Adiciona distribuição por tarball instalável em aplicações externas, com seis fronteiras públicas e a CLI agentic-ddd.
