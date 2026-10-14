@@ -437,13 +437,30 @@ export async function planRun(
   return planned;
 }
 
-export function jsonlTelemetry(path: string): Telemetry {
+/** Troca cada segredo por `[REDACTED]` antes de gravar telemetria ou resultados. */
+export function redactSecrets(
+  text: string,
+  secrets: readonly string[],
+): string {
+  return secrets
+    .filter(Boolean)
+    .reduce((value, secret) => value.replaceAll(secret, '[REDACTED]'), text);
+}
+
+/** `secrets` saem da linha antes de gravar (a credencial do CLI nunca vai para o disco). */
+export function jsonlTelemetry(
+  path: string,
+  secrets: readonly string[] = [],
+): Telemetry {
   let ready: Promise<unknown> | null = null;
   return {
     async write(record) {
       ready ??= mkdir(dirname(path), { recursive: true });
       await ready;
-      await appendFile(path, `${JSON.stringify(record)}\n`);
+      await appendFile(
+        path,
+        `${redactSecrets(JSON.stringify(record), secrets)}\n`,
+      );
     },
   };
 }
@@ -458,7 +475,7 @@ export function memoryTelemetry(): Telemetry & {
 const USAGE = [
   'uso: bun scripts/orchestrate.ts [opções]',
   '  plano (padrão, sem executar nada): mostra nível, modelo e tamanho do brief por item.',
-  '  --real --max-invocations <n>   executa de verdade (exige ANTHROPIC_API_KEY e o CLI claude)',
+  '  --real --max-invocations <n>   executa de verdade (exige o CLI claude e CLAUDE_CODE_OAUTH_TOKEN, da assinatura, ou ANTHROPIC_API_KEY)',
   '  --max-tokens <n>               teto de entrada+saída medidas (padrão: sem teto)',
   '  --max-turns <n>                turnos por invocação (padrão 30)',
   '  --max-usd <x>                  teto nativo do CLI por invocação, em dólar (padrão 2)',
@@ -607,10 +624,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       console.log(JSON.stringify({ mode: 'plan', items: plan }, null, 2));
       return 0;
     }
-    if (!process.env.ANTHROPIC_API_KEY)
-      throw new Error(
-        'ANTHROPIC_API_KEY ausente: o modo real usa claude --bare',
-      );
+    const auth = ports.claudeAuth();
     const found = Bun.which('claude');
     if (!found) throw new Error('CLI claude não encontrado no PATH');
     const options = {
@@ -619,6 +633,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       maxTurns: cli.maxTurns,
       maxUsdPerInvocation: cli.maxUsd,
       timeoutMs: cli.timeoutMin * 60_000,
+      authentication: auth.authentication,
     };
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
     const telemetryPath = join(out, runId, 'telemetry.jsonl');
@@ -629,7 +644,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       reviewer: cli.review ? ports.createClaudeReviewer(options) : undefined,
       policy: cli.policy,
       budget: { maxInvocations: cli.maxInvocations!, maxTokens: cli.maxTokens },
-      telemetry: jsonlTelemetry(telemetryPath),
+      telemetry: jsonlTelemetry(telemetryPath, [auth.secret]),
     });
     console.log(
       JSON.stringify({ ...result, telemetry: telemetryPath }, null, 2),

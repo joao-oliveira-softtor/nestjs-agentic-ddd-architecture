@@ -1,5 +1,7 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { match } from 'ts-pattern';
 import {
   claudeToolFlags,
   parseClaudeTranscript,
@@ -212,6 +214,28 @@ export function createCliGates(options: CliGatesOptions): Gates {
   };
 }
 
+/** `oauth-token`: assinatura do Claude Code (`claude setup-token`); `api-key`: cobrança pela API. */
+export type ClaudeAuthentication = 'api-key' | 'oauth-token';
+
+/**
+ * Credencial do driver e do benchmark de revisão. O token de assinatura tem precedência,
+ * porque é a escolha explícita de quem o exporta; sem nenhuma das duas, nada roda.
+ */
+export function claudeAuth(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): { readonly authentication: ClaudeAuthentication; readonly secret: string } {
+  if (env.CLAUDE_CODE_OAUTH_TOKEN)
+    return {
+      authentication: 'oauth-token',
+      secret: env.CLAUDE_CODE_OAUTH_TOKEN,
+    };
+  if (env.ANTHROPIC_API_KEY)
+    return { authentication: 'api-key', secret: env.ANTHROPIC_API_KEY };
+  throw new Error(
+    'nenhuma credencial do Claude: exporte CLAUDE_CODE_OAUTH_TOKEN (assinatura, gerado por `claude setup-token`) ou ANTHROPIC_API_KEY',
+  );
+}
+
 export interface ClaudeRunOptions {
   readonly executable: string;
   readonly root: string;
@@ -220,6 +244,8 @@ export interface ClaudeRunOptions {
   readonly maxUsdPerInvocation: number;
   readonly timeoutMs: number;
   readonly env?: Readonly<Record<string, string | undefined>>;
+  /** Ausente = `api-key` (`--bare`), o comportamento anterior ao token de assinatura. */
+  readonly authentication?: ClaudeAuthentication;
 }
 
 const EXECUTOR_TOOLS = ['Read', 'Grep', 'Glob', 'Edit', 'Write', 'Bash'];
@@ -237,7 +263,17 @@ export function claudeRunArgv(
     '--output-format',
     'stream-json',
     '--verbose',
-    '--bare',
+    // `--bare` só aceita chave de API; com o token, `--safe-mode` mantém o mesmo contexto
+    // (só o brief: sem CLAUDE.md, skills, plugins, hooks nem MCP) e lê o OAuth.
+    ...match(options.authentication ?? 'api-key')
+      .with('api-key', () => ['--bare'])
+      .with('oauth-token', () => [
+        '--safe-mode',
+        '--setting-sources',
+        'project',
+        '--strict-mcp-config',
+      ])
+      .exhaustive(),
     '--model',
     model,
     '--max-turns',
@@ -253,15 +289,38 @@ export function claudeRunArgv(
   ];
 }
 
+/** Com uma delas no ambiente, o CLI cobraria pela API ou por outro provedor, não pelo token. */
+const NON_SUBSCRIPTION_VARIABLES = [
+  'ANTHROPIC_API_KEY',
+  'ANTHROPIC_AUTH_TOKEN',
+  'ANTHROPIC_BASE_URL',
+  'CLAUDE_CODE_USE_BEDROCK',
+  'CLAUDE_CODE_USE_VERTEX',
+  'CLAUDE_CODE_USE_FOUNDRY',
+];
+
 /**
  * Profundidade 1 (topologia plana, ADR-0003 D9). `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` nunca
  * passa: ele sobrepõe o modelo escolhido por tarefa e invalidaria a medição por nível.
+ * `home`, no modo `oauth-token`, é um diretório temporário: nada de auto-memória, settings ou
+ * plugins do usuário. O cache do `bun` continua o real, para o `verify` não reinstalar tudo.
  */
 export function claudeRunEnv(
   base: Readonly<Record<string, string | undefined>> = process.env,
+  authentication: ClaudeAuthentication = 'api-key',
+  home?: string,
 ): Record<string, string | undefined> {
   const env = { ...base };
   delete env.CLAUDE_CODE_SUBAGENT_MODEL_FORCE;
+  if (authentication === 'oauth-token') {
+    for (const name of NON_SUBSCRIPTION_VARIABLES) delete env[name];
+    if (home) {
+      env.BUN_INSTALL_CACHE_DIR ??= base.HOME
+        ? join(base.HOME, '.bun/install/cache')
+        : undefined;
+      env.HOME = home;
+    }
+  }
   return {
     ...env,
     CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH: '1',
@@ -287,12 +346,20 @@ async function runClaude(
   const started = performance.now();
   const timeout = AbortSignal.timeout(options.timeoutMs);
   const controller = AbortSignal.any([signal, timeout]);
+  const authentication = options.authentication ?? 'api-key';
+  const home = await match(authentication)
+    .with('oauth-token', () => mkdtemp(join(tmpdir(), 'claude-home-')))
+    .with('api-key', () => undefined)
+    .exhaustive();
   let spawned: Spawned;
   try {
     spawned = await spawn(
       claudeRunArgv(options, model, prompt, tools),
       options.root,
-      { env: claudeRunEnv(options.env), signal: controller },
+      {
+        env: claudeRunEnv(options.env, authentication, home),
+        signal: controller,
+      },
     );
   } catch (error) {
     return {
@@ -302,17 +369,22 @@ async function runClaude(
       durationMs: Math.round(performance.now() - started),
       diagnostic: timeout.aborted ? 'deadline_exceeded' : String(error),
     };
+  } finally {
+    if (home) await rm(home, { recursive: true, force: true });
   }
-  const parsed = parseClaudeTranscript({
-    transport: 'finished',
-    exitCode: spawned.code,
-    signal: null,
-    stdout: spawned.stdout,
-    stderr: spawned.stderr,
-    durationMs: Math.round(performance.now() - started),
-    evidence: [],
-    diagnostic: null,
-  });
+  const parsed = parseClaudeTranscript(
+    {
+      transport: 'finished',
+      exitCode: spawned.code,
+      signal: null,
+      stdout: spawned.stdout,
+      stderr: spawned.stderr,
+      durationMs: Math.round(performance.now() - started),
+      evidence: [],
+      diagnostic: null,
+    },
+    { authentication },
+  );
   const measured = (value: typeof parsed.usage.inputTokens) =>
     value.status === 'available' ? value.value : null;
   return {

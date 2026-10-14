@@ -1,0 +1,6 @@
+# Dataset de um caso só, para o smoke real do token de assinatura (#36): mede a
+# autenticação, não a qualidade das skills. Cópia de `confirmar-pedido` de orders.yaml.
+- id: confirmar-pedido
+  audience: runtime
+  question: "Qual tool confirma o pedido 7f3c, e com quais argumentos?"
+  expect: { type: tool_call, name: confirm_order, input: { order_id: "7f3c" } }

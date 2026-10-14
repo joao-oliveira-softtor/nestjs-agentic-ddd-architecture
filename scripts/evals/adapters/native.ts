@@ -8,6 +8,7 @@ import {
 } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { homedir, tmpdir } from 'node:os';
+import { match } from 'ts-pattern';
 import type {
   AdapterInfo,
   AdapterRequest,
@@ -86,6 +87,8 @@ export interface NativeAdapterOptions {
 interface NativeDefinition {
   command: 'codex' | 'cursor-agent' | 'claude';
   credential: 'CODEX_API_KEY' | 'CURSOR_API_KEY' | 'ANTHROPIC_API_KEY';
+  /** Variável do token de assinatura (`authentication: 'oauth-token'`); ausente = modo não suportado. */
+  oauthCredential?: 'CLAUDE_CODE_OAUTH_TOKEN';
   bundle: boolean;
   /** Variáveis fixas do processo, além das de credencial e de sandbox. */
   env?: Readonly<Record<string, string>>;
@@ -95,7 +98,7 @@ interface NativeDefinition {
     configuration: EvalConfiguration,
     request: AdapterRequest,
   ): string[];
-  parse(result: ProcessResult): AdapterResult;
+  parse(result: ProcessResult, configuration: EvalConfiguration): AdapterResult;
   collect?(
     home: string,
     result: AdapterResult,
@@ -170,9 +173,22 @@ export function createNativeAdapter(
     },
     async run(request, runOptions) {
       const local = configuration.authentication === 'local-login';
-      const key =
-        options.credentials?.[definition.credential] ??
-        process.env[definition.credential];
+      const credential = match(configuration.authentication ?? 'api-key')
+        .with('oauth-token', () => definition.oauthCredential ?? null)
+        .with('api-key', 'local-login', () => definition.credential)
+        .exhaustive();
+      if (!credential)
+        return processResult({
+          transport: 'infra_error',
+          exitCode: null,
+          signal: null,
+          stdout: '',
+          stderr: '',
+          durationMs: 0,
+          evidence: [],
+          diagnostic: `${definition.command} adapter does not support oauth-token authentication`,
+        });
+      const key = options.credentials?.[credential] ?? process.env[credential];
       if (!local && !key)
         return {
           ...processResult({
@@ -183,7 +199,7 @@ export function createNativeAdapter(
             stderr: '',
             durationMs: 0,
             evidence: [],
-            diagnostic: `Missing external ${definition.credential}`,
+            diagnostic: `Missing external ${credential}`,
           }),
         };
       if (local && definition.command === 'claude')
@@ -294,7 +310,7 @@ export function createNativeAdapter(
               PATH: '/tools:/usr/bin:/bin',
               NO_COLOR: '1',
               ...definition.env,
-              ...(!local ? { [definition.credential]: key! } : {}),
+              ...(!local ? { [credential]: key! } : {}),
             },
             timeoutMs: request.timeoutMs,
             evidenceDir: request.evidenceDir,
@@ -322,7 +338,7 @@ export function createNativeAdapter(
           },
           runOptions,
         );
-        const result = definition.parse(execution);
+        const result = definition.parse(execution, configuration);
         await definition.collect?.(home, result, request.evidenceDir, secrets);
         await writeFile(
           join(request.evidenceDir, 'adapter.json'),

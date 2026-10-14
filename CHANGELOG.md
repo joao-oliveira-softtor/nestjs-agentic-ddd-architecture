@@ -9,6 +9,7 @@ Orquestração de agentes por camada e modelo (épico #26). Tudo offline: nenhum
 - `scripts/boundary-gates.ts` confere só-corpo, contagem de linhas e direção de import por camada.
 - `scripts/orchestrate.ts`: driver sequencial com roteamento por camada (Haiku no domínio, Sonnet em application e operators), uma retentativa por nível, escalação e `needs-human`, orçamento de invocações e de tokens medidos, revisão Opus opcional e telemetria JSONL. O modo padrão só planeja.
 - Harness de avaliação: adapter `claude-cli` (uso somado de `modelUsage`; custo derivado não adotado), `promptMode` `brief` no benchmark de implementação e benchmark de revisão com as 19 regressões plantadas e controles limpos.
+- Claude pela assinatura do Claude Code (#36): `authentication: oauth-token` no harness (`CLAUDE_CODE_OAUTH_TOKEN`, gerado por `claude setup-token`), e o driver e o benchmark de revisão usam o token quando ele existe, com `--safe-mode` no lugar de `--bare`, `HOME` temporário e sem variáveis que cobrem pela API. O `apiKeySource` do CLI é registrado e uma origem de chave de API reprova a execução; o token é redigido nos artefatos. Dependência de desenvolvimento nova: `ts-pattern`.
 - Decisões em [ADR-0003](docs/adr/ADR-0003.md); pesquisa, spec e plano em `docs/research/` e `docs/superpowers/`. Os perfis de modelo no instalador (#33) e a campanha de comparação (#36) seguem pendentes.
 
 ## [0.4.0] — 2026-10-10

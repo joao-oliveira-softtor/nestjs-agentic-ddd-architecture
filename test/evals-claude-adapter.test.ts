@@ -52,17 +52,102 @@ test('o manifesto aceita claude-cli e os manifestos congelados continuam válido
     ).text(),
   );
   expect(manifestSchema.safeParse(frozen).success).toBe(true);
-  const claude = {
+  const withConfiguration = (patch: Record<string, unknown>) => ({
     ...frozen,
-    configurations: [{ ...frozen.configurations[0], adapter: 'claude-cli' }],
-  };
-  expect(manifestSchema.safeParse(claude).success).toBe(true);
+    configurations: [{ ...frozen.configurations[0], ...patch }],
+  });
+  for (const authentication of ['api-key', 'oauth-token'])
+    expect(
+      manifestSchema.safeParse(
+        withConfiguration({ adapter: 'claude-cli', authentication }),
+      ).success,
+    ).toBe(true);
   expect(
+    manifestSchema.safeParse(withConfiguration({ adapter: 'outro' })).success,
+  ).toBe(false);
+});
+
+test('manifesto: oauth-token só no claude-cli e claude-cli sem local-login', async () => {
+  const frozen = JSON.parse(
+    await Bun.file(
+      join(
+        import.meta.dir,
+        '../evals/campaigns/cycle-20/manifests/codex-sol-high-r1.json',
+      ),
+    ).text(),
+  );
+  const parse = (patch: Record<string, unknown>) =>
     manifestSchema.safeParse({
       ...frozen,
-      configurations: [{ ...frozen.configurations[0], adapter: 'outro' }],
-    }).success,
-  ).toBe(false);
+      configurations: [{ ...frozen.configurations[0], ...patch }],
+    });
+  const local = parse({ adapter: 'claude-cli', authentication: 'local-login' });
+  expect(local.success).toBe(false);
+  expect(JSON.stringify(local.error?.issues)).toContain('local-login');
+  for (const adapter of ['codex-cli', 'cursor-cli', 'scripted']) {
+    const oauth = parse({ adapter, authentication: 'oauth-token' });
+    expect(oauth.success).toBe(false);
+    expect(JSON.stringify(oauth.error?.issues)).toContain('claude-cli');
+  }
+});
+
+test('smoke: o manifesto e o dataset de um caso são válidos e cabem no teto de 2 invocações', async () => {
+  const { loadDataset } = await import('../scripts/evals/dataset');
+  const manifest = manifestSchema.parse(
+    JSON.parse(
+      await Bun.file(
+        join(import.meta.dir, '../evals/run.smoke-oauth.json'),
+      ).text(),
+    ),
+  );
+  expect(manifest.configurations).toEqual([
+    expect.objectContaining({
+      adapter: 'claude-cli',
+      authentication: 'oauth-token',
+      model: 'claude-haiku-5-5',
+    }),
+  ]);
+  expect(manifest.budget.maxInvocations).toBe(2);
+  expect(manifest.budget.maxCorrectionsPerItem).toBe(0);
+  const cases = await loadDataset(
+    join(import.meta.dir, '..', manifest.skillDatasets[0]!.path),
+  );
+  expect(cases.map((c) => c.id)).toEqual(['confirmar-pedido']);
+});
+
+test('auth: apiKeySource do init é registrado; origem de chave de API reprova o oauth-token', async () => {
+  const init = (source: string) =>
+    `${JSON.stringify({ type: 'system', subtype: 'init', session_id: 'offline-claude-session', model: 'claude-haiku-5-5', apiKeySource: source })}\n`;
+  const body = (await transcript())
+    .split('\n')
+    .filter((line) => line && JSON.parse(line).subtype !== 'init')
+    .join('\n');
+  const oauth = { authentication: 'oauth-token' as const };
+  const subscription = parseClaudeTranscript(
+    result(`${init('none')}${body}\n`),
+    oauth,
+  );
+  expect(subscription.transport).toBe('finished');
+  expect(subscription.authSource).toEqual({
+    status: 'available',
+    value: 'none',
+    source: 'claude.init.apiKeySource',
+  });
+  for (const source of ['ANTHROPIC_API_KEY', 'apiKeyHelper']) {
+    const billed = parseClaudeTranscript(
+      result(`${init(source)}${body}\n`),
+      oauth,
+    );
+    expect(billed.transport).toBe('infra_error');
+    expect(billed.finalText).toBeNull();
+    expect(billed.diagnostic).toContain('auth_source_mismatch');
+    // Com chave de API declarada, a mesma origem é a esperada.
+    expect(
+      parseClaudeTranscript(result(`${init(source)}${body}\n`), {
+        authentication: 'api-key',
+      }).transport,
+    ).toBe('finished');
+  }
 });
 
 test('argv: opções variádicas só na forma =, para não engolir o prompt, que vem depois de --', () => {
@@ -364,3 +449,112 @@ test('adapter executa só um CLI falso no sandbox, com chave por variável e sem
     await rm(root, { recursive: true, force: true });
   }
 }, 30000);
+
+test('adapter com oauth-token: só o token no ambiente do sandbox, redigido, e sem token o run nem começa', async () => {
+  const { mkdtemp, mkdir, writeFile, chmod, rm } =
+    await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { frozenSource } = await import('./helpers/evals');
+  const { createAttemptWorkspace } = await import('../scripts/evals/isolation');
+  const { createClaudeAdapter } =
+    await import('../scripts/evals/adapters/claude');
+  const fixture = await frozenSource();
+  const root = await mkdtemp(join(tmpdir(), 'eval-claude-oauth-'));
+  const baseline = join(fixture.source.root, 'oauth-context');
+  await mkdir(baseline);
+  await writeFile(join(baseline, 'context.md'), 'private context');
+  const workspace = await createAttemptWorkspace(
+    fixture.source,
+    baseline,
+    'skills',
+  );
+  try {
+    const executable = join(root, 'claude');
+    const token = 'offline-oauth-token-never-publish';
+    // Sai com 25 se uma chave de API chegar ao processo; ecoa o token para provar a redação.
+    await writeFile(
+      executable,
+      `#!/bin/sh\nif [ "$1" = '--version' ]; then echo 'offline-claude-1'; exit 0; fi\nif [ -n "$ANTHROPIC_API_KEY" ]; then exit 25; fi\nprintf '{"type":"system","subtype":"init","session_id":"offline-claude-session","model":"m","apiKeySource":"none","key":"%s"}\\n' "$CLAUDE_CODE_OAUTH_TOKEN"\ncat <<'SYNTHETIC_TRANSCRIPT'\n${(
+        await transcript()
+      )
+        .split('\n')
+        .filter((line) => line && JSON.parse(line).subtype !== 'init')
+        .join('\n')}\nSYNTHETIC_TRANSCRIPT\n`,
+    );
+    await chmod(executable, 0o700);
+    const registered = new Set<string>();
+    const options = {
+      executable,
+      credentials: {
+        CLAUDE_CODE_OAUTH_TOKEN: token,
+        ANTHROPIC_API_KEY: 'offline-key-must-not-reach-the-cli',
+      },
+      onSecrets: (values: readonly string[]) =>
+        values.forEach((value) => registered.add(value)),
+      probeEvidenceDir: join(root, 'probe'),
+    };
+    const oauth = { ...configuration, authentication: 'oauth-token' as const };
+    const run = (
+      adapter: ReturnType<typeof createClaudeAdapter>,
+      dir: string,
+    ) =>
+      adapter.run(
+        {
+          id: 'case',
+          mode: 'skills',
+          cwd: workspace.root,
+          prompt: 'pergunta',
+          timeoutMs: 5000,
+          evidenceDir: dir,
+        },
+        { signal: new AbortController().signal },
+      );
+    await mkdir(join(root, 'run'));
+    const observed = await run(
+      createClaudeAdapter(oauth, options),
+      join(root, 'run'),
+    );
+    expect(observed.transport).toBe('finished');
+    expect(observed.authSource).toEqual({
+      status: 'available',
+      value: 'none',
+      source: 'claude.init.apiKeySource',
+    });
+    expect(registered.has(token)).toBe(true);
+    const evidence = await Promise.all(
+      observed.evidence.map((path) => Bun.file(path).text()),
+    );
+    expect(evidence.join('\n')).not.toContain(token);
+    expect(evidence.join('\n')).toContain('[REDACTED]');
+
+    const missing = await run(
+      createClaudeAdapter(oauth, {
+        ...options,
+        credentials: { CLAUDE_CODE_OAUTH_TOKEN: '' },
+      }),
+      join(root, 'must-not-exist'),
+    );
+    expect(missing.transport).toBe('infra_error');
+    expect(missing.diagnostic).toBe('Missing external CLAUDE_CODE_OAUTH_TOKEN');
+    expect(missing.evidence).toEqual([]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}, 30000);
+
+test('adapters sem token de assinatura recusam oauth-token antes de executar', async () => {
+  const { createCodexAdapter } =
+    await import('../scripts/evals/adapters/codex');
+  const outcome = await createCodexAdapter(
+    {
+      id: 'codex',
+      adapter: 'codex-cli',
+      authentication: 'oauth-token',
+      model: 'gpt',
+      parameters: {},
+    },
+    { executable: '/bin/false', credentials: { CODEX_API_KEY: 'k' } },
+  ).run(request, { signal: new AbortController().signal });
+  expect(outcome.transport).toBe('infra_error');
+  expect(outcome.diagnostic).toContain('does not support oauth-token');
+});

@@ -50,6 +50,7 @@ const adapter = z.strictObject({
   sessionId: measured(z.string()),
   observedModel: measured(z.string()),
   modelRevision: measured(z.string()),
+  authSource: measured(z.string()).optional(),
   usage,
 });
 const command = z.strictObject({
