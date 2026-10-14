@@ -289,6 +289,21 @@ export function claudeRunArgv(
   ];
 }
 
+/**
+ * Variáveis de uma sessão do Claude Code que roda o driver (`CLAUDECODE`, `CLAUDE_EFFORT`,
+ * `CLAUDE_CODE_PLUGIN_DIRS`, socket e token de mensagens...). Herdadas, carregam plugins e o
+ * esforço da sessão pai no executor e contaminam a medição. Ficam só o token de assinatura e as
+ * escolhas de provedor do modo `api-key`.
+ */
+const PARENT_SESSION_VARIABLE =
+  /^(CLAUDECODE|CLAUDE_PID|CLAUDE_EFFORT|CLAUDE_CODE_.+)$/;
+const KEPT_CLAUDE_VARIABLES = new Set([
+  'CLAUDE_CODE_OAUTH_TOKEN',
+  'CLAUDE_CODE_USE_BEDROCK',
+  'CLAUDE_CODE_USE_VERTEX',
+  'CLAUDE_CODE_USE_FOUNDRY',
+]);
+
 /** Com uma delas no ambiente, o CLI cobraria pela API ou por outro provedor, não pelo token. */
 const NON_SUBSCRIPTION_VARIABLES = [
   'ANTHROPIC_API_KEY',
@@ -311,7 +326,10 @@ export function claudeRunEnv(
   home?: string,
 ): Record<string, string | undefined> {
   const env = { ...base };
-  delete env.CLAUDE_CODE_SUBAGENT_MODEL_FORCE;
+  // Inclui `CLAUDE_CODE_SUBAGENT_MODEL_FORCE`, que sobreporia o modelo de cada tarefa.
+  for (const name of Object.keys(env))
+    if (PARENT_SESSION_VARIABLE.test(name) && !KEPT_CLAUDE_VARIABLES.has(name))
+      delete env[name];
   if (authentication === 'oauth-token') {
     for (const name of NON_SUBSCRIPTION_VARIABLES) delete env[name];
     if (home) {
@@ -418,7 +436,13 @@ export function parseExecutorResponse(text: string | null): {
         diagnostic:
           value.status === 'done' || !Array.isArray(value.findings)
             ? null
-            : value.findings.map(String).join('; ') || null,
+            : value.findings
+                .map((finding) =>
+                  typeof finding === 'string'
+                    ? finding
+                    : JSON.stringify(finding),
+                )
+                .join('; ') || null,
       };
   } catch {
     // resposta fora do formato: tratada como falha abaixo

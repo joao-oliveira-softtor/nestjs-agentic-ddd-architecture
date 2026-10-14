@@ -698,6 +698,44 @@ test('telemetria jsonl troca a credencial por [REDACTED] antes de gravar', async
   }
 });
 
+test('claude: variáveis da sessão pai do Claude Code não chegam ao executor, nos dois modos', async () => {
+  const { claudeRunEnv } = await import('../scripts/orchestrate-ports');
+  const parent = {
+    PATH: '/bin',
+    CLAUDECODE: '1',
+    CLAUDE_PID: '42',
+    CLAUDE_EFFORT: 'max',
+    CLAUDE_CODE_PLUGIN_DIRS: '/home/user/mods/plugin',
+    CLAUDE_CODE_MESSAGING_TOKEN: 'socket-token',
+    CLAUDE_CODE_SESSION_ID: 'pai',
+    CLAUDE_CODE_ENTRYPOINT: 'cli',
+    CLAUDE_CODE_OAUTH_TOKEN: 'token',
+    CLAUDE_CODE_USE_BEDROCK: '1',
+  };
+  for (const env of [
+    claudeRunEnv(parent),
+    claudeRunEnv(parent, 'oauth-token', '/tmp/home'),
+  ]) {
+    for (const name of [
+      'CLAUDECODE',
+      'CLAUDE_PID',
+      'CLAUDE_EFFORT',
+      'CLAUDE_CODE_PLUGIN_DIRS',
+      'CLAUDE_CODE_MESSAGING_TOKEN',
+      'CLAUDE_CODE_SESSION_ID',
+      'CLAUDE_CODE_ENTRYPOINT',
+    ])
+      expect(env[name]).toBeUndefined();
+    expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBe('token');
+    expect(env.CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH).toBe('1');
+  }
+  // A escolha de provedor só sobrevive no modo de chave de API.
+  expect(claudeRunEnv(parent).CLAUDE_CODE_USE_BEDROCK).toBe('1');
+  expect(
+    claudeRunEnv(parent, 'oauth-token', '/tmp/home').CLAUDE_CODE_USE_BEDROCK,
+  ).toBeUndefined();
+});
+
 test('claudeAuth: o token de assinatura tem precedência; sem credencial nada roda', async () => {
   const { claudeAuth } = await import('../scripts/orchestrate-ports');
   expect(
@@ -803,6 +841,12 @@ test('claude: a resposta final do executor só classifica; fora do formato é fa
   expect(
     parseExecutorResponse('{"status":"blocked","findings":["falta contrato"]}'),
   ).toEqual({ status: 'blocked', diagnostic: 'falta contrato' });
+  // Achado estruturado sai como JSON, nunca como [object Object].
+  expect(
+    parseExecutorResponse(
+      '{"status":"blocked","findings":[{"tipo":"dependencia-ausente"}]}',
+    ).diagnostic,
+  ).toBe('{"tipo":"dependencia-ausente"}');
   expect(parseExecutorResponse('pronto!').status).toBe('failed');
   expect(parseExecutorResponse('{"status":"ok"}').status).toBe('failed');
   expect(parseExecutorResponse(null).status).toBe('failed');

@@ -114,14 +114,12 @@ export function claudeUsage(modelUsage: unknown, source: string): Usage {
 }
 
 /**
- * Origens de credencial que denunciam cobrança pela API. Com `oauth-token` a execução tem de
- * ser paga pela assinatura; uma chave de API no ambiente ou num `apiKeySource` das settings
- * vence o token no CLI e mudaria a cobrança em silêncio.
+ * Origens aceitas com `oauth-token`: só a do token de assinatura. Uma chave de API no ambiente
+ * ou um `apiKeyHelper` nas settings vence o token no CLI e mudaria a cobrança em silêncio.
+ * `none` é o valor que o Claude Code 2.1.299 informou pela assinatura no smoke de 2026-10-14
+ * (harness e driver).
  */
-const API_KEY_SOURCES: readonly string[] = [
-  'ANTHROPIC_API_KEY',
-  'apiKeyHelper',
-];
+const SUBSCRIPTION_SOURCES: readonly string[] = ['none'];
 
 export function authSourceMismatch(
   authentication: EvalConfiguration['authentication'],
@@ -132,7 +130,7 @@ export function authSourceMismatch(
       'oauth-token',
       () =>
         authSource?.status === 'available' &&
-        API_KEY_SOURCES.includes(authSource.value),
+        !SUBSCRIPTION_SOURCES.includes(authSource.value),
     )
     .with('api-key', 'local-login', () => false)
     .exhaustive();
