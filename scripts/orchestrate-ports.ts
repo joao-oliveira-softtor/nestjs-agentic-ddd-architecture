@@ -1,6 +1,9 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { parseClaudeTranscript } from './evals/adapters/claude';
+import {
+  claudeToolFlags,
+  parseClaudeTranscript,
+} from './evals/adapters/claude';
 import { bodyOnlyFindings, importDirectionFindings } from './boundary-gates';
 import type { GateLayer } from './boundary-gates';
 import type {
@@ -244,10 +247,8 @@ export function claudeRunArgv(
     '--no-session-persistence',
     '--permission-mode',
     'dontAsk',
-    '--tools',
-    tools.join(','),
-    '--allowed-tools',
-    tools.join(','),
+    ...claudeToolFlags(tools),
+    '--',
     prompt,
   ];
 }

@@ -19,6 +19,20 @@ import {
 const READ_TOOLS = ['Read', 'Grep', 'Glob'];
 const IMPLEMENTATION_TOOLS = [...READ_TOOLS, 'Edit', 'Write', 'Bash'];
 
+/**
+ * `--tools` e `--allowed-tools` são opções variádicas do CLI: na forma `--opção valor` elas
+ * consomem os argumentos seguintes, inclusive o prompt posicional ("Input must be provided…").
+ * A forma `--opção=valor` não consome, e `--` encerra as opções antes do prompt. Lista vazia
+ * desliga todas as ferramentas.
+ */
+export function claudeToolFlags(tools: readonly string[]): string[] {
+  const list = tools.join(',');
+  return [
+    `--tools=${list}`,
+    ...(tools.length ? [`--allowed-tools=${list}`] : []),
+  ];
+}
+
 export function claudeArgv(
   executable: string,
   configuration: EvalConfiguration,
@@ -41,12 +55,10 @@ export function claudeArgv(
     '--setting-sources',
     'project',
     '--strict-mcp-config',
-    '--tools',
-    tools.join(','),
     '--permission-mode',
     'dontAsk',
-    '--allowed-tools',
-    tools.join(','),
+    ...claudeToolFlags(tools),
+    '--',
     request.prompt,
   ];
 }

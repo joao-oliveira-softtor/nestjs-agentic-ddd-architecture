@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 import { join } from 'node:path';
 import {
   claudeArgv,
+  claudeToolFlags,
   claudeUsage,
   parseClaudeTranscript,
 } from '../scripts/evals/adapters/claude';
@@ -64,10 +65,24 @@ test('o manifesto aceita claude-cli e os manifestos congelados continuam válido
   ).toBe(false);
 });
 
+test('argv: opções variádicas só na forma =, para não engolir o prompt, que vem depois de --', () => {
+  const variadic = ['--tools', '--allowed-tools', '--allowedTools'];
+  for (const mode of ['skills', 'implementation'] as const) {
+    const argv = claudeArgv('c', configuration, { ...request, mode });
+    for (const name of variadic) expect(argv).not.toContain(name);
+    expect(argv.slice(-2)).toEqual(['--', 'pergunta']);
+  }
+  expect(claudeToolFlags([])).toEqual(['--tools=']);
+  expect(claudeToolFlags(['Read'])).toEqual([
+    '--tools=Read',
+    '--allowed-tools=Read',
+  ]);
+});
+
 test('argv: modelo e esforço explícitos, sem sessão, configuração de usuário nem MCP', () => {
   const argv = claudeArgv('/bin/claude', configuration, request);
   expect(argv[0]).toBe('/bin/claude');
-  expect(argv.at(-1)).toBe('pergunta');
+  expect(argv.slice(-2)).toEqual(['--', 'pergunta']);
   const value = (flag: string) => argv[argv.indexOf(flag) + 1];
   expect(value('--model')).toBe('claude-haiku-5-5');
   expect(value('--effort')).toBe('low');
@@ -81,16 +96,16 @@ test('argv: modelo e esforço explícitos, sem sessão, configuração de usuár
 });
 
 test('argv: skills só lê; implementação edita e roda comandos; none não é suportado', () => {
-  expect(
-    claudeArgv('c', configuration, request)[
-      claudeArgv('c', configuration, request).indexOf('--tools') + 1
-    ],
-  ).toBe('Read,Grep,Glob');
+  const flag = (argv: string[], name: string) =>
+    argv.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
+  const skills = claudeArgv('c', configuration, request);
+  expect(flag(skills, '--tools')).toBe('Read,Grep,Glob');
+  expect(flag(skills, '--allowed-tools')).toBe('Read,Grep,Glob');
   const implementation = claudeArgv('c', configuration, {
     ...request,
     mode: 'implementation',
   });
-  expect(implementation[implementation.indexOf('--tools') + 1]).toBe(
+  expect(flag(implementation, '--tools')).toBe(
     'Read,Grep,Glob,Edit,Write,Bash',
   );
   expect(

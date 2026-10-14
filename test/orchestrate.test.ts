@@ -583,14 +583,17 @@ test('claude: argv com --bare, sem herdar o modelo forçado e com profundidade 1
   ]);
   const value = (flag: string) => executor[executor.indexOf(flag) + 1];
   expect(executor[0]).toBe('/bin/claude');
-  expect(executor.at(-1)).toBe('brief');
+  expect(executor.slice(-2)).toEqual(['--', 'brief']);
+  expect(executor).not.toContain('--tools');
+  expect(executor).not.toContain('--allowed-tools');
   expect(executor).toContain('--bare');
   expect(executor).not.toContain('--dangerously-skip-permissions');
   expect(value('--model')).toBe('claude-haiku-5-5');
   expect(value('--max-turns')).toBe('12');
   expect(value('--max-budget-usd')).toBe('1.5');
   expect(value('--permission-mode')).toBe('dontAsk');
-  expect(value('--tools')).toBe('Read,Edit');
+  expect(executor).toContain('--tools=Read,Edit');
+  expect(executor).toContain('--allowed-tools=Read,Edit');
   const env = claudeRunEnv({
     PATH: '/bin',
     CLAUDE_CODE_SUBAGENT_MODEL_FORCE: 'opus',
