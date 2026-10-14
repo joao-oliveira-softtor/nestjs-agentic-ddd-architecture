@@ -265,3 +265,24 @@ test('publication redacts secrets in agent patches and report strings before com
     await rm(root, { recursive: true, force: true });
   }
 });
+test('Markdown mostra o modo de prompt efetivo de cada configuração', () => {
+  const report = reportFixture([
+    row('haiku-legado', 'a', 'correct'),
+    row('haiku-brief', 'a', 'correct'),
+  ]);
+  const base = evalManifest.configurations[0]!;
+  report.manifest = {
+    ...evalManifest,
+    configurations: [
+      { ...base, id: 'haiku-legado' },
+      { ...base, id: 'haiku-brief', promptMode: 'brief' },
+    ],
+  };
+  const lines = renderMarkdown(report).split('\n');
+  expect(lines.find((l) => l.startsWith('| haiku-legado |'))).toContain(
+    'prompt: legacy',
+  );
+  expect(lines.find((l) => l.startsWith('| haiku-brief |'))).toContain(
+    'prompt: brief',
+  );
+});

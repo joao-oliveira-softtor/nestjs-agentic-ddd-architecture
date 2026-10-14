@@ -285,7 +285,7 @@ export function renderMarkdown(report: EvalReport): string {
       (m) => m.configuration === config.id && m.dataset === null,
     )!;
     lines.push(
-      `| ${config.id} | ${config.adapter} ${escape(report.provenance.adapters[config.id]?.version ?? 'indisponível')} | ${escape(config.model)} ${escape(JSON.stringify(config.parameters))} | ${percentage(metric.accuracy)} | ${percentage(metric.coverage)} |`,
+      `| ${config.id} | ${config.adapter} ${escape(report.provenance.adapters[config.id]?.version ?? 'indisponível')} | ${escape(config.model)} ${escape(JSON.stringify(config.parameters))} prompt: ${config.promptMode ?? 'legacy'} | ${percentage(metric.accuracy)} | ${percentage(metric.coverage)} |`,
     );
   }
   lines.push(
