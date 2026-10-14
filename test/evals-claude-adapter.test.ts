@@ -133,7 +133,12 @@ test('auth: apiKeySource do init é registrado; origem de chave de API reprova o
     value: 'none',
     source: 'claude.init.apiKeySource',
   });
-  for (const source of ['ANTHROPIC_API_KEY', 'apiKeyHelper', 'user']) {
+  for (const source of [
+    'ANTHROPIC_API_KEY',
+    'apiKeyHelper',
+    '/login managed key',
+    'user',
+  ]) {
     const billed = parseClaudeTranscript(
       result(`${init(source)}${body}\n`),
       oauth,

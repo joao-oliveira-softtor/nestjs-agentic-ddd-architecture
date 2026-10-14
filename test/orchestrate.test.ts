@@ -635,9 +635,14 @@ test('claude oauth-token: --safe-mode no lugar de --bare e nenhuma variável que
     CLAUDE_CODE_USE_BEDROCK: '1',
     CLAUDE_CODE_USE_VERTEX: '1',
     CLAUDE_CODE_USE_FOUNDRY: '1',
+    CLAUDE_CODE_USE_ANTHROPIC_AWS: '1',
+    CLAUDE_CODE_USE_MANTLE: '1',
+    CLAUDE_CONFIG_DIR: '/home/real/.claude-alt',
   };
   const env = claudeRunEnv(base, 'oauth-token', '/tmp/home');
   for (const name of [
+    'CLAUDE_CODE_USE_ANTHROPIC_AWS',
+    'CLAUDE_CODE_USE_MANTLE',
     'ANTHROPIC_API_KEY',
     'ANTHROPIC_AUTH_TOKEN',
     'ANTHROPIC_BASE_URL',
@@ -648,6 +653,7 @@ test('claude oauth-token: --safe-mode no lugar de --bare e nenhuma variável que
     expect(env[name]).toBeUndefined();
   expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBe('token');
   expect(env.HOME).toBe('/tmp/home');
+  expect(env.CLAUDE_CONFIG_DIR).toBe('/tmp/home/.claude');
   expect(env.BUN_INSTALL_CACHE_DIR).toBe('/home/real/.bun/install/cache');
   // Sem token, o modo antigo continua igual: --bare e a chave intacta.
   expect(claudeRunEnv(base).ANTHROPIC_API_KEY).toBe('key');

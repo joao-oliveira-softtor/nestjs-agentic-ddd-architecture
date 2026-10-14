@@ -337,6 +337,8 @@ export function claudeRunEnv(
         ? join(base.HOME, '.bun/install/cache')
         : undefined;
       env.HOME = home;
+      // `CLAUDE_CONFIG_DIR` substitui `~/.claude` (settings, sessões, plugins, credenciais).
+      env.CLAUDE_CONFIG_DIR = join(home, '.claude');
     }
   }
   return {
