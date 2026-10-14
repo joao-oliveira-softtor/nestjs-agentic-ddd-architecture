@@ -1,5 +1,5 @@
-import { readFile, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 import { parseClaudeTranscript } from './evals/adapters/claude';
 import { bodyOnlyFindings, importDirectionFindings } from './boundary-gates';
 import type { GateLayer } from './boundary-gates';
@@ -45,18 +45,31 @@ async function spawn(
   return { code, stdout, stderr };
 }
 
-interface FileSnapshot {
-  readonly path: string;
-  readonly text: string;
+interface DirtyFile {
+  /** Hash do conteúdo, ou `deleted`. Ausente do mapa = igual ao HEAD. */
+  readonly hash: string;
+  readonly content: Buffer | null;
+}
+interface Worktree {
+  readonly source: { readonly path: string; readonly text: string };
+  readonly dirty: ReadonlyMap<string, DirtyFile>;
 }
 export interface CliGatesOptions {
   readonly root: string;
   readonly config: string;
+  /** Prefixos (relativos à raiz) que o driver escreve durante a execução: telemetria, briefs. */
+  readonly ignore?: readonly string[];
 }
 
+const TEST_FILE = /\.test\.ts$/;
+const sha = (data: Buffer | string) =>
+  new Bun.CryptoHasher('sha256').update(data).digest('hex');
+
 /**
- * Gates do driver: fronteira (imports por camada e, em itens `method:`, só o corpo atribuído)
- * e depois `verify --item` com o specHash do packet. O packet vem de `packet --static`.
+ * Gates do driver. Escopo: só o arquivo-fonte do item e arquivos `*.test.ts` podem mudar no
+ * worktree inteiro (um `Write`/`Bash` do executor pode tocar qualquer arquivo). Depois,
+ * fronteira (imports por camada e, em itens `method:`, só o corpo atribuído) e
+ * `verify --item` com o specHash do packet. O packet vem de `packet --static`.
  */
 export function createCliGates(options: CliGatesOptions): Gates {
   const run = (...args: string[]) =>
@@ -64,6 +77,43 @@ export function createCliGates(options: CliGatesOptions): Gates {
       [process.execPath, CLI, ...args, '--config', options.config],
       options.root,
     );
+  const git = (...args: string[]) => spawn(['git', ...args], options.root);
+  const ignored = (path: string) =>
+    (options.ignore ?? []).some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    );
+
+  /** Arquivos que diferem do HEAD (modificados, novos, apagados), com hash e conteúdo. */
+  async function dirtyFiles(): Promise<Map<string, DirtyFile>> {
+    const status = await git(
+      'status',
+      '--porcelain=v1',
+      '-z',
+      '-uall',
+      '--no-renames',
+    );
+    if (status.code !== 0)
+      throw new Error(`git status falhou: ${status.stderr.trim()}`);
+    const files = new Map<string, DirtyFile>();
+    for (const entry of status.stdout.split('\0').filter(Boolean)) {
+      const path = entry.slice(3);
+      if (ignored(path)) continue;
+      const file = Bun.file(resolve(options.root, path));
+      if (await file.exists()) {
+        const content = Buffer.from(await file.arrayBuffer());
+        files.set(path, { hash: sha(content), content });
+      } else files.set(path, { hash: 'deleted', content: null });
+    }
+    return files;
+  }
+  const changedPaths = (
+    before: ReadonlyMap<string, DirtyFile>,
+    after: ReadonlyMap<string, DirtyFile>,
+  ) =>
+    [...new Set([...before.keys(), ...after.keys()])]
+      .filter((path) => before.get(path)?.hash !== after.get(path)?.hash)
+      .sort();
+
   return {
     async packet(id) {
       const result = await run('packet', id, '--static');
@@ -71,13 +121,24 @@ export function createCliGates(options: CliGatesOptions): Gates {
         throw new Error(`packet ${id} falhou: ${result.stderr.trim()}`);
       return result.stdout;
     },
-    async snapshot(facts): Promise<FileSnapshot> {
+    async snapshot(facts): Promise<Worktree> {
       const path = resolve(options.root, facts.sourcePath);
-      return { path, text: await readFile(path, 'utf8') };
+      return {
+        source: { path, text: await readFile(path, 'utf8') },
+        dirty: await dirtyFiles(),
+      };
     },
     async verify(facts, snapshot): Promise<GateOutcome> {
-      const before = snapshot as FileSnapshot;
-      const after = await readFile(before.path, 'utf8');
+      const before = snapshot as Worktree;
+      const outOfScope = changedPaths(before.dirty, await dirtyFiles()).filter(
+        (path) => path !== facts.sourcePath && !TEST_FILE.test(path),
+      );
+      if (outOfScope.length)
+        return {
+          passed: false,
+          report: `Gate de escopo: só ${facts.sourcePath} e arquivos *.test.ts podem mudar; alterados fora do escopo:\n${outOfScope.join('\n')}`,
+        };
+      const after = await readFile(before.source.path, 'utf8');
       const findings = importDirectionFindings(
         facts.sourcePath,
         after,
@@ -87,7 +148,7 @@ export function createCliGates(options: CliGatesOptions): Gates {
       if (method)
         findings.push(
           ...bodyOnlyFindings(
-            before.text,
+            before.source.text,
             after,
             method[1]!,
             method[2]!,
@@ -112,12 +173,38 @@ export function createCliGates(options: CliGatesOptions): Gates {
       };
     },
     async restore(_facts, snapshot) {
-      const before = snapshot as FileSnapshot;
-      await writeFile(before.path, before.text);
+      const before = snapshot as Worktree;
+      for (const path of changedPaths(before.dirty, await dirtyFiles())) {
+        const baseline = before.dirty.get(path);
+        const target = resolve(options.root, path);
+        if (baseline?.content) {
+          await mkdir(dirname(target), { recursive: true });
+          await writeFile(target, baseline.content);
+        } else if (baseline) await rm(target, { force: true });
+        else {
+          // Sem entrada no baseline: o arquivo era igual ao HEAD (ou não existia).
+          const tracked = await git('cat-file', '-e', `HEAD:${path}`);
+          if (tracked.code === 0) await git('checkout', 'HEAD', '--', path);
+          else await rm(target, { force: true });
+        }
+      }
     },
+    /** Tudo o que difere do HEAD, inclusive arquivos novos (que `git diff` sozinho omite). */
     async diff() {
-      const result = await spawn(['git', 'diff'], options.root);
-      return result.stdout.trim() || '(sem alterações rastreadas)';
+      const tracked = await git('diff', 'HEAD');
+      const untracked = await git('ls-files', '-o', '--exclude-standard', '-z');
+      const created: string[] = [];
+      for (const path of untracked.stdout.split('\0').filter(Boolean)) {
+        if (ignored(path)) continue;
+        // `--no-index` sai com 1 quando há diferença; o texto do diff é o que importa.
+        created.push(
+          (await git('diff', '--no-index', '--', '/dev/null', path)).stdout,
+        );
+      }
+      return (
+        [tracked.stdout, ...created].filter((part) => part.trim()).join('\n') ||
+        '(sem alterações)'
+      );
     },
   };
 }

@@ -60,3 +60,6 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# saídas do driver de orquestração e dos briefs
+/.agentic-tasks

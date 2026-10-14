@@ -1,5 +1,5 @@
 import { appendFile, mkdir, realpath } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import {
   assertOutsideGenerated,
   parsePacket,
@@ -77,10 +77,11 @@ export interface GateOutcome {
 }
 export interface Gates {
   packet(id: string): Promise<string>;
+  /** Baseline do item: tirado uma vez, antes da primeira tentativa, e reusado nas retentativas. */
   snapshot(facts: PacketFacts): Promise<unknown>;
   /** Gates de fronteira e `verify --item`, com o `specHash` do packet. */
   verify(facts: PacketFacts, snapshot: unknown): Promise<GateOutcome>;
-  /** Devolve o item ao estado anterior à tentativa que falhou, antes de subir de nível. */
+  /** Devolve o worktree ao baseline do item, antes de subir de nível. */
   restore(facts: PacketFacts, snapshot: unknown): Promise<void>;
   diff(): Promise<string>;
 }
@@ -229,6 +230,8 @@ export async function orchestrate(input: OrchestrateInput): Promise<RunResult> {
     let tierAttempts = 0;
     let attempt = 0;
     let failure: string | null = null;
+    // Uma única vez por item: uma retentativa não pode normalizar a deriva da anterior.
+    const snapshot = await input.gates.snapshot(facts);
     for (;;) {
       state.stop = blocked();
       if (state.stop)
@@ -242,7 +245,6 @@ export async function orchestrate(input: OrchestrateInput): Promise<RunResult> {
       const model = models[tier];
       attempt++;
       tierAttempts++;
-      const snapshot = await input.gates.snapshot(facts);
       const brief = renderBrief({
         packet,
         extras: failureSection(failure),
@@ -564,7 +566,11 @@ export async function main(argv: readonly string[]): Promise<number> {
     const root = process.cwd();
     const out = assertOutsideGenerated(root, cli.out);
     const ports = await import('./orchestrate-ports');
-    const gates = ports.createCliGates({ root, config: cli.config });
+    const gates = ports.createCliGates({
+      root,
+      config: cli.config,
+      ignore: [relative(root, out)],
+    });
     const statusArgs = [
       resolve(import.meta.dir, '../src/cli/main.ts'),
       'status',

@@ -55,6 +55,8 @@ function ports(script: Script = {}) {
   const items = new Map<string, PlanItem>();
   const tasks: Task[] = [];
   const restored: string[] = [];
+  const snapshots: string[] = [];
+  const verified: unknown[] = [];
   let current: Task | null = null;
   const executor: Executor = {
     async run(task) {
@@ -72,18 +74,27 @@ function ports(script: Script = {}) {
   };
   const gates: Gates = {
     packet: async (id) => packetOf(items.get(id)!),
-    snapshot: async (facts) => facts.id,
-    verify: async (facts) =>
-      script.gate?.({ id: facts.id, attempt: current!.attempt }) ?? {
-        passed: true,
-        report: 'ok',
-      },
+    snapshot: async (facts) => {
+      snapshots.push(facts.id);
+      return { baseline: facts.id };
+    },
+    verify: async (facts, snapshot) => {
+      verified.push(snapshot);
+      return (
+        script.gate?.({ id: facts.id, attempt: current!.attempt }) ?? {
+          passed: true,
+          report: 'ok',
+        }
+      );
+    },
     restore: async (facts) => void restored.push(facts.id),
     diff: async () => 'diff --git a/x b/x',
   };
   return {
     tasks,
     restored,
+    snapshots,
+    verified,
     executor,
     gates,
     register: (...list: PlanItem[]) =>
@@ -202,6 +213,30 @@ test('duas falhas no nível sobem para o nível acima, restauram o item e levam 
       r.kind === 'attempt' ? [r.decision] : [],
     ),
   ).toEqual(['retry', 'escalate', 'accepted']);
+});
+
+test('o baseline é um só por item e vale para todas as retentativas e níveis', async () => {
+  const order = domain('Order');
+  const other = domain('Other');
+  const p = ports({
+    gate: ({ id, attempt }) =>
+      id === order.id && attempt < 4
+        ? { passed: false, report: 'falhou' }
+        : { passed: true, report: 'ok' },
+  });
+  p.register(order, other);
+  await orchestrate({
+    waves: [[order, other]],
+    executor: p.executor,
+    gates: p.gates,
+    budget,
+    telemetry: memoryTelemetry(),
+  });
+  // 3 tentativas do primeiro item (haiku, haiku, sonnet → 4 com a aceita) e 1 do segundo.
+  expect(p.snapshots).toEqual([order.id, other.id]);
+  const first = p.verified.slice(0, 4);
+  expect(new Set(first).size).toBe(1);
+  expect(p.verified[4]).not.toBe(first[0]);
 });
 
 test('blocked devolve o item: sobe sem retentativa no mesmo nível', async () => {
@@ -581,24 +616,42 @@ test('claude: a resposta final do executor só classifica; fora do formato é fa
   expect(parseExecutorResponse(null).status).toBe('failed');
 });
 
-test('gates reais: fronteira acusa import proibido e restore devolve o arquivo', async () => {
-  const { createCliGates } = await import('../scripts/orchestrate-ports');
+async function gitRepo() {
   const { mkdir, writeFile } = await import('node:fs/promises');
   const root = await mkdtemp(join(tmpdir(), 'orchestrate-gates-'));
+  const git = (...args: string[]) => {
+    const run = Bun.spawnSync(['git', ...args], { cwd: root });
+    expect(run.exitCode).toBe(0);
+  };
+  git('init', '-q');
+  git('config', 'user.email', 'test@example.com');
+  git('config', 'user.name', 'Test');
+  await mkdir(join(root, 'orders/domain'), { recursive: true });
+  const original = 'export class Order {\n  total() {\n    return 1;\n  }\n}\n';
+  await writeFile(join(root, 'orders/domain/order.ts'), original);
+  await writeFile(
+    join(root, 'orders/domain/other.ts'),
+    'export const x = 1;\n',
+  );
+  await writeFile(join(root, 'config.ts'), 'export default {};\n');
+  git('add', '-A');
+  git('commit', '-q', '-m', 'base');
+  const facts = {
+    id: 'entity:Order',
+    layer: 'domain',
+    module: 'orders',
+    sourcePath: 'orders/domain/order.ts',
+    specHash: hash('entity:Order'),
+  };
+  return { root, original, facts, file: join(root, 'orders/domain/order.ts') };
+}
+
+test('gates reais: fronteira acusa import proibido e restore devolve o arquivo', async () => {
+  const { createCliGates } = await import('../scripts/orchestrate-ports');
+  const { writeFile } = await import('node:fs/promises');
+  const { root, original, facts, file } = await gitRepo();
   try {
-    await mkdir(join(root, 'orders/domain'), { recursive: true });
-    const file = join(root, 'orders/domain/order.ts');
-    const original =
-      'export class Order {\n  total() {\n    return 1;\n  }\n}\n';
-    await writeFile(file, original);
     const gates = createCliGates({ root, config: 'agentic.config.ts' });
-    const facts = {
-      id: 'entity:Order',
-      layer: 'domain',
-      module: 'orders',
-      sourcePath: 'orders/domain/order.ts',
-      specHash: hash('entity:Order'),
-    };
     const snapshot = await gates.snapshot(facts);
     await writeFile(
       file,
@@ -616,6 +669,97 @@ test('gates reais: fronteira acusa import proibido e restore devolve o arquivo',
     const drift = await gates.verify(method, snapshot);
     expect(drift.passed).toBe(false);
     expect(drift.report).toContain('Body line count changed');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('gates reais: o escopo cobre o worktree inteiro e a restauração devolve o baseline', async () => {
+  const { createCliGates } = await import('../scripts/orchestrate-ports');
+  const { writeFile, mkdir } = await import('node:fs/promises');
+  const { root, original, facts, file } = await gitRepo();
+  try {
+    // Estado sujo antes do item: um item anterior já aceito, ainda sem commit.
+    await writeFile(
+      join(root, 'orders/domain/other.ts'),
+      'export const x = 2;\n',
+    );
+    const gates = createCliGates({
+      root,
+      config: 'agentic.config.ts',
+      ignore: ['.agentic-tasks'],
+    });
+    const snapshot = await gates.snapshot(facts);
+
+    // A telemetria do driver e arquivos *.test.ts são permitidos.
+    await mkdir(join(root, '.agentic-tasks/runs'), { recursive: true });
+    await writeFile(join(root, '.agentic-tasks/runs/t.jsonl'), '{}\n');
+    await writeFile(join(root, 'orders/domain/order.test.ts'), 'test();\n');
+    await writeFile(join(root, 'orders/domain/order.ts'), `${original}// ok\n`);
+    // Fora do escopo: outro fonte rastreado, configuração e arquivo novo.
+    await writeFile(
+      join(root, 'orders/domain/other.ts'),
+      'export const x = 3;\n',
+    );
+    await writeFile(
+      join(root, 'config.ts'),
+      'export default { hacked: true };\n',
+    );
+    await writeFile(join(root, 'orders/domain/new.ts'), 'export {};\n');
+
+    const outcome = await gates.verify(facts, snapshot);
+    expect(outcome.passed).toBe(false);
+    expect(outcome.report).toContain('Gate de escopo');
+    expect(outcome.report).toContain('config.ts');
+    expect(outcome.report).toContain('orders/domain/new.ts');
+    expect(outcome.report).toContain('orders/domain/other.ts');
+    expect(outcome.report).not.toContain('order.test.ts');
+    expect(outcome.report).not.toContain('.agentic-tasks');
+
+    await gates.restore(facts, snapshot);
+    expect(await readFile(file, 'utf8')).toBe(original);
+    expect(await readFile(join(root, 'config.ts'), 'utf8')).toBe(
+      'export default {};\n',
+    );
+    // O baseline sujo volta como estava (não ao HEAD); o arquivo novo some.
+    expect(await readFile(join(root, 'orders/domain/other.ts'), 'utf8')).toBe(
+      'export const x = 2;\n',
+    );
+    expect(await Bun.file(join(root, 'orders/domain/new.ts')).exists()).toBe(
+      false,
+    );
+    expect(
+      await Bun.file(join(root, 'orders/domain/order.test.ts')).exists(),
+    ).toBe(false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('gates reais: o diff do revisor inclui arquivos novos, não só os rastreados', async () => {
+  const { createCliGates } = await import('../scripts/orchestrate-ports');
+  const { writeFile, mkdir } = await import('node:fs/promises');
+  const { root, original, file } = await gitRepo();
+  try {
+    const gates = createCliGates({
+      root,
+      config: 'agentic.config.ts',
+      ignore: ['.agentic-tasks'],
+    });
+    expect(await gates.diff()).toBe('(sem alterações)');
+    await writeFile(file, original.replace('return 1;', 'return 2;'));
+    await writeFile(
+      join(root, 'orders/domain/order.test.ts'),
+      "test('cobre total', () => {});\n",
+    );
+    await mkdir(join(root, '.agentic-tasks'), { recursive: true });
+    await writeFile(join(root, '.agentic-tasks/t.jsonl'), '{}\n');
+    const diff = await gates.diff();
+    expect(diff).toContain('-    return 1;');
+    expect(diff).toContain('+    return 2;');
+    expect(diff).toContain('orders/domain/order.test.ts');
+    expect(diff).toContain("+test('cobre total'");
+    expect(diff).not.toContain('.agentic-tasks');
   } finally {
     await rm(root, { recursive: true, force: true });
   }
