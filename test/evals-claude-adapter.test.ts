@@ -102,6 +102,44 @@ test('manifesto: oauth-token só no claude-cli e claude-cli sem local-login', as
   }
 });
 
+test('smoke do roteamento: o manifesto é válido e o teto de 3 invocações reserva a última para a revisão', async () => {
+  const manifest = manifestSchema.parse(
+    JSON.parse(
+      await Bun.file(
+        join(import.meta.dir, '../evals/run.smoke-routing.json'),
+      ).text(),
+    ),
+  );
+  const [configuration] = manifest.configurations;
+  expect(manifest.skillDatasets).toEqual([]);
+  expect(configuration).toMatchObject({
+    adapter: 'claude-cli',
+    authentication: 'oauth-token',
+    model: 'claude-haiku-5-5',
+    promptMode: 'brief',
+  });
+  expect(configuration!.routing).toEqual({
+    byLayer: {
+      domain: 'claude-haiku-5-5',
+      application: 'claude-sonnet-5-5',
+      operators: 'claude-sonnet-5-5',
+    },
+    ladder: [
+      { model: 'claude-haiku-5-5' },
+      { model: 'claude-sonnet-5-5', reasoningEffort: 'medium' },
+    ],
+    reviewer: { model: 'claude-opus-5-5', reasoningEffort: 'low' },
+  });
+  // 3 invocações: 2 para itens (o domínio no Haiku e um item no Sonnet) e 1 reservada à revisão.
+  expect(manifest.budget).toMatchObject({
+    maxInvocations: 3,
+    maxCorrectionsPerItem: 0,
+    implementationTimeoutMs: 600000,
+    // 3 × 10 min de invocação + 60 min de folga para baseline, status, next e verify.
+    totalTimeoutMs: (3 * 10 + 60) * 60_000,
+  });
+});
+
 test('smoke: o manifesto e o dataset de um caso são válidos e cabem no teto de 2 invocações', async () => {
   const { loadDataset } = await import('../scripts/evals/dataset');
   const manifest = manifestSchema.parse(
