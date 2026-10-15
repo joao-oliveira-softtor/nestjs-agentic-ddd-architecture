@@ -1,5 +1,12 @@
 import { expect, test } from 'bun:test';
-import { classifyPilot, pilotArm, type PilotArm } from '../scripts/evals/pilot';
+import { join } from 'node:path';
+import {
+  PILOT_ARMS,
+  classifyPilot,
+  pilotArm,
+  type PilotArm,
+} from '../scripts/evals/pilot';
+import { REVIEW_MAX_TOKENS } from '../scripts/evals/implementation';
 import type { CampaignReport } from '../scripts/evals/aggregate';
 
 // Braço com custo total `cost` (as duas faixas iguais, salvo `cheap`) e `accepted` itens aceitos.
@@ -204,4 +211,26 @@ test('pilotArm: a revisão do A3 só vale despachada e terminada, e sem item ace
     pilotArm(configuration({ runMetrics: [run({ review: null })] }))
       .inconclusive,
   ).toBe(false);
+});
+
+// O pré-registro cita números e ids que existem no código: se divergirem, o teste reprova.
+test('o pré-registro cita o sourceRef, o teto, os braços e o limite do revisor reais', async () => {
+  const dir = join(import.meta.dir, '../evals/campaigns/cycle-21-pilot');
+  const text = await Bun.file(join(dir, 'PREREGISTRATION.md')).text();
+  const index = (await Bun.file(join(dir, 'index.json')).json()) as {
+    runs: { id: string; manifest: { path: string } }[];
+  };
+  let ceiling = 0;
+  for (const run of index.runs) {
+    const manifest = (await Bun.file(join(dir, run.manifest.path)).json()) as {
+      sourceRef: string;
+      budget: { maxInvocations: number };
+    };
+    expect(text).toContain(manifest.sourceRef);
+    ceiling += manifest.budget.maxInvocations;
+  }
+  expect(ceiling).toBe(110);
+  expect(text).toContain(`${ceiling} invocações`);
+  for (const id of Object.values(PILOT_ARMS)) expect(text).toContain(id);
+  expect(text).toContain(`${REVIEW_MAX_TOKENS}`.replace(/_/g, ''));
 });
