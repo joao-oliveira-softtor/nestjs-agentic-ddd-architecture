@@ -801,6 +801,20 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
   });
 });
 
+test('plannedCases 0 deixa a cobertura indisponível, sem dividir por zero', async () => {
+  const f = await campaign(0);
+  for (const run of f.index.runs)
+    (run as { plannedCases: number }).plannedCases = 0;
+  await writeFile(f.path, JSON.stringify(f.index));
+  const c = (await aggregateCampaign(f.path)).configurations[0]!;
+  expect(c.plannedCases).toBe(0);
+  expect(c.coverage).toMatchObject({
+    numerator: 0,
+    denominator: 0,
+    value: { status: 'unavailable', reason: 'zero_denominator' },
+  });
+});
+
 // Compatibilidade com o cycle-20 (evidência imutável): o agregador só acrescenta
 // chaves. Os hashes vêm da saída do agregador da main em dd58fb3, gerada com
 // `bun run evals:aggregate --campaign evals/campaigns/cycle-20/index.json --out <novo>`
