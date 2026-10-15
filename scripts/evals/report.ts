@@ -1,7 +1,9 @@
 import { lstat, readFile, readdir, rename, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
+import { match, P } from 'ts-pattern';
 import type {
   Artifact,
+  BenchmarkResult,
   CaseResult,
   EvalReport,
   Measured,
@@ -65,6 +67,57 @@ function sumUsage(usage: Usage[]): Usage {
             'native_cost_sum',
           )
         : unavailable('incomplete_or_incompatible_costs'),
+  };
+}
+/** Só em benchmark com roteamento: trocas de degrau, turnos e resultado da revisão. */
+interface RoutingMetrics {
+  escalations?: number;
+  turns?: Measured<number>;
+  review?: {
+    outcome: NonNullable<BenchmarkResult['review']>['outcome'];
+    dispatched: boolean;
+    findings: number;
+    usage: Usage | null;
+  } | null;
+}
+function routingMetrics(b: BenchmarkResult): RoutingMetrics {
+  const attempts = b.items.flatMap((i) => i.attempts);
+  if (b.review === undefined && attempts.every((a) => a.tier === undefined))
+    return {};
+  const agents = [
+    ...attempts.map((a) => a.execution),
+    ...(b.review?.execution ? [b.review.execution] : []),
+  ];
+  const turns = agents.map((e) =>
+    match(e.numTurns)
+      .with({ status: 'available' }, (t) => t.value)
+      .with({ status: 'unavailable' }, P.nullish, () => null)
+      .exhaustive(),
+  );
+  return {
+    escalations: b.items.reduce(
+      (n, i) =>
+        n +
+        i.attempts.filter(
+          (a, k) => k > 0 && (a.tier ?? 0) > (i.attempts[k - 1]!.tier ?? 0),
+        ).length,
+      0,
+    ),
+    turns:
+      agents.length && turns.every((t) => t !== null)
+        ? available(
+            turns.reduce((n, t) => n + t!, 0),
+            'num_turns_sum',
+          )
+        : unavailable<number>('incomplete_turns'),
+    review: b.review
+      ? {
+          outcome: b.review.outcome,
+          dispatched: b.review.dispatched,
+          findings: b.review.findings,
+          usage: b.review.execution?.usage ?? null,
+        }
+      : null,
   };
 }
 export function computeMetrics(report: EvalReport) {
@@ -172,6 +225,7 @@ export function computeMetrics(report: EvalReport) {
         ),
       0,
     ),
+    ...routingMetrics(b),
   }));
   const byConfig = new Map(
     configurations.map((id) => [
@@ -308,11 +362,18 @@ export function renderMarkdown(report: EvalReport): string {
     lines.push(
       `| ${b.configuration} | ${percentage(b.initial)} | ${percentage(b.final)} | ${b.corrections} | ${measure(b.completion)} | ${b.agentDurationMs.toFixed(0)}/${b.verificationDurationMs.toFixed(0)} |`,
     );
-  for (const b of report.benchmarks)
-    for (const i of b.items)
+  for (const b of metrics.benchmarks)
+    if (b.escalations !== undefined)
       lines.push(
-        `- ${b.configuration}/${i.item}: ${i.state}${i.reason ? ' — ' + escape(i.reason) : ''}; specHash ${i.specHash ?? 'indisponível (not_prepared)'}; ${i.attempts.length} tentativa(s).`,
+        `- Roteamento ${b.configuration}: ${b.escalations} escalação(ões); turnos ${measure(b.turns!)}; revisão ${b.review ? `${b.review.outcome} (despachada: ${b.review.dispatched ? 'sim' : 'não'}, ${b.review.findings} achado(s))` : 'não configurada'}.`,
       );
+  for (const b of report.benchmarks)
+    for (const i of b.items) {
+      const models = i.attempts.flatMap((a) => (a.model ? [a.model] : []));
+      lines.push(
+        `- ${b.configuration}/${i.item}: ${i.state}${i.reason ? ' — ' + escape(i.reason) : ''}; specHash ${i.specHash ?? 'indisponível (not_prepared)'}; ${i.attempts.length} tentativa(s)${models.length ? ` (${models.map(escape).join(' → ')})` : ''}.`,
+      );
+    }
   lines.push(
     '',
     'Concordância de respostas estruturadas válidas (pode incluir erros iguais):',

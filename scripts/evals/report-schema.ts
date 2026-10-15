@@ -23,6 +23,11 @@ const measured = <T extends z.ZodType>(value: T) =>
       reason: z.string().min(1),
     }),
   ]);
+const inputParts = {
+  uncachedInputTokens: integer,
+  cacheWriteInputTokens: integer,
+  cacheReadInputTokens: integer,
+};
 const usage = z.strictObject({
   inputTokens: measured(integer),
   cachedInputTokens: measured(integer),
@@ -30,6 +35,38 @@ const usage = z.strictObject({
   cost: measured(
     z.strictObject({ amount: number, currency: z.string().min(1) }),
   ),
+  cacheWriteInputTokens: measured(integer).optional(),
+  byModel: z
+    .record(
+      z.string().min(1),
+      z.strictObject({
+        ...inputParts,
+        outputTokens: integer,
+        reportedCostUSD: number.optional(),
+      }),
+    )
+    .optional(),
+  requests: z
+    .strictObject({
+      status: z.enum(['reconciled', 'residual', 'unreconciled']),
+      items: z.array(
+        z.strictObject({
+          model: z.string().min(1),
+          ...inputParts,
+          cacheWrite1hInputTokens: integer.nullable(),
+        }),
+      ),
+      // O resíduo pode ser negativo: é o sinal de leitura divergente que reprova o smoke.
+      residual: z.record(
+        z.string().min(1),
+        z.strictObject({
+          uncachedInputTokens: z.number().int(),
+          cacheWriteInputTokens: z.number().int(),
+          cacheReadInputTokens: z.number().int(),
+        }),
+      ),
+    })
+    .optional(),
 });
 const transport = z.enum(['finished', 'timeout', 'cancelled', 'infra_error']);
 const processFields = {
@@ -53,6 +90,7 @@ const adapter = z.strictObject({
   modelRevision: measured(z.string()),
   authSource: measured(z.string()).optional(),
   usage,
+  numTurns: measured(integer).optional(),
 });
 const command = z.strictObject({
   name: z.string(),
@@ -226,6 +264,22 @@ const metrics = z.strictObject({
       completion: measured(z.string()),
       agentDurationMs: number,
       verificationDurationMs: number,
+      escalations: integer.optional(),
+      turns: measured(integer).optional(),
+      review: z
+        .strictObject({
+          outcome: z.enum([
+            'approved',
+            'changes_requested',
+            'error',
+            'not_run',
+          ]),
+          dispatched: z.boolean(),
+          findings: integer,
+          usage: usage.nullable(),
+        })
+        .nullable()
+        .optional(),
     }),
   ),
   agreements: z.array(

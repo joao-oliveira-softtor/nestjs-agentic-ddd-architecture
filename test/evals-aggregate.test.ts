@@ -3,13 +3,19 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { stableStringify } from '@agentic-ddd/compiler';
-import { aggregateCampaign, main } from '../scripts/evals/aggregate';
+import {
+  aggregateCampaign,
+  main,
+  nearestRank,
+  renderAggregate,
+} from '../scripts/evals/aggregate';
 import { sha256 } from '../scripts/evals/isolation';
 import { computeMetrics, writeReport } from '../scripts/evals/report';
 import {
   available,
   emptyUsage,
   type EvalReport,
+  type Usage,
 } from '../scripts/evals/contracts';
 const roots: string[] = [];
 // Fixtures retain and hash raw evidence, including multiple campaign variants.
@@ -561,4 +567,333 @@ test('accepts a checksummed current-schema report with derived metrics omitted',
   expect(
     (await aggregateCampaign(f.path)).configurations[0]!.correctCases,
   ).toBe(15);
+});
+
+test('mediana e p90 nearest-rank: posição ⌈p·n⌉ da amostra ordenada, sem média', async () => {
+  expect(nearestRank([], 0.5)).toBeNull();
+  expect(nearestRank([5], 0.9)).toBe(5);
+  expect(nearestRank([4, 1, 3, 2], 0.5)).toBe(2);
+  expect(nearestRank([4, 1, 3, 2], 0.9)).toBe(4);
+  expect(nearestRank([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 0.9)).toBe(9);
+  expect(nearestRank([3, 1, 2], 0.5)).toBe(2);
+});
+
+test('índice: repetitionsPerConfiguration (ausente = 3) define a contagem e o teto da repetição', async () => {
+  const f = await campaign();
+  const write = (index: unknown) => writeFile(f.path, JSON.stringify(index));
+  const two = { ...f.index, repetitionsPerConfiguration: 2 };
+  await write(two);
+  await rejectsIndex(f.path);
+  await write({ ...two, runs: f.index.runs.slice(0, 2) });
+  const a = await aggregateCampaign(f.path);
+  expect(a.configurations[0]).toMatchObject({
+    plannedRuns: 2,
+    executedRuns: 2,
+  });
+  await write({
+    ...two,
+    runs: [f.index.runs[0], { ...f.index.runs[1]!, repetition: 3 }],
+  });
+  await rejectsIndex(f.path);
+  await write({ ...f.index, runs: f.index.runs.slice(0, 2) });
+  await rejectsIndex(f.path);
+  await write({ ...f.index, repetitionsPerConfiguration: 11 });
+  await rejectsIndex(f.path);
+});
+
+test('braço roteado: escalação, falso verde, fronteira, turnos e custo derivado com a revisão', async () => {
+  const HAIKU = 'claude-haiku-5-5',
+    SONNET = 'claude-sonnet-5-5',
+    OPUS = 'claude-opus-5-5';
+  const f = await campaign();
+  const historical = (await Bun.file(
+    join(
+      import.meta.dir,
+      '../docs/superpowers/validation/2026-10-09-plan6/reference/report.json',
+    ),
+  ).json()) as EvalReport;
+  const template = historical.benchmarks[0]!.items[0]!.attempts[0]!;
+  // Sonnet: 1 MTok de leitura de cache (US$ 0,10) e 0,1 MTok de saída (US$ 1,00).
+  const sonnet = (): Usage => ({
+    ...emptyUsage(),
+    cacheWriteInputTokens: available(0, 'fixture'),
+    byModel: {
+      [SONNET]: {
+        uncachedInputTokens: 0,
+        cacheWriteInputTokens: 0,
+        cacheReadInputTokens: 1_000_000,
+        outputTokens: 100_000,
+      },
+    },
+    requests: {
+      status: 'reconciled',
+      items: [
+        {
+          model: SONNET,
+          uncachedInputTokens: 0,
+          cacheWriteInputTokens: 0,
+          cacheReadInputTokens: 1_000_000,
+          cacheWrite1hInputTokens: 0,
+        },
+      ],
+      residual: {},
+    },
+  });
+  const free = (): Usage => ({
+    ...emptyUsage(),
+    byModel: {
+      [SONNET]: {
+        uncachedInputTokens: 0,
+        cacheWriteInputTokens: 0,
+        cacheReadInputTokens: 0,
+        outputTokens: 0,
+      },
+    },
+  });
+  for (const repetition of [1, 2, 3])
+    await mutate(
+      f,
+      (r) => {
+        // Um caso de skill com custo: não pode entrar no custo por item aceito do benchmark.
+        r.cases.forEach((c, i) => {
+          c.execution!.usage = repetition === 1 && i === 0 ? sonnet() : free();
+        });
+      },
+      repetition,
+    );
+  await mutate(f, (report) => {
+    const benchmark = report.benchmarks[0]!;
+    const attempt = (
+      index: number,
+      number: number,
+      tier: number,
+      model: string,
+    ) => {
+      const item = benchmark.items[index]!;
+      const a = structuredClone(template);
+      a.number = number;
+      a.tier = tier;
+      a.model = model;
+      a.handoff.item = item.item;
+      a.handoff.specHash = item.specHash!;
+      a.handoff.criteria = [];
+      a.verification!.itemReport = {
+        ...a.verification!.itemReport!,
+        item: item.item,
+      };
+      a.execution.usage = sonnet();
+      a.execution.numTurns = available(4, 'fixture');
+      a.execution.durationMs = 1000;
+      return a;
+    };
+    const greenButWrong = attempt(0, 1, 0, HAIKU);
+    greenButWrong.verification!.referenceTests = {
+      ...greenButWrong.verification!.referenceTests!,
+      exitCode: 1,
+    };
+    const escalated = attempt(0, 2, 1, SONNET);
+    escalated.reasoningEffort = 'medium';
+    benchmark.items[0]!.attempts = [greenButWrong, escalated];
+    benchmark.items[0]!.state = 'accepted';
+    const outside = attempt(1, 1, 0, HAIKU);
+    outside.audit = { ...outside.audit!, ok: false };
+    // Oráculo sem evidência válida (JUnit inválido) não é rejeição: indisponível, nunca falso verde.
+    outside.verification!.referenceTests = {
+      ...outside.verification!.referenceTests!,
+      exitCode: 1,
+      collectionError: 'JUnit missing, invalid or incomplete',
+    };
+    benchmark.items[1]!.attempts = [outside];
+    benchmark.items[1]!.state = 'failed';
+    const execution = structuredClone(template.execution);
+    execution.usage = {
+      ...emptyUsage(),
+      byModel: {
+        [OPUS]: {
+          uncachedInputTokens: 1_000_000,
+          cacheWriteInputTokens: 0,
+          cacheReadInputTokens: 0,
+          outputTokens: 0,
+        },
+      },
+      // Entrada sem evento assistant: resíduo, na faixa única do Opus.
+      requests: {
+        status: 'residual',
+        items: [],
+        residual: {
+          [OPUS]: {
+            uncachedInputTokens: 1_000_000,
+            cacheWriteInputTokens: 0,
+            cacheReadInputTokens: 0,
+          },
+        },
+      },
+    };
+    execution.numTurns = available(1, 'fixture');
+    execution.durationMs = 500;
+    benchmark.review = {
+      outcome: 'approved',
+      dispatched: true,
+      execution,
+      briefTokens: 1000,
+      findings: 0,
+      reason: null,
+    };
+  });
+  // writeReport valida o relatório com todos os campos novos pelo reportSchema.
+  const written = (await Bun.file(
+    join(f.root, 'run-1/report.json'),
+  ).json()) as EvalReport;
+  expect(written.metrics!.benchmarks[0]).toMatchObject({
+    escalations: 1,
+    turns: { status: 'available', value: 13 },
+    review: { outcome: 'approved', dispatched: true, findings: 0 },
+  });
+  expect(await Bun.file(join(f.root, 'run-1/report.md')).text()).toContain(
+    `(${HAIKU} → ${SONNET})`,
+  );
+  const c = (await aggregateCampaign(f.path)).configurations[0]!;
+  expect(c).toMatchObject({
+    escalations: 1,
+    escalatedItems: 1,
+    falseGreen: { attempts: 1, finalItems: 0, unavailableAttempts: 1 },
+    boundaryViolations: 1,
+    finalItems: 1,
+  });
+  const run = c.runMetrics[0]!;
+  expect(run).toMatchObject({
+    repetition: 1,
+    status: 'budget_exhausted',
+    review: { outcome: 'approved', dispatched: true, transport: 'finished' },
+    turns: { status: 'available', value: 13 },
+    agentDurationMs: 3500,
+  });
+  expect(run.items[0]).toMatchObject({
+    state: 'accepted',
+    attempts: 2,
+    models: [HAIKU, SONNET],
+  });
+  expect(c.cost).toMatchObject({
+    label: 'derived',
+    available: true,
+    reason: null,
+    lowerBound: false,
+    reportedUSD: null,
+  });
+  expect(c.cost.total!.expensive).toBeCloseTo(4 * 1.1 + 4, 9);
+  expect(c.cost.review!.expensive).toBeCloseTo(4, 9);
+  expect(c.cost.perAcceptedItem.withReview!.expensive).toBeCloseTo(7.3, 9);
+  expect(c.cost.perAcceptedItem.withoutReview!.cheap).toBeCloseTo(3.3, 9);
+  // Tokens por modelo: 4 usos do Sonnet (3 tentativas + 1 caso) e a entrada do Opus na revisão.
+  expect(c.tokensByModel).toEqual({
+    [SONNET]: {
+      uncachedInputTokens: 0,
+      cacheWriteInputTokens: 0,
+      cacheReadInputTokens: 4_000_000,
+      outputTokens: 400_000,
+    },
+    [OPUS]: {
+      uncachedInputTokens: 1_000_000,
+      cacheWriteInputTokens: 0,
+      cacheReadInputTokens: 0,
+      outputTokens: 0,
+    },
+  });
+  expect(c.cost.perRun.expensive.median).toBe(0);
+  expect(c.cost.perRun.expensive.p90).toBeCloseTo(8.4, 9);
+  expect(c.cost.perRun.expensive).toMatchObject({ n: 3, excluded: 0 });
+  // Turnos indisponíveis nas execuções sem tentativa não entram na distribuição,
+  // e a amostra publica quantas execuções entraram e quantas ficaram de fora.
+  expect(c.distribution.turns).toEqual({
+    median: 13,
+    p90: 13,
+    n: 1,
+    excluded: 2,
+  });
+  // Timeout com requisições e sem `byModel`: custo vira limite inferior.
+  await mutate(f, (report) => {
+    const usage = report.benchmarks[0]!.items[1]!.attempts[0]!.execution.usage;
+    delete usage.byModel;
+    usage.requests!.status = 'unreconciled';
+  });
+  const bounded = (await aggregateCampaign(f.path)).configurations[0]!.cost;
+  expect(bounded.lowerBound).toBe(true);
+  expect(bounded.total!.expensive).toBeCloseTo(3 * 1.1 + 0.1 + 4, 9);
+  // Um uso sem detalhamento torna o custo do braço indisponível, nunca estimado, mas a
+  // evidência `unreconciled` de outra tentativa continua marcando o limite inferior.
+  await mutate(f, (report) => {
+    report.benchmarks[0]!.items[0]!.attempts[0]!.execution.usage = emptyUsage();
+  });
+  expect(
+    (await aggregateCampaign(f.path)).configurations[0]!.cost,
+  ).toMatchObject({
+    available: false,
+    reason: 'no_usage_breakdown',
+    total: null,
+    lowerBound: true,
+  });
+});
+
+test('configuração sem execuções não publica custo zero como se fosse medido', async () => {
+  const f = await campaign(0);
+  const cost = (await aggregateCampaign(f.path)).configurations[0]!.cost;
+  expect(cost).toMatchObject({
+    available: false,
+    reason: 'no_runs',
+    total: null,
+    review: null,
+    reportedUSD: null,
+  });
+  expect(cost.perAcceptedItem).toEqual({
+    withReview: null,
+    withoutReview: null,
+  });
+});
+
+test('plannedCases 0 deixa a cobertura indisponível, sem dividir por zero', async () => {
+  const f = await campaign(0);
+  for (const run of f.index.runs)
+    (run as { plannedCases: number }).plannedCases = 0;
+  await writeFile(f.path, JSON.stringify(f.index));
+  const c = (await aggregateCampaign(f.path)).configurations[0]!;
+  expect(c.plannedCases).toBe(0);
+  expect(c.coverage).toMatchObject({
+    numerator: 0,
+    denominator: 0,
+    value: { status: 'unavailable', reason: 'zero_denominator' },
+  });
+});
+
+// Compatibilidade com o cycle-20 (evidência imutável): o agregador só acrescenta
+// chaves. Os hashes vêm da saída do agregador da main em dd58fb3, gerada com
+// `bun run evals:aggregate --campaign evals/campaigns/cycle-20/index.json --out <novo>`
+// (sha256 de aggregate.json e de aggregate.md).
+const CYCLE_20_JSON_SHA256 =
+  '3de8157d74607266819d5b4059e26628d9552ec086ee3a0219374c5bf74f2a42';
+const CYCLE_20_MD_SHA256 =
+  'bbae2385df51432de55bc446059a4b0f2c9ca425ab654af17ffb3422f1722b4e';
+const NEW_AGGREGATE_KEYS = [
+  'boundaryViolations',
+  'cost',
+  'distribution',
+  'escalatedItems',
+  'escalations',
+  'falseGreen',
+  'runMetrics',
+  'tokensByModel',
+];
+test('cycle-20: o agregado só ganha chaves novas e o markdown não muda', async () => {
+  const report = await aggregateCampaign(
+    join(import.meta.dir, '../evals/campaigns/cycle-20/index.json'),
+  );
+  expect(sha256(renderAggregate(report))).toBe(CYCLE_20_MD_SHA256);
+  const legacy = structuredClone(report) as unknown as {
+    configurations: Record<string, unknown>[];
+    groups: Record<string, unknown>[];
+  };
+  for (const entry of [...legacy.configurations, ...legacy.groups])
+    for (const key of NEW_AGGREGATE_KEYS) delete entry[key];
+  expect(sha256(JSON.stringify(legacy, null, 2) + '\n')).toBe(
+    CYCLE_20_JSON_SHA256,
+  );
 });

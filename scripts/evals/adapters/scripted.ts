@@ -1,4 +1,9 @@
-import type { AdapterRequest, AdapterResult, EvalAdapter } from '../contracts';
+import type {
+  AdapterRequest,
+  AdapterResult,
+  EvalAdapter,
+  Usage,
+} from '../contracts';
 import { available, emptyUsage, unavailable } from '../contracts';
 import { runProcess } from '../process';
 import {
@@ -15,6 +20,8 @@ export interface ScriptedAction {
   exitCode?: number;
   delayMs?: number;
   argv?: readonly string[];
+  /** Uso devolvido como se medido (offline: custo derivado e agregação sem inferência). */
+  usage?: Usage;
   /** Trusted offline fixture callback; never provided to real adapters. */
   before?: (request: AdapterRequest) => Promise<void>;
 }
@@ -38,7 +45,7 @@ export function createScriptedAdapter(
         sessionId: available(`scripted-${index}`, 'scripted_fixture'),
         observedModel: available('scripted', 'scripted_fixture'),
         modelRevision: unavailable<string>('synthetic'),
-        usage: emptyUsage(),
+        usage: action?.usage ?? emptyUsage(),
       };
       if (!action)
         return {

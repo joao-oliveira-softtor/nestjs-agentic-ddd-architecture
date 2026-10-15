@@ -211,11 +211,47 @@ export const available = <T>(value: T, source: string): Measured<T> => ({
   value,
   source,
 });
+/** Parcelas de entrada na semântica da API: `uncachedInputTokens` exclui escrita e leitura de cache. */
+export interface InputParts {
+  uncachedInputTokens: number;
+  cacheWriteInputTokens: number;
+  cacheReadInputTokens: number;
+}
+/** Uso de um modelo servido (Claude: uma chave de `modelUsage` do `result`). */
+export interface ModelUsage extends InputParts {
+  outputTokens: number;
+  /** Custo de lista informado pelo CLI: checagem cruzada do custo derivado, nunca fonte. */
+  reportedCostUSD?: number;
+}
+/**
+ * Entrada de uma requisição (Claude: `message.usage` do último evento `assistant` de cada
+ * `message.id`). A saída por requisição não é guardada: o stream-json repete o `output_tokens`
+ * provisório em todos os eventos de um id.
+ */
+export interface RequestUsage extends InputParts {
+  model: string;
+  /** Parte da escrita de cache com TTL de 1 h; `null` quando o CLI não separa o TTL. */
+  cacheWrite1hInputTokens: number | null;
+}
+export interface RequestsUsage {
+  /**
+   * `reconciled`: a entrada de `items` por modelo bate com `byModel`; `residual`: a diferença
+   * (chamadas auxiliares do CLI, ou negativa se a leitura divergir) fica em `residual`;
+   * `unreconciled`: sem `result` (timeout), não há com o que comparar nem saída medida.
+   */
+  status: 'reconciled' | 'residual' | 'unreconciled';
+  items: RequestUsage[];
+  residual: Record<string, InputParts>;
+}
 export interface Usage {
   inputTokens: Measured<number>;
   cachedInputTokens: Measured<number>;
   outputTokens: Measured<number>;
   cost: Measured<{ amount: number; currency: string }>;
+  /** Escrita de cache, contida em `inputTokens` como `cachedInputTokens`. */
+  cacheWriteInputTokens?: Measured<number>;
+  byModel?: Record<string, ModelUsage>;
+  requests?: RequestsUsage;
 }
 export const emptyUsage = (): Usage => ({
   inputTokens: unavailable(),
@@ -252,6 +288,8 @@ export interface AdapterResult {
   /** Origem da credencial declarada pelo CLI (Claude: `apiKeySource` do `system/init`). */
   authSource?: Measured<string>;
   usage: Usage;
+  /** Turnos do laço do agente (Claude: `num_turns` do `result`). */
+  numTurns?: Measured<number>;
   durationMs: number;
   evidence: string[];
   diagnostic: string | null;

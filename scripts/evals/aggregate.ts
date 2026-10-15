@@ -1,5 +1,6 @@
 import { lstat, mkdir, realpath, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import { match, P } from 'ts-pattern';
 import { z } from 'zod';
 import { stableStringify } from '@agentic-ddd/compiler';
 import {
@@ -18,6 +19,13 @@ import { readPrivateBytes } from './private-files';
 import { parseImplementationReply, verdictOf } from './judge';
 import { finalVerificationState } from './final-verification';
 import { TASK_ITEMS } from './audit';
+import {
+  deriveCost,
+  loadPricing,
+  reportedCost,
+  type DerivedCost,
+  type Pricing,
+} from './pricing';
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const file = z.strictObject({
@@ -31,13 +39,16 @@ export const campaignSchema = z
   .strictObject({
     schemaVersion: z.literal(1),
     id: z.string().min(1),
+    /** Repetições planejadas por configuração; ausente = 3 (índices do `cycle-20`). */
+    repetitionsPerConfiguration: z.number().int().min(2).max(10).optional(),
     runs: z
       .array(
         z.strictObject({
           id: z.string().min(1),
           configuration: z.string().min(1),
-          repetition: z.number().int().min(1).max(3),
-          plannedCases: z.number().int().positive(),
+          repetition: z.number().int().min(1),
+          // Campanha só de implementação: nenhum caso de skill planejado.
+          plannedCases: z.number().int().nonnegative(),
           manifest: file,
           result: z.discriminatedUnion('status', [
             z.strictObject({ status: z.literal('executed'), report: file }),
@@ -48,7 +59,7 @@ export const campaignSchema = z
           ]),
         }),
       )
-      .min(3),
+      .min(1),
   })
   .superRefine((c, ctx) => {
     const ids = new Set<string>(),
@@ -63,12 +74,20 @@ export const campaignSchema = z
       ids.add(r.id);
       slots.add(slot);
     }
+    const repetitions = c.repetitionsPerConfiguration ?? 3;
+    if (c.runs.some((r) => r.repetition > repetitions))
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Repetition outside repetitionsPerConfiguration',
+      });
     for (const config of new Set(c.runs.map((r) => r.configuration)))
-      if (c.runs.filter((r) => r.configuration === config).length !== 3)
+      if (
+        c.runs.filter((r) => r.configuration === config).length !== repetitions
+      )
         ctx.addIssue({
           code: 'custom',
           message:
-            'Exactly three planned repetitions per configuration required',
+            'Planned repetitions per configuration must equal repetitionsPerConfiguration',
         });
   });
 type Slot = z.infer<typeof campaignSchema>['runs'][number];
@@ -218,6 +237,23 @@ function validateRows(report: EvalReport, slot: Slot) {
     }
   }
 }
+type Verification = NonNullable<ItemAttempt['verification']>;
+const green = (t: Verification['executorTests']) =>
+  !!t &&
+  t.exitCode === 0 &&
+  !t.collectionError &&
+  !t.emptySuite &&
+  t.cases.length > 0 &&
+  t.cases.every((c) => c.status === 'passed');
+/** `verify-item` do item com os gates I1–I5 aprovados. */
+const itemGatesGreen = (attempt: ItemAttempt, v: Verification) =>
+  v.itemReport?.item === attempt.handoff.item &&
+  v.itemReport.status === 'done' &&
+  v.itemReport.gates
+    .map((g) => g.id)
+    .sort()
+    .join() === 'I1,I2,I3,I4,I5' &&
+  v.itemReport.gates.every((g) => g.status === 'passed');
 function accepted(attempt: ItemAttempt | undefined) {
   if (!attempt) return false;
   let reply;
@@ -227,13 +263,6 @@ function accepted(attempt: ItemAttempt | undefined) {
     return false;
   }
   const v = attempt.verification;
-  const green = (t: NonNullable<typeof v>['executorTests']) =>
-    !!t &&
-    t.exitCode === 0 &&
-    !t.collectionError &&
-    !t.emptySuite &&
-    t.cases.length > 0 &&
-    t.cases.every((c) => c.status === 'passed');
   return (
     attempt.execution.transport === 'finished' &&
     attempt.execution.exitCode === 0 &&
@@ -242,13 +271,7 @@ function accepted(attempt: ItemAttempt | undefined) {
     attempt.audit.findings.length === 0 &&
     !!v &&
     v.findings.length === 0 &&
-    v.itemReport?.item === attempt.handoff.item &&
-    v.itemReport.status === 'done' &&
-    v.itemReport.gates
-      .map((g) => g.id)
-      .sort()
-      .join() === 'I1,I2,I3,I4,I5' &&
-    v.itemReport.gates.every((g) => g.status === 'passed') &&
+    itemGatesGreen(attempt, v) &&
     green(v.executorTests) &&
     green(v.referenceTests) &&
     attempt.handoff.criteria.every((c) =>
@@ -316,7 +339,251 @@ function sumUsage(usage: Usage[], complete: boolean): Usage {
         : unavailable('incomplete_or_incompatible_costs'),
   };
 }
-function summarize(executed: Executed[], planned: Slot[]) {
+/**
+ * Falso verde (`relatorio.md:224`, "gates verdes mas oráculo privado reprova"): gates I1–I5 e
+ * testes do executor verdes, testes de referência reprovados. `null`: sem `referenceTests`, a
+ * tentativa não entra na métrica (indisponível).
+ */
+function falseGreen(attempt: ItemAttempt): boolean | null {
+  const v = attempt.verification;
+  if (
+    attempt.execution.transport !== 'finished' ||
+    attempt.execution.exitCode !== 0 ||
+    !v ||
+    !itemGatesGreen(attempt, v) ||
+    !green(v.executorTests)
+  )
+    return false;
+  const reference = v.referenceTests;
+  if (!reference) return null;
+  // Oráculo que não produziu evidência válida (coleta/JUnit inválido, suíte vazia) não rejeitou nada.
+  if (
+    reference.collectionError ||
+    reference.emptySuite ||
+    !reference.cases.length
+  )
+    return null;
+  return !green(reference);
+}
+/**
+ * Percentil nearest-rank: o elemento de posição ⌈p·n⌉ da amostra ordenada. A mediana com n par
+ * é a metade inferior, sem média; a regra de leitura do pré-registro depende desta definição.
+ */
+export function nearestRank(values: readonly number[], p: number) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.max(1, Math.ceil(p * sorted.length)) - 1]!;
+}
+/** `n` execuções entram na amostra; `excluded` ficaram de fora por falta de medição (sem viés oculto). */
+const spread = (values: readonly number[], runs = values.length) => ({
+  median: nearestRank(values, 0.5),
+  p90: nearestRank(values, 0.9),
+  n: values.length,
+  excluded: runs - values.length,
+});
+const measuredValue = (value: Measured<number> | undefined) =>
+  match(value)
+    .with({ status: 'available' }, (m) => m.value)
+    .with({ status: 'unavailable' }, P.nullish, () => null)
+    .exhaustive();
+const NO_COST: DerivedCost = {
+  status: 'available',
+  expensive: 0,
+  cheap: 0,
+  lowerBound: false,
+};
+type ModelTokens = Record<
+  string,
+  {
+    uncachedInputTokens: number;
+    cacheWriteInputTokens: number;
+    cacheReadInputTokens: number;
+    outputTokens: number;
+  }
+>;
+/** Soma de tokens por modelo; sem `byModel` em alguma parcela (ou sem parcelas), `null`: nunca estimada. */
+const sumByModel = (parts: readonly (ModelTokens | undefined)[]) =>
+  parts.length && parts.every((p) => p !== undefined)
+    ? parts.reduce<ModelTokens>((total, part) => {
+        for (const [model, tokens] of Object.entries(part!)) {
+          const sum = (total[model] ??= {
+            uncachedInputTokens: 0,
+            cacheWriteInputTokens: 0,
+            cacheReadInputTokens: 0,
+            outputTokens: 0,
+          });
+          sum.uncachedInputTokens += tokens.uncachedInputTokens;
+          sum.cacheWriteInputTokens += tokens.cacheWriteInputTokens;
+          sum.cacheReadInputTokens += tokens.cacheReadInputTokens;
+          sum.outputTokens += tokens.outputTokens;
+        }
+        return total;
+      }, {})
+    : null;
+/** Soma de custos derivados; um indisponível torna a soma indisponível (nunca estimada). */
+const addCost = (total: DerivedCost, cost: DerivedCost): DerivedCost =>
+  match([total, cost] as const)
+    .with([{ status: 'unavailable' }, P._], ([t]) => t)
+    .with([P._, { status: 'unavailable' }], ([, c]) => c)
+    .with(
+      [{ status: 'available' }, { status: 'available' }],
+      ([t, c]): DerivedCost => ({
+        status: 'available',
+        expensive: t.expensive + c.expensive,
+        cheap: t.cheap + c.cheap,
+        lowerBound: t.lowerBound || c.lowerBound,
+      }),
+    )
+    .exhaustive();
+const sumCost = (costs: readonly DerivedCost[]) =>
+  costs.reduce(addCost, NO_COST);
+const costOf = (usage: readonly Usage[], pricing: Pricing) =>
+  sumCost(usage.map((u) => deriveCost(u, pricing)));
+const priced = (cost: DerivedCost) =>
+  match(cost)
+    .with({ status: 'available' }, (c) => c)
+    .with({ status: 'unavailable' }, () => null)
+    .exhaustive();
+/** Métricas de uma execução, entrada da regra de leitura do pré-registro (PR-3). */
+function runMetrics({ slot, report }: Executed, pricing: Pricing) {
+  const b = report.benchmarks.find(
+    (b) => b.configuration === slot.configuration,
+  )!;
+  const attempts = b.items.flatMap((i) => i.attempts);
+  const review = b.review?.execution ?? null;
+  const executions = [
+    ...report.cases
+      .filter((c) => c.configuration === slot.configuration)
+      .flatMap((c) => (c.execution ? [c.execution] : [])),
+    ...attempts.map((a) => a.execution),
+  ];
+  const withoutReview = costOf(
+    executions.map((e) => e.usage),
+    pricing,
+  );
+  // Só o benchmark: casos de skill não entram no custo por item aceito.
+  const benchmarkCost = costOf(
+    attempts.map((a) => a.execution.usage),
+    pricing,
+  );
+  const reviewCost = costOf(review ? [review.usage] : [], pricing);
+  const agents = [
+    ...attempts.map((a) => a.execution),
+    ...(review ? [review] : []),
+  ];
+  const turns = agents.map((e) => measuredValue(e.numTurns));
+  const reported = [...executions, ...(review ? [review] : [])].map((e) =>
+    reportedCost(e.usage),
+  );
+  const escalationsOf = (attempts: ItemAttempt[]) =>
+    attempts.filter(
+      (a, n) => n > 0 && (a.tier ?? 0) > (attempts[n - 1]!.tier ?? 0),
+    ).length;
+  const finals = b.items.flatMap((i) => i.attempts.slice(-1));
+  return {
+    id: slot.id,
+    repetition: slot.repetition,
+    status: report.status,
+    items: b.items.map((i) => ({
+      item: i.item,
+      state: i.state,
+      attempts: i.attempts.length,
+      models: i.attempts.map((a) => a.model ?? null),
+    })),
+    review: b.review
+      ? {
+          outcome: b.review.outcome,
+          dispatched: b.review.dispatched,
+          transport: b.review.execution?.transport ?? null,
+        }
+      : null,
+    finalItems: b.items.filter((i) => accepted(i.attempts.at(-1))).length,
+    escalations: b.items.reduce((n, i) => n + escalationsOf(i.attempts), 0),
+    escalatedItems: b.items.filter((i) => escalationsOf(i.attempts) > 0).length,
+    falseGreen: {
+      attempts: attempts.filter((a) => falseGreen(a) === true).length,
+      finalItems: finals.filter((a) => falseGreen(a) === true).length,
+      unavailableAttempts: attempts.filter((a) => falseGreen(a) === null)
+        .length,
+    },
+    boundaryViolations: attempts.filter((a) => a.audit?.ok === false).length,
+    turns:
+      agents.length && turns.every((t) => t !== null)
+        ? available(
+            turns.reduce((n, t) => n + t!, 0),
+            'num_turns_sum',
+          )
+        : unavailable<number>('incomplete_turns'),
+    agentDurationMs: agents.reduce((n, e) => n + e.durationMs, 0),
+    tokensByModel: sumByModel(
+      [...executions, ...(review ? [review] : [])].map((e) => e.usage.byModel),
+    ),
+    // Direto do uso: continua verdadeiro mesmo quando outra execução torna o custo indisponível.
+    lowerBound: [...executions, ...(review ? [review] : [])].some(
+      (e) => e.usage.requests?.status === 'unreconciled',
+    ),
+    cost: {
+      total: addCost(withoutReview, reviewCost),
+      withoutReview,
+      benchmark: benchmarkCost,
+      review: reviewCost,
+      reportedUSD: reported.every((c) => c !== null)
+        ? reported.reduce((n, c) => n + c!, 0)
+        : null,
+    },
+  };
+}
+function costSummary(
+  runs: ReturnType<typeof runMetrics>[],
+  finalItems: number,
+) {
+  const total = sumCost(runs.map((r) => r.cost.total));
+  // Custo por item aceito: só o benchmark, sem casos de skill que não geram itens.
+  const benchmark = sumCost(runs.map((r) => r.cost.benchmark));
+  const review = sumCost(runs.map((r) => r.cost.review));
+  // Sem nenhuma execução não há medição: nunca publicar zero como se fosse custo.
+  const measured = runs.length > 0;
+  const perItem = (cost: DerivedCost) =>
+    match([priced(cost), finalItems > 0] as const)
+      .with([P.nonNullable, true], ([c]) => ({
+        expensive: c.expensive / finalItems,
+        cheap: c.cheap / finalItems,
+      }))
+      .otherwise(() => null);
+  const perRun = runs.map((r) => priced(r.cost.total));
+  return {
+    label: 'derived' as const,
+    available: runs.length > 0 && total.status === 'available',
+    reason: match(total)
+      .with({ status: 'unavailable' }, (c) => c.reason)
+      .with({ status: 'available' }, () => (runs.length ? null : 'no_runs'))
+      .exhaustive(),
+    lowerBound: runs.some(
+      (r) => r.lowerBound || priced(r.cost.total)?.lowerBound === true,
+    ),
+    total: measured ? priced(total) : null,
+    review: measured ? priced(review) : null,
+    perAcceptedItem: {
+      withReview: measured ? perItem(addCost(benchmark, review)) : null,
+      withoutReview: measured ? perItem(benchmark) : null,
+    },
+    perRun: {
+      expensive: spread(
+        perRun.flatMap((c) => (c ? [c.expensive] : [])),
+        runs.length,
+      ),
+      cheap: spread(
+        perRun.flatMap((c) => (c ? [c.cheap] : [])),
+        runs.length,
+      ),
+    },
+    reportedUSD:
+      measured && runs.every((r) => r.cost.reportedUSD !== null)
+        ? runs.reduce((n, r) => n + r.cost.reportedUSD!, 0)
+        : null,
+  };
+}
+function summarize(executed: Executed[], planned: Slot[], pricing: Pricing) {
   let correctCases = 0,
     evaluableCases = 0,
     initialItems = 0,
@@ -408,6 +675,7 @@ function summarize(executed: Executed[], planned: Slot[]) {
       certifiedRuns++;
   }
   const plannedCases = planned.reduce((n, r) => n + r.plannedCases, 0);
+  const runs = executed.map((r) => runMetrics(r, pricing));
   return {
     plannedRuns: planned.length,
     executedRuns: executed.length,
@@ -433,6 +701,32 @@ function summarize(executed: Executed[], planned: Slot[]) {
     usage: usage.length
       ? sumUsage(usage, executed.length === planned.length && notRunCases === 0)
       : emptyUsage(),
+    escalations: runs.reduce((n, r) => n + r.escalations, 0),
+    escalatedItems: runs.reduce((n, r) => n + r.escalatedItems, 0),
+    falseGreen: {
+      attempts: runs.reduce((n, r) => n + r.falseGreen.attempts, 0),
+      finalItems: runs.reduce((n, r) => n + r.falseGreen.finalItems, 0),
+      unavailableAttempts: runs.reduce(
+        (n, r) => n + r.falseGreen.unavailableAttempts,
+        0,
+      ),
+    },
+    boundaryViolations: runs.reduce((n, r) => n + r.boundaryViolations, 0),
+    tokensByModel: sumByModel(runs.map((r) => r.tokensByModel ?? undefined)),
+    cost: costSummary(runs, finalItems),
+    distribution: {
+      finalItems: spread(runs.map((r) => r.finalItems)),
+      escalations: spread(runs.map((r) => r.escalations)),
+      agentDurationMs: spread(runs.map((r) => r.agentDurationMs)),
+      turns: spread(
+        runs.flatMap((r) => {
+          const value = measuredValue(r.turns);
+          return value === null ? [] : [value];
+        }),
+        runs.length,
+      ),
+    },
+    runMetrics: runs,
   };
 }
 function grouping({ slot, report }: Executed) {
@@ -501,6 +795,7 @@ function grouping({ slot, report }: Executed) {
 export async function aggregateCampaign(path: string) {
   const indexBytes = await bytes(resolve(path));
   const index = campaignSchema.parse(JSON.parse(indexBytes.toString()));
+  const pricing = await loadPricing();
   const root = dirname(resolve(path));
   const executed: Executed[] = [];
   const reportIds = new Set<string>();
@@ -547,6 +842,7 @@ export async function aggregateCampaign(path: string) {
         ...summarize(
           executed.filter((r) => r.slot.configuration === configuration),
           index.runs.filter((r) => r.configuration === configuration),
+          pricing,
         ),
         notRun: index.runs
           .filter(
@@ -568,6 +864,7 @@ export async function aggregateCampaign(path: string) {
         ...summarize(
           g.runs,
           g.runs.map((r) => r.slot),
+          pricing,
         ),
         runs: g.runs.map((r) => ({
           id: r.slot.id,
