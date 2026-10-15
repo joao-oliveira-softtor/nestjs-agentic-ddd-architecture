@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import {
   claudeArgv,
   claudeToolFlags,
+  claudeRequests,
   claudeUsage,
   parseClaudeTranscript,
   reconcileRequests,
@@ -683,4 +684,47 @@ test('requests: timeout com stdout truncado mede a entrada já recebida, sem rec
   expect(parsed.usage.byModel).toBeUndefined();
   expect(parsed.usage.outputTokens.status).toBe('unavailable');
   expect(parsed.numTurns).toBeUndefined();
+});
+
+const assistantEvent = (id: string, input: number, extra: object = {}) =>
+  JSON.stringify({
+    type: 'assistant',
+    message: {
+      id,
+      model: 'claude-haiku-5-5',
+      usage: {
+        input_tokens: input,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        ...extra,
+      },
+    },
+  });
+
+test('requests: com o mesmo id vale o último evento, mesmo com entrada diferente', () => {
+  const items = claudeRequests(
+    [
+      assistantEvent('a', 10),
+      assistantEvent('a', 20),
+      assistantEvent('b', 5),
+    ].join('\n'),
+  );
+  expect(items.map((i) => i.uncachedInputTokens)).toEqual([20, 5]);
+});
+
+test('requests: escrita de 1 h maior que a escrita total é TTL desconhecido, nunca preço negativo', () => {
+  const [item] = claudeRequests(
+    assistantEvent('a', 0, {
+      cache_creation_input_tokens: 1000,
+      cache_creation: { ephemeral_1h_input_tokens: 2000 },
+    }),
+  );
+  expect(item!.cacheWrite1hInputTokens).toBeNull();
+  const [ok] = claudeRequests(
+    assistantEvent('b', 0, {
+      cache_creation_input_tokens: 1000,
+      cache_creation: { ephemeral_1h_input_tokens: 400 },
+    }),
+  );
+  expect(ok!.cacheWrite1hInputTokens).toBe(400);
 });

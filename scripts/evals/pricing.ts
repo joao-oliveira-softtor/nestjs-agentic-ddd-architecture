@@ -27,6 +27,8 @@ export const pricingSchema = z.strictObject({
       tiers: z
         .array(tierSchema)
         .min(1)
+        // O custo usa só a primeira e a última faixa (resíduo e saída); intermediárias seriam ignoradas.
+        .max(2)
         .refine(
           (tiers) =>
             tiers.every((tier, i) =>
@@ -73,15 +75,17 @@ const promptTokens = (parts: InputParts) =>
 const tierFor = (tiers: readonly Tier[], size: number) =>
   tiers.find((t) => t.maxPromptTokens === null || size <= t.maxPromptTokens)!;
 /**
- * Escrita de cache sem TTL informado (resíduo, `byModel` sem requisições) paga o preço de 1 h:
- * conservador, e foi o TTL de toda a escrita observada no smoke de 2026-10-14.
+ * Escrita de cache sem TTL informado (resíduo, `byModel` sem requisições) paga o preço de 1 h
+ * no teto (`expensive`), conservador, e foi o TTL de toda a escrita observada no smoke de
+ * 2026-10-14; no piso (`floor`, o `cheap`) paga o de 5 min, para o piso ser de fato um piso.
  */
 const inputCost = (
   tier: Tier,
   parts: InputParts,
   longTtl: number | null = null,
+  floor = false,
 ) => {
-  const long = longTtl ?? parts.cacheWriteInputTokens;
+  const long = longTtl ?? (floor ? 0 : parts.cacheWriteInputTokens);
   return (
     (parts.uncachedInputTokens * tier.input +
       (parts.cacheWriteInputTokens - long) * tier.cacheWrite5m +
@@ -99,7 +103,10 @@ const inputCost = (
  */
 export function deriveCost(usage: Usage, pricing: Pricing): DerivedCost {
   const { byModel, requests } = usage;
-  const items: RequestUsage[] = requests?.items ?? [];
+  // Evento sem entrada (ex.: mensagem sintética) não custa nada nem exige preço do seu modelo.
+  const items: RequestUsage[] = (requests?.items ?? []).filter(
+    (i) => promptTokens(i) > 0,
+  );
   if (!byModel && !items.length)
     return { status: 'unavailable', reason: 'no_usage_breakdown' };
   const models = new Set([
@@ -113,16 +120,19 @@ export function deriveCost(usage: Usage, pricing: Pricing): DerivedCost {
     cheap = 0;
   for (const item of items) {
     const tiers = pricing.models[item.model]!.tiers;
-    const cost = inputCost(
-      tierFor(tiers, promptTokens(item)),
-      item,
-      item.cacheWrite1hInputTokens,
-    );
-    expensive += cost;
-    cheap += cost;
+    const tier = tierFor(tiers, promptTokens(item));
+    expensive += inputCost(tier, item, item.cacheWrite1hInputTokens);
+    cheap += inputCost(tier, item, item.cacheWrite1hInputTokens, true);
   }
   if (!byModel)
     return { status: 'available', expensive, cheap, lowerBound: true };
+  // A saída vem do `modelUsage`: requisição de um modelo que ele omite deixaria a saída de fora.
+  for (const item of items)
+    if (!byModel[item.model])
+      return {
+        status: 'unavailable',
+        reason: `model_not_in_model_usage:${item.model}`,
+      };
   for (const [model, measured] of Object.entries(byModel)) {
     const tiers = pricing.models[model]!.tiers;
     const [first, last] = [tiers[0]!, tiers.at(-1)!];
@@ -152,7 +162,7 @@ export function deriveCost(usage: Usage, pricing: Pricing): DerivedCost {
         reason: `tiered_model_without_requests:${model}`,
       };
     expensive += inputCost(uncertain ? last : first, uncovered);
-    cheap += inputCost(first, uncovered);
+    cheap += inputCost(first, uncovered, null, true);
     const crossed = items.some(
       (i) => i.model === model && promptTokens(i) > threshold,
     );
@@ -161,7 +171,12 @@ export function deriveCost(usage: Usage, pricing: Pricing): DerivedCost {
       MILLION;
     cheap += (measured.outputTokens * first.output) / MILLION;
   }
-  return { status: 'available', expensive, cheap, lowerBound: false };
+  return {
+    status: 'available',
+    expensive,
+    cheap,
+    lowerBound: requests?.status === 'unreconciled',
+  };
 }
 
 /** Soma do custo de lista do CLI (`costUSD`), para a checagem cruzada; `null` se faltar. */

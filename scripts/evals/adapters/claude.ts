@@ -195,7 +195,9 @@ export function claudeRequests(stdout: string): RequestUsage[] {
       uncachedInputTokens: uncached!,
       cacheWriteInputTokens: write!,
       cacheReadInputTokens: read!,
-      cacheWrite1hInputTokens: isCount(longTtl) ? longTtl : null,
+      // 1 h maior que a escrita total é incoerente: TTL desconhecido, não preço negativo.
+      cacheWrite1hInputTokens:
+        isCount(longTtl) && longTtl <= write! ? longTtl : null,
     });
   }
   return [...byId.values()];

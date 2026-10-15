@@ -206,3 +206,78 @@ test('indisponível: sem detalhamento, modelo sem preço, faixas sem requisiçõ
     ),
   ).toBe(`requests_exceed_model_usage:${HAIKU}`);
 });
+
+test('modelo só nas requisições, ausente do modelUsage, deixa o custo indisponível', () => {
+  expect(
+    reasonOf(
+      usage({
+        byModel: { [SONNET]: model(10, 5) },
+        requests: {
+          status: 'residual',
+          items: [request(HAIKU, 1000)],
+          residual: { [HAIKU]: { ...zero, cacheReadInputTokens: -1000 } },
+        },
+      }),
+    ),
+  ).toBe(`model_not_in_model_usage:${HAIKU}`);
+});
+
+test('TTL desconhecido: o piso paga 5 min e o teto paga 1 h', () => {
+  const derived = derive(
+    usage({
+      requests: {
+        status: 'unreconciled',
+        items: [
+          request(SONNET, 0, {
+            cacheWriteInputTokens: 1_000_000,
+            cacheWrite1hInputTokens: null,
+          }),
+        ],
+        residual: {},
+      },
+    }),
+  );
+  expect(derived.lowerBound).toBe(true);
+  expect(derived.cheap).toBeCloseTo(2.5, 12);
+  expect(derived.expensive).toBeCloseTo(4, 12);
+});
+
+test('evento sem uso (mensagem sintética) não exige preço nem derruba o custo', () => {
+  const derived = derive(
+    usage({
+      byModel: { [SONNET]: model(1_000_000, 0) },
+      requests: {
+        status: 'reconciled',
+        items: [request('<synthetic>', 0), request(SONNET, 1_000_000)],
+        residual: {},
+      },
+    }),
+  );
+  expect(derived.expensive).toBeCloseTo(0.1, 12);
+});
+
+test('requisições sem reconciliação são limite inferior mesmo com modelUsage presente', () => {
+  expect(
+    derive(
+      usage({
+        byModel: { [SONNET]: model(10, 1) },
+        requests: {
+          status: 'unreconciled',
+          items: [request(SONNET, 10)],
+          residual: {},
+        },
+      }),
+    ).lowerBound,
+  ).toBe(true);
+});
+
+test('o schema de preços aceita no máximo duas faixas', () => {
+  const three = structuredClone(pricing);
+  const [first] = three.models[HAIKU]!.tiers;
+  three.models[HAIKU]!.tiers = [
+    { ...first!, maxPromptTokens: 50_000 },
+    { ...first!, maxPromptTokens: 100_000 },
+    { ...first!, maxPromptTokens: null },
+  ];
+  expect(pricingSchema.safeParse(three).success).toBe(false);
+});
