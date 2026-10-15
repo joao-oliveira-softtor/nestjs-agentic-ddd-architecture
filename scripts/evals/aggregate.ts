@@ -383,6 +383,34 @@ const NO_COST: DerivedCost = {
   cheap: 0,
   lowerBound: false,
 };
+type ModelTokens = Record<
+  string,
+  {
+    uncachedInputTokens: number;
+    cacheWriteInputTokens: number;
+    cacheReadInputTokens: number;
+    outputTokens: number;
+  }
+>;
+/** Soma de tokens por modelo; sem `byModel` em alguma parcela (ou sem parcelas), `null`: nunca estimada. */
+const sumByModel = (parts: readonly (ModelTokens | undefined)[]) =>
+  parts.length && parts.every((p) => p !== undefined)
+    ? parts.reduce<ModelTokens>((total, part) => {
+        for (const [model, tokens] of Object.entries(part!)) {
+          const sum = (total[model] ??= {
+            uncachedInputTokens: 0,
+            cacheWriteInputTokens: 0,
+            cacheReadInputTokens: 0,
+            outputTokens: 0,
+          });
+          sum.uncachedInputTokens += tokens.uncachedInputTokens;
+          sum.cacheWriteInputTokens += tokens.cacheWriteInputTokens;
+          sum.cacheReadInputTokens += tokens.cacheReadInputTokens;
+          sum.outputTokens += tokens.outputTokens;
+        }
+        return total;
+      }, {})
+    : null;
 /** Soma de custos derivados; um indisponível torna a soma indisponível (nunca estimada). */
 const addCost = (total: DerivedCost, cost: DerivedCost): DerivedCost =>
   match([total, cost] as const)
@@ -478,6 +506,9 @@ function runMetrics({ slot, report }: Executed, pricing: Pricing) {
           )
         : unavailable<number>('incomplete_turns'),
     agentDurationMs: agents.reduce((n, e) => n + e.durationMs, 0),
+    tokensByModel: sumByModel(
+      [...executions, ...(review ? [review] : [])].map((e) => e.usage.byModel),
+    ),
     cost: {
       total: addCost(withoutReview, reviewCost),
       withoutReview,
@@ -666,6 +697,7 @@ function summarize(executed: Executed[], planned: Slot[], pricing: Pricing) {
       ),
     },
     boundaryViolations: runs.reduce((n, r) => n + r.boundaryViolations, 0),
+    tokensByModel: sumByModel(runs.map((r) => r.tokensByModel ?? undefined)),
     cost: costSummary(runs, finalItems),
     distribution: {
       finalItems: spread(runs.map((r) => r.finalItems)),

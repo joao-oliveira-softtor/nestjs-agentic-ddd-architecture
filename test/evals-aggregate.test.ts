@@ -778,6 +778,21 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
   expect(c.cost.review!.expensive).toBeCloseTo(4, 9);
   expect(c.cost.perAcceptedItem.withReview!.expensive).toBeCloseTo(7.3, 9);
   expect(c.cost.perAcceptedItem.withoutReview!.cheap).toBeCloseTo(3.3, 9);
+  // Tokens por modelo: 4 usos do Sonnet (3 tentativas + 1 caso) e a entrada do Opus na revisão.
+  expect(c.tokensByModel).toEqual({
+    [SONNET]: {
+      uncachedInputTokens: 0,
+      cacheWriteInputTokens: 0,
+      cacheReadInputTokens: 4_000_000,
+      outputTokens: 400_000,
+    },
+    [OPUS]: {
+      uncachedInputTokens: 1_000_000,
+      cacheWriteInputTokens: 0,
+      cacheReadInputTokens: 0,
+      outputTokens: 0,
+    },
+  });
   expect(c.cost.perRun.expensive.median).toBe(0);
   expect(c.cost.perRun.expensive.p90).toBeCloseTo(8.4, 9);
   expect(c.cost.perRun.expensive).toMatchObject({ n: 3, excluded: 0 });
@@ -857,6 +872,7 @@ const NEW_AGGREGATE_KEYS = [
   'escalations',
   'falseGreen',
   'runMetrics',
+  'tokensByModel',
 ];
 test('cycle-20: o agregado só ganha chaves novas e o markdown não muda', async () => {
   const report = await aggregateCampaign(
