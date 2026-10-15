@@ -155,7 +155,11 @@ export async function prepareTasksBaseline(
     await disposeWorkspace(workspace);
   }
 }
-/** Limite provisório do brief do revisor (plano da #36); o PR-3 fixa o valor do piloto. */
+/**
+ * Limite do brief do revisor no piloto cycle-21 (pré-registro): ao menos 3× o maior brief do
+ * ensaio e da estimativa com os patches aceitos do cycle-20 (≈13k tokens), piso de 50000.
+ * `test/evals-pilot-rehearsal.test.ts` falha se o brief crescer além disso.
+ */
 export const REVIEW_MAX_TOKENS = 50_000;
 
 /** Degrau inicial do item: o da camada dele em `routing.byLayer`. */

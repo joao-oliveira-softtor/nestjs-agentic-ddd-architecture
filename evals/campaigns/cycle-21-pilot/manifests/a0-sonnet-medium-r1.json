@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "sourceRef": "c673f9c24836e413fc2c89b2215090df1c3c05f6",
+  "skillDatasets": [],
+  "benchmark": "tasks",
+  "configurations": [
+    {
+      "id": "a0-sonnet-medium",
+      "adapter": "claude-cli",
+      "authentication": "oauth-token",
+      "promptMode": "brief",
+      "model": "claude-sonnet-5-5",
+      "parameters": {
+        "reasoningEffort": "medium"
+      }
+    }
+  ],
+  "budget": {
+    "maxInvocations": 10,
+    "skillTimeoutMs": 120000,
+    "implementationTimeoutMs": 600000,
+    "totalTimeoutMs": 9600000,
+    "maxCorrectionsPerItem": 1,
+    "repetitions": 1,
+    "concurrency": 1
+  }
+}

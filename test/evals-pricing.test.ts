@@ -222,7 +222,7 @@ test('modelo só nas requisições, ausente do modelUsage, deixa o custo indispo
   ).toBe(`model_not_in_model_usage:${HAIKU}`);
 });
 
-test('TTL desconhecido: o piso paga 5 min e o teto paga 1 h', () => {
+test('TTL desconhecido: cheap e expensive pagam 1 h (a incerteza de TTL não é de faixa) e o piso paga 5 min', () => {
   const derived = derive(
     usage({
       requests: {
@@ -238,8 +238,11 @@ test('TTL desconhecido: o piso paga 5 min e o teto paga 1 h', () => {
     }),
   );
   expect(derived.lowerBound).toBe(true);
-  expect(derived.cheap).toBeCloseTo(2.5, 12);
+  // Modelo de faixa única: as duas faixas coincidem e o TTL desconhecido fica em 1 h.
+  expect(derived.cheap).toBeCloseTo(4, 12);
   expect(derived.expensive).toBeCloseTo(4, 12);
+  // O piso absoluto (faixa barata e 5 min) é só descritivo e não entra na regra do piloto.
+  expect(derived.floor).toBeCloseTo(2.5, 12);
 });
 
 test('evento sem uso (mensagem sintética) não exige preço nem derruba o custo', () => {

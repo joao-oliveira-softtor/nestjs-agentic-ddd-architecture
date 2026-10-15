@@ -390,6 +390,7 @@ const NO_COST: DerivedCost = {
   status: 'available',
   expensive: 0,
   cheap: 0,
+  floor: 0,
   lowerBound: false,
 };
 type ModelTokens = Record<
@@ -431,6 +432,7 @@ const addCost = (total: DerivedCost, cost: DerivedCost): DerivedCost =>
         status: 'available',
         expensive: t.expensive + c.expensive,
         cheap: t.cheap + c.cheap,
+        floor: t.floor + c.floor,
         lowerBound: t.lowerBound || c.lowerBound,
       }),
     )
