@@ -354,7 +354,16 @@ function falseGreen(attempt: ItemAttempt): boolean | null {
     !green(v.executorTests)
   )
     return false;
-  return v.referenceTests ? !green(v.referenceTests) : null;
+  const reference = v.referenceTests;
+  if (!reference) return null;
+  // Oráculo que não produziu evidência válida (coleta/JUnit inválido, suíte vazia) não rejeitou nada.
+  if (
+    reference.collectionError ||
+    reference.emptySuite ||
+    !reference.cases.length
+  )
+    return null;
+  return !green(reference);
 }
 /**
  * Percentil nearest-rank: o elemento de posição ⌈p·n⌉ da amostra ordenada. A mediana com n par
@@ -509,6 +518,10 @@ function runMetrics({ slot, report }: Executed, pricing: Pricing) {
     tokensByModel: sumByModel(
       [...executions, ...(review ? [review] : [])].map((e) => e.usage.byModel),
     ),
+    // Direto do uso: continua verdadeiro mesmo quando outra execução torna o custo indisponível.
+    lowerBound: [...executions, ...(review ? [review] : [])].some(
+      (e) => e.usage.requests?.status === 'unreconciled',
+    ),
     cost: {
       total: addCost(withoutReview, reviewCost),
       withoutReview,
@@ -545,7 +558,9 @@ function costSummary(
       .with({ status: 'unavailable' }, (c) => c.reason)
       .with({ status: 'available' }, () => (runs.length ? null : 'no_runs'))
       .exhaustive(),
-    lowerBound: runs.some((r) => priced(r.cost.total)?.lowerBound === true),
+    lowerBound: runs.some(
+      (r) => r.lowerBound || priced(r.cost.total)?.lowerBound === true,
+    ),
     total: measured ? priced(total) : null,
     review: measured ? priced(review) : null,
     perAcceptedItem: {

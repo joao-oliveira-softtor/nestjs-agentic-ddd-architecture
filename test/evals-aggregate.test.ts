@@ -697,6 +697,12 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
     benchmark.items[0]!.state = 'accepted';
     const outside = attempt(1, 1, 0, HAIKU);
     outside.audit = { ...outside.audit!, ok: false };
+    // Oráculo sem evidência válida (JUnit inválido) não é rejeição: indisponível, nunca falso verde.
+    outside.verification!.referenceTests = {
+      ...outside.verification!.referenceTests!,
+      exitCode: 1,
+      collectionError: 'JUnit missing, invalid or incomplete',
+    };
     benchmark.items[1]!.attempts = [outside];
     benchmark.items[1]!.state = 'failed';
     const execution = structuredClone(template.execution);
@@ -750,7 +756,7 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
   expect(c).toMatchObject({
     escalations: 1,
     escalatedItems: 1,
-    falseGreen: { attempts: 1, finalItems: 0, unavailableAttempts: 0 },
+    falseGreen: { attempts: 1, finalItems: 0, unavailableAttempts: 1 },
     boundaryViolations: 1,
     finalItems: 1,
   });
@@ -813,9 +819,10 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
   const bounded = (await aggregateCampaign(f.path)).configurations[0]!.cost;
   expect(bounded.lowerBound).toBe(true);
   expect(bounded.total!.expensive).toBeCloseTo(3 * 1.1 + 0.1 + 4, 9);
-  // Um uso sem detalhamento torna o custo do braço indisponível, nunca estimado.
+  // Um uso sem detalhamento torna o custo do braço indisponível, nunca estimado, mas a
+  // evidência `unreconciled` de outra tentativa continua marcando o limite inferior.
   await mutate(f, (report) => {
-    report.benchmarks[0]!.items[1]!.attempts[0]!.execution.usage = emptyUsage();
+    report.benchmarks[0]!.items[0]!.attempts[0]!.execution.usage = emptyUsage();
   });
   expect(
     (await aggregateCampaign(f.path)).configurations[0]!.cost,
@@ -823,6 +830,7 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
     available: false,
     reason: 'no_usage_breakdown',
     total: null,
+    lowerBound: true,
   });
 });
 
