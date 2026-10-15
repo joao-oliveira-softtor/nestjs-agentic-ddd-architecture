@@ -365,9 +365,12 @@ export function nearestRank(values: readonly number[], p: number) {
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.max(1, Math.ceil(p * sorted.length)) - 1]!;
 }
-const spread = (values: readonly number[]) => ({
+/** `n` execuções entram na amostra; `excluded` ficaram de fora por falta de medição (sem viés oculto). */
+const spread = (values: readonly number[], runs = values.length) => ({
   median: nearestRank(values, 0.5),
   p90: nearestRank(values, 0.9),
+  n: values.length,
+  excluded: runs - values.length,
 });
 const measuredValue = (value: Measured<number> | undefined) =>
   match(value)
@@ -419,6 +422,11 @@ function runMetrics({ slot, report }: Executed, pricing: Pricing) {
   ];
   const withoutReview = costOf(
     executions.map((e) => e.usage),
+    pricing,
+  );
+  // Só o benchmark: casos de skill não entram no custo por item aceito.
+  const benchmarkCost = costOf(
+    attempts.map((a) => a.execution.usage),
     pricing,
   );
   const reviewCost = costOf(review ? [review.usage] : [], pricing);
@@ -473,6 +481,7 @@ function runMetrics({ slot, report }: Executed, pricing: Pricing) {
     cost: {
       total: addCost(withoutReview, reviewCost),
       withoutReview,
+      benchmark: benchmarkCost,
       review: reviewCost,
       reportedUSD: reported.every((c) => c !== null)
         ? reported.reduce((n, c) => n + c!, 0)
@@ -485,7 +494,11 @@ function costSummary(
   finalItems: number,
 ) {
   const total = sumCost(runs.map((r) => r.cost.total));
-  const withoutReview = sumCost(runs.map((r) => r.cost.withoutReview));
+  // Custo por item aceito: só o benchmark, sem casos de skill que não geram itens.
+  const benchmark = sumCost(runs.map((r) => r.cost.benchmark));
+  const review = sumCost(runs.map((r) => r.cost.review));
+  // Sem nenhuma execução não há medição: nunca publicar zero como se fosse custo.
+  const measured = runs.length > 0;
   const perItem = (cost: DerivedCost) =>
     match([priced(cost), finalItems > 0] as const)
       .with([P.nonNullable, true], ([c]) => ({
@@ -502,19 +515,26 @@ function costSummary(
       .with({ status: 'available' }, () => (runs.length ? null : 'no_runs'))
       .exhaustive(),
     lowerBound: runs.some((r) => priced(r.cost.total)?.lowerBound === true),
-    total: priced(total),
-    review: priced(sumCost(runs.map((r) => r.cost.review))),
+    total: measured ? priced(total) : null,
+    review: measured ? priced(review) : null,
     perAcceptedItem: {
-      withReview: perItem(total),
-      withoutReview: perItem(withoutReview),
+      withReview: measured ? perItem(addCost(benchmark, review)) : null,
+      withoutReview: measured ? perItem(benchmark) : null,
     },
     perRun: {
-      expensive: spread(perRun.flatMap((c) => (c ? [c.expensive] : []))),
-      cheap: spread(perRun.flatMap((c) => (c ? [c.cheap] : []))),
+      expensive: spread(
+        perRun.flatMap((c) => (c ? [c.expensive] : [])),
+        runs.length,
+      ),
+      cheap: spread(
+        perRun.flatMap((c) => (c ? [c.cheap] : [])),
+        runs.length,
+      ),
     },
-    reportedUSD: runs.every((r) => r.cost.reportedUSD !== null)
-      ? runs.reduce((n, r) => n + r.cost.reportedUSD!, 0)
-      : null,
+    reportedUSD:
+      measured && runs.every((r) => r.cost.reportedUSD !== null)
+        ? runs.reduce((n, r) => n + r.cost.reportedUSD!, 0)
+        : null,
   };
 }
 function summarize(executed: Executed[], planned: Slot[], pricing: Pricing) {
@@ -656,6 +676,7 @@ function summarize(executed: Executed[], planned: Slot[], pricing: Pricing) {
           const value = measuredValue(r.turns);
           return value === null ? [] : [value];
         }),
+        runs.length,
       ),
     },
     runMetrics: runs,

@@ -654,7 +654,10 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
     await mutate(
       f,
       (r) => {
-        for (const c of r.cases) c.execution!.usage = free();
+        // Um caso de skill com custo: não pode entrar no custo por item aceito do benchmark.
+        r.cases.forEach((c, i) => {
+          c.execution!.usage = repetition === 1 && i === 0 ? sonnet() : free();
+        });
       },
       repetition,
     );
@@ -771,14 +774,21 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
     lowerBound: false,
     reportedUSD: null,
   });
-  expect(c.cost.total!.expensive).toBeCloseTo(3 * 1.1 + 4, 9);
+  expect(c.cost.total!.expensive).toBeCloseTo(4 * 1.1 + 4, 9);
   expect(c.cost.review!.expensive).toBeCloseTo(4, 9);
   expect(c.cost.perAcceptedItem.withReview!.expensive).toBeCloseTo(7.3, 9);
   expect(c.cost.perAcceptedItem.withoutReview!.cheap).toBeCloseTo(3.3, 9);
   expect(c.cost.perRun.expensive.median).toBe(0);
-  expect(c.cost.perRun.expensive.p90).toBeCloseTo(7.3, 9);
-  // Turnos indisponíveis nas execuções sem tentativa não entram na distribuição.
-  expect(c.distribution.turns).toEqual({ median: 13, p90: 13 });
+  expect(c.cost.perRun.expensive.p90).toBeCloseTo(8.4, 9);
+  expect(c.cost.perRun.expensive).toMatchObject({ n: 3, excluded: 0 });
+  // Turnos indisponíveis nas execuções sem tentativa não entram na distribuição,
+  // e a amostra publica quantas execuções entraram e quantas ficaram de fora.
+  expect(c.distribution.turns).toEqual({
+    median: 13,
+    p90: 13,
+    n: 1,
+    excluded: 2,
+  });
   // Timeout com requisições e sem `byModel`: custo vira limite inferior.
   await mutate(f, (report) => {
     const usage = report.benchmarks[0]!.items[1]!.attempts[0]!.execution.usage;
@@ -787,7 +797,7 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
   });
   const bounded = (await aggregateCampaign(f.path)).configurations[0]!.cost;
   expect(bounded.lowerBound).toBe(true);
-  expect(bounded.total!.expensive).toBeCloseTo(2 * 1.1 + 0.1 + 4, 9);
+  expect(bounded.total!.expensive).toBeCloseTo(3 * 1.1 + 0.1 + 4, 9);
   // Um uso sem detalhamento torna o custo do braço indisponível, nunca estimado.
   await mutate(f, (report) => {
     report.benchmarks[0]!.items[1]!.attempts[0]!.execution.usage = emptyUsage();
@@ -798,6 +808,22 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
     available: false,
     reason: 'no_usage_breakdown',
     total: null,
+  });
+});
+
+test('configuração sem execuções não publica custo zero como se fosse medido', async () => {
+  const f = await campaign(0);
+  const cost = (await aggregateCampaign(f.path)).configurations[0]!.cost;
+  expect(cost).toMatchObject({
+    available: false,
+    reason: 'no_runs',
+    total: null,
+    review: null,
+    reportedUSD: null,
+  });
+  expect(cost.perAcceptedItem).toEqual({
+    withReview: null,
+    withoutReview: null,
   });
 });
 
