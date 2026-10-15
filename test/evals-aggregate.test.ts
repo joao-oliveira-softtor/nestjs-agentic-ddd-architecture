@@ -7,6 +7,7 @@ import {
   aggregateCampaign,
   main,
   nearestRank,
+  renderAggregate,
 } from '../scripts/evals/aggregate';
 import { sha256 } from '../scripts/evals/isolation';
 import { computeMetrics, writeReport } from '../scripts/evals/report';
@@ -615,6 +616,7 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
   // Sonnet: 1 MTok de leitura de cache (US$ 0,10) e 0,1 MTok de saída (US$ 1,00).
   const sonnet = (): Usage => ({
     ...emptyUsage(),
+    cacheWriteInputTokens: available(0, 'fixture'),
     byModel: {
       [SONNET]: {
         uncachedInputTokens: 0,
@@ -686,7 +688,9 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
       ...greenButWrong.verification!.referenceTests!,
       exitCode: 1,
     };
-    benchmark.items[0]!.attempts = [greenButWrong, attempt(0, 2, 1, SONNET)];
+    const escalated = attempt(0, 2, 1, SONNET);
+    escalated.reasoningEffort = 'medium';
+    benchmark.items[0]!.attempts = [greenButWrong, escalated];
     benchmark.items[0]!.state = 'accepted';
     const outside = attempt(1, 1, 0, HAIKU);
     outside.audit = { ...outside.audit!, ok: false };
@@ -703,6 +707,18 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
           outputTokens: 0,
         },
       },
+      // Entrada sem evento assistant: resíduo, na faixa única do Opus.
+      requests: {
+        status: 'residual',
+        items: [],
+        residual: {
+          [OPUS]: {
+            uncachedInputTokens: 1_000_000,
+            cacheWriteInputTokens: 0,
+            cacheReadInputTokens: 0,
+          },
+        },
+      },
     };
     execution.numTurns = available(1, 'fixture');
     execution.durationMs = 500;
@@ -715,6 +731,18 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
       reason: null,
     };
   });
+  // writeReport valida o relatório com todos os campos novos pelo reportSchema.
+  const written = (await Bun.file(
+    join(f.root, 'run-1/report.json'),
+  ).json()) as EvalReport;
+  expect(written.metrics!.benchmarks[0]).toMatchObject({
+    escalations: 1,
+    turns: { status: 'available', value: 13 },
+    review: { outcome: 'approved', dispatched: true, findings: 0 },
+  });
+  expect(await Bun.file(join(f.root, 'run-1/report.md')).text()).toContain(
+    `(${HAIKU} → ${SONNET})`,
+  );
   const c = (await aggregateCampaign(f.path)).configurations[0]!;
   expect(c).toMatchObject({
     escalations: 1,
@@ -771,4 +799,37 @@ test('braço roteado: escalação, falso verde, fronteira, turnos e custo deriva
     reason: 'no_usage_breakdown',
     total: null,
   });
+});
+
+// Compatibilidade com o cycle-20 (evidência imutável): o agregador só acrescenta
+// chaves. Os hashes vêm da saída do agregador da main em dd58fb3, gerada com
+// `bun run evals:aggregate --campaign evals/campaigns/cycle-20/index.json --out <novo>`
+// (sha256 de aggregate.json e de aggregate.md).
+const CYCLE_20_JSON_SHA256 =
+  '3de8157d74607266819d5b4059e26628d9552ec086ee3a0219374c5bf74f2a42';
+const CYCLE_20_MD_SHA256 =
+  'bbae2385df51432de55bc446059a4b0f2c9ca425ab654af17ffb3422f1722b4e';
+const NEW_AGGREGATE_KEYS = [
+  'boundaryViolations',
+  'cost',
+  'distribution',
+  'escalatedItems',
+  'escalations',
+  'falseGreen',
+  'runMetrics',
+];
+test('cycle-20: o agregado só ganha chaves novas e o markdown não muda', async () => {
+  const report = await aggregateCampaign(
+    join(import.meta.dir, '../evals/campaigns/cycle-20/index.json'),
+  );
+  expect(sha256(renderAggregate(report))).toBe(CYCLE_20_MD_SHA256);
+  const legacy = structuredClone(report) as unknown as {
+    configurations: Record<string, unknown>[];
+    groups: Record<string, unknown>[];
+  };
+  for (const entry of [...legacy.configurations, ...legacy.groups])
+    for (const key of NEW_AGGREGATE_KEYS) delete entry[key];
+  expect(sha256(JSON.stringify(legacy, null, 2) + '\n')).toBe(
+    CYCLE_20_JSON_SHA256,
+  );
 });

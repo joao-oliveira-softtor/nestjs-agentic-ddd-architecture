@@ -264,6 +264,22 @@ const metrics = z.strictObject({
       completion: measured(z.string()),
       agentDurationMs: number,
       verificationDurationMs: number,
+      escalations: integer.optional(),
+      turns: measured(integer).optional(),
+      review: z
+        .strictObject({
+          outcome: z.enum([
+            'approved',
+            'changes_requested',
+            'error',
+            'not_run',
+          ]),
+          dispatched: z.boolean(),
+          findings: integer,
+          usage: usage.nullable(),
+        })
+        .nullable()
+        .optional(),
     }),
   ),
   agreements: z.array(
