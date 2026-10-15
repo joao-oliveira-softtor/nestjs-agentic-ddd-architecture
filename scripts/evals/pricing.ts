@@ -63,6 +63,8 @@ export type DerivedCost =
       status: 'available';
       expensive: number;
       cheap: number;
+      /** Piso absoluto: faixa barata e, sem TTL informado, 5 min. Só descritivo (sensibilidade de TTL). */
+      floor: number;
       lowerBound: boolean;
     }
   | { status: 'unavailable'; reason: string };
@@ -76,8 +78,9 @@ const tierFor = (tiers: readonly Tier[], size: number) =>
   tiers.find((t) => t.maxPromptTokens === null || size <= t.maxPromptTokens)!;
 /**
  * Escrita de cache sem TTL informado (resíduo, `byModel` sem requisições) paga o preço de 1 h
- * no teto (`expensive`), conservador, e foi o TTL de toda a escrita observada no smoke de
- * 2026-10-14; no piso (`floor`, o `cheap`) paga o de 5 min, para o piso ser de fato um piso.
+ * em `expensive` e `cheap`, o TTL de toda a escrita observada no smoke de 2026-10-14 e o que o
+ * pré-registro adota; só o piso absoluto (`floor`) paga o de 5 min. Assim a incerteza de TTL não
+ * se mistura com a de faixa de preço, que é a que a regra I do piloto compara.
  */
 const inputCost = (
   tier: Tier,
@@ -117,15 +120,18 @@ export function deriveCost(usage: Usage, pricing: Pricing): DerivedCost {
     if (!pricing.models[model])
       return { status: 'unavailable', reason: `model_without_price:${model}` };
   let expensive = 0,
-    cheap = 0;
+    cheap = 0,
+    floor = 0;
   for (const item of items) {
     const tiers = pricing.models[item.model]!.tiers;
     const tier = tierFor(tiers, promptTokens(item));
-    expensive += inputCost(tier, item, item.cacheWrite1hInputTokens);
-    cheap += inputCost(tier, item, item.cacheWrite1hInputTokens, true);
+    const request = inputCost(tier, item, item.cacheWrite1hInputTokens);
+    expensive += request;
+    cheap += request;
+    floor += inputCost(tier, item, item.cacheWrite1hInputTokens, true);
   }
   if (!byModel)
-    return { status: 'available', expensive, cheap, lowerBound: true };
+    return { status: 'available', expensive, cheap, floor, lowerBound: true };
   // A saída vem do `modelUsage`: requisição de um modelo que ele omite deixaria a saída de fora.
   for (const item of items)
     if (!byModel[item.model])
@@ -162,19 +168,23 @@ export function deriveCost(usage: Usage, pricing: Pricing): DerivedCost {
         reason: `tiered_model_without_requests:${model}`,
       };
     expensive += inputCost(uncertain ? last : first, uncovered);
-    cheap += inputCost(first, uncovered, null, true);
+    cheap += inputCost(first, uncovered);
+    floor += inputCost(first, uncovered, null, true);
     const crossed = items.some(
       (i) => i.model === model && promptTokens(i) > threshold,
     );
     expensive +=
       (measured.outputTokens * (crossed || uncertain ? last : first).output) /
       MILLION;
-    cheap += (measured.outputTokens * first.output) / MILLION;
+    const cheapOutput = (measured.outputTokens * first.output) / MILLION;
+    cheap += cheapOutput;
+    floor += cheapOutput;
   }
   return {
     status: 'available',
     expensive,
     cheap,
+    floor,
     lowerBound: requests?.status === 'unreconciled',
   };
 }

@@ -67,7 +67,9 @@ tempo (`relatorio.md:224`) são publicados como métricas descritivas.
   por execução são publicados, mas só descrevem.
 - **TTL de cache**: o primário é o informado por requisição (`cache_creation.ephemeral_5m/1h`,
   conferido com `result.usage.cache_creation`); sem informação, vale **1 h** (o observado no smoke
-  do PR-1 e o conservador para o A3), e a leitura com 5 min é publicada como sensibilidade. Se
+  do PR-1 e o conservador para o A3), e a leitura com 5 min é publicada como sensibilidade no
+  campo `floor` do custo (faixa barata e 5 min). A regra I compara só `expensive` e `cheap`, que
+  mantêm o TTL de 1 h nos dois: a incerteza de TTL nunca dispara a sensibilidade de faixa. Se
   `result.usage.cache_creation` divergir da soma por requisição, vale o `result` e a divergência é
   anotada.
 - **Timeout**: tentativa em `timeout` conta como falha (como nos controles), com custo de
