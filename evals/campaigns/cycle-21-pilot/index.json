@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "id": "cycle-21-pilot",
+  "repetitionsPerConfiguration": 2,
+  "runs": [
+    {
+      "id": "a0-sonnet-medium-r1",
+      "configuration": "a0-sonnet-medium",
+      "repetition": 1,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/a0-sonnet-medium-r1.json",
+        "sha256": "11f364c2883f6d0739a5510c673d0211e79dd1d734c9c80b9840897933b213d2"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "a1-sonnet-low-r1",
+      "configuration": "a1-sonnet-low",
+      "repetition": 1,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/a1-sonnet-low-r1.json",
+        "sha256": "78d8c70f99bc10da4bb6335525c407174aa0ad925bbdd5fbf666038441486474"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "a2-opus-low-r1",
+      "configuration": "a2-opus-low",
+      "repetition": 1,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/a2-opus-low-r1.json",
+        "sha256": "7de416b7434349af18c4522513dddea32c7c8327dda0054f91623f9e74c33e96"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "a3-routed-r1",
+      "configuration": "a3-routed",
+      "repetition": 1,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/a3-routed-r1.json",
+        "sha256": "d5c2466f054ec0573d0100a8af97c1ac899e49e494fb89e11f8c5dc7b786fec1"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "a0-sonnet-medium-r2",
+      "configuration": "a0-sonnet-medium",
+      "repetition": 2,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/a0-sonnet-medium-r2.json",
+        "sha256": "11f364c2883f6d0739a5510c673d0211e79dd1d734c9c80b9840897933b213d2"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "a1-sonnet-low-r2",
+      "configuration": "a1-sonnet-low",
+      "repetition": 2,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/a1-sonnet-low-r2.json",
+        "sha256": "78d8c70f99bc10da4bb6335525c407174aa0ad925bbdd5fbf666038441486474"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "a2-opus-low-r2",
+      "configuration": "a2-opus-low",
+      "repetition": 2,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/a2-opus-low-r2.json",
+        "sha256": "7de416b7434349af18c4522513dddea32c7c8327dda0054f91623f9e74c33e96"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "a3-routed-r2",
+      "configuration": "a3-routed",
+      "repetition": 2,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/a3-routed-r2.json",
+        "sha256": "d5c2466f054ec0573d0100a8af97c1ac899e49e494fb89e11f8c5dc7b786fec1"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    }
+  ]
+}
