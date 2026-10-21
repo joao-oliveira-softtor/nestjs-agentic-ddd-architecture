@@ -180,17 +180,15 @@ export async function runOperator(
               (event) =>
                 !tool.record.emits.some((cls) => cls.name === event.name),
             );
-            if (undeclared || refused) {
+            if (refused) {
               undeclared = true;
               throw new Error(
-                refused
-                  ? `Event ${refused.name} is not declared in emits of use-case ${tool.record.name}`
-                  : `Use-case ${tool.record.name} already published an undeclared event`,
+                `Event ${refused.name} is not declared in emits of use-case ${tool.record.name}`,
               );
             }
             for (const event of batch) {
               check();
-              // A concurrent publish may have been refused while this batch awaited the bus.
+              // Earlier, or concurrently while this batch awaited the bus.
               if (undeclared)
                 throw new Error(
                   `Use-case ${tool.record.name} already published an undeclared event`,

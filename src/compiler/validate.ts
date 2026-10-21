@@ -110,11 +110,20 @@ export function validate(
     required(useCase.description, `${useCase.id}: description`, useCase.source);
     required(useCase.whenToUse, `${useCase.id}: whenToUse`, useCase.source);
     const reachable = new Set<string>();
+    const declared = new Set(useCase.emits);
     for (const use of useCase.uses) {
       const method = methodsById.get(use);
       if (!method)
         err(`${useCase.id}: uses cita ${use}, que não existe`, useCase.source);
-      else for (const emitted of method.emits) reachable.add(emitted);
+      else
+        for (const emitted of method.emits) {
+          reachable.add(emitted);
+          if (!declared.has(emitted))
+            err(
+              `${useCase.id}: ${method.id} emite ${emitted}, que falta em emits (o runtime recusaria a publicação)`,
+              useCase.source,
+            );
+        }
     }
     for (const emitted of useCase.emits) {
       if (!reachable.has(emitted))

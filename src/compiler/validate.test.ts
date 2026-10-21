@@ -150,6 +150,33 @@ describe('validate', () => {
     );
   });
 
+  test('emits do use-case precisa cobrir o que os métodos em uses emitem', () => {
+    const errors = errorsOf(() => {
+      @AgentEvent({ description: 'Tocou.', payload: z.object({}) })
+      class Rang extends DomainEvent<object> {}
+      @AgentEntity({ description: 'Sino.' })
+      class Bell extends AggregateRoot<string> {
+        @AgentMethod({ description: 'Toca.', emits: [Rang] })
+        ring(): void {}
+      }
+      @AgentUseCase({
+        name: 'ring_bell',
+        description: 'Toca.',
+        whenToUse: 'Sempre.',
+        ...io,
+        uses: ['method:Bell.ring'],
+      })
+      class RingBell {}
+      void Bell;
+      void RingBell;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(HERE);
+    expect(errors[0]).toContain(
+      'usecase:ring_bell: method:Bell.ring emite event:Rang, que falta em emits (o runtime recusaria a publicação)',
+    );
+  });
+
   test('requiresApproval precisa estar na allowlist', () => {
     const errors = errorsOf(() => {
       @AgentUseCase({
