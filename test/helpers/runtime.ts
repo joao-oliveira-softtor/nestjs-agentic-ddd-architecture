@@ -3,8 +3,10 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
+import { DomainEvent } from '@agentic-ddd/core';
 import { createRegistry } from '@agentic-ddd/decorators';
 import { buildIR, irHash } from '../../src/contracts/ir';
+export class Changed extends DomainEvent {}
 const dirs: string[] = [];
 afterEach(() => {
   for (const dir of dirs.splice(0))
@@ -26,8 +28,15 @@ export function fixture() {
     whenNotToUse: 'For leisure',
     input: z.object({ value: z.string() }),
     output: z.object({ value: z.string() }),
+    // uses: [] would fail static validation, but the runtime only calls buildIR.
     uses: [],
-    emits: [],
+    emits: [Changed],
+    source,
+  });
+  registry.events.push({
+    target: Changed,
+    description: 'Changed',
+    payload: z.unknown(),
     source,
   });
   registry.useCases.push({

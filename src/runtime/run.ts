@@ -166,6 +166,8 @@ export async function runOperator(
           }
         }
         let toolActive = true;
+        // Set before the first await so even a swallowed or un-awaited failure fails the run.
+        let undeclared = false;
         const ctx: UseCaseContext = {
           correlationId: runId,
           causationId: step.id,
@@ -173,6 +175,17 @@ export async function runOperator(
             check();
             if (!toolActive)
               throw new Error('Use-case execution already ended');
+            const refused = batch.find(
+              (event) => !tool.record.emits.includes(event.constructor),
+            );
+            if (undeclared || refused) {
+              undeclared = true;
+              throw new Error(
+                refused
+                  ? `Event ${refused.name} is not declared in emits of use-case ${tool.record.name}`
+                  : `Use-case ${tool.record.name} already published an undeclared event`,
+              );
+            }
             for (const event of batch) {
               check();
               event.stamp(runId, step.id);
@@ -188,6 +201,7 @@ export async function runOperator(
           const output = await wait(() =>
             tool.instance.execute(parsed.data, ctx),
           );
+          if (undeclared) return finish('failed', 'use_case_error');
           const validated = tool.record.output.safeParse(output);
           if (!validated.success) return finish('failed', 'use_case_error');
           result(
@@ -202,7 +216,7 @@ export async function runOperator(
           );
         } catch (error) {
           if (error instanceof RunTimeout) throw error;
-          if (!(error instanceof DomainError)) throw error;
+          if (undeclared || !(error instanceof DomainError)) throw error;
           result({ code: error.code, message: error.message }, true);
         } finally {
           toolActive = false;
