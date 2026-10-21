@@ -23,6 +23,7 @@
     "skills:example": "bun scripts/create-skills-example.ts",
     "evals": "bun scripts/evals/main.ts",
     "evals:aggregate": "bun scripts/evals/aggregate.ts",
+    "evals:session-cost": "bun scripts/evals/session-cost.ts",
     "build:app": "bun build ./src/main.ts --target=bun --packages=external --sourcemap=linked --outdir=dist",
     "prepack": "bun run build",
     "prepublishOnly": "node scripts/block-publish.cjs",
