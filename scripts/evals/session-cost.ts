@@ -2,7 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { match } from 'ts-pattern';
-import { claudeRequests } from './adapters/claude';
+import { claudeMessages } from './adapters/claude';
 import { emptyUsage, type ModelUsage, type RequestUsage } from './contracts';
 import {
   deriveCost,
@@ -30,7 +30,7 @@ export interface CostedRow {
   cacheWriteUnknownTtlInputTokens: number;
   cacheReadInputTokens: number;
   outputTokens: number;
-  /** Custo `≥`: há saída provisória de subagente ou o total deixa de fora chamadas do CLI. */
+  /** Sempre `true`: o transcript não tem as chamadas auxiliares do CLI e a saída de subagente é provisória. */
   lowerBound: boolean;
   cost: DerivedCost;
 }
@@ -43,7 +43,6 @@ export interface GroupCost {
 export interface SessionCostReport {
   groups: GroupCost[];
   byModel: Record<string, CostedRow>;
-  /** Sempre `lowerBound`: chamadas auxiliares do CLI não geram evento `assistant`. */
   total: CostedRow;
   retrievedAt: string;
   /** Do arquivo principal: linhas `assistant` sem `usage` e linhas `isSidechain: true`. */
@@ -53,23 +52,17 @@ export interface SessionCostReport {
   invalidOutputRequests: number;
 }
 
-type Request = RequestUsage & { outputTokens: number; partialOutput: boolean };
+type Request = RequestUsage & { outputTokens: number };
 
 const object = (value: unknown): Record<string, unknown> | null =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
-const isCount = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 const promptTokens = (r: RequestUsage) =>
   r.uncachedInputTokens + r.cacheWriteInputTokens + r.cacheReadInputTokens;
 
-/**
- * Passada própria porque `claudeRequests` descarta a saída e o `message.id`. Aplica os mesmos
- * filtros dele e guarda a mesma ordem de inserção, para o `zip` por posição em `sessionCost`.
- */
-function scanFile(text: string) {
-  const messages = new Map<string, { model: string; output: number | null }>();
+/** Só os contadores de aviso: o resto vem de `claudeMessages`. */
+function countLines(text: string) {
   let noUsage = 0,
     sidechain = 0;
   for (const line of text.split('\n')) {
@@ -79,38 +72,14 @@ function scanFile(text: string) {
     } catch {
       continue;
     }
-    if (!event) continue;
-    if (event.isSidechain === true) sidechain++;
-    if (event.type !== 'assistant') continue;
-    const message = object(event.message);
-    const usage = object(message?.usage);
-    if (!usage) {
+    if (event?.isSidechain === true) sidechain++;
+    if (event?.type === 'assistant' && !object(object(event.message)?.usage))
       noUsage++;
-      continue;
-    }
-    if (typeof message?.id !== 'string' || typeof message.model !== 'string')
-      continue;
-    if (
-      ![
-        usage.input_tokens,
-        usage.cache_creation_input_tokens ?? 0,
-        usage.cache_read_input_tokens ?? 0,
-      ].every(isCount)
-    )
-      continue;
-    messages.set(message.id, {
-      model: message.model,
-      output: isCount(usage.output_tokens) ? usage.output_tokens : null,
-    });
   }
-  return { messages, noUsage, sidechain };
+  return { noUsage, sidechain };
 }
 
-function costRow(
-  requests: Request[],
-  pricing: Pricing,
-  lowerBound: boolean,
-): CostedRow {
+function costRow(requests: Request[], pricing: Pricing): CostedRow {
   const byModel: Record<string, ModelUsage> = {};
   const row: CostedRow = {
     requests: requests.length,
@@ -120,7 +89,9 @@ function costRow(
     cacheWriteUnknownTtlInputTokens: 0,
     cacheReadInputTokens: 0,
     outputTokens: 0,
-    lowerBound: lowerBound || requests.some((r) => r.partialOutput),
+    // shortcut: sempre ≥ (chamadas auxiliares do CLI ficam fora do transcript e a saída de subagente é
+    // provisória); rever se a validação com referência real provar exatidão do modelo principal.
+    lowerBound: true,
     cost: { status: 'unavailable', reason: 'no_usage_breakdown' },
   };
   for (const r of requests) {
@@ -157,12 +128,15 @@ function costRow(
 
 const byModelOf = (requests: Request[], pricing: Pricing) => {
   const groups = new Map<string, Request[]>();
-  for (const r of requests)
-    groups.set(r.model, [...(groups.get(r.model) ?? []), r]);
+  for (const r of requests) {
+    const list = groups.get(r.model) ?? [];
+    list.push(r);
+    groups.set(r.model, list);
+  }
   return Object.fromEntries(
     [...groups]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([model, rs]) => [model, costRow(rs, pricing, false)]),
+      .map(([model, rs]) => [model, costRow(rs, pricing)]),
   );
 };
 
@@ -179,45 +153,37 @@ export function sessionCost(
     sidechainLines: 0,
     invalidOutputRequests: 0,
   };
-  for (const file of files) {
-    const scan = scanFile(file.text);
+  // Entre arquivos o primeiro `message.id` vence: o principal precisa vir antes dos subagentes.
+  const ordered = [...files].sort(
+    (a, b) => Number(b.kind === 'main') - Number(a.kind === 'main'),
+  );
+  for (const file of ordered) {
     if (file.kind === 'main') {
-      report.noUsageLines += scan.noUsage;
-      report.sidechainLines += scan.sidechain;
+      const counts = countLines(file.text);
+      report.noUsageLines += counts.noUsage;
+      report.sidechainLines += counts.sidechain;
     }
-    const requests = claudeRequests(file.text);
-    const ids = [...scan.messages.keys()];
-    if (
-      requests.length !== ids.length ||
-      requests.some((r, i) => r.model !== scan.messages.get(ids[i]!)!.model)
-    )
-      throw new Error(
-        `Transcript com requisições inconsistentes: ${file.path}`,
-      );
     const own: Request[] = [];
-    requests.forEach((r, i) => {
-      const id = ids[i]!;
-      if (seen.has(id)) return;
+    for (const { id, request, output } of claudeMessages(file.text)) {
+      if (seen.has(id)) continue;
       seen.add(id);
-      const { output } = scan.messages.get(id)!;
       if (output === null) report.invalidOutputRequests++;
-      const request = {
-        ...r,
-        outputTokens: output ?? 0,
-        // A saída de arquivo de subagente é provisória (último evento do stream), nunca estimada.
-        partialOutput: file.kind === 'subagent',
-      };
-      // Requisição sem entrada nem saída (modelo `<synthetic>`): sem preço, derrubaria a sessão.
-      if (promptTokens(request) === 0 && request.outputTokens === 0) return;
-      own.push(request);
-    });
+      const costed = { ...request, outputTokens: output ?? 0 };
+      // `<synthetic>` não é requisição à API (sem preço, derrubaria a sessão); zerada também sai.
+      if (
+        costed.model === '<synthetic>' ||
+        (promptTokens(costed) === 0 && costed.outputTokens === 0)
+      )
+        continue;
+      own.push(costed);
+    }
     if (!own.length) continue;
     all.push(...own);
     groups.push({
       label: file.label,
       kind: file.kind,
       models: byModelOf(own, pricing),
-      total: costRow(own, pricing, false),
+      total: costRow(own, pricing),
     });
   }
   if (!all.length)
@@ -227,24 +193,31 @@ export function sessionCost(
   return {
     groups,
     byModel: byModelOf(all, pricing),
-    total: costRow(all, pricing, true),
+    total: costRow(all, pricing),
     retrievedAt: pricing.retrievedAt,
     ...report,
   };
 }
 
+// Rótulo vem de texto livre do meta.json: sem caracteres de controle (ANSI) e com tamanho limitado.
+const clean = (value: string, max: number) =>
+  value
+    .replace(/\p{Cc}/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max)
+    // O corte por unidade UTF-16 pode deixar meio emoji no fim.
+    .replace(/[\uD800-\uDBFF]$/, '');
 export function subagentLabel(meta: unknown): string {
   const { agentType, description } = object(meta) ?? {};
-  const type = typeof agentType === 'string' ? agentType : 'subagente';
-  const text =
-    typeof description === 'string'
-      ? [...description.replace(/\s+/g, ' ').trim()].slice(0, 60).join('')
-      : '';
+  const type =
+    (typeof agentType === 'string' && clean(agentType, 40)) || 'subagente';
+  const text = typeof description === 'string' ? clean(description, 60) : '';
   return text ? `${type}: ${text}` : type;
 }
 
 const number = (n: number) => n.toLocaleString('pt-BR');
-const usd = (n: number) => n.toFixed(2);
+const usd = (n: number) => n.toFixed(4);
 const costText = (row: CostedRow) =>
   match(row.cost)
     .with(

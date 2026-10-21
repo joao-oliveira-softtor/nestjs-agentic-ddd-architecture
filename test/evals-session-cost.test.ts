@@ -182,27 +182,23 @@ test('Haiku acima de 100k: entrada na faixa cara; saída cara e barata nas duas 
   expect(cost.cheap).toBeCloseTo(0.007555, 10);
 });
 
-test('saída de subagente deixa a linha do grupo como limite inferior; o principal sozinho não', () => {
-  const onlyMain = sessionCost(
-    [main(ndjson(assistant({ id: 'm1', input: 1000, output: 10 })))],
-    pricing,
-  );
-  expect(onlyMain.groups[0]!.total.lowerBound).toBe(false);
-  expect(onlyMain.groups[0]!.models[HAIKU]!.lowerBound).toBe(false);
-  // O total é sempre limite inferior: chamadas auxiliares do CLI não geram evento.
-  expect(onlyMain.total.lowerBound).toBe(true);
-
-  const withSubagent = sessionCost(
+test('toda linha é limite inferior: o transcript não tem as chamadas auxiliares do CLI', () => {
+  const report = sessionCost(
     [
       main(ndjson(assistant({ id: 'm1', input: 1000, output: 10 }))),
       subagent(ndjson(assistant({ id: 's1', input: 500, output: 5 }))),
     ],
     pricing,
   );
-  expect(withSubagent.groups[0]!.total.lowerBound).toBe(false);
-  expect(withSubagent.groups[1]!.kind).toBe('subagent');
-  expect(withSubagent.groups[1]!.total.lowerBound).toBe(true);
-  expect(withSubagent.total.lowerBound).toBe(true);
+  expect(report.groups.map((g) => g.kind)).toEqual(['main', 'subagent']);
+  for (const group of report.groups) {
+    expect(group.total.lowerBound).toBe(true);
+    for (const row of Object.values(group.models))
+      expect(row.lowerBound).toBe(true);
+  }
+  for (const row of Object.values(report.byModel))
+    expect(row.lowerBound).toBe(true);
+  expect(report.total.lowerBound).toBe(true);
 });
 
 test('modelo sem preço deixa o custo indisponível, nunca zero', () => {
@@ -408,4 +404,48 @@ test('contadores: linha assistant sem usage e linha isSidechain no principal vir
   const text = renderSessionCost(report);
   expect(text).toContain('linhas assistant sem usage');
   expect(text).toContain('linhas isSidechain');
+});
+
+test('rótulo do subagente sem caracteres de controle (ANSI) e com o tipo limitado', () => {
+  const label = subagentLabel({
+    agentType: 'x'.repeat(100),
+    description: '\u001b[2J\u001b]0;pwned\u0007 olá',
+  });
+  expect(label).not.toMatch(/\p{Cc}/u);
+  expect(label.startsWith('x'.repeat(40) + ': ')).toBe(true);
+  expect(label).toContain('olá');
+});
+
+test('rótulo cortado no limite não deixa meio emoji', () => {
+  const label = subagentLabel({
+    agentType: 'scout',
+    description: 'a'.repeat(59) + '😀',
+  });
+  expect(label).toBe('scout: ' + 'a'.repeat(59));
+});
+
+test('<synthetic> com saída é descartado: não derruba a sessão sem preço', () => {
+  const report = sessionCost(
+    [
+      main(
+        ndjson(
+          assistant({ id: 'm1', input: 1000, output: 10 }),
+          assistant({ id: 'syn', model: '<synthetic>', output: 3 }),
+        ),
+      ),
+    ],
+    pricing,
+  );
+  expect(report.total.requests).toBe(1);
+  expect(report.total.cost.status).toBe('available');
+});
+
+test('o principal vence a dedup mesmo quando o subagente vem primeiro na lista', () => {
+  const dup = assistant({ id: 'dup', input: 1000, output: 10 });
+  const report = sessionCost(
+    [subagent(ndjson(dup)), main(ndjson(dup))],
+    pricing,
+  );
+  expect(report.groups.map((g) => g.kind)).toEqual(['main']);
+  expect(report.total.requests).toBe(1);
 });
