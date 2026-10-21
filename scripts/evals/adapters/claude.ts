@@ -164,8 +164,19 @@ export function claudeByModel(
  * stdout pode terminar no meio de um evento; requisição com parcela inválida fica de fora e
  * aparece como resíduo na reconciliação.
  */
+export interface ClaudeMessage {
+  id: string;
+  request: RequestUsage;
+  /** `output_tokens` do último evento do id: provisório no stream-json, por isso fora de `RequestUsage`. */
+  output: number | null;
+}
 export function claudeRequests(stdout: string): RequestUsage[] {
-  const byId = new Map<string, RequestUsage>();
+  return claudeMessages(stdout).map((m) => m.request);
+}
+
+/** Mesma leitura de `claudeRequests`, mantendo o `message.id` e o `output_tokens` de cada requisição. */
+export function claudeMessages(stdout: string): ClaudeMessage[] {
+  const byId = new Map<string, ClaudeMessage>();
   for (const line of stdout.split('\n')) {
     let event: Record<string, unknown> | null;
     try {
@@ -191,13 +202,17 @@ export function claudeRequests(stdout: string): RequestUsage[] {
     const [uncached, write, read] = counts as number[];
     const longTtl = object(usage.cache_creation)?.ephemeral_1h_input_tokens;
     byId.set(message.id, {
-      model: message.model,
-      uncachedInputTokens: uncached!,
-      cacheWriteInputTokens: write!,
-      cacheReadInputTokens: read!,
-      // 1 h maior que a escrita total é incoerente: TTL desconhecido, não preço negativo.
-      cacheWrite1hInputTokens:
-        isCount(longTtl) && longTtl <= write! ? longTtl : null,
+      id: message.id,
+      output: isCount(usage.output_tokens) ? usage.output_tokens : null,
+      request: {
+        model: message.model,
+        uncachedInputTokens: uncached!,
+        cacheWriteInputTokens: write!,
+        cacheReadInputTokens: read!,
+        // 1 h maior que a escrita total é incoerente: TTL desconhecido, não preço negativo.
+        cacheWrite1hInputTokens:
+          isCount(longTtl) && longTtl <= write! ? longTtl : null,
+      },
     });
   }
   return [...byId.values()];

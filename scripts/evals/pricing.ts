@@ -117,7 +117,8 @@ export function deriveCost(usage: Usage, pricing: Pricing): DerivedCost {
     ...items.map((i) => i.model),
   ]);
   for (const model of models)
-    if (!pricing.models[model])
+    // `hasOwn`: o modelo vem do transcript e `models['__proto__']` seria truthy sem `tiers`.
+    if (!Object.hasOwn(pricing.models, model))
       return { status: 'unavailable', reason: `model_without_price:${model}` };
   let expensive = 0,
     cheap = 0,
