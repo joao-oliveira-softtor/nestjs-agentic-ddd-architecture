@@ -5,6 +5,7 @@ Este repositório é o framework `@agentic-ddd` (em `src/`) e o app de exemplo `
 ## Desenvolvimento do framework
 
 - Runtime, testes e build: Bun (`bun test`, `bun run typecheck`, `bun run lint`, `bun run build`).
+- Gate do CI (`.github/workflows/ci.yml`): `typecheck`, `lint`, `bun test --path-ignore-patterns='test/evals-*'`, `agentic verify 0001` (`done`), `build`, `test:package`, `compile --check`, `skills:install --check`; job à parte `bun test test/evals-` (~27 min, não editar o worktree enquanto roda).
 - Design: `docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md`; decisões: `docs/adr/ADR-0001.md`; planos: `docs/superpowers/plans/`.
 - `examples/**` importa o framework só via `@agentic-ddd/*`; `src/core` só importa `zod`.
 - Testes com `bun:test`; snapshots em `__snapshots__/` são revisados como código.
