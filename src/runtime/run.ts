@@ -166,6 +166,8 @@ export async function runOperator(
           }
         }
         let toolActive = true;
+        // Set before the first await so even a swallowed or un-awaited failure fails the run.
+        let undeclared = false;
         const ctx: UseCaseContext = {
           correlationId: runId,
           causationId: step.id,
@@ -173,8 +175,24 @@ export async function runOperator(
             check();
             if (!toolActive)
               throw new Error('Use-case execution already ended');
+            // By name, like the IR and skills: identity breaks when a module is loaded twice.
+            const refused = batch.find(
+              (event) =>
+                !tool.record.emits.some((cls) => cls.name === event.name),
+            );
+            if (refused) {
+              undeclared = true;
+              throw new Error(
+                `Event ${refused.name} is not declared in emits of use-case ${tool.record.name}`,
+              );
+            }
             for (const event of batch) {
               check();
+              // Earlier, or concurrently while this batch awaited the bus.
+              if (undeclared)
+                throw new Error(
+                  `Use-case ${tool.record.name} already published an undeclared event`,
+                );
               event.stamp(runId, step.id);
               trace.events.push(event);
               step.events.push(event);
@@ -188,6 +206,7 @@ export async function runOperator(
           const output = await wait(() =>
             tool.instance.execute(parsed.data, ctx),
           );
+          if (undeclared) return finish('failed', 'use_case_error');
           const validated = tool.record.output.safeParse(output);
           if (!validated.success) return finish('failed', 'use_case_error');
           result(
@@ -202,7 +221,7 @@ export async function runOperator(
           );
         } catch (error) {
           if (error instanceof RunTimeout) throw error;
-          if (!(error instanceof DomainError)) throw error;
+          if (undeclared || !(error instanceof DomainError)) throw error;
           result({ code: error.code, message: error.message }, true);
         } finally {
           toolActive = false;

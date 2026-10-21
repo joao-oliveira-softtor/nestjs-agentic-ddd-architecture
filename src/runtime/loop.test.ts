@@ -9,7 +9,7 @@ import { FakeApproval, FakeLlm, InMemoryEventBus } from '@agentic-ddd/testing';
 import { buildIR, irHash } from '../contracts/ir';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { fixture } from '../../test/helpers/runtime';
+import { Changed, fixture } from '../../test/helpers/runtime';
 import {
   OperatorRuntime,
   type AssistantBlock,
@@ -30,7 +30,6 @@ const calls = (...content: AssistantBlock[]): LlmResponse => ({
   content,
   stopReason: 'tool_calls',
 });
-class Changed extends DomainEvent {}
 async function setup(
   script: ConstructorParameters<typeof FakeLlm>[0],
   execute: UseCase<unknown, unknown>['execute'] = async (input) => input,
@@ -366,3 +365,115 @@ for (const [name, context] of [
     expect(f.eventBus.events).toEqual([]);
   });
 }
+
+class Other extends DomainEvent {}
+class SubChanged extends Changed {}
+const failedUseCase = { status: 'failed', reason: 'use_case_error' };
+
+test('publishing an event outside the use-case emits fails the run and nothing reaches the bus', async () => {
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    await ctx.publish([new Other('x')]);
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(f.eventBus.events).toEqual([]);
+  expect(result.events).toEqual([]);
+  expect(f.llm.requests).toHaveLength(1);
+});
+
+test('a batch with one undeclared event publishes none of that batch', async () => {
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    await ctx.publish([new Changed('ok'), new Other('x')]);
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(f.eventBus.events).toEqual([]);
+});
+
+test('a use-case that swallows the undeclared-event error still fails the run', async () => {
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    await ctx.publish([new Other('x')]).catch(() => {});
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(f.eventBus.events).toEqual([]);
+});
+
+test('swallowing the error and throwing DomainError is not a recoverable tool result', async () => {
+  const f = await setup([calls(call()), end], async (_input, ctx) => {
+    await ctx.publish([new Other('x')]).catch(() => {});
+    throw new DomainError('NO_WORK', 'no work');
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(f.llm.requests).toHaveLength(1);
+});
+
+test('after an undeclared event, later publishes of the same call are refused too', async () => {
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    await ctx.publish([new Other('x')]).catch(() => {});
+    await ctx.publish([new Changed('later')]).catch(() => {});
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(f.eventBus.events).toEqual([]);
+});
+
+test('an un-awaited undeclared publish still fails the run', async () => {
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    void ctx.publish([new Other('x')]).catch(() => {});
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+});
+
+test('a declared event is published, a subclass of it is refused', async () => {
+  const ok = await setup([calls(call()), end], async (input, ctx) => {
+    await ctx.publish([new Changed('ok')]);
+    return input;
+  });
+  const okResult = await ok.runtime.run('agent', { message: 'go' });
+  expect(okResult.status).toBe('completed');
+  expect(ok.eventBus.events.map((e) => e.name)).toEqual(['Changed']);
+
+  const sub = await setup([calls(call()), end], async (input, ctx) => {
+    await ctx.publish([new SubChanged('x')]);
+    return input;
+  });
+  const subResult = await sub.runtime.run('agent', { message: 'go' });
+  expect(subResult).toMatchObject(failedUseCase);
+  expect(sub.eventBus.events).toEqual([]);
+});
+
+test('a concurrent batch stops reaching the bus once another publish is refused', async () => {
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    await Promise.all([
+      ctx.publish([new Changed('a1'), new Changed('a2')]),
+      ctx.publish([new Other('x')]),
+    ]).catch(() => {});
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(f.eventBus.events.map((e) => e.payload)).toEqual(['a1']);
+});
+
+test('a second copy of a declared event class is accepted by name, like the IR', async () => {
+  // Simulates the same module loaded twice: another class with the same name.
+  const Twin = (() => {
+    class Changed extends DomainEvent {}
+    return Changed;
+  })();
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    await ctx.publish([new Twin('twin')]);
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result.status).toBe('completed');
+  expect(f.eventBus.events.map((e) => e.name)).toEqual(['Changed']);
+});
