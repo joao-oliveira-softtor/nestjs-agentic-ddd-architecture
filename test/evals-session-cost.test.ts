@@ -449,3 +449,33 @@ test('o principal vence a dedup mesmo quando o subagente vem primeiro na lista',
   expect(report.groups.map((g) => g.kind)).toEqual(['main']);
   expect(report.total.requests).toBe(1);
 });
+
+test.each(['__proto__', 'constructor', 'toString'])(
+  'nome de modelo hostil (%s) vira indisponível, sem poluir Object.prototype nem lançar',
+  (model) => {
+    const report = sessionCost(
+      [main(ndjson(assistant({ id: 'h1', model, input: 1000, output: 10 })))],
+      pricing,
+    );
+    expect(report.total.cost.status).toBe('unavailable');
+    expect(JSON.stringify(report.total.cost)).toContain('model_without_price');
+    expect(({} as Record<string, unknown>).uncachedInputTokens).toBeUndefined();
+    expect(({} as Record<string, unknown>).outputTokens).toBeUndefined();
+  },
+);
+
+test('nome de modelo com escape ANSI não chega ao terminal', () => {
+  const report = sessionCost(
+    [
+      main(
+        ndjson(
+          assistant({ id: 'a1', model: '\u001b[2Jevil\u0007', input: 10 }),
+        ),
+      ),
+    ],
+    pricing,
+  );
+  const text = renderSessionCost(report);
+  expect(text).not.toMatch(/(?!\n)\p{Cc}/u);
+  expect(text).toContain('evil');
+});

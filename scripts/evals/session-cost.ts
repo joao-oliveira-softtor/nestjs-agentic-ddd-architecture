@@ -80,7 +80,8 @@ function countLines(text: string) {
 }
 
 function costRow(requests: Request[], pricing: Pricing): CostedRow {
-  const byModel: Record<string, ModelUsage> = {};
+  // Map: o nome do modelo vem do transcript e `{}['__proto__']` aponta para Object.prototype.
+  const byModel = new Map<string, ModelUsage>();
   const row: CostedRow = {
     requests: requests.length,
     uncachedInputTokens: 0,
@@ -102,12 +103,13 @@ function costRow(requests: Request[], pricing: Pricing): CostedRow {
       row.cacheWriteUnknownTtlInputTokens += r.cacheWriteInputTokens;
     row.cacheReadInputTokens += r.cacheReadInputTokens;
     row.outputTokens += r.outputTokens;
-    const m = (byModel[r.model] ??= {
+    const m = byModel.get(r.model) ?? {
       uncachedInputTokens: 0,
       cacheWriteInputTokens: 0,
       cacheReadInputTokens: 0,
       outputTokens: 0,
-    });
+    };
+    byModel.set(r.model, m);
     m.uncachedInputTokens += r.uncachedInputTokens;
     m.cacheWriteInputTokens += r.cacheWriteInputTokens;
     m.cacheReadInputTokens += r.cacheReadInputTokens;
@@ -116,7 +118,7 @@ function costRow(requests: Request[], pricing: Pricing): CostedRow {
   row.cost = deriveCost(
     {
       ...emptyUsage(),
-      byModel,
+      byModel: Object.fromEntries(byModel),
       // Não é reconciliação de verdade: `byModel` sai das próprias requisições (nada a comparar),
       // montado direto para que `deriveCost` use a faixa por requisição e a saída por modelo.
       requests: { status: 'reconciled', items: requests, residual: {} },
@@ -300,7 +302,12 @@ export function renderSessionCost(report: SessionCostReport): string {
     warnings.push(
       `Aviso: ${number(report.total.cacheWriteUnknownTtlInputTokens)} tokens de escrita de cache sem TTL informado (coluna 1h; expensive os cobra como 1 h).`,
     );
-  return [...table(rows), '', ...warnings].join('\n') + '\n';
+  // Nome de modelo e motivo vêm do transcript: sem caracteres de controle (ANSI), mantendo as quebras de linha.
+  return (
+    [...table(rows), '', ...warnings]
+      .join('\n')
+      .replace(/(?!\n)\p{Cc}/gu, ' ') + '\n'
+  );
 }
 
 /** O id vira nome de arquivo: só o formato de UUID/slug do Claude Code. */
