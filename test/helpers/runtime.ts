@@ -28,7 +28,7 @@ export function fixture() {
     whenNotToUse: 'For leisure',
     input: z.object({ value: z.string() }),
     output: z.object({ value: z.string() }),
-    // uses: [] would fail static validation, but the runtime only calls buildIR.
+    // emits without a method in uses that emits it fails validate; the runtime only calls buildIR.
     uses: [],
     emits: [Changed],
     source,

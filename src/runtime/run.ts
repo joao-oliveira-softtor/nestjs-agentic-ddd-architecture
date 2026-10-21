@@ -175,8 +175,10 @@ export async function runOperator(
             check();
             if (!toolActive)
               throw new Error('Use-case execution already ended');
+            // By name, like the IR and skills: identity breaks when a module is loaded twice.
             const refused = batch.find(
-              (event) => !tool.record.emits.includes(event.constructor),
+              (event) =>
+                !tool.record.emits.some((cls) => cls.name === event.name),
             );
             if (undeclared || refused) {
               undeclared = true;
@@ -188,6 +190,11 @@ export async function runOperator(
             }
             for (const event of batch) {
               check();
+              // A concurrent publish may have been refused while this batch awaited the bus.
+              if (undeclared)
+                throw new Error(
+                  `Use-case ${tool.record.name} already published an undeclared event`,
+                );
               event.stamp(runId, step.id);
               trace.events.push(event);
               step.events.push(event);

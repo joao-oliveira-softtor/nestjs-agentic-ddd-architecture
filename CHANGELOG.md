@@ -4,7 +4,7 @@
 
 Runtime dos operators:
 
-- **Mudança de compatibilidade (#63):** o runtime dos operators recusa evento publicado por `ctx.publish` que não esteja em `emits` do use-case (classe exata, subclasse não vale). O use-case termina em `failed/use_case_error`, nada do lote recusado chega ao bus e as publicações seguintes da mesma chamada também são recusadas, mesmo que o use-case engula o erro. `emits` omitido vale `[]`, então use-case sem `emits` que publique algo passa a falhar. `createTestContext` continua aceitando qualquer evento.
+- **Mudança de compatibilidade (#63):** o runtime dos operators recusa evento publicado por `ctx.publish` que não esteja em `emits` do use-case (pelo nome da classe, como na IR: subclasse não vale). O use-case termina em `failed/use_case_error`, nada do lote recusado chega ao bus e as publicações seguintes da mesma chamada também são recusadas, mesmo que o use-case engula o erro. `emits` omitido vale `[]`, então use-case sem `emits` que publique algo passa a falhar. `createTestContext` continua aceitando qualquer evento.
 
 Orquestração de agentes por camada e modelo (épico #26). Tudo offline: nenhuma inferência real foi executada, e as rotas `--real` exigem orçamento autorizado.
 

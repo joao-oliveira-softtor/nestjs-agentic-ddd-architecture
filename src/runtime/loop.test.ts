@@ -449,3 +449,31 @@ test('a declared event is published, a subclass of it is refused', async () => {
   expect(subResult).toMatchObject(failedUseCase);
   expect(sub.eventBus.events).toEqual([]);
 });
+
+test('a concurrent batch stops reaching the bus once another publish is refused', async () => {
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    await Promise.all([
+      ctx.publish([new Changed('a1'), new Changed('a2')]),
+      ctx.publish([new Other('x')]),
+    ]).catch(() => {});
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(f.eventBus.events.map((e) => e.payload)).toEqual(['a1']);
+});
+
+test('a second copy of a declared event class is accepted by name, like the IR', async () => {
+  // Simulates the same module loaded twice: another class with the same name.
+  const Twin = (() => {
+    class Changed extends DomainEvent {}
+    return Changed;
+  })();
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    await ctx.publish([new Twin('twin')]);
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result.status).toBe('completed');
+  expect(f.eventBus.events.map((e) => e.name)).toEqual(['Changed']);
+});
