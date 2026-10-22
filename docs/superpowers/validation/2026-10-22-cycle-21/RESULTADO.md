@@ -17,9 +17,21 @@ Execução real em 2026-10-22, das 11:14 às 11:48 (-03:00), conforme o pré-reg
 - **Cota não isolada**: 5 outras sessões `claude` estavam abertas durante a execução. O número de
   cota da janela de 5 h não é publicado como medição do piloto.
 
+## Onde está a evidência
+
+A evidência bruta das 8 execuções (relatórios, saída de cada invocação, patches e verificação,
+~15 MB) **não** é versionada, por decisão do usuário. Ela está em
+`cycle-21-pilot-evidence.tar.gz` (1,4 MB, SHA-256
+`b17bb61259930839626c7d66f1717536dde0dc2b9aa26f1e0d777fc61a786e4d`), com o índice da campanha
+apontando para os relatórios (`cycle-21-pilot/index-executed.json`). Por isso
+`evals/campaigns/cycle-21-pilot/index.json` continua com os slots `not_run`. Para reagregar:
+extrair o arquivo, copiar `index-executed.json` sobre o índice com os caminhos dos relatórios
+extraídos e rodar `evals:aggregate`. Aqui ficam o agregado, a classificação e a linha do tempo.
+
 ## Agregado
 
-`bun run evals:aggregate --campaign evals/campaigns/cycle-21-pilot/index.json --out
+Gerado com o índice executado: `bun run evals:aggregate --campaign
+evals/campaigns/cycle-21-pilot/index.json --out
 docs/superpowers/validation/2026-10-22-cycle-21/real/aggregate`. Custo derivado de
 `evals/pricing.json`, somado nas 2 repetições, sem `lowerBound` em nenhum braço; as faixas cara e
 barata coincidem.
