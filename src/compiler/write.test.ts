@@ -44,6 +44,7 @@ beforeEach(async () => {
     out: DEFAULT_OUT,
     mirrors: ['.claude/skills'],
     changesDir: 'changes',
+    rules: { dir: '.ai/rules', exclude: [], briefMaxTokens: 2000 },
     verify: { test: ['bun', 'test'], commands: [] },
   };
 });

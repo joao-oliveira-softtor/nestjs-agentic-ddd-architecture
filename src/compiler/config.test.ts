@@ -115,3 +115,53 @@ describe('validação do caminho dos módulos', () => {
     expect(config.modules).toEqual([{ name: 'x', path: 'src/x' }]);
   });
 });
+
+describe('configuração das regras do time', () => {
+  const base = { modules: [{ name: 'x', path: 'x' }] };
+
+  test('resolveConfig usa os padrões quando rules não é informado', () => {
+    expect(resolveConfig(base, dir).rules).toEqual({
+      dir: '.ai/rules',
+      exclude: [],
+      briefMaxTokens: 2000,
+    });
+  });
+
+  test('resolveConfig normaliza rules.dir e repassa exclude e briefMaxTokens', () => {
+    const { rules } = resolveConfig(
+      {
+        ...base,
+        rules: {
+          dir: './docs/regras/',
+          exclude: ['core/done'],
+          briefMaxTokens: 500,
+        },
+      },
+      dir,
+    );
+    expect(rules).toEqual({
+      dir: 'docs/regras',
+      exclude: ['core/done'],
+      briefMaxTokens: 500,
+    });
+  });
+
+  test('resolveConfig rejeita rules.dir fora da raiz', () => {
+    expect(() =>
+      resolveConfig({ ...base, rules: { dir: '../fora' } }, dir),
+    ).toThrow('agentic.config.ts: rules.dir não pode apontar');
+  });
+
+  test('resolveConfig rejeita rules.dir absoluto', () => {
+    expect(() =>
+      resolveConfig({ ...base, rules: { dir: '/etc/regras' } }, dir),
+    ).toThrow('agentic.config.ts: rules.dir deve ser relativo');
+  });
+
+  test('resolveConfig rejeita briefMaxTokens que não é inteiro positivo', () => {
+    for (const briefMaxTokens of [0, -1, 1.5, Number.NaN])
+      expect(() =>
+        resolveConfig({ ...base, rules: { briefMaxTokens } }, dir),
+      ).toThrow('agentic.config.ts: rules.briefMaxTokens deve ser um inteiro');
+  });
+});

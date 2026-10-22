@@ -79,6 +79,15 @@ test('example cria tutorial completo sob ancestral simbólico', async () => {
   const physicalRoot = await realpath(root);
   expect(run(physicalRoot, 'compile')).toMatchObject({ code: 0 });
   expect(run(physicalRoot, 'compile', '--check')).toMatchObject({ code: 0 });
+  const agents = await readFile(join(physicalRoot, 'AGENTS.md'), 'utf8');
+  expect(agents).toContain('### Regras por caminho');
+  expect(agents).toContain('.ai/rules/testes.md');
+  const tasksSkill = await readFile(
+    join(physicalRoot, '.agents/skills/tasks-dev/SKILL.md'),
+    'utf8',
+  );
+  expect(tasksSkill).toContain('## Regras do time');
+  expect(tasksSkill).toContain('.ai/rules/testes.md');
 });
 
 test('example recusa destino existente e opções inválidas sem alterar arquivos', async () => {

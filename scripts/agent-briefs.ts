@@ -1,8 +1,14 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
-import { approxTokens } from '@agentic-ddd/compiler';
+import {
+  approxTokens,
+  briefRules,
+  loadConfig,
+  loadRules,
+  type Rule,
+} from '@agentic-ddd/compiler';
 
 export type BriefRole = 'domain' | 'application' | 'reviewer';
 export interface PacketFacts {
@@ -23,9 +29,13 @@ export interface BriefInput {
   /** Conteúdo fora do packet. Fica em seção própria, com hash próprio. */
   readonly extras?: readonly BriefSection[];
   readonly maxTokens?: number;
+  /** Regras do time já filtradas (briefRules). */
+  readonly rules?: readonly Rule[];
+  readonly rulesMaxTokens?: number;
 }
 
 export const DEFAULT_MAX_TOKENS = 6000;
+export const DEFAULT_RULES_MAX_TOKENS = 2000;
 export const DEFAULT_OUT = '.agentic-tasks/briefs';
 /** Caminhos escritos pelo compilador ou pelo instalador; briefs não entram aqui. */
 export const GENERATED_PATHS = [
@@ -65,6 +75,7 @@ export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
     '- Um operator declarativo já está implementado: acrescente só testes que exercitem suas tools e contratos.',
     '- Cubra cada obrigação do packet com `covers([...ids], título)` de `@agentic-ddd/testing` em testes `bun:test`.',
     '- Não rode `compile` nem altere o hash. Dependência pendente, divergência de hash ou necessidade de infraestrutura fora do contrato: devolva o item.',
+    '- Regra do time nunca vence um gate (verify, specHash, gates de fronteira, obrigações `covers`): em conflito, siga o gate e devolva o item com o conflito descrito.',
     '- Após duas correções sem progresso nos findings, encerre e devolva o diagnóstico.',
     '',
     RESPONSE_FORMAT,
@@ -129,11 +140,33 @@ function renderExtras(extras: readonly BriefSection[]): string[] {
   ];
 }
 
-function checkBudget(brief: string, maxTokens: number): string {
+const listRules = (rules: readonly Rule[]): string =>
+  rules.map((r) => `${r.key} ~${approxTokens(r.body)}`).join(', ');
+
+/** Seção "Regras do time" (vazia sem regras); nunca trunca. */
+function rulesSection(
+  rules: readonly Rule[] = [],
+  maxTokens = DEFAULT_RULES_MAX_TOKENS,
+): BriefSection[] {
+  if (!rules.length) return [];
+  const content = rules.map((r) => `#### ${r.key}\n\n${r.body}`).join('\n\n');
+  const tokens = approxTokens(content);
+  if (tokens > maxTokens)
+    throw new Error(
+      `regras do time excedem o orçamento: ~${tokens} > ${maxTokens} tokens (${listRules(rules)})`,
+    );
+  return [{ title: 'Regras do time', content }];
+}
+
+function checkBudget(
+  brief: string,
+  maxTokens: number,
+  rules: readonly Rule[] = [],
+): string {
   const tokens = approxTokens(brief);
   if (tokens > maxTokens)
     throw new Error(
-      `brief excede o orçamento: ~${tokens} > ${maxTokens} tokens`,
+      `brief excede o orçamento: ~${tokens} > ${maxTokens} tokens${rules.length ? ` (regras do time: ${listRules(rules)})` : ''}`,
     );
   return brief;
 }
@@ -158,10 +191,14 @@ export function renderBrief(input: BriefInput): string {
       '## Packet',
       '',
       input.packet.trimEnd(),
-      ...renderExtras(input.extras ?? []),
+      ...renderExtras([
+        ...(input.extras ?? []),
+        ...rulesSection(input.rules, input.rulesMaxTokens),
+      ]),
       '',
     ].join('\n'),
     input.maxTokens ?? DEFAULT_MAX_TOKENS,
+    input.rules,
   );
 }
 
@@ -175,6 +212,8 @@ export interface ReviewerInput {
   /** Núcleo do papel no lugar do padrão (variantes de experimento). */
   readonly core?: string;
   readonly maxTokens?: number;
+  readonly rules?: readonly Rule[];
+  readonly rulesMaxTokens?: number;
 }
 
 export function renderReviewerBrief(input: ReviewerInput): string {
@@ -193,10 +232,12 @@ export function renderReviewerBrief(input: ReviewerInput): string {
         { title: 'Diff', content: input.diff },
         { title: 'Resultado dos gates', content: input.gates },
         ...(input.extras ?? []),
+        ...rulesSection(input.rules, input.rulesMaxTokens),
       ]),
       '',
     ].join('\n'),
     input.maxTokens ?? DEFAULT_MAX_TOKENS,
+    input.rules,
   );
 }
 
@@ -218,6 +259,7 @@ export function assertOutsideGenerated(root: string, out: string): string {
 interface CliOptions {
   readonly items: string[];
   readonly config: string;
+  readonly configExplicit: boolean;
   readonly out: string;
   readonly packetFile?: string;
   readonly maxTokens: number;
@@ -226,14 +268,17 @@ interface CliOptions {
 function parseCli(argv: readonly string[]): CliOptions | string {
   const items: string[] = [];
   let config = 'agentic.config.ts';
+  let configExplicit = false;
   let out = DEFAULT_OUT;
   let packetFile: string | undefined;
   let maxTokens = DEFAULT_MAX_TOKENS;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
     const value = (): string | undefined => argv[++i];
-    if (arg === '--config') config = value() ?? '';
-    else if (arg === '--out') out = value() ?? '';
+    if (arg === '--config') {
+      config = value() ?? '';
+      configExplicit = true;
+    } else if (arg === '--out') out = value() ?? '';
     else if (arg === '--packet-file') packetFile = value();
     else if (arg === '--max-tokens') maxTokens = Number(value());
     else if (arg.startsWith('--')) return `opção desconhecida: ${arg}`;
@@ -245,7 +290,7 @@ function parseCli(argv: readonly string[]): CliOptions | string {
   if (!items.length) return 'informe ao menos um item';
   if (packetFile && items.length !== 1)
     return '--packet-file vale para exatamente um item';
-  return { items, config, out, packetFile, maxTokens };
+  return { items, config, configExplicit, out, packetFile, maxTokens };
 }
 
 const USAGE =
@@ -283,6 +328,15 @@ export async function main(argv: readonly string[]): Promise<number> {
         throw new Error(`${item} e ${other} gerariam o mesmo arquivo: ${name}`);
       names.set(name, item);
     }
+    const present = await access(options.config).then(
+      () => true,
+      () => false,
+    );
+    if (!present && options.configExplicit)
+      throw new Error(`config não encontrada: ${options.config}`);
+    // Config padrão ausente = sem regras (--packet-file sem projeto).
+    const config = present ? await loadConfig(options.config) : null;
+    const rules = config ? await loadRules(config) : [];
     await mkdir(out, { recursive: true });
     for (const item of options.items) {
       const packet = options.packetFile
@@ -293,7 +347,12 @@ export async function main(argv: readonly string[]): Promise<number> {
       const file = join(out, briefFileName(item));
       await writeFile(
         file,
-        renderBrief({ packet, maxTokens: options.maxTokens }),
+        renderBrief({
+          packet,
+          maxTokens: options.maxTokens,
+          rules: briefRules(rules, [parsePacket(packet).sourcePath]),
+          rulesMaxTokens: config?.rules.briefMaxTokens,
+        }),
       );
       console.log(relative(root, file) || basename(file));
     }

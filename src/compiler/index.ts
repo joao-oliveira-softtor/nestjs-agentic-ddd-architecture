@@ -111,3 +111,14 @@ export {
   type ItemVerifyOptions,
   type ItemVerifyReport,
 } from './verify/item';
+export {
+  CORE_RULES,
+  RuleError,
+  briefRules,
+  composeRules,
+  fillMarkers,
+  loadRules,
+  ruleHash,
+  rulesFor,
+  type Rule,
+} from './rules';

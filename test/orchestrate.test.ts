@@ -1045,3 +1045,38 @@ test('CLI: --real exige orçamento; o plano roda sobre o grafo real sem executar
     console.error = error;
   }
 }, 120000);
+
+test('regras do time chegam ao executor (por sourcePath), ao revisor e ao planRun', async () => {
+  const a = domain('A');
+  const rule = (key: string, body: string, paths: string[] | null) => ({
+    key,
+    file: `.ai/rules/${key}.md`,
+    paths,
+    body,
+  });
+  const rules = [
+    rule('geral', '- REGRA-GERAL', null),
+    rule('aplica', '- REGRA-APLICA', ['src/**']),
+    rule('fora', '- REGRA-FORA', ['outro/**']),
+  ];
+  const p = ports();
+  p.register(a);
+  const r = reviewer('{"status":"approved","findings":[]}');
+  await orchestrate({
+    waves: [[a]],
+    executor: p.executor,
+    gates: p.gates,
+    reviewer: r.port,
+    budget,
+    telemetry: memoryTelemetry(),
+    rules,
+  });
+  for (const brief of [p.tasks[0]!.brief, r.briefs[0]!]) {
+    expect(brief).toContain('- REGRA-GERAL');
+    expect(brief).toContain('- REGRA-APLICA');
+    expect(brief).not.toContain('REGRA-FORA');
+  }
+  const without = await planRun([[a]], p.gates);
+  const withRules = await planRun([[a]], p.gates, {}, undefined, rules);
+  expect(withRules[0]!.briefTokens).toBeGreaterThan(without[0]!.briefTokens);
+});

@@ -1,6 +1,12 @@
 import { appendFile, mkdir, realpath } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import {
+  briefRules,
+  loadConfig,
+  loadRules,
+  type Rule,
+} from '@agentic-ddd/compiler';
+import {
   assertOutsideGenerated,
   parsePacket,
   renderBrief,
@@ -171,6 +177,8 @@ export interface OrchestrateInput {
   readonly telemetry: Telemetry;
   readonly signal?: AbortSignal;
   readonly maxBriefTokens?: number;
+  readonly rules?: readonly Rule[];
+  readonly rulesMaxTokens?: number;
 }
 
 /** Nível inicial de uma camada; camada desconhecida não tem papel de executor. */
@@ -269,6 +277,8 @@ export async function orchestrate(input: OrchestrateInput): Promise<RunResult> {
       const brief = renderBrief({
         packet,
         extras: failureSection(failure),
+        rules: briefRules(input.rules ?? [], [facts.sourcePath]),
+        rulesMaxTokens: input.rulesMaxTokens,
         maxTokens: input.maxBriefTokens,
       });
       const result = await input.executor.run(
@@ -361,10 +371,16 @@ export async function orchestrate(input: OrchestrateInput): Promise<RunResult> {
       let diagnostic: string | null = null;
       let reviewed: ReviewerResult | null = null;
       try {
+        const packets = await Promise.all(
+          items.map((i) => input.gates.packet(i.id)),
+        );
         const brief = renderReviewerBrief({
-          packets: await Promise.all(
-            items.map((i) => input.gates.packet(i.id)),
+          packets,
+          rules: briefRules(
+            input.rules ?? [],
+            packets.map((p) => parsePacket(p).sourcePath),
           ),
+          rulesMaxTokens: input.rulesMaxTokens,
           diff: await input.gates.diff(),
           gates: items
             .map(
@@ -432,6 +448,8 @@ export async function planRun(
   gates: Pick<Gates, 'packet'>,
   policy: Policy = {},
   maxBriefTokens?: number,
+  rules: readonly Rule[] = [],
+  rulesMaxTokens?: number,
 ): Promise<PlannedItem[]> {
   const { approxTokens } = await import('@agentic-ddd/compiler');
   const models = policy.models ?? DEFAULT_MODELS;
@@ -439,6 +457,7 @@ export async function planRun(
   for (const wave of waves)
     for (const item of [...wave].sort((a, b) => a.id.localeCompare(b.id))) {
       const tier = startTier(item.layer, policy);
+      const packet = await gates.packet(item.id);
       planned.push({
         id: item.id,
         layer: item.layer,
@@ -446,7 +465,9 @@ export async function planRun(
         model: models[tier],
         briefTokens: approxTokens(
           renderBrief({
-            packet: await gates.packet(item.id),
+            packet,
+            rules: briefRules(rules, [parsePacket(packet).sourcePath]),
+            rulesMaxTokens,
             maxTokens: maxBriefTokens,
           }),
         ),
@@ -603,6 +624,8 @@ export async function main(argv: readonly string[]): Promise<number> {
   try {
     const root = process.cwd();
     const out = assertOutsideGenerated(root, cli.out);
+    const config = await loadConfig(cli.config);
+    const rules = await loadRules(config);
     const ports = await import('./orchestrate-ports');
     const gates = ports.createCliGates({
       root,
@@ -638,7 +661,14 @@ export async function main(argv: readonly string[]): Promise<number> {
       })),
     );
     if (!cli.real) {
-      const plan = await planRun(planned, gates, cli.policy);
+      const plan = await planRun(
+        planned,
+        gates,
+        cli.policy,
+        undefined,
+        rules,
+        config.rules.briefMaxTokens,
+      );
       console.log(JSON.stringify({ mode: 'plan', items: plan }, null, 2));
       return 0;
     }
@@ -663,6 +693,8 @@ export async function main(argv: readonly string[]): Promise<number> {
       policy: cli.policy,
       budget: { maxInvocations: cli.maxInvocations!, maxTokens: cli.maxTokens },
       telemetry: jsonlTelemetry(telemetryPath, [auth.secret]),
+      rules,
+      rulesMaxTokens: config.rules.briefMaxTokens,
     });
     console.log(
       JSON.stringify({ ...result, telemetry: telemetryPath }, null, 2),

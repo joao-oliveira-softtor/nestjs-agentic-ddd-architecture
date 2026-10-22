@@ -1,4 +1,5 @@
 import type { IR } from '../ir';
+import { CORE_RULES, fillMarkers, ruleHash, type Rule } from '../rules';
 import { code, table } from './markdown';
 
 export const BLOCK_BEGIN = '<!-- agentic-ddd:begin -->';
@@ -10,7 +11,11 @@ export interface AgentsPaths {
   readonly changesDir?: string;
 }
 
-export function renderAgentsBlock(ir: IR, paths: AgentsPaths): string {
+export function renderAgentsBlock(
+  ir: IR,
+  paths: AgentsPaths,
+  rules: readonly Rule[] = CORE_RULES,
+): string {
   const changes = paths.changesDir ?? 'changes';
   const lines: string[] = [
     BLOCK_BEGIN,
@@ -34,20 +39,31 @@ export function renderAgentsBlock(ir: IR, paths: AgentsPaths): string {
     ]);
     lines.push(table(['Operator', 'Skill de runtime'], rows), '');
   }
-  lines.push(
-    '### Convenções',
-    '',
-    '- Entidades, métodos, eventos, use-cases e operators são declarados com `@AgentEntity`, `@AgentMethod`, `@AgentEvent`, `@AgentUseCase` e `@Operator` de `@agentic-ddd/decorators`; cada regra de negócio é um `@Invariant({ id, text })` com ID estável.',
-    '- Onde criar: `<caminho do módulo>/domain` (entidades, eventos, ports), `<caminho do módulo>/application` (use-cases, sempre com `uses`), `<caminho do módulo>/operators` (operators). A skill de dev do módulo tem os caminhos exatos.',
-    '- Todo método público de entidade tem `@AgentMethod`; métodos auxiliares usam `#privado`.',
-    '- Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.',
-    '- Coordenação: consulte `bun run agentic status` ou `next` (ondas); execute cada item a partir de `bun run agentic packet <item>` e valide com `bun run agentic verify --item <item> --spec-hash <hash>`. `status --static` lê declarações de teste sem executá-las e nunca certifica `done`.',
-    '- O sinal de esqueleto reconhece só a chamada literal `notImplemented()`; corpo vazio conta como implementado. Estado é calculado sob demanda e não entra nos arquivos gerados.',
-    '- Testes declaram o que cobrem com `covers([...ids], título)` de `@agentic-ddd/testing`.',
-    `- Mudança de regra de negócio: escreva antes a proposta em ${code(`${changes}/NNNN-<slug>/proposal.md`)} (delta, critérios de aceite e \`## Motivo\`), implemente e rode \`bun run agentic compile\`; para mudança já feita no código, \`bun run agentic compile --draft-change <slug>\` gera o rascunho.`,
-    '- Uma tarefa só está concluída quando `bun run agentic verify <NNNN>` retorna `done` ou `needs-human`.',
-    `- Gerados (não edite): ${code(paths.devSkills)}, ${code(paths.runtimeSkills)}, os espelhos de skills e este bloco. Altere o código decorado e rode \`bun run agentic compile\`; o CI roda \`bun run agentic compile --check\`.`,
-    BLOCK_END,
-  );
+  lines.push('### Convenções', '');
+  const values = {
+    changes,
+    devSkills: paths.devSkills,
+    runtimeSkills: paths.runtimeSkills,
+  };
+  for (const rule of rules)
+    if (rule.paths === null)
+      lines.push(
+        rule.file === null ? fillMarkers(rule.body, values) : rule.body,
+      );
+  const scoped = rules.filter((r) => r.paths !== null);
+  if (scoped.length > 0) {
+    const rows = scoped.map((r) => [
+      r.paths!.map(code).join(', '),
+      code(r.file!),
+      code(ruleHash(r)),
+    ]);
+    lines.push(
+      '',
+      '### Regras por caminho',
+      '',
+      table(['Globs', 'Arquivo', 'sha256'], rows),
+    );
+  }
+  lines.push(BLOCK_END);
   return lines.join('\n');
 }

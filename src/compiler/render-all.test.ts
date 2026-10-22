@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
 import { analyze } from './analyze';
 import { irHash } from './ir';
+import { composeRules, type Rule } from './rules';
 import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
 import { DEFAULT_OUT, renderAll } from './render/index';
 import { stripKind } from './render/markdown';
@@ -71,5 +72,49 @@ describe('renderAll', () => {
     );
     expect([...again.files]).toEqual([...rendered.files]);
     expect(again.agentsBlock).toBe(rendered.agentsBlock);
+  });
+
+  test('com regras do time: override, exclude, regra sem paths e índice por caminho', () => {
+    const team: Rule[] = [
+      {
+        key: 'core/layers',
+        file: '.ai/rules/core/layers.md',
+        paths: null,
+        body: '- Camadas do time.',
+      },
+      {
+        key: 'estilo',
+        file: '.ai/rules/estilo.md',
+        paths: null,
+        body: '- Estilo do time.\n- Segunda linha.',
+      },
+      {
+        key: 'testes',
+        file: '.ai/rules/testes.md',
+        paths: ['src/compiler/__fixtures__/**', 'test/**'],
+        body: '- Testes em português.',
+      },
+      {
+        key: 'docs',
+        file: '.ai/rules/docs.md',
+        paths: ['docs/**'],
+        body: '- Docs.',
+      },
+    ];
+    const rules = composeRules(team, ['core/done']);
+    const out = renderAll(ir, DEFAULT_OUT, { rules });
+    expect(out.agentsBlock).toContain('- Camadas do time.');
+    expect(out.agentsBlock).not.toContain('Onde criar:');
+    expect(out.agentsBlock).not.toContain('`verify <NNNN>`');
+    expect(out.agentsBlock).toContain('- Estilo do time.\n- Segunda linha.');
+    expect(out.agentsBlock).not.toContain('Testes em português');
+    expect(out.agentsBlock).toContain('### Regras por caminho');
+    expect(out.agentsBlock.endsWith(BLOCK_END)).toBe(true);
+    expect(out.agentsBlock).toMatchSnapshot();
+    const skill = out.files.get('.agents/skills/shop-dev/SKILL.md')!;
+    expect(skill).toContain('## Regras do time');
+    expect(skill).toContain('.ai/rules/testes.md');
+    expect(skill).not.toContain('.ai/rules/docs.md');
+    expect(skill).toMatchSnapshot();
   });
 });

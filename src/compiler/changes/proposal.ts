@@ -9,7 +9,7 @@ export const MOTIVO_PLACEHOLDER =
 
 const CHANGE_DIR = /^(\d{4})-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/;
+export const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/;
 
 export interface Delta {
   readonly added: string[];
