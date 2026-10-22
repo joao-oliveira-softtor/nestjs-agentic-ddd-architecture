@@ -1,0 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { classifyPilotReport, pilotArm, PILOT_ARMS } from '/home/jvtuta/code/nadd-pr4/scripts/evals/pilot';
+const r = JSON.parse(readFileSync('/home/jvtuta/code/nadd-pr4/docs/superpowers/validation/2026-10-22-cycle-21/real/aggregate/aggregate.json', 'utf8'));
+for (const [k, id] of Object.entries(PILOT_ARMS)) {
+  const c = r.configurations.find((x: any) => x.configuration === id);
+  const a = pilotArm(c, { requiresReview: k === 'a3' });
+  const t = c.cost.available ? c.cost.total : null;
+  console.log(k, id, 'aceitos', a.accepted, 'inconcl', a.inconclusive, 'custo', JSON.stringify(t), 'lowerBound', c.cost.lowerBound,
+    'porItem(exp)', t && a.accepted ? (t.expensive / a.accepted).toFixed(4) : '-');
+}
+console.log(JSON.stringify(classifyPilotReport(r)));

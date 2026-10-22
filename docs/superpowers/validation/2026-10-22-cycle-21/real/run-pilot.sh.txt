@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Piloto cycle-21 (#36): 8 slots em sequência, para no primeiro que não completar.
+R=/home/jvtuta/agentic-evals-runs/cycle-21-pilot
+T=~/.config/agentic-evals/claude-oauth-token
+M=/home/jvtuta/code/nadd-pilot/evals/campaigns/cycle-21-pilot/manifests
+cd /home/jvtuta/code/nadd-pilot || exit 9
+mkdir -p "$R"
+for slot in a0-sonnet-medium-r1 a1-sonnet-low-r1 a2-opus-low-r1 a3-routed-r1 a0-sonnet-medium-r2 a1-sonnet-low-r2 a2-opus-low-r2 a3-routed-r2; do
+  date -Is > "$R/$slot.start"
+  CLAUDE_CODE_OAUTH_TOKEN="$(cat $T)" bun run evals --config "$M/$slot.json" --out "$R/$slot" --real --trusted-source > "$R/$slot.log" 2>&1
+  code=$?
+  { echo "exit=$code"; date -Is; } > "$R/$slot.exit"
+  status=$(bun -e "console.log(JSON.parse(require('fs').readFileSync('$R/$slot/report.json','utf8')).status)" 2>/dev/null)
+  echo "$slot exit=$code status=$status" >> "$R/progress.txt"
+  [ "$code" = 0 ] && [ "$status" = completed ] || { echo "PARADO em $slot" >> "$R/progress.txt"; break; }
+done
+echo "linhas vazias no token: $(grep -c '^$' $T)" > "$R/leak.txt"
+grep -rlF -f "$T" "$R" >> "$R/leak.txt" 2>&1; echo "grep exit=$? (1 = nada encontrado)" >> "$R/leak.txt"
