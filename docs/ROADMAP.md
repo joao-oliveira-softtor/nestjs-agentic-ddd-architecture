@@ -17,7 +17,7 @@ A spec histórica chamou as extensões futuras de v0.1. Para evitar confusão co
 | Plano 7 — Primeiro adapter real de LlmPort              | [#7](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/7) | Base v0.1.0 |
 | Plano 8 — Demonstração CLI com LLM real e aprovação     | [#8](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/8) | #7          |
 
-O Plano 5 tem [spec](superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [plano de execução](superpowers/plans/2026-10-08-v0-05-agent-skills.md) versionados. O Plano 6 tem [spec](superpowers/specs/2026-10-08-v0-06-agent-evals-design.md), [plano](superpowers/plans/2026-10-08-v0-06-agent-evals.md) e [referência real com limitações de orçamento e protocolo](superpowers/validation/2026-10-09-plan6.md); sua implementação é integrada pela [PR #16](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/16). Os Planos 7–8 formam outra frente: primeiro o adapter, depois a experiência de operação por CLI. O Plano 7 está **em pausa** enquanto o foco são os agentes de desenvolvimento (épico #26); ver [ADR-0004](adr/ADR-0004.md).
+O Plano 5 tem [spec](superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [plano de execução](superpowers/plans/2026-10-08-v0-05-agent-skills.md) versionados. O Plano 6 tem [spec](superpowers/specs/2026-10-08-v0-06-agent-evals-design.md), [plano](superpowers/plans/2026-10-08-v0-06-agent-evals.md) e [referência real com limitações de orçamento e protocolo](superpowers/validation/2026-10-09-plan6.md); sua implementação é integrada pela [PR #16](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/16). Os Planos 7–8 formam outra frente: primeiro o adapter, depois a experiência de operação por CLI. O Plano 7 esteve em pausa durante o épico #26 ([ADR-0004](adr/ADR-0004.md)); com o épico encerrado, volta à fila, dependendo da decisão de provider no ADR-0004.
 
 ## Ciclo de avaliações #17–#20
 
@@ -40,9 +40,29 @@ O ciclo preserva o dataset original e a referência real anterior. Manifestos de
 
 [Release](releases/0.4.0.md), [PR #21](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/21) e [#13](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/13): exports públicos, CLI instalável, biblioteca/declarações/maps e smoke do tarball real em consumidor externo. Tarball disponível no GitHub; publicação no registro npm segue bloqueada até definir nome e permissões. Planos 7–8 permanecem próximos trabalhos.
 
-## Frente proposta — Orquestração de agentes por camada e modelo
+## Frente encerrada — Orquestração de agentes por camada e modelo
 
-Épico [#26](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/26) (sub-issues #27–#39). Objetivo: reduzir tokens e custo com briefs determinísticos por tarefa e distribuição do trabalho por camada entre Haiku (domínio), Sonnet (application, operators e integração) e Opus (aprovação e revisão), cada um em contexto limpo. Não há benchmark publicado para essa divisão em três níveis: ela é hipótese a medir, com Sonnet e Opus sozinhos como controles. [Spec](superpowers/specs/2026-10-12-orquestracao-agentes-por-modelo.md), [ADR-0003](adr/ADR-0003.md), [plano](superpowers/plans/2026-10-13-orquestracao-agentes-por-modelo.md) e [pesquisa](research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md). **Entregue** (sem inferência real): `packet --static`, gerador de briefs, executor de domínio isolado, gates de fronteira, papel de revisor, adapter Claude no harness, driver de orquestração com escalação e benchmark de revisão com as 19 regressões plantadas (#28–#32, #34, #35, #37). **Em andamento:** a campanha de comparação (#36), com o modo de prompt `brief` já no benchmark de implementação. **Pendente:** perfil de modelos no instalador (#33, só depois do experimento, ADR-0003 D15) e o spike de value object (#38, opcional). Qualquer inferência real exige orçamento autorizado e a decisão sobre a política de custo derivado.
+Épico [#26](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/26) (sub-issues #27–#39). Objetivo: reduzir tokens e custo com briefs determinísticos por tarefa e distribuição do trabalho por camada entre Haiku, Sonnet e Opus. [Spec](superpowers/specs/2026-10-12-orquestracao-agentes-por-modelo.md), [ADR-0003](adr/ADR-0003.md), [plano](superpowers/plans/2026-10-13-orquestracao-agentes-por-modelo.md) e [pesquisa](research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md). **Entregue:** `packet --static`, gerador de briefs, executor de domínio isolado, gates de fronteira, papel de revisor, adapter Claude no harness, driver de orquestração com escalação, benchmark de revisão e a medição de custo de sessão (`evals:session-cost`). **Resultado:** o piloto cycle-21 ([#36](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/36), [resultado](superpowers/validation/2026-10-22-cycle-21/RESULTADO.md)) classificou S: Sonnet medium sozinho aceitou tanto quanto o roteamento, com custo um pouco menor. O padrão é o modelo `inherit` com brief e gates; o roteamento fica como experimento; #33 e #38 não serão feitas.
+
+## Frente proposta — Regras do time e conhecimento do domínio para agentes
+
+Épico [#70](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/70), inspirado no Laravel Boost. Objetivo: o código gerado por agentes segue o padrão do time (não um padrão fixo do framework) e as regras de negócio compiladas ficam consultáveis por agentes locais e externos.
+
+| Issue | Entrega | Dependência |
+| --- | --- | --- |
+| [#65](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/65) | Pesquisa do Laravel Boost, ADR e plano de medição | — |
+| [#66](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/66) | Regras do time compostas com as do framework | #65 |
+| [#67](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/67) | Layout e convenções de camada configuráveis | #65 |
+| [#68](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/68) | Servidor MCP local (stdio), somente leitura | #65 |
+| [#69](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/69) | Servidor MCP remoto (HTTP + autenticação) | #65, #68 |
+
+A linha de base do critério de sucesso é o A0 do piloto cycle-21 (Sonnet medium, 10 de 10 aceitos).
+
+## Ordem das próximas frentes
+
+1. Épico #70, começando pela pesquisa #65, que destrava #66–#68 em paralelo.
+2. Em paralelo, a frente de runtime: decidir o provider no [ADR-0004](adr/ADR-0004.md), depois #7 (com os requisitos F8 do runtime) e #8. A parte offline da #8 (CLI, aprovação e `FakeLlm`) não depende da #7.
+3. A superfície HTTP da #11 e da #69 é decidida uma vez, no mesmo ADR, por causa do gate que proíbe `@Controller`.
 
 ## Backlog — Extensões e distribuição
 

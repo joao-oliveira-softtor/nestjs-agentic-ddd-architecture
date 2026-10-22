@@ -12,7 +12,7 @@ Carregue somente as referências necessárias:
 - [Executor](references/executor.md): executar um packet sem mudar a especificação.
 - [Executor de domínio](references/executor-domain.md): item `domain` em contexto isolado, só com o packet.
 - [Revisor](references/reviewer.md): revisar o diff contra o contrato e os gates, sem editar.
-- [Orquestração](references/orchestration.md): distribuir itens por camada entre níveis de modelo, com escalação e telemetria.
+- [Orquestração](references/orchestration.md): experimento que distribui itens por camada entre níveis de modelo, com escalação e telemetria; o padrão é o modelo `inherit`.
 - [Instalação](references/installation.md): instalar/verificar links e adaptadores locais ou globais.
 - [Tutorial](references/tutorial.md): praticar em um workspace tasks isolado.
 

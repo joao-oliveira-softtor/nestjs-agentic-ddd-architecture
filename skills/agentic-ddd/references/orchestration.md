@@ -1,6 +1,6 @@
 # Orquestração por camada e modelo
 
-Driver sequencial que distribui os itens do grafo entre níveis de modelo. É uma hipótese a medir (ADR-0003), não o padrão: o modo padrão não executa nada.
+Driver sequencial que distribui os itens do grafo entre níveis de modelo. É ferramenta de experimento, não o padrão: o piloto de #36 mostrou que um modelo só (Sonnet medium) iguala o roteamento em aceite com custo igual ou menor, então o padrão é o modelo `inherit` com brief e gates (ADR-0003, Resultado do experimento). O modo padrão do driver não executa nada.
 
 ```
 bun scripts/orchestrate.ts [--static] [--change NNNN] [--tier domain=sonnet] [--ladder sonnet,opus]
