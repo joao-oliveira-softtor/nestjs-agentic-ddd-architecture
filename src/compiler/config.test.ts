@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadConfig, resolveConfig } from './config';
+import {
+  DEFAULT_CONVENTIONS,
+  loadConfig,
+  resolveConfig,
+  type AgenticConfig,
+} from './config';
 
 let dir: string;
 
@@ -170,5 +175,184 @@ describe('configuração das regras do time', () => {
       expect(() =>
         resolveConfig({ ...base, rules: { briefMaxTokens } }, dir),
       ).toThrow('agentic.config.ts: rules.briefMaxTokens deve ser um inteiro');
+  });
+});
+
+describe('configuração das convenções', () => {
+  const base = { modules: [{ name: 'x', path: 'x' }] };
+
+  function withConventions(conventions: unknown) {
+    return resolveConfig({ ...base, conventions } as AgenticConfig, dir);
+  }
+
+  test('resolveConfig preenche conventions com o padrão quando o campo não existe', () => {
+    expect(resolveConfig(base, dir).conventions).toEqual(DEFAULT_CONVENTIONS);
+  });
+
+  test('resolveConfig mescla layers e suffixes por chave', () => {
+    expect(
+      withConventions({
+        layers: { domain: 'core' },
+        suffixes: { operator: '.op.ts' },
+      }).conventions,
+    ).toEqual({
+      ...DEFAULT_CONVENTIONS,
+      layers: {
+        domain: 'core',
+        application: 'application',
+        operators: 'operators',
+      },
+      suffixes: { events: '.events.ts', operator: '.op.ts' },
+    });
+  });
+
+  test('resolveConfig mescla forbiddenImports por camada', () => {
+    expect(
+      withConventions({ forbiddenImports: { domain: ['application'] } })
+        .conventions?.forbiddenImports,
+    ).toEqual({
+      domain: ['application'],
+      application: ['operators', 'infrastructure'],
+    });
+  });
+
+  test('listas substituem o padrão em vez de somar', () => {
+    const resolved = withConventions({
+      infrastructure: ['infra'],
+      forbiddenImports: { domain: ['infrastructure'] },
+    }).conventions;
+    expect(resolved?.infrastructure).toEqual(['infra']);
+    expect(resolved?.forbiddenImports.domain).toEqual(['infrastructure']);
+  });
+
+  test('forbiddenImports aceita lista vazia', () => {
+    expect(
+      withConventions({ forbiddenImports: { application: [] } }).conventions
+        ?.forbiddenImports.application,
+    ).toEqual([]);
+  });
+
+  test('rejeita nome de pasta de camada que não é uma pasta só', () => {
+    for (const value of ['core/domain', 'core\\domain', '', '.', '..']) {
+      expect(() => withConventions({ layers: { domain: value } })).toThrow(
+        `agentic.config.ts: conventions.layers.domain "${value}" deve ser o nome de uma pasta só dentro do módulo; layout aninhado se faz por modules[].path`,
+      );
+    }
+  });
+
+  test('rejeita nome de pasta em infrastructure que não é uma pasta só', () => {
+    expect(() => withConventions({ infrastructure: ['a/b'] })).toThrow(
+      'agentic.config.ts: conventions.infrastructure[0] "a/b" deve ser o nome de uma pasta só dentro do módulo',
+    );
+  });
+
+  test('rejeita sufixo de teste, declaração ou com segmento vazio', () => {
+    for (const value of ['.x.test.ts', '.x.d.ts', '..ts'])
+      expect(() => withConventions({ suffixes: { events: value } })).toThrow(
+        `conventions.suffixes.events "${value}" não pode terminar em`,
+      );
+  });
+
+  test('rejeita sufixo fora do formato ".nome.ts"', () => {
+    for (const value of [
+      '.ts',
+      'events.ts',
+      '.events',
+      '.events.js',
+      'x/.events.ts',
+      '.a\\b.ts',
+    ]) {
+      expect(() => withConventions({ suffixes: { events: value } })).toThrow(
+        `agentic.config.ts: conventions.suffixes.events "${value}" deve começar com "." e terminar em ".ts"`,
+      );
+    }
+  });
+
+  test('rejeita sufixo de eventos igual ao de operator', () => {
+    expect(() =>
+      withConventions({ suffixes: { operator: '.events.ts' } }),
+    ).toThrow(
+      'agentic.config.ts: conventions.suffixes.events e conventions.suffixes.operator não podem ser iguais',
+    );
+  });
+
+  test('rejeita infrastructure vazio', () => {
+    expect(() => withConventions({ infrastructure: [] })).toThrow(
+      'agentic.config.ts: conventions.infrastructure não pode ser vazio',
+    );
+  });
+
+  test('rejeita nome de pasta repetido entre camadas e infrastructure', () => {
+    expect(() => withConventions({ layers: { application: 'infra' } })).toThrow(
+      'agentic.config.ts: a pasta "infra" aparece mais de uma vez (conventions.layers.application e conventions.infrastructure[1])',
+    );
+    expect(() => withConventions({ infrastructure: ['x', 'x'] })).toThrow(
+      'a pasta "x" aparece mais de uma vez',
+    );
+  });
+
+  test('rejeita tipo errado com mensagem indicando o campo', () => {
+    const cases: [unknown, string][] = [
+      ['x', 'conventions deve ser um objeto'],
+      [{ layers: 'x' }, 'conventions.layers deve ser um objeto'],
+      [
+        { layers: { domain: 1 } },
+        'conventions.layers.domain deve ser um texto',
+      ],
+      [{ suffixes: 'x' }, 'conventions.suffixes deve ser um objeto'],
+      [
+        { suffixes: { events: 1 } },
+        'conventions.suffixes.events deve ser um texto',
+      ],
+      [
+        { infrastructure: 'infra' },
+        'conventions.infrastructure deve ser uma lista de textos',
+      ],
+      [
+        { infrastructure: [1] },
+        'conventions.infrastructure deve ser uma lista de textos',
+      ],
+      [
+        { forbiddenImports: 'x' },
+        'conventions.forbiddenImports deve ser um objeto',
+      ],
+      [
+        { forbiddenImports: { domain: 'application' } },
+        'conventions.forbiddenImports.domain deve ser uma lista de textos',
+      ],
+    ];
+    for (const [conventions, message] of cases)
+      expect(() => withConventions(conventions)).toThrow(
+        `agentic.config.ts: ${message}`,
+      );
+  });
+
+  test('rejeita chave desconhecida em qualquer nível listando as válidas', () => {
+    expect(() => withConventions({ layer: { domain: 'core' } })).toThrow(
+      'agentic.config.ts: conventions.layer não existe; as chaves válidas em conventions são: layers, suffixes, infrastructure, forbiddenImports',
+    );
+    expect(() => withConventions({ layers: { core: 'x' } })).toThrow(
+      'agentic.config.ts: conventions.layers.core não existe; as chaves válidas em conventions.layers são: domain, application, operators',
+    );
+    expect(() => withConventions({ suffixes: { event: '.x.ts' } })).toThrow(
+      'agentic.config.ts: conventions.suffixes.event não existe; as chaves válidas em conventions.suffixes são: events, operator',
+    );
+    expect(() => withConventions({ forbiddenImports: { infra: [] } })).toThrow(
+      'agentic.config.ts: conventions.forbiddenImports.infra não existe',
+    );
+  });
+
+  test('rejeita forbiddenImports.operators dizendo que operators não tem regra de import', () => {
+    expect(() =>
+      withConventions({ forbiddenImports: { operators: [] } }),
+    ).toThrow('operators não tem regra de import');
+  });
+
+  test('rejeita alvo de forbiddenImports fora de application, operators e infrastructure', () => {
+    expect(() =>
+      withConventions({ forbiddenImports: { domain: ['domain'] } }),
+    ).toThrow(
+      'agentic.config.ts: conventions.forbiddenImports.domain aceita só application, operators ou infrastructure (recebido "domain")',
+    );
   });
 });

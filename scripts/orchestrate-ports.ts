@@ -6,6 +6,7 @@ import {
   claudeToolFlags,
   parseClaudeTranscript,
 } from './evals/adapters/claude';
+import type { ResolvedConventions } from '../src/compiler/conventions';
 import { bodyOnlyFindings, importDirectionFindings } from './boundary-gates';
 import type { GateLayer } from './boundary-gates';
 import type {
@@ -64,6 +65,7 @@ export interface CliGatesOptions {
   readonly config: string;
   /** Prefixos (relativos à raiz) que o driver escreve durante a execução: telemetria, briefs. */
   readonly ignore?: readonly string[];
+  readonly conventions?: ResolvedConventions;
 }
 
 const TEST_FILE = /\.test\.ts$/;
@@ -148,6 +150,7 @@ export function createCliGates(options: CliGatesOptions): Gates {
         facts.sourcePath,
         after,
         facts.layer as GateLayer,
+        options.conventions,
       );
       const method = /^method:([^.]+)\.(.+)$/.exec(facts.id);
       if (method)

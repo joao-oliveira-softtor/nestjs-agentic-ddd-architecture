@@ -156,6 +156,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     rules,
     history: plan.nextLock?.changes ?? [],
     changesDir: config.changesDir,
+    conventions: config.conventions,
   });
   const lint = lintRendered(rendered);
   const lintErrors: CompileError[] = lint

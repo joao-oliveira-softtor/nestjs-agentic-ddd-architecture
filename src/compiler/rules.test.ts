@@ -29,6 +29,21 @@ function failure(fn: () => unknown): RuleError {
 }
 
 describe('CORE_RULES', () => {
+  test('os marcadores de camada usam layers quando informado', () => {
+    const layers = { domain: 'model', application: 'app', operators: 'ops' };
+    const layersRule = CORE_RULES.find((r) => r.key === 'core/layers')!;
+    const text = fillMarkers(layersRule.body, {
+      changes: 'c',
+      devSkills: 'd',
+      runtimeSkills: 'r',
+      layers,
+    });
+    expect(text).toContain('`<caminho do módulo>/model` (entidades');
+    expect(text).toContain('`<caminho do módulo>/app` (use-cases');
+    expect(text).toContain('`<caminho do módulo>/ops` (operators');
+    expect(text).not.toContain('{{');
+  });
+
   test('com os marcadores preenchidos reproduz o texto fixo das convenções anteriores à #66', () => {
     // Texto copiado de agents-md.ts antes da #66, com valores fora do padrão
     // para provar que cada marcador cai no lugar certo.

@@ -1,8 +1,23 @@
 import { stat } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import {
+  DEFAULT_CONVENTIONS,
+  type ConventionLayer,
+  type ConventionsConfig,
+  type ImportTarget,
+  type ResolvedConventions,
+} from './conventions';
 import { toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
+
+export {
+  DEFAULT_CONVENTIONS,
+  type ConventionLayer,
+  type ConventionsConfig,
+  type ImportTarget,
+  type ResolvedConventions,
+};
 
 /** Sub-orçamento padrão das regras do time no brief (ADR-0005 D4). */
 export const DEFAULT_RULES_MAX_TOKENS = 2000;
@@ -31,6 +46,7 @@ export interface AgenticConfig {
   readonly changes?: string;
   readonly verify?: VerifyConfig;
   readonly rules?: RulesConfig;
+  readonly conventions?: ConventionsConfig;
 }
 
 export interface ResolvedConfig {
@@ -52,9 +68,180 @@ export interface ResolvedConfig {
       readonly command: readonly string[];
     }[];
   };
+  // Opcional só para que testes que montam ResolvedConfig à mão continuem compilando;
+  // resolveConfig sempre preenche.
+  readonly conventions?: ResolvedConventions;
 }
 
 const MODULE_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+function checkKeys(
+  value: unknown,
+  path: string,
+  allowed: readonly string[],
+  hints: Readonly<Record<string, string>> = {},
+): Record<string, unknown> {
+  if (value === undefined) return {};
+  if (typeof value !== 'object' || value === null || Array.isArray(value))
+    throw new Error(`agentic.config.ts: ${path} deve ser um objeto`);
+  const object = value as Record<string, unknown>;
+  for (const key of Object.keys(object)) {
+    if (allowed.includes(key)) continue;
+    if (Object.hasOwn(hints, key))
+      throw new Error(
+        `agentic.config.ts: ${path}.${key} não é válido: ${hints[key]}`,
+      );
+    throw new Error(
+      `agentic.config.ts: ${path}.${key} não existe; as chaves válidas em ${path} são: ${allowed.join(', ')}`,
+    );
+  }
+  return object;
+}
+
+function folderName(value: unknown, path: string, nested = true): string {
+  if (typeof value !== 'string')
+    throw new Error(`agentic.config.ts: ${path} deve ser um texto`);
+  if (value === '' || value === '.' || value === '..' || /[/\\]/.test(value))
+    throw new Error(
+      `agentic.config.ts: ${path} "${value}" deve ser o nome de uma pasta só dentro do módulo${nested ? '; layout aninhado se faz por modules[].path' : ''}`,
+    );
+  return value;
+}
+
+function suffixName(value: unknown, path: string): string {
+  if (typeof value !== 'string')
+    throw new Error(`agentic.config.ts: ${path} deve ser um texto`);
+  if (/\.(test|spec|d)\.ts$/.test(value) || value.includes('..'))
+    throw new Error(
+      `agentic.config.ts: ${path} "${value}" não pode terminar em ".test.ts", ".spec.ts" ou ".d.ts" (arquivo de teste ou de declaração) nem ter segmento vazio ("..")`,
+    );
+  if (
+    !value.startsWith('.') ||
+    value === '.ts' ||
+    !value.endsWith('.ts') ||
+    /[/\\]/.test(value)
+  )
+    throw new Error(
+      `agentic.config.ts: ${path} "${value}" deve começar com "." e terminar em ".ts" (ex.: ".events.ts"), sem "/" nem "\\"`,
+    );
+  return value;
+}
+
+function stringList(value: unknown, path: string): string[] {
+  if (!Array.isArray(value) || !value.every((item) => typeof item === 'string'))
+    throw new Error(`agentic.config.ts: ${path} deve ser uma lista de textos`);
+  return [...value];
+}
+
+function importTargets(value: unknown, path: string): ImportTarget[] {
+  const allowed: readonly string[] = [
+    'application',
+    'operators',
+    'infrastructure',
+  ] satisfies ImportTarget[];
+  return stringList(value, path).map((target) => {
+    if (!allowed.includes(target))
+      throw new Error(
+        `agentic.config.ts: ${path} aceita só application, operators ou infrastructure (recebido "${target}")`,
+      );
+    return target as ImportTarget;
+  });
+}
+
+function resolveConventions(input: unknown): ResolvedConventions {
+  const root = checkKeys(
+    input,
+    'conventions',
+    Object.keys(DEFAULT_CONVENTIONS),
+  );
+  const layersIn = checkKeys(
+    root.layers,
+    'conventions.layers',
+    Object.keys(DEFAULT_CONVENTIONS.layers),
+  );
+  const suffixesIn = checkKeys(
+    root.suffixes,
+    'conventions.suffixes',
+    Object.keys(DEFAULT_CONVENTIONS.suffixes),
+  );
+  const forbiddenIn = checkKeys(
+    root.forbiddenImports,
+    'conventions.forbiddenImports',
+    Object.keys(DEFAULT_CONVENTIONS.forbiddenImports),
+    {
+      operators:
+        'operators não tem regra de import; só domain e application têm',
+    },
+  );
+
+  const layer = (key: ConventionLayer): string =>
+    layersIn[key] === undefined
+      ? DEFAULT_CONVENTIONS.layers[key]
+      : folderName(layersIn[key], `conventions.layers.${key}`);
+  const layers = {
+    domain: layer('domain'),
+    application: layer('application'),
+    operators: layer('operators'),
+  };
+
+  const suffix = (key: 'events' | 'operator'): string =>
+    suffixesIn[key] === undefined
+      ? DEFAULT_CONVENTIONS.suffixes[key]
+      : suffixName(suffixesIn[key], `conventions.suffixes.${key}`);
+  const events = suffix('events');
+  const operator = suffix('operator');
+  if (events === operator)
+    throw new Error(
+      `agentic.config.ts: conventions.suffixes.events e conventions.suffixes.operator não podem ser iguais ("${events}")`,
+    );
+
+  const infrastructure =
+    root.infrastructure === undefined
+      ? [...DEFAULT_CONVENTIONS.infrastructure]
+      : stringList(root.infrastructure, 'conventions.infrastructure').map(
+          (item, i) =>
+            folderName(item, `conventions.infrastructure[${i}]`, false),
+        );
+  if (infrastructure.length === 0)
+    throw new Error(
+      'agentic.config.ts: conventions.infrastructure não pode ser vazio; informe ao menos uma pasta',
+    );
+
+  const forbidden = (key: 'domain' | 'application'): ImportTarget[] =>
+    forbiddenIn[key] === undefined
+      ? [...DEFAULT_CONVENTIONS.forbiddenImports[key]]
+      : importTargets(forbiddenIn[key], `conventions.forbiddenImports.${key}`);
+
+  // Uma pasta só pode servir a uma camada ou a um item de infrastructure.
+  const folders = new Map<string, string>();
+  const claims: [string, string][] = [
+    ['conventions.layers.domain', layers.domain],
+    ['conventions.layers.application', layers.application],
+    ['conventions.layers.operators', layers.operators],
+    ...infrastructure.map((name, i): [string, string] => [
+      `conventions.infrastructure[${i}]`,
+      name,
+    ]),
+  ];
+  for (const [where, name] of claims) {
+    const first = folders.get(name);
+    if (first !== undefined)
+      throw new Error(
+        `agentic.config.ts: a pasta "${name}" aparece mais de uma vez (${first} e ${where})`,
+      );
+    folders.set(name, where);
+  }
+
+  return {
+    layers,
+    suffixes: { events, operator },
+    infrastructure,
+    forbiddenImports: {
+      domain: forbidden('domain'),
+      application: forbidden('application'),
+    },
+  };
+}
 
 export function defineConfig(config: AgenticConfig): AgenticConfig {
   return config;
@@ -155,6 +342,7 @@ export function resolveConfig(
         .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
         .map(([name, command]) => ({ name, command: [...command] })),
     },
+    conventions: resolveConventions(config.conventions),
   };
 }
 

@@ -1,5 +1,6 @@
 import { stableStringify } from '../canonical';
 import { workItems } from '../graph';
+import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../conventions';
 import type { IR, IRModule } from '../ir';
 import type { LockChange } from '../lock';
 import { rulesFor, ruleHash, type Rule } from '../rules';
@@ -16,8 +17,10 @@ export function renderDevSkill(
     readonly history?: readonly LockChange[];
     readonly devSkillsDir?: string;
     readonly rules?: readonly Rule[];
+    readonly conventions?: ResolvedConventions;
   } = {},
 ): Map<string, string> {
+  const { layers, suffixes } = options.conventions ?? DEFAULT_CONVENTIONS;
   const inModule = <T extends { readonly module: string }>(
     xs: readonly T[],
   ): T[] => xs.filter((x) => x.module === module.name);
@@ -215,7 +218,7 @@ export function renderDevSkill(
       [
         [
           'Entidade',
-          code(`${module.path}/domain/<nome>.ts`),
+          code(`${module.path}/${layers.domain}/<nome>.ts`),
           '`@AgentEntity({ description, states })` + `@Invariant({ id, text })` na classe',
         ],
         [
@@ -225,17 +228,17 @@ export function renderDevSkill(
         ],
         [
           'Evento',
-          code(`${module.path}/domain/<agregado>.events.ts`),
+          code(`${module.path}/${layers.domain}/<agregado>${suffixes.events}`),
           '`@AgentEvent({ description, payload })` estendendo `DomainEvent`',
         ],
         [
           'Use-case',
-          code(`${module.path}/application/<nome>.ts`),
+          code(`${module.path}/${layers.application}/<nome>.ts`),
           "`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entidade>.<método>'], emits? })`",
         ],
         [
           'Operator',
-          code(`${module.path}/operators/<nome>.operator.ts`),
+          code(`${module.path}/${layers.operators}/<nome>${suffixes.operator}`),
           '`@Operator({ name, description, instructions, useCases, requiresApproval? })`',
         ],
       ],

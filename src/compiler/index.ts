@@ -19,13 +19,18 @@ export {
   type ProjectAnalysis,
 } from './compile';
 export {
+  DEFAULT_CONVENTIONS,
   DEFAULT_RULES_MAX_TOKENS,
   defineConfig,
   loadConfig,
   resolveConfig,
   type AgenticConfig,
+  type ConventionLayer,
+  type ConventionsConfig,
+  type ImportTarget,
   type ModuleConfig,
   type ResolvedConfig,
+  type ResolvedConventions,
 } from './config';
 export { itemOfMethod, workItems, type Layer, type WorkItem } from './graph';
 export {

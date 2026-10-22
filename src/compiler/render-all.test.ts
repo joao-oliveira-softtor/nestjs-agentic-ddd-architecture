@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
 import { analyze } from './analyze';
+import { resolveConfig } from './config';
 import { irHash } from './ir';
 import { composeRules, type Rule } from './rules';
 import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
@@ -115,6 +116,34 @@ describe('renderAll', () => {
     expect(skill).toContain('## Regras do time');
     expect(skill).toContain('.ai/rules/testes.md');
     expect(skill).not.toContain('.ai/rules/docs.md');
+    expect(skill).toMatchSnapshot();
+  });
+  test('convenções de layout: caminhos e sufixos vêm da config, a camada do item vem do decorator', () => {
+    const { conventions } = resolveConfig(
+      {
+        modules: [{ name: 'shop', path: 'src/shop/core' }],
+        conventions: {
+          layers: { domain: 'model' },
+          suffixes: { events: '.evt.ts' },
+        },
+      },
+      ROOT,
+    );
+    const custom = {
+      ...ir,
+      modules: ir.modules.map((m) => ({ ...m, path: 'src/shop/core' })),
+    };
+    const out = renderAll(custom, DEFAULT_OUT, { conventions });
+    const skill = out.files.get('.agents/skills/shop-dev/SKILL.md')!;
+    expect(skill).toContain('`src/shop/core/model/<nome>.ts`');
+    expect(skill).toContain('`src/shop/core/model/<agregado>.evt.ts`');
+    expect(skill).toContain('`src/shop/core/application/<nome>.ts`');
+    expect(skill).not.toContain('.events.ts');
+    expect(out.agentsBlock).toContain('`<caminho do módulo>/model`');
+    expect(out.agentsBlock).toContain('`<caminho do módulo>/application`');
+    expect(out.agentsBlock).not.toContain('`<caminho do módulo>/domain`');
+    expect(skill).toContain('| `entity:Product` | domain |');
+    expect(skill).toContain('| `usecase:create_product` | application |');
     expect(skill).toMatchSnapshot();
   });
 });
