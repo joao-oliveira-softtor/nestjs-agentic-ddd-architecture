@@ -1080,3 +1080,25 @@ test('regras do time chegam ao executor (por sourcePath), ao revisor e ao planRu
   const withRules = await planRun([[a]], p.gates, {}, undefined, rules);
   expect(withRules[0]!.briefTokens).toBeGreaterThan(without[0]!.briefTokens);
 });
+
+test('planRun com revisor reprova a soma das regras antes de qualquer invocação', async () => {
+  const [a, b] = [domain('A'), domain('B')];
+  const rule = (key: string, file: string) => ({
+    key,
+    file: `.ai/rules/${key}.md`,
+    paths: [file],
+    body: `- ${'x'.repeat(4000)}`,
+  });
+  // ~1000 tokens cada: cada executor cabe em 1500, a soma do revisor não.
+  const rules = [rule('a', 'src/entity-A.ts'), rule('b', 'src/entity-B.ts')];
+  const p = ports();
+  p.register(a);
+  p.register(b);
+  const plan = (review: boolean) =>
+    planRun([[a, b]], p.gates, {}, undefined, rules, 1500, review);
+  expect(await plan(false)).toHaveLength(2);
+  expect(await plan(true).catch((e: unknown) => e)).toBeInstanceOf(Error);
+  expect(String(await plan(true).catch((e: unknown) => e))).toMatch(
+    /regras do time excedem o orçamento/,
+  );
+});

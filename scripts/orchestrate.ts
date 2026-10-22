@@ -450,14 +450,17 @@ export async function planRun(
   maxBriefTokens?: number,
   rules: readonly Rule[] = [],
   rulesMaxTokens?: number,
+  review = false,
 ): Promise<PlannedItem[]> {
   const { approxTokens } = await import('@agentic-ddd/compiler');
   const models = policy.models ?? DEFAULT_MODELS;
   const planned: PlannedItem[] = [];
+  const packets: string[] = [];
   for (const wave of waves)
     for (const item of [...wave].sort((a, b) => a.id.localeCompare(b.id))) {
       const tier = startTier(item.layer, policy);
       const packet = await gates.packet(item.id);
+      packets.push(packet);
       planned.push({
         id: item.id,
         layer: item.layer,
@@ -473,6 +476,20 @@ export async function planRun(
         ),
       });
     }
+  // O revisor soma as regras de todos os itens: cada brief de executor pode
+  // caber e a soma não. O diff só existe depois da execução e fica de fora.
+  if (review)
+    renderReviewerBrief({
+      packets,
+      diff: '',
+      gates: '',
+      rules: briefRules(
+        rules,
+        packets.map((p) => parsePacket(p).sourcePath),
+      ),
+      rulesMaxTokens,
+      maxTokens: maxBriefTokens,
+    });
   return planned;
 }
 
@@ -660,8 +677,8 @@ export async function main(argv: readonly string[]): Promise<number> {
         dependsOn: byId.get(id)!.dependsOn,
       })),
     );
-    // Renderiza todos os briefs antes de qualquer invocação paga: estouro de
-    // orçamento das regras falha aqui, e não no meio de uma onda.
+    // Renderiza os briefs dos executores (e as regras do revisor) antes de
+    // qualquer invocação paga: estouro de orçamento falha aqui, não no meio de uma onda.
     const plan = await planRun(
       planned,
       gates,
@@ -669,6 +686,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       undefined,
       rules,
       config.rules.briefMaxTokens,
+      cli.review,
     );
     if (!cli.real) {
       console.log(JSON.stringify({ mode: 'plan', items: plan }, null, 2));

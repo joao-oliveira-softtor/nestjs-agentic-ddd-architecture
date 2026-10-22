@@ -1,11 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
-import { analyze } from './analyze';
+import { join } from 'node:path';
 import { resolveConfig } from './config';
-import { BLOCK_END, renderAgentsBlock } from './render/agents-md';
 import {
   CORE_RULES,
   RuleError,
@@ -17,8 +14,6 @@ import {
   rulesFor,
   type Rule,
 } from './rules';
-
-const ROOT = resolve(import.meta.dir, '../..');
 
 const team = (key: string, body = 'texto', paths: string[] | null = null) =>
   ({ key, file: `.ai/rules/${key}.md`, paths, body }) satisfies Rule;
@@ -34,28 +29,26 @@ function failure(fn: () => unknown): RuleError {
 }
 
 describe('CORE_RULES', () => {
-  test('com os marcadores preenchidos reproduz as convenções do bloco de hoje', () => {
-    const { ir } = analyze(defineShop(), {
-      root: ROOT,
-      modules: [SHOP_MODULE],
-    });
-    const paths = {
-      devSkills: '.agents/skills',
-      runtimeSkills: '.agentic/runtime',
-      changesDir: 'changes',
-    };
-    const block = renderAgentsBlock(ir, paths);
-    const lines = block
-      .slice(block.indexOf('### Convenções\n\n') + '### Convenções\n\n'.length)
-      .replace(BLOCK_END, '')
-      .trimEnd()
-      .split('\n');
+  test('com os marcadores preenchidos reproduz o texto fixo das convenções anteriores à #66', () => {
+    // Texto copiado de agents-md.ts antes da #66, com valores fora do padrão
+    // para provar que cada marcador cai no lugar certo.
     const values = {
-      changes: paths.changesDir,
-      devSkills: paths.devSkills,
-      runtimeSkills: paths.runtimeSkills,
+      changes: 'docs/changes',
+      devSkills: 'out/skills',
+      runtimeSkills: 'out/runtime',
     };
-    expect(CORE_RULES.map((r) => fillMarkers(r.body, values))).toEqual(lines);
+    expect(CORE_RULES.map((r) => fillMarkers(r.body, values))).toEqual([
+      '- Entidades, métodos, eventos, use-cases e operators são declarados com `@AgentEntity`, `@AgentMethod`, `@AgentEvent`, `@AgentUseCase` e `@Operator` de `@agentic-ddd/decorators`; cada regra de negócio é um `@Invariant({ id, text })` com ID estável.',
+      '- Onde criar: `<caminho do módulo>/domain` (entidades, eventos, ports), `<caminho do módulo>/application` (use-cases, sempre com `uses`), `<caminho do módulo>/operators` (operators). A skill de dev do módulo tem os caminhos exatos.',
+      '- Todo método público de entidade tem `@AgentMethod`; métodos auxiliares usam `#privado`.',
+      '- Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.',
+      '- Coordenação: consulte `bun run agentic status` ou `next` (ondas); execute cada item a partir de `bun run agentic packet <item>` e valide com `bun run agentic verify --item <item> --spec-hash <hash>`. `status --static` lê declarações de teste sem executá-las e nunca certifica `done`.',
+      '- O sinal de esqueleto reconhece só a chamada literal `notImplemented()`; corpo vazio conta como implementado. Estado é calculado sob demanda e não entra nos arquivos gerados.',
+      '- Testes declaram o que cobrem com `covers([...ids], título)` de `@agentic-ddd/testing`.',
+      '- Mudança de regra de negócio: escreva antes a proposta em `docs/changes/NNNN-<slug>/proposal.md` (delta, critérios de aceite e `## Motivo`), implemente e rode `bun run agentic compile`; para mudança já feita no código, `bun run agentic compile --draft-change <slug>` gera o rascunho.',
+      '- Uma tarefa só está concluída quando `bun run agentic verify <NNNN>` retorna `done` ou `needs-human`.',
+      '- Gerados (não edite): `out/skills`, `out/runtime`, os espelhos de skills e este bloco. Altere o código decorado e rode `bun run agentic compile`; o CI roda `bun run agentic compile --check`.',
+    ]);
     expect(CORE_RULES.map((r) => r.key)).toEqual([
       'core/decorators',
       'core/layers',
@@ -210,6 +203,24 @@ describe('validação do conteúdo da regra', () => {
     const error = await loadRules(config()).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(RuleError);
     expect((error as RuleError).source).toBe('.ai/rules');
+  });
+
+  test('links simbólicos para arquivo e para pasta fora da raiz são ignorados', async () => {
+    // Protege contra mudança do padrão do Bun.Glob (followSymlinks: false).
+    const outside = await mkdtemp(join(tmpdir(), 'agentic-rules-fora-'));
+    try {
+      await writeFile(join(outside, 'segredo.md'), '- SEGREDO');
+      await write('ok.md', '- ok');
+      await symlink(
+        join(outside, 'segredo.md'),
+        join(dir, '.ai/rules/link.md'),
+      );
+      await symlink(outside, join(dir, '.ai/rules/pasta'), 'dir');
+      const team = (await loadRules(config())).filter((r) => r.file !== null);
+      expect(team.map((r) => r.key)).toEqual(['ok']);
+    } finally {
+      await rm(outside, { recursive: true, force: true });
+    }
   });
 
   test('glob com ./ é normalizado e casa com o caminho do item', async () => {
