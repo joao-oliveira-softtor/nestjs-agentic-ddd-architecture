@@ -1,0 +1,8 @@
+a0-sonnet-medium-r1 exit=0 status=completed
+a1-sonnet-low-r1 exit=0 status=completed
+a2-opus-low-r1 exit=0 status=completed
+a3-routed-r1 exit=0 status=completed
+a0-sonnet-medium-r2 exit=0 status=completed
+a1-sonnet-low-r2 exit=0 status=completed
+a2-opus-low-r2 exit=0 status=completed
+a3-routed-r2 exit=0 status=completed

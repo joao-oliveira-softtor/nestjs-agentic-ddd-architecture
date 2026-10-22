@@ -1,0 +1,3772 @@
+{
+  "schemaVersion": 1,
+  "id": "cycle-21-pilot",
+  "campaignSha256": "af259f8304ff33f14e969919b6920fa01cb5d96f593acc5b426e13b088392e04",
+  "configurations": [
+    {
+      "configuration": "a0-sonnet-medium",
+      "plannedRuns": 2,
+      "executedRuns": 2,
+      "plannedCases": 0,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 10,
+      "initialItems": 9,
+      "finalItems": 10,
+      "certifiedRuns": 2,
+      "corrections": 1,
+      "protocolFailures": 0,
+      "behaviorFailures": 1,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "initial": {
+        "numerator": 9,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 0.9,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 10,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 1286639,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 1136292,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 26174,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "escalations": 0,
+      "escalatedItems": 0,
+      "falseGreen": {
+        "attempts": 0,
+        "finalItems": 0,
+        "unavailableAttempts": 0
+      },
+      "boundaryViolations": 1,
+      "tokensByModel": {
+        "claude-sonnet-5-5": {
+          "uncachedInputTokens": 164,
+          "cacheWriteInputTokens": 150183,
+          "cacheReadInputTokens": 1136292,
+          "outputTokens": 26174
+        }
+      },
+      "cost": {
+        "label": "derived",
+        "available": true,
+        "reason": null,
+        "lowerBound": false,
+        "total": {
+          "status": "available",
+          "expensive": 0.9764292,
+          "cheap": 0.9764292,
+          "floor": 0.9764292,
+          "lowerBound": false
+        },
+        "review": {
+          "status": "available",
+          "expensive": 0,
+          "cheap": 0,
+          "floor": 0,
+          "lowerBound": false
+        },
+        "perAcceptedItem": {
+          "withReview": {
+            "expensive": 0.09764292,
+            "cheap": 0.09764292
+          },
+          "withoutReview": {
+            "expensive": 0.09764292,
+            "cheap": 0.09764292
+          }
+        },
+        "perRun": {
+          "expensive": {
+            "median": 0.4540512,
+            "p90": 0.522378,
+            "n": 2,
+            "excluded": 0
+          },
+          "cheap": {
+            "median": 0.4540512,
+            "p90": 0.522378,
+            "n": 2,
+            "excluded": 0
+          }
+        },
+        "reportedUSD": 0.9764292
+      },
+      "distribution": {
+        "finalItems": {
+          "median": 5,
+          "p90": 5,
+          "n": 2,
+          "excluded": 0
+        },
+        "escalations": {
+          "median": 0,
+          "p90": 0,
+          "n": 2,
+          "excluded": 0
+        },
+        "agentDurationMs": {
+          "median": 166580.34863899997,
+          "p90": 261403.149046,
+          "n": 2,
+          "excluded": 0
+        },
+        "turns": {
+          "median": 47,
+          "p90": 53,
+          "n": 2,
+          "excluded": 0
+        }
+      },
+      "runMetrics": [
+        {
+          "id": "a0-sonnet-medium-r1",
+          "repetition": 1,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            }
+          ],
+          "review": null,
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 1,
+          "turns": {
+            "status": "available",
+            "value": 47,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 261403.149046,
+          "tokensByModel": {
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 82,
+              "cacheWriteInputTokens": 81791,
+              "cacheReadInputTokens": 578100,
+              "outputTokens": 13724
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.522378,
+              "cheap": 0.522378,
+              "floor": 0.522378,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.522378,
+              "cheap": 0.522378,
+              "floor": 0.522378,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.522378,
+              "cheap": 0.522378,
+              "floor": 0.522378,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.522378
+          }
+        },
+        {
+          "id": "a0-sonnet-medium-r2",
+          "repetition": 2,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            }
+          ],
+          "review": null,
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 0,
+          "turns": {
+            "status": "available",
+            "value": 53,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 166580.34863899997,
+          "tokensByModel": {
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 82,
+              "cacheWriteInputTokens": 68392,
+              "cacheReadInputTokens": 558192,
+              "outputTokens": 12450
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.4540512,
+              "cheap": 0.4540512,
+              "floor": 0.4540512,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.4540512,
+              "cheap": 0.4540512,
+              "floor": 0.4540512,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.4540512,
+              "cheap": 0.4540512,
+              "floor": 0.4540512,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.4540512
+          }
+        }
+      ],
+      "notRun": []
+    },
+    {
+      "configuration": "a1-sonnet-low",
+      "plannedRuns": 2,
+      "executedRuns": 2,
+      "plannedCases": 0,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 10,
+      "initialItems": 3,
+      "finalItems": 4,
+      "certifiedRuns": 0,
+      "corrections": 3,
+      "protocolFailures": 0,
+      "behaviorFailures": 5,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "initial": {
+        "numerator": 3,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 0.3,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 4,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 0.4,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 0,
+        "denominator": 2,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 944631,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 838028,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 20422,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "escalations": 0,
+      "escalatedItems": 0,
+      "falseGreen": {
+        "attempts": 0,
+        "finalItems": 0,
+        "unavailableAttempts": 0
+      },
+      "boundaryViolations": 5,
+      "tokensByModel": {
+        "claude-sonnet-5-5": {
+          "uncachedInputTokens": 132,
+          "cacheWriteInputTokens": 106471,
+          "cacheReadInputTokens": 838028,
+          "outputTokens": 20422
+        }
+      },
+      "cost": {
+        "label": "derived",
+        "available": true,
+        "reason": null,
+        "lowerBound": false,
+        "total": {
+          "status": "available",
+          "expensive": 0.7141708,
+          "cheap": 0.7141708,
+          "floor": 0.7141708,
+          "lowerBound": false
+        },
+        "review": {
+          "status": "available",
+          "expensive": 0,
+          "cheap": 0,
+          "floor": 0,
+          "lowerBound": false
+        },
+        "perAcceptedItem": {
+          "withReview": {
+            "expensive": 0.1785427,
+            "cheap": 0.1785427
+          },
+          "withoutReview": {
+            "expensive": 0.1785427,
+            "cheap": 0.1785427
+          }
+        },
+        "perRun": {
+          "expensive": {
+            "median": 0.31338,
+            "p90": 0.4007908,
+            "n": 2,
+            "excluded": 0
+          },
+          "cheap": {
+            "median": 0.31338,
+            "p90": 0.4007908,
+            "n": 2,
+            "excluded": 0
+          }
+        },
+        "reportedUSD": 0.7141708
+      },
+      "distribution": {
+        "finalItems": {
+          "median": 2,
+          "p90": 2,
+          "n": 2,
+          "excluded": 0
+        },
+        "escalations": {
+          "median": 0,
+          "p90": 0,
+          "n": 2,
+          "excluded": 0
+        },
+        "agentDurationMs": {
+          "median": 167681.79036400001,
+          "p90": 231148.297403,
+          "n": 2,
+          "excluded": 0
+        },
+        "turns": {
+          "median": 38,
+          "p90": 47,
+          "n": 2,
+          "excluded": 0
+        }
+      },
+      "runMetrics": [
+        {
+          "id": "a1-sonnet-low-r1",
+          "repetition": 1,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "failed",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "blocked",
+              "attempts": 0,
+              "models": []
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "blocked",
+              "attempts": 0,
+              "models": []
+            }
+          ],
+          "review": null,
+          "finalItems": 2,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 2,
+          "turns": {
+            "status": "available",
+            "value": 38,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 167681.79036400001,
+          "tokensByModel": {
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 58,
+              "cacheWriteInputTokens": 47571,
+              "cacheReadInputTokens": 361800,
+              "outputTokens": 8680
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.31338,
+              "cheap": 0.31338,
+              "floor": 0.31338,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.31338,
+              "cheap": 0.31338,
+              "floor": 0.31338,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.31338,
+              "cheap": 0.31338,
+              "floor": 0.31338,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.31338000000000005
+          }
+        },
+        {
+          "id": "a1-sonnet-low-r2",
+          "repetition": 2,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "failed",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "blocked",
+              "attempts": 0,
+              "models": []
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "blocked",
+              "attempts": 0,
+              "models": []
+            }
+          ],
+          "review": null,
+          "finalItems": 2,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 3,
+          "turns": {
+            "status": "available",
+            "value": 47,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 231148.297403,
+          "tokensByModel": {
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 74,
+              "cacheWriteInputTokens": 58900,
+              "cacheReadInputTokens": 476228,
+              "outputTokens": 11742
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.4007908,
+              "cheap": 0.4007908,
+              "floor": 0.4007908,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.4007908,
+              "cheap": 0.4007908,
+              "floor": 0.4007908,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.4007908,
+              "cheap": 0.4007908,
+              "floor": 0.4007908,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.40079079999999995
+          }
+        }
+      ],
+      "notRun": []
+    },
+    {
+      "configuration": "a2-opus-low",
+      "plannedRuns": 2,
+      "executedRuns": 2,
+      "plannedCases": 0,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 10,
+      "initialItems": 9,
+      "finalItems": 10,
+      "certifiedRuns": 2,
+      "corrections": 1,
+      "protocolFailures": 0,
+      "behaviorFailures": 1,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "initial": {
+        "numerator": 9,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 0.9,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 10,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 1224991,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 1077343,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 26350,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "escalations": 0,
+      "escalatedItems": 0,
+      "falseGreen": {
+        "attempts": 0,
+        "finalItems": 0,
+        "unavailableAttempts": 0
+      },
+      "boundaryViolations": 1,
+      "tokensByModel": {
+        "claude-opus-5-5": {
+          "uncachedInputTokens": 158,
+          "cacheWriteInputTokens": 147490,
+          "cacheReadInputTokens": 1077343,
+          "outputTokens": 26350
+        }
+      },
+      "cost": {
+        "label": "derived",
+        "available": true,
+        "reason": null,
+        "lowerBound": false,
+        "total": {
+          "status": "available",
+          "expensive": 1.9230206,
+          "cheap": 1.9230206,
+          "floor": 1.9230206,
+          "lowerBound": false
+        },
+        "review": {
+          "status": "available",
+          "expensive": 0,
+          "cheap": 0,
+          "floor": 0,
+          "lowerBound": false
+        },
+        "perAcceptedItem": {
+          "withReview": {
+            "expensive": 0.19230206,
+            "cheap": 0.19230206
+          },
+          "withoutReview": {
+            "expensive": 0.19230206,
+            "cheap": 0.19230206
+          }
+        },
+        "perRun": {
+          "expensive": {
+            "median": 0.9318837999999999,
+            "p90": 0.9911368,
+            "n": 2,
+            "excluded": 0
+          },
+          "cheap": {
+            "median": 0.9318837999999999,
+            "p90": 0.9911368,
+            "n": 2,
+            "excluded": 0
+          }
+        },
+        "reportedUSD": 1.9230206
+      },
+      "distribution": {
+        "finalItems": {
+          "median": 5,
+          "p90": 5,
+          "n": 2,
+          "excluded": 0
+        },
+        "escalations": {
+          "median": 0,
+          "p90": 0,
+          "n": 2,
+          "excluded": 0
+        },
+        "agentDurationMs": {
+          "median": 195637.77039999998,
+          "p90": 235616.487426,
+          "n": 2,
+          "excluded": 0
+        },
+        "turns": {
+          "median": 44,
+          "p90": 47,
+          "n": 2,
+          "excluded": 0
+        }
+      },
+      "runMetrics": [
+        {
+          "id": "a2-opus-low-r1",
+          "repetition": 1,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            }
+          ],
+          "review": null,
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 1,
+          "turns": {
+            "status": "available",
+            "value": 44,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 195637.77039999998,
+          "tokensByModel": {
+            "claude-opus-5-5": {
+              "uncachedInputTokens": 78,
+              "cacheWriteInputTokens": 77311,
+              "cacheReadInputTokens": 522684,
+              "outputTokens": 13390
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.9911368,
+              "cheap": 0.9911368,
+              "floor": 0.9911368,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.9911368,
+              "cheap": 0.9911368,
+              "floor": 0.9911368,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.9911368,
+              "cheap": 0.9911368,
+              "floor": 0.9911368,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.9911368
+          }
+        },
+        {
+          "id": "a2-opus-low-r2",
+          "repetition": 2,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            }
+          ],
+          "review": null,
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 0,
+          "turns": {
+            "status": "available",
+            "value": 47,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 235616.487426,
+          "tokensByModel": {
+            "claude-opus-5-5": {
+              "uncachedInputTokens": 80,
+              "cacheWriteInputTokens": 70179,
+              "cacheReadInputTokens": 554659,
+              "outputTokens": 12960
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.9318837999999999,
+              "cheap": 0.9318837999999999,
+              "floor": 0.9318837999999999,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.9318837999999999,
+              "cheap": 0.9318837999999999,
+              "floor": 0.9318837999999999,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.9318837999999999,
+              "cheap": 0.9318837999999999,
+              "floor": 0.9318837999999999,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.9318838000000002
+          }
+        }
+      ],
+      "notRun": []
+    },
+    {
+      "configuration": "a3-routed",
+      "plannedRuns": 2,
+      "executedRuns": 2,
+      "plannedCases": 0,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 10,
+      "initialItems": 10,
+      "finalItems": 10,
+      "certifiedRuns": 2,
+      "corrections": 0,
+      "protocolFailures": 0,
+      "behaviorFailures": 0,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "initial": {
+        "numerator": 10,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 10,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 1640408,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 1434628,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 40156,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "escalations": 0,
+      "escalatedItems": 0,
+      "falseGreen": {
+        "attempts": 0,
+        "finalItems": 0,
+        "unavailableAttempts": 0
+      },
+      "boundaryViolations": 0,
+      "tokensByModel": {
+        "claude-haiku-5-5": {
+          "uncachedInputTokens": 82,
+          "cacheWriteInputTokens": 67035,
+          "cacheReadInputTokens": 624490,
+          "outputTokens": 23611
+        },
+        "claude-sonnet-5-5": {
+          "uncachedInputTokens": 100,
+          "cacheWriteInputTokens": 100801,
+          "cacheReadInputTokens": 782884,
+          "outputTokens": 16025
+        },
+        "claude-opus-5-5": {
+          "uncachedInputTokens": 6,
+          "cacheWriteInputTokens": 37756,
+          "cacheReadInputTokens": 27254,
+          "outputTokens": 520
+        }
+      },
+      "cost": {
+        "label": "derived",
+        "available": true,
+        "reason": null,
+        "lowerBound": false,
+        "total": {
+          "status": "available",
+          "expensive": 0.9913308000000001,
+          "cheap": 0.9913308000000001,
+          "floor": 0.9913308000000001,
+          "lowerBound": false
+        },
+        "review": {
+          "status": "available",
+          "expensive": 0.3179228,
+          "cheap": 0.3179228,
+          "floor": 0.3179228,
+          "lowerBound": false
+        },
+        "perAcceptedItem": {
+          "withReview": {
+            "expensive": 0.09913308000000001,
+            "cheap": 0.09913308000000001
+          },
+          "withoutReview": {
+            "expensive": 0.0673408,
+            "cheap": 0.0673408
+          }
+        },
+        "perRun": {
+          "expensive": {
+            "median": 0.49364855,
+            "p90": 0.49768225,
+            "n": 2,
+            "excluded": 0
+          },
+          "cheap": {
+            "median": 0.49364855,
+            "p90": 0.49768225,
+            "n": 2,
+            "excluded": 0
+          }
+        },
+        "reportedUSD": 0.9913308000000001
+      },
+      "distribution": {
+        "finalItems": {
+          "median": 5,
+          "p90": 5,
+          "n": 2,
+          "excluded": 0
+        },
+        "escalations": {
+          "median": 0,
+          "p90": 0,
+          "n": 2,
+          "excluded": 0
+        },
+        "agentDurationMs": {
+          "median": 198781.620345,
+          "p90": 200694.98643999998,
+          "n": 2,
+          "excluded": 0
+        },
+        "turns": {
+          "median": 57,
+          "p90": 59,
+          "n": 2,
+          "excluded": 0
+        }
+      },
+      "runMetrics": [
+        {
+          "id": "a3-routed-r1",
+          "repetition": 1,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-haiku-5-5"
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-haiku-5-5"
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            }
+          ],
+          "review": {
+            "outcome": "approved",
+            "dispatched": true,
+            "transport": "finished"
+          },
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 0,
+          "turns": {
+            "status": "available",
+            "value": 57,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 200694.98643999998,
+          "tokensByModel": {
+            "claude-haiku-5-5": {
+              "uncachedInputTokens": 38,
+              "cacheWriteInputTokens": 33831,
+              "cacheReadInputTokens": 275775,
+              "outputTokens": 12228
+            },
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 48,
+              "cacheWriteInputTokens": 48590,
+              "cacheReadInputTokens": 365166,
+              "outputTokens": 7876
+            },
+            "claude-opus-5-5": {
+              "uncachedInputTokens": 4,
+              "cacheWriteInputTokens": 19389,
+              "cacheReadInputTokens": 24031,
+              "outputTokens": 417
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.49364855,
+              "cheap": 0.49364855,
+              "floor": 0.49364855,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.32537435000000003,
+              "cheap": 0.32537435000000003,
+              "floor": 0.32537435000000003,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.32537435000000003,
+              "cheap": 0.32537435000000003,
+              "floor": 0.32537435000000003,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0.16827419999999998,
+              "cheap": 0.16827419999999998,
+              "floor": 0.16827419999999998,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.4936485500000001
+          }
+        },
+        {
+          "id": "a3-routed-r2",
+          "repetition": 2,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-haiku-5-5"
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-haiku-5-5"
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            }
+          ],
+          "review": {
+            "outcome": "approved",
+            "dispatched": true,
+            "transport": "finished"
+          },
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 0,
+          "turns": {
+            "status": "available",
+            "value": 59,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 198781.620345,
+          "tokensByModel": {
+            "claude-haiku-5-5": {
+              "uncachedInputTokens": 44,
+              "cacheWriteInputTokens": 33204,
+              "cacheReadInputTokens": 348715,
+              "outputTokens": 11383
+            },
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 52,
+              "cacheWriteInputTokens": 52211,
+              "cacheReadInputTokens": 417718,
+              "outputTokens": 8149
+            },
+            "claude-opus-5-5": {
+              "uncachedInputTokens": 2,
+              "cacheWriteInputTokens": 18367,
+              "cacheReadInputTokens": 3223,
+              "outputTokens": 103
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.49768225,
+              "cheap": 0.49768225,
+              "floor": 0.49768225,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.34803364999999997,
+              "cheap": 0.34803364999999997,
+              "floor": 0.34803364999999997,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.34803364999999997,
+              "cheap": 0.34803364999999997,
+              "floor": 0.34803364999999997,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0.14964860000000002,
+              "cheap": 0.14964860000000002,
+              "floor": 0.14964860000000002,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.49768225000000005
+          }
+        }
+      ],
+      "notRun": []
+    }
+  ],
+  "groups": [
+    {
+      "id": "4561571bb0ca96bf93fd8b0968697204a9883b382e8f0ef202204903ca4a6034",
+      "provenance": {
+        "mode": "real",
+        "source": "c673f9c24836e413fc2c89b2215090df1c3c05f6",
+        "runner": "4de7c53f1eb3e6207e53939377cdcafbb277f93e",
+        "configuration": {
+          "id": "a0-sonnet-medium",
+          "adapter": "claude-cli",
+          "authentication": "oauth-token",
+          "model": "claude-sonnet-5-5",
+          "parameters": {
+            "reasoningEffort": "medium"
+          },
+          "promptMode": "brief"
+        },
+        "adapter": {
+          "id": "claude-cli",
+          "version": "2.1.308 (Claude Code)",
+          "executableSha256": "356733f185fa988e6bf3aa9a555269fdd167982a2e2a80d3c8a78037bb92ad58"
+        },
+        "environment": {
+          "platform": "linux/x64",
+          "bun": "1.4.3",
+          "nativeToolAccess": {
+            "sourceTrustAcknowledged": true,
+            "credentials": "accessible",
+            "network": "host"
+          }
+        },
+        "budget": {
+          "maxInvocations": 10,
+          "skillTimeoutMs": 120000,
+          "implementationTimeoutMs": 600000,
+          "totalTimeoutMs": 9600000,
+          "maxCorrectionsPerItem": 1,
+          "repetitions": 1,
+          "concurrency": 1
+        },
+        "datasets": [],
+        "cases": [],
+        "packets": [
+          {
+            "item": "entity:Task",
+            "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+          },
+          {
+            "item": "method:Task.complete",
+            "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+          },
+          {
+            "item": "operator:task-operator",
+            "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+          },
+          {
+            "item": "usecase:complete_task",
+            "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+          },
+          {
+            "item": "usecase:create_task",
+            "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+          }
+        ],
+        "observed": [
+          {
+            "model": {
+              "status": "available",
+              "value": "claude-sonnet-5-5"
+            },
+            "revision": {
+              "reason": "not_reported",
+              "status": "unavailable"
+            }
+          }
+        ]
+      },
+      "plannedRuns": 2,
+      "executedRuns": 2,
+      "plannedCases": 0,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 10,
+      "initialItems": 9,
+      "finalItems": 10,
+      "certifiedRuns": 2,
+      "corrections": 1,
+      "protocolFailures": 0,
+      "behaviorFailures": 1,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "initial": {
+        "numerator": 9,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 0.9,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 10,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 1286639,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 1136292,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 26174,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "escalations": 0,
+      "escalatedItems": 0,
+      "falseGreen": {
+        "attempts": 0,
+        "finalItems": 0,
+        "unavailableAttempts": 0
+      },
+      "boundaryViolations": 1,
+      "tokensByModel": {
+        "claude-sonnet-5-5": {
+          "uncachedInputTokens": 164,
+          "cacheWriteInputTokens": 150183,
+          "cacheReadInputTokens": 1136292,
+          "outputTokens": 26174
+        }
+      },
+      "cost": {
+        "label": "derived",
+        "available": true,
+        "reason": null,
+        "lowerBound": false,
+        "total": {
+          "status": "available",
+          "expensive": 0.9764292,
+          "cheap": 0.9764292,
+          "floor": 0.9764292,
+          "lowerBound": false
+        },
+        "review": {
+          "status": "available",
+          "expensive": 0,
+          "cheap": 0,
+          "floor": 0,
+          "lowerBound": false
+        },
+        "perAcceptedItem": {
+          "withReview": {
+            "expensive": 0.09764292,
+            "cheap": 0.09764292
+          },
+          "withoutReview": {
+            "expensive": 0.09764292,
+            "cheap": 0.09764292
+          }
+        },
+        "perRun": {
+          "expensive": {
+            "median": 0.4540512,
+            "p90": 0.522378,
+            "n": 2,
+            "excluded": 0
+          },
+          "cheap": {
+            "median": 0.4540512,
+            "p90": 0.522378,
+            "n": 2,
+            "excluded": 0
+          }
+        },
+        "reportedUSD": 0.9764292
+      },
+      "distribution": {
+        "finalItems": {
+          "median": 5,
+          "p90": 5,
+          "n": 2,
+          "excluded": 0
+        },
+        "escalations": {
+          "median": 0,
+          "p90": 0,
+          "n": 2,
+          "excluded": 0
+        },
+        "agentDurationMs": {
+          "median": 166580.34863899997,
+          "p90": 261403.149046,
+          "n": 2,
+          "excluded": 0
+        },
+        "turns": {
+          "median": 47,
+          "p90": 53,
+          "n": 2,
+          "excluded": 0
+        }
+      },
+      "runMetrics": [
+        {
+          "id": "a0-sonnet-medium-r1",
+          "repetition": 1,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            }
+          ],
+          "review": null,
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 1,
+          "turns": {
+            "status": "available",
+            "value": 47,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 261403.149046,
+          "tokensByModel": {
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 82,
+              "cacheWriteInputTokens": 81791,
+              "cacheReadInputTokens": 578100,
+              "outputTokens": 13724
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.522378,
+              "cheap": 0.522378,
+              "floor": 0.522378,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.522378,
+              "cheap": 0.522378,
+              "floor": 0.522378,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.522378,
+              "cheap": 0.522378,
+              "floor": 0.522378,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.522378
+          }
+        },
+        {
+          "id": "a0-sonnet-medium-r2",
+          "repetition": 2,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            }
+          ],
+          "review": null,
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 0,
+          "turns": {
+            "status": "available",
+            "value": 53,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 166580.34863899997,
+          "tokensByModel": {
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 82,
+              "cacheWriteInputTokens": 68392,
+              "cacheReadInputTokens": 558192,
+              "outputTokens": 12450
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.4540512,
+              "cheap": 0.4540512,
+              "floor": 0.4540512,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.4540512,
+              "cheap": 0.4540512,
+              "floor": 0.4540512,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.4540512,
+              "cheap": 0.4540512,
+              "floor": 0.4540512,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.4540512
+          }
+        }
+      ],
+      "runs": [
+        {
+          "id": "a0-sonnet-medium-r1",
+          "reportId": "f58a964b-747f-44e6-b731-633781e2c326",
+          "repetition": 1,
+          "reportSha256": "5341afd5faa87b780f6e0d4c065cdfd0ebc36e4dce64e48ef816d6de5c38dcb0",
+          "status": "completed"
+        },
+        {
+          "id": "a0-sonnet-medium-r2",
+          "reportId": "61e684ad-ef63-44fb-8ff5-945e6e48482d",
+          "repetition": 2,
+          "reportSha256": "72d81410da3122e1ee054d85757ecb551e48ee9754a39c104dfc3b57f9a988f5",
+          "status": "completed"
+        }
+      ],
+      "baselines": [
+        {
+          "run": "a0-sonnet-medium-r1",
+          "baselineHash": "d5c4c59730047e2844c3be1cc18b816191bd8437819c75bc50d93115219af932",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "d5c4c59730047e2844c3be1cc18b816191bd8437819c75bc50d93115219af932"
+            },
+            {
+              "item": "entity:Task",
+              "number": 2,
+              "hash": "d5c4c59730047e2844c3be1cc18b816191bd8437819c75bc50d93115219af932"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "a7d52bb99e789818d5614788a1cb22506a104804e69bcc1963af446788f53069"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "dd21ddf003d3eb3c709c1f441eb4695d3448611fe2235184bccf1663fd91bf1d"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "13f579922d2ba35b3c3a4476dd95a480e2bacb6d80fe4813e85e37ad5dac9324"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "276b190cdb3f831b152d85d457e2eba3919497dcde2f8e0180ae1fdac581973e"
+            }
+          ]
+        },
+        {
+          "run": "a0-sonnet-medium-r2",
+          "baselineHash": "044da264db5e802338a5517db995a376c52e9acb41ed4aed3dee3c037a2484f7",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "044da264db5e802338a5517db995a376c52e9acb41ed4aed3dee3c037a2484f7"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "4a9d55daf151f8176c795d0c3b946f510aeab0d179de00a155d6200091ab3578"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "c23146d9c18e952255b542f36e81c8cd2e10f4d3678202e5a3cf9189f22b0dca"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "8447f4331b344fb0cfbed37af6b81d1948ccadce8ea186d6d90b8d240a83245e"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "a1d9f87fd7f4a28e8e046ac56a2cacd201c8894a22af5205a1dea32d7d5b339a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9c42e161e7c7897b86f32fc7f191f251a3f94b41f8c7917456d9b27f989d3c58",
+      "provenance": {
+        "mode": "real",
+        "source": "c673f9c24836e413fc2c89b2215090df1c3c05f6",
+        "runner": "4de7c53f1eb3e6207e53939377cdcafbb277f93e",
+        "configuration": {
+          "id": "a2-opus-low",
+          "adapter": "claude-cli",
+          "authentication": "oauth-token",
+          "model": "claude-opus-5-5",
+          "parameters": {
+            "reasoningEffort": "low"
+          },
+          "promptMode": "brief"
+        },
+        "adapter": {
+          "id": "claude-cli",
+          "version": "2.1.308 (Claude Code)",
+          "executableSha256": "356733f185fa988e6bf3aa9a555269fdd167982a2e2a80d3c8a78037bb92ad58"
+        },
+        "environment": {
+          "platform": "linux/x64",
+          "bun": "1.4.3",
+          "nativeToolAccess": {
+            "sourceTrustAcknowledged": true,
+            "credentials": "accessible",
+            "network": "host"
+          }
+        },
+        "budget": {
+          "maxInvocations": 10,
+          "skillTimeoutMs": 120000,
+          "implementationTimeoutMs": 600000,
+          "totalTimeoutMs": 9600000,
+          "maxCorrectionsPerItem": 1,
+          "repetitions": 1,
+          "concurrency": 1
+        },
+        "datasets": [],
+        "cases": [],
+        "packets": [
+          {
+            "item": "entity:Task",
+            "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+          },
+          {
+            "item": "method:Task.complete",
+            "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+          },
+          {
+            "item": "operator:task-operator",
+            "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+          },
+          {
+            "item": "usecase:complete_task",
+            "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+          },
+          {
+            "item": "usecase:create_task",
+            "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+          }
+        ],
+        "observed": [
+          {
+            "model": {
+              "status": "available",
+              "value": "claude-opus-5-5"
+            },
+            "revision": {
+              "reason": "not_reported",
+              "status": "unavailable"
+            }
+          }
+        ]
+      },
+      "plannedRuns": 2,
+      "executedRuns": 2,
+      "plannedCases": 0,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 10,
+      "initialItems": 9,
+      "finalItems": 10,
+      "certifiedRuns": 2,
+      "corrections": 1,
+      "protocolFailures": 0,
+      "behaviorFailures": 1,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "initial": {
+        "numerator": 9,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 0.9,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 10,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 1224991,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 1077343,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 26350,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "escalations": 0,
+      "escalatedItems": 0,
+      "falseGreen": {
+        "attempts": 0,
+        "finalItems": 0,
+        "unavailableAttempts": 0
+      },
+      "boundaryViolations": 1,
+      "tokensByModel": {
+        "claude-opus-5-5": {
+          "uncachedInputTokens": 158,
+          "cacheWriteInputTokens": 147490,
+          "cacheReadInputTokens": 1077343,
+          "outputTokens": 26350
+        }
+      },
+      "cost": {
+        "label": "derived",
+        "available": true,
+        "reason": null,
+        "lowerBound": false,
+        "total": {
+          "status": "available",
+          "expensive": 1.9230206,
+          "cheap": 1.9230206,
+          "floor": 1.9230206,
+          "lowerBound": false
+        },
+        "review": {
+          "status": "available",
+          "expensive": 0,
+          "cheap": 0,
+          "floor": 0,
+          "lowerBound": false
+        },
+        "perAcceptedItem": {
+          "withReview": {
+            "expensive": 0.19230206,
+            "cheap": 0.19230206
+          },
+          "withoutReview": {
+            "expensive": 0.19230206,
+            "cheap": 0.19230206
+          }
+        },
+        "perRun": {
+          "expensive": {
+            "median": 0.9318837999999999,
+            "p90": 0.9911368,
+            "n": 2,
+            "excluded": 0
+          },
+          "cheap": {
+            "median": 0.9318837999999999,
+            "p90": 0.9911368,
+            "n": 2,
+            "excluded": 0
+          }
+        },
+        "reportedUSD": 1.9230206
+      },
+      "distribution": {
+        "finalItems": {
+          "median": 5,
+          "p90": 5,
+          "n": 2,
+          "excluded": 0
+        },
+        "escalations": {
+          "median": 0,
+          "p90": 0,
+          "n": 2,
+          "excluded": 0
+        },
+        "agentDurationMs": {
+          "median": 195637.77039999998,
+          "p90": 235616.487426,
+          "n": 2,
+          "excluded": 0
+        },
+        "turns": {
+          "median": 44,
+          "p90": 47,
+          "n": 2,
+          "excluded": 0
+        }
+      },
+      "runMetrics": [
+        {
+          "id": "a2-opus-low-r1",
+          "repetition": 1,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            }
+          ],
+          "review": null,
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 1,
+          "turns": {
+            "status": "available",
+            "value": 44,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 195637.77039999998,
+          "tokensByModel": {
+            "claude-opus-5-5": {
+              "uncachedInputTokens": 78,
+              "cacheWriteInputTokens": 77311,
+              "cacheReadInputTokens": 522684,
+              "outputTokens": 13390
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.9911368,
+              "cheap": 0.9911368,
+              "floor": 0.9911368,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.9911368,
+              "cheap": 0.9911368,
+              "floor": 0.9911368,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.9911368,
+              "cheap": 0.9911368,
+              "floor": 0.9911368,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.9911368
+          }
+        },
+        {
+          "id": "a2-opus-low-r2",
+          "repetition": 2,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            }
+          ],
+          "review": null,
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 0,
+          "turns": {
+            "status": "available",
+            "value": 47,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 235616.487426,
+          "tokensByModel": {
+            "claude-opus-5-5": {
+              "uncachedInputTokens": 80,
+              "cacheWriteInputTokens": 70179,
+              "cacheReadInputTokens": 554659,
+              "outputTokens": 12960
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.9318837999999999,
+              "cheap": 0.9318837999999999,
+              "floor": 0.9318837999999999,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.9318837999999999,
+              "cheap": 0.9318837999999999,
+              "floor": 0.9318837999999999,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.9318837999999999,
+              "cheap": 0.9318837999999999,
+              "floor": 0.9318837999999999,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.9318838000000002
+          }
+        }
+      ],
+      "runs": [
+        {
+          "id": "a2-opus-low-r1",
+          "reportId": "630669b8-a3ba-4ba3-a6f5-9b14b13d4a6b",
+          "repetition": 1,
+          "reportSha256": "90e837f866a37568a37711388b0a0a018aa2386b43c3b71e67012db6ca6a51df",
+          "status": "completed"
+        },
+        {
+          "id": "a2-opus-low-r2",
+          "reportId": "c8fca5ae-93ec-4c80-a588-360f360e524b",
+          "repetition": 2,
+          "reportSha256": "16556aa8e62a6adf8b2f71bc02879228fdebf8d62699db7bdc0dc759bf0cfeec",
+          "status": "completed"
+        }
+      ],
+      "baselines": [
+        {
+          "run": "a2-opus-low-r1",
+          "baselineHash": "fd258e526582a1330757db47aee81716492e28196cce732a411dad75c08ad953",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "fd258e526582a1330757db47aee81716492e28196cce732a411dad75c08ad953"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "ca5ec1025edc89d848a37d976ea2e4b406a87eba8be9a42c1d22d26bb8d7359c"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "05c222f356f1e9be69acc8bfca65a8ed50c5360b06ded2add0f0a7fca238748d"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 2,
+              "hash": "05c222f356f1e9be69acc8bfca65a8ed50c5360b06ded2add0f0a7fca238748d"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "e5bc1e6aaf63390052fd2c0558f4578cc132c81739c18fe4da53b3dabb97de36"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "d755d060c73fc80d89b726522fb496eab66486cd813a201b12ca92112ea86e2d"
+            }
+          ]
+        },
+        {
+          "run": "a2-opus-low-r2",
+          "baselineHash": "bc3f0178631581c61b0253d284467915c57fd9583080178640b85776830aee40",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "bc3f0178631581c61b0253d284467915c57fd9583080178640b85776830aee40"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "88baf2c3cea07e66568c09c5abb3d376e619cd19cb3f7d1169d78c16064e810e"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "b98f8f9be7824a8de3f852b6061477ea5790a7e552a31d13e59e024731a09756"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "a4bad3a56bf164dd34eb2290f465a7091d369339d9abb9ebd28311a75f0d9d26"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "0f6afa8f2c6fad589e9592e35f9e830a04de51699446e3ae4c36dcf2ec46cc46"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b62453d3b6a03972fed9e1159e30d026b2d5be57c70ae0651f69988f8fb3752c",
+      "provenance": {
+        "mode": "real",
+        "source": "c673f9c24836e413fc2c89b2215090df1c3c05f6",
+        "runner": "4de7c53f1eb3e6207e53939377cdcafbb277f93e",
+        "configuration": {
+          "id": "a3-routed",
+          "adapter": "claude-cli",
+          "authentication": "oauth-token",
+          "model": "claude-haiku-5-5",
+          "parameters": {},
+          "promptMode": "brief",
+          "routing": {
+            "byLayer": {
+              "domain": "claude-haiku-5-5",
+              "application": "claude-sonnet-5-5",
+              "operators": "claude-sonnet-5-5"
+            },
+            "ladder": [
+              {
+                "model": "claude-haiku-5-5"
+              },
+              {
+                "model": "claude-sonnet-5-5",
+                "reasoningEffort": "medium"
+              },
+              {
+                "model": "claude-opus-5-5",
+                "reasoningEffort": "low"
+              }
+            ],
+            "reviewer": {
+              "model": "claude-opus-5-5",
+              "reasoningEffort": "low"
+            }
+          }
+        },
+        "adapter": {
+          "id": "claude-cli",
+          "version": "2.1.308 (Claude Code)",
+          "executableSha256": "356733f185fa988e6bf3aa9a555269fdd167982a2e2a80d3c8a78037bb92ad58"
+        },
+        "environment": {
+          "platform": "linux/x64",
+          "bun": "1.4.3",
+          "nativeToolAccess": {
+            "sourceTrustAcknowledged": true,
+            "credentials": "accessible",
+            "network": "host"
+          }
+        },
+        "budget": {
+          "maxInvocations": 25,
+          "skillTimeoutMs": 120000,
+          "implementationTimeoutMs": 600000,
+          "totalTimeoutMs": 18600000,
+          "maxCorrectionsPerItem": 1,
+          "repetitions": 1,
+          "concurrency": 1
+        },
+        "datasets": [],
+        "cases": [],
+        "packets": [
+          {
+            "item": "entity:Task",
+            "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+          },
+          {
+            "item": "method:Task.complete",
+            "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+          },
+          {
+            "item": "operator:task-operator",
+            "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+          },
+          {
+            "item": "usecase:complete_task",
+            "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+          },
+          {
+            "item": "usecase:create_task",
+            "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+          }
+        ],
+        "observed": [
+          {
+            "model": {
+              "status": "available",
+              "value": "claude-haiku-5-5"
+            },
+            "revision": {
+              "reason": "not_reported",
+              "status": "unavailable"
+            }
+          },
+          {
+            "model": {
+              "status": "available",
+              "value": "claude-sonnet-5-5"
+            },
+            "revision": {
+              "reason": "not_reported",
+              "status": "unavailable"
+            }
+          }
+        ]
+      },
+      "plannedRuns": 2,
+      "executedRuns": 2,
+      "plannedCases": 0,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 10,
+      "initialItems": 10,
+      "finalItems": 10,
+      "certifiedRuns": 2,
+      "corrections": 0,
+      "protocolFailures": 0,
+      "behaviorFailures": 0,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "initial": {
+        "numerator": 10,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 10,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": {
+          "status": "available",
+          "value": 1,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 1640408,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 1434628,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 40156,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "escalations": 0,
+      "escalatedItems": 0,
+      "falseGreen": {
+        "attempts": 0,
+        "finalItems": 0,
+        "unavailableAttempts": 0
+      },
+      "boundaryViolations": 0,
+      "tokensByModel": {
+        "claude-haiku-5-5": {
+          "uncachedInputTokens": 82,
+          "cacheWriteInputTokens": 67035,
+          "cacheReadInputTokens": 624490,
+          "outputTokens": 23611
+        },
+        "claude-sonnet-5-5": {
+          "uncachedInputTokens": 100,
+          "cacheWriteInputTokens": 100801,
+          "cacheReadInputTokens": 782884,
+          "outputTokens": 16025
+        },
+        "claude-opus-5-5": {
+          "uncachedInputTokens": 6,
+          "cacheWriteInputTokens": 37756,
+          "cacheReadInputTokens": 27254,
+          "outputTokens": 520
+        }
+      },
+      "cost": {
+        "label": "derived",
+        "available": true,
+        "reason": null,
+        "lowerBound": false,
+        "total": {
+          "status": "available",
+          "expensive": 0.9913308000000001,
+          "cheap": 0.9913308000000001,
+          "floor": 0.9913308000000001,
+          "lowerBound": false
+        },
+        "review": {
+          "status": "available",
+          "expensive": 0.3179228,
+          "cheap": 0.3179228,
+          "floor": 0.3179228,
+          "lowerBound": false
+        },
+        "perAcceptedItem": {
+          "withReview": {
+            "expensive": 0.09913308000000001,
+            "cheap": 0.09913308000000001
+          },
+          "withoutReview": {
+            "expensive": 0.0673408,
+            "cheap": 0.0673408
+          }
+        },
+        "perRun": {
+          "expensive": {
+            "median": 0.49364855,
+            "p90": 0.49768225,
+            "n": 2,
+            "excluded": 0
+          },
+          "cheap": {
+            "median": 0.49364855,
+            "p90": 0.49768225,
+            "n": 2,
+            "excluded": 0
+          }
+        },
+        "reportedUSD": 0.9913308000000001
+      },
+      "distribution": {
+        "finalItems": {
+          "median": 5,
+          "p90": 5,
+          "n": 2,
+          "excluded": 0
+        },
+        "escalations": {
+          "median": 0,
+          "p90": 0,
+          "n": 2,
+          "excluded": 0
+        },
+        "agentDurationMs": {
+          "median": 198781.620345,
+          "p90": 200694.98643999998,
+          "n": 2,
+          "excluded": 0
+        },
+        "turns": {
+          "median": 57,
+          "p90": 59,
+          "n": 2,
+          "excluded": 0
+        }
+      },
+      "runMetrics": [
+        {
+          "id": "a3-routed-r1",
+          "repetition": 1,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-haiku-5-5"
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-haiku-5-5"
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            }
+          ],
+          "review": {
+            "outcome": "approved",
+            "dispatched": true,
+            "transport": "finished"
+          },
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 0,
+          "turns": {
+            "status": "available",
+            "value": 57,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 200694.98643999998,
+          "tokensByModel": {
+            "claude-haiku-5-5": {
+              "uncachedInputTokens": 38,
+              "cacheWriteInputTokens": 33831,
+              "cacheReadInputTokens": 275775,
+              "outputTokens": 12228
+            },
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 48,
+              "cacheWriteInputTokens": 48590,
+              "cacheReadInputTokens": 365166,
+              "outputTokens": 7876
+            },
+            "claude-opus-5-5": {
+              "uncachedInputTokens": 4,
+              "cacheWriteInputTokens": 19389,
+              "cacheReadInputTokens": 24031,
+              "outputTokens": 417
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.49364855,
+              "cheap": 0.49364855,
+              "floor": 0.49364855,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.32537435000000003,
+              "cheap": 0.32537435000000003,
+              "floor": 0.32537435000000003,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.32537435000000003,
+              "cheap": 0.32537435000000003,
+              "floor": 0.32537435000000003,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0.16827419999999998,
+              "cheap": 0.16827419999999998,
+              "floor": 0.16827419999999998,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.4936485500000001
+          }
+        },
+        {
+          "id": "a3-routed-r2",
+          "repetition": 2,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-haiku-5-5"
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-haiku-5-5"
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                "claude-sonnet-5-5"
+              ]
+            }
+          ],
+          "review": {
+            "outcome": "approved",
+            "dispatched": true,
+            "transport": "finished"
+          },
+          "finalItems": 5,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 0,
+          "turns": {
+            "status": "available",
+            "value": 59,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 198781.620345,
+          "tokensByModel": {
+            "claude-haiku-5-5": {
+              "uncachedInputTokens": 44,
+              "cacheWriteInputTokens": 33204,
+              "cacheReadInputTokens": 348715,
+              "outputTokens": 11383
+            },
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 52,
+              "cacheWriteInputTokens": 52211,
+              "cacheReadInputTokens": 417718,
+              "outputTokens": 8149
+            },
+            "claude-opus-5-5": {
+              "uncachedInputTokens": 2,
+              "cacheWriteInputTokens": 18367,
+              "cacheReadInputTokens": 3223,
+              "outputTokens": 103
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.49768225,
+              "cheap": 0.49768225,
+              "floor": 0.49768225,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.34803364999999997,
+              "cheap": 0.34803364999999997,
+              "floor": 0.34803364999999997,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.34803364999999997,
+              "cheap": 0.34803364999999997,
+              "floor": 0.34803364999999997,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0.14964860000000002,
+              "cheap": 0.14964860000000002,
+              "floor": 0.14964860000000002,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.49768225000000005
+          }
+        }
+      ],
+      "runs": [
+        {
+          "id": "a3-routed-r1",
+          "reportId": "452a222c-541b-4568-bd50-ab12df4d7b35",
+          "repetition": 1,
+          "reportSha256": "dc6b5a6a9282284c4cf41251064be2442fc36f175ca6c1e6679f03c68281b0fd",
+          "status": "completed"
+        },
+        {
+          "id": "a3-routed-r2",
+          "reportId": "14f83ab6-dda0-479a-a0b0-ad4eb1cc63f2",
+          "repetition": 2,
+          "reportSha256": "60c456702bb8129d4464efb516ab1ef1c013ee876f50952af80d9a525f08bf51",
+          "status": "completed"
+        }
+      ],
+      "baselines": [
+        {
+          "run": "a3-routed-r1",
+          "baselineHash": "622be4475bbb90be31bd9f10e8ac709b8404bc500c7979bdae72f780d11e7819",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "622be4475bbb90be31bd9f10e8ac709b8404bc500c7979bdae72f780d11e7819"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "baa9978fbdb51e61c4558780311d9e89e7511437f3ff9acbb9c29d7ceb2e1cf8"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "e644a3eaa24cb6f503af260c681c0e86f6684b9f7ba3adcf86c18efa3705331d"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "18b76d46cee4d332e5463870889e495c361d45a1deaeb587232b92495bc7863d"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "9d7af130c7fe041bc2b2276e6a327ebb2b97cdd1026c37948f0bcc5574d5e1d2"
+            }
+          ]
+        },
+        {
+          "run": "a3-routed-r2",
+          "baselineHash": "3b7bc2a7a49942ae5db08c67dba7c089c202f4aeb169da697ed8c6af31e15337",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "3b7bc2a7a49942ae5db08c67dba7c089c202f4aeb169da697ed8c6af31e15337"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "0ea7794666384fbd278df26cbb8ea6e25a352cb12f888aee8b075d5c46eb5ad9"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "d9de8e54b3414819784d642378652cbb32c31a2eefd07d62f096a7254984e8f9"
+            },
+            {
+              "item": "usecase:complete_task",
+              "number": 1,
+              "hash": "3a915d6d0ec7c1344e2d900c7258ca346ab9d877eda3bb5efc8ce70b3901018d"
+            },
+            {
+              "item": "operator:task-operator",
+              "number": 1,
+              "hash": "530d93fb0d0b0440ec391a16b1f48269ec0f9e6ad98981a1ee61db433e5f6b6c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d09330f5297f45fa0fb218a6f2499b4a4afef257ae605b6c35627bdf5cd38023",
+      "provenance": {
+        "mode": "real",
+        "source": "c673f9c24836e413fc2c89b2215090df1c3c05f6",
+        "runner": "4de7c53f1eb3e6207e53939377cdcafbb277f93e",
+        "configuration": {
+          "id": "a1-sonnet-low",
+          "adapter": "claude-cli",
+          "authentication": "oauth-token",
+          "model": "claude-sonnet-5-5",
+          "parameters": {
+            "reasoningEffort": "low"
+          },
+          "promptMode": "brief"
+        },
+        "adapter": {
+          "id": "claude-cli",
+          "version": "2.1.308 (Claude Code)",
+          "executableSha256": "356733f185fa988e6bf3aa9a555269fdd167982a2e2a80d3c8a78037bb92ad58"
+        },
+        "environment": {
+          "platform": "linux/x64",
+          "bun": "1.4.3",
+          "nativeToolAccess": {
+            "sourceTrustAcknowledged": true,
+            "credentials": "accessible",
+            "network": "host"
+          }
+        },
+        "budget": {
+          "maxInvocations": 10,
+          "skillTimeoutMs": 120000,
+          "implementationTimeoutMs": 600000,
+          "totalTimeoutMs": 9600000,
+          "maxCorrectionsPerItem": 1,
+          "repetitions": 1,
+          "concurrency": 1
+        },
+        "datasets": [],
+        "cases": [],
+        "packets": [
+          {
+            "item": "entity:Task",
+            "specHash": "e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c"
+          },
+          {
+            "item": "method:Task.complete",
+            "specHash": "eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364"
+          },
+          {
+            "item": "operator:task-operator",
+            "specHash": "78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1"
+          },
+          {
+            "item": "usecase:complete_task",
+            "specHash": "c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d"
+          },
+          {
+            "item": "usecase:create_task",
+            "specHash": "daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6"
+          }
+        ],
+        "observed": [
+          {
+            "model": {
+              "status": "available",
+              "value": "claude-sonnet-5-5"
+            },
+            "revision": {
+              "reason": "not_reported",
+              "status": "unavailable"
+            }
+          }
+        ]
+      },
+      "plannedRuns": 2,
+      "executedRuns": 2,
+      "plannedCases": 0,
+      "evaluableCases": 0,
+      "correctCases": 0,
+      "plannedItems": 10,
+      "initialItems": 3,
+      "finalItems": 4,
+      "certifiedRuns": 0,
+      "corrections": 3,
+      "protocolFailures": 0,
+      "behaviorFailures": 5,
+      "infrastructureFailures": 0,
+      "timeouts": 0,
+      "budgetExhaustedRuns": 0,
+      "notRunCases": 0,
+      "accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": {
+          "status": "unavailable",
+          "reason": "zero_denominator"
+        }
+      },
+      "initial": {
+        "numerator": 3,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 0.3,
+          "source": "evidence_counts"
+        }
+      },
+      "final": {
+        "numerator": 4,
+        "denominator": 10,
+        "value": {
+          "status": "available",
+          "value": 0.4,
+          "source": "evidence_counts"
+        }
+      },
+      "certification": {
+        "numerator": 0,
+        "denominator": 2,
+        "value": {
+          "status": "available",
+          "value": 0,
+          "source": "evidence_counts"
+        }
+      },
+      "usage": {
+        "inputTokens": {
+          "status": "available",
+          "value": 944631,
+          "source": "evidence_usage_sum"
+        },
+        "cachedInputTokens": {
+          "status": "available",
+          "value": 838028,
+          "source": "evidence_usage_sum"
+        },
+        "outputTokens": {
+          "status": "available",
+          "value": 20422,
+          "source": "evidence_usage_sum"
+        },
+        "cost": {
+          "status": "unavailable",
+          "reason": "incomplete_or_incompatible_costs"
+        }
+      },
+      "escalations": 0,
+      "escalatedItems": 0,
+      "falseGreen": {
+        "attempts": 0,
+        "finalItems": 0,
+        "unavailableAttempts": 0
+      },
+      "boundaryViolations": 5,
+      "tokensByModel": {
+        "claude-sonnet-5-5": {
+          "uncachedInputTokens": 132,
+          "cacheWriteInputTokens": 106471,
+          "cacheReadInputTokens": 838028,
+          "outputTokens": 20422
+        }
+      },
+      "cost": {
+        "label": "derived",
+        "available": true,
+        "reason": null,
+        "lowerBound": false,
+        "total": {
+          "status": "available",
+          "expensive": 0.7141708,
+          "cheap": 0.7141708,
+          "floor": 0.7141708,
+          "lowerBound": false
+        },
+        "review": {
+          "status": "available",
+          "expensive": 0,
+          "cheap": 0,
+          "floor": 0,
+          "lowerBound": false
+        },
+        "perAcceptedItem": {
+          "withReview": {
+            "expensive": 0.1785427,
+            "cheap": 0.1785427
+          },
+          "withoutReview": {
+            "expensive": 0.1785427,
+            "cheap": 0.1785427
+          }
+        },
+        "perRun": {
+          "expensive": {
+            "median": 0.31338,
+            "p90": 0.4007908,
+            "n": 2,
+            "excluded": 0
+          },
+          "cheap": {
+            "median": 0.31338,
+            "p90": 0.4007908,
+            "n": 2,
+            "excluded": 0
+          }
+        },
+        "reportedUSD": 0.7141708
+      },
+      "distribution": {
+        "finalItems": {
+          "median": 2,
+          "p90": 2,
+          "n": 2,
+          "excluded": 0
+        },
+        "escalations": {
+          "median": 0,
+          "p90": 0,
+          "n": 2,
+          "excluded": 0
+        },
+        "agentDurationMs": {
+          "median": 167681.79036400001,
+          "p90": 231148.297403,
+          "n": 2,
+          "excluded": 0
+        },
+        "turns": {
+          "median": 38,
+          "p90": 47,
+          "n": 2,
+          "excluded": 0
+        }
+      },
+      "runMetrics": [
+        {
+          "id": "a1-sonnet-low-r1",
+          "repetition": 1,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "failed",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "blocked",
+              "attempts": 0,
+              "models": []
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "blocked",
+              "attempts": 0,
+              "models": []
+            }
+          ],
+          "review": null,
+          "finalItems": 2,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 2,
+          "turns": {
+            "status": "available",
+            "value": 38,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 167681.79036400001,
+          "tokensByModel": {
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 58,
+              "cacheWriteInputTokens": 47571,
+              "cacheReadInputTokens": 361800,
+              "outputTokens": 8680
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.31338,
+              "cheap": 0.31338,
+              "floor": 0.31338,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.31338,
+              "cheap": 0.31338,
+              "floor": 0.31338,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.31338,
+              "cheap": 0.31338,
+              "floor": 0.31338,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.31338000000000005
+          }
+        },
+        {
+          "id": "a1-sonnet-low-r2",
+          "repetition": 2,
+          "status": "completed",
+          "items": [
+            {
+              "item": "entity:Task",
+              "state": "accepted",
+              "attempts": 1,
+              "models": [
+                null
+              ]
+            },
+            {
+              "item": "method:Task.complete",
+              "state": "failed",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "usecase:create_task",
+              "state": "accepted",
+              "attempts": 2,
+              "models": [
+                null,
+                null
+              ]
+            },
+            {
+              "item": "usecase:complete_task",
+              "state": "blocked",
+              "attempts": 0,
+              "models": []
+            },
+            {
+              "item": "operator:task-operator",
+              "state": "blocked",
+              "attempts": 0,
+              "models": []
+            }
+          ],
+          "review": null,
+          "finalItems": 2,
+          "escalations": 0,
+          "escalatedItems": 0,
+          "falseGreen": {
+            "attempts": 0,
+            "finalItems": 0,
+            "unavailableAttempts": 0
+          },
+          "boundaryViolations": 3,
+          "turns": {
+            "status": "available",
+            "value": 47,
+            "source": "num_turns_sum"
+          },
+          "agentDurationMs": 231148.297403,
+          "tokensByModel": {
+            "claude-sonnet-5-5": {
+              "uncachedInputTokens": 74,
+              "cacheWriteInputTokens": 58900,
+              "cacheReadInputTokens": 476228,
+              "outputTokens": 11742
+            }
+          },
+          "lowerBound": false,
+          "cost": {
+            "total": {
+              "status": "available",
+              "expensive": 0.4007908,
+              "cheap": 0.4007908,
+              "floor": 0.4007908,
+              "lowerBound": false
+            },
+            "withoutReview": {
+              "status": "available",
+              "expensive": 0.4007908,
+              "cheap": 0.4007908,
+              "floor": 0.4007908,
+              "lowerBound": false
+            },
+            "benchmark": {
+              "status": "available",
+              "expensive": 0.4007908,
+              "cheap": 0.4007908,
+              "floor": 0.4007908,
+              "lowerBound": false
+            },
+            "review": {
+              "status": "available",
+              "expensive": 0,
+              "cheap": 0,
+              "floor": 0,
+              "lowerBound": false
+            },
+            "reportedUSD": 0.40079079999999995
+          }
+        }
+      ],
+      "runs": [
+        {
+          "id": "a1-sonnet-low-r1",
+          "reportId": "a5ba3df0-611e-4fae-937a-77b6d7146818",
+          "repetition": 1,
+          "reportSha256": "e3a93757904e279d678e557e60441a664efb1a7a6646034f85f91613ef013228",
+          "status": "completed"
+        },
+        {
+          "id": "a1-sonnet-low-r2",
+          "reportId": "5656832d-6665-4ffc-b2a0-eb1a7c9b9a6f",
+          "repetition": 2,
+          "reportSha256": "1212ac215de47b5d2dbffb4c9ddaf6fd3c52a0fee5a08d53676e6083e7f841d0",
+          "status": "completed"
+        }
+      ],
+      "baselines": [
+        {
+          "run": "a1-sonnet-low-r1",
+          "baselineHash": "a4d65e849d1a86bdd830d7f6370a829fa55c31fa2b33ecf39bb02746053d325f",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "a4d65e849d1a86bdd830d7f6370a829fa55c31fa2b33ecf39bb02746053d325f"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "ac5dfc1269c9ea0b67002f70b89d5a3b253048767bc4312c5fdc99d9550b4eb7"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 2,
+              "hash": "ac5dfc1269c9ea0b67002f70b89d5a3b253048767bc4312c5fdc99d9550b4eb7"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "ac5dfc1269c9ea0b67002f70b89d5a3b253048767bc4312c5fdc99d9550b4eb7"
+            }
+          ]
+        },
+        {
+          "run": "a1-sonnet-low-r2",
+          "baselineHash": "55b40727cbb509da02aa5944dd3adedfa360e259bad086bc2136d6cc1c9c6d2c",
+          "attempts": [
+            {
+              "item": "entity:Task",
+              "number": 1,
+              "hash": "55b40727cbb509da02aa5944dd3adedfa360e259bad086bc2136d6cc1c9c6d2c"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 1,
+              "hash": "40cc129367b0ac6c9c91c817810b9bf16e81d25f6cd24204203472184bb099d9"
+            },
+            {
+              "item": "method:Task.complete",
+              "number": 2,
+              "hash": "40cc129367b0ac6c9c91c817810b9bf16e81d25f6cd24204203472184bb099d9"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 1,
+              "hash": "40cc129367b0ac6c9c91c817810b9bf16e81d25f6cd24204203472184bb099d9"
+            },
+            {
+              "item": "usecase:create_task",
+              "number": 2,
+              "hash": "40cc129367b0ac6c9c91c817810b9bf16e81d25f6cd24204203472184bb099d9"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
