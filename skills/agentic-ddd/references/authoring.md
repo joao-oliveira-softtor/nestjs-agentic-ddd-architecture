@@ -63,6 +63,7 @@ Aqui, entidades e eventos ficam em `src/shop/core/model`, com eventos em `.evt.t
 - Cada camada é o nome de uma pasta só dentro do módulo. Layout aninhado, como `src/<bc>/core/domain`, se faz por `modules[].path`; camadas em pais diferentes não são suportadas.
 - A camada de um item continua vindo do decorator, não da pasta.
 - `forbiddenImports` diz o que `domain` e `application` não podem importar. Uma lista substitui o padrão, não soma a ele; declarar uma camada mantém o padrão da outra. `[]` desliga a regra de pastas daquela camada, mas a barreira a `@nestjs/*` e ao runtime continua. `operators` não tem regra de import.
+- `suffixes` só muda o texto da tabela "Como estender"; nenhum gate valida nome de arquivo pelo sufixo.
 - Essas convenções valem para a tabela "Como estender" da skill de dev, para o texto de camadas no bloco do AGENTS.md e para o gate de import do `orchestrate`.
 - Uma regra do time com a chave `core/layers` muda só o texto; o gate continua o mesmo.
 - O CLI `bun scripts/boundary-gates.ts imports` usa só o padrão; ele não lê o `agentic.config.ts`.
