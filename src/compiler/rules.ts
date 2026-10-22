@@ -1,4 +1,5 @@
-import { join } from 'node:path';
+import { realpath } from 'node:fs/promises';
+import { isAbsolute, join, relative } from 'node:path';
 import { sha256 } from './canonical';
 import type { ResolvedConfig } from './config';
 import { FRONTMATTER, parseFrontmatterData } from './changes/proposal';
@@ -183,6 +184,17 @@ export async function loadRules(config: ResolvedConfig): Promise<Rule[]> {
   const cwd = join(config.root, config.rules.dir);
   const team: Rule[] = [];
   const files: string[] = [];
+  // O config só valida o caminho no texto; um link (na pasta ou num pai) pode
+  // apontar para fora do projeto e levar texto alheio ao AGENTS.md e aos briefs.
+  const real = await realpath(cwd).catch(() => null);
+  if (real !== null) {
+    const inside = relative(await realpath(config.root), real);
+    if (inside.startsWith('..') || isAbsolute(inside))
+      throw new RuleError(
+        config.rules.dir,
+        `${config.rules.dir}: a pasta de regras aponta para fora da raiz do projeto (${real})`,
+      );
+  }
   try {
     for await (const rel of new Bun.Glob('**/*.md').scan({
       cwd,

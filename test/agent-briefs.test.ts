@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
@@ -284,6 +284,48 @@ test('estouro do sub-orçamento e do teto com regras lista as regras', () => {
   expect(() =>
     renderBrief({ packet: text, rules, maxTokens: 1000, rulesMaxTokens: 5000 }),
   ).toThrow(/brief excede o orçamento: .*grande ~\d+, pequena ~\d+/);
+});
+
+test('CLI com agentic.config.ts e .ai/rules grava as regras aplicáveis e respeita rules.briefMaxTokens', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'agentic-briefs-'));
+  dirs.push(dir);
+  const file = join(dir, 'packet.md');
+  await Bun.write(file, packet('entity:Order'));
+  await mkdir(join(dir, 'm'));
+  // Sem import: defineConfig é identidade e a pasta temporária não resolve @agentic-ddd/*.
+  const config = (budget: number) =>
+    `export default { modules: [{ name: 'orders', path: 'm' }], rules: { briefMaxTokens: ${budget} } };\n`;
+  await Bun.write(join(dir, 'agentic.config.ts'), config(2000));
+  await Bun.write(join(dir, 'pequeno.config.ts'), config(1));
+  await Bun.write(join(dir, '.ai/rules/geral.md'), '- REGRA-GERAL\n');
+  await Bun.write(
+    join(dir, '.ai/rules/dominio.md'),
+    "---\npaths: ['examples/orders/domain/**']\n---\n- REGRA-DOMINIO\n",
+  );
+  await Bun.write(
+    join(dir, '.ai/rules/fora.md'),
+    "---\npaths: ['outro/**']\n---\n- REGRA-FORA\n",
+  );
+  const out = join(dir, 'out');
+  const args = ['entity:Order', '--packet-file', file, '--out', out];
+  const cwd = process.cwd();
+  const error = console.error;
+  const errors: string[] = [];
+  console.error = (...a: unknown[]) => void errors.push(a.join(' '));
+  process.chdir(dir);
+  try {
+    expect(await main(args)).toBe(0);
+    const brief = await readFile(join(out, 'entity-Order.md'), 'utf8');
+    expect(brief).toContain('### Regras do time');
+    expect(brief).toContain('- REGRA-GERAL');
+    expect(brief).toContain('- REGRA-DOMINIO');
+    expect(brief).not.toContain('REGRA-FORA');
+    expect(await main([...args, '--config', 'pequeno.config.ts'])).toBe(1);
+    expect(errors.join('\n')).toContain('regras do time excedem o orçamento');
+  } finally {
+    process.chdir(cwd);
+    console.error = error;
+  }
 });
 
 test('CLI: --packet-file sem agentic.config.ts funciona; --config explícito inexistente falha', async () => {

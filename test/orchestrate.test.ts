@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import {
   jsonlTelemetry,
   memoryTelemetry,
@@ -1043,6 +1043,46 @@ test('CLI: --real exige orçamento; o plano roda sobre o grafo real sem executar
     process.chdir(cwd);
     console.log = log;
     console.error = error;
+  }
+}, 120000);
+
+test('CLI: o plano carrega as regras do config e aplica rules.briefMaxTokens', async () => {
+  const { main } = await import('../scripts/orchestrate');
+  const root = join(import.meta.dir, '..');
+  await mkdir(join(root, '.tmp'), { recursive: true });
+  const proj = await mkdtemp(join(root, '.tmp', 'orchestrate-rules-'));
+  const rel = `.tmp/${basename(proj)}`;
+  await Bun.write(
+    join(proj, 'agentic.config.ts'),
+    `import { defineConfig } from '@agentic-ddd/compiler';
+export default defineConfig({
+  root: '../..',
+  modules: [{ name: 'orders', path: 'examples/orders' }],
+  rules: { dir: '${rel}/rules', briefMaxTokens: 10 },
+});
+`,
+  );
+  await Bun.write(
+    join(proj, 'rules/dominio.md'),
+    `---\npaths: ['examples/orders/**']\n---\n- ${'x'.repeat(400)}\n`,
+  );
+  const errors: string[] = [];
+  const log = console.log;
+  const error = console.error;
+  console.log = () => {};
+  console.error = (...args: unknown[]) => void errors.push(args.join(' '));
+  const cwd = process.cwd();
+  process.chdir(root);
+  try {
+    expect(
+      await main(['--static', '--config', `${rel}/agentic.config.ts`]),
+    ).toBe(1);
+    expect(errors.join('\n')).toContain('regras do time excedem o orçamento');
+  } finally {
+    process.chdir(cwd);
+    console.log = log;
+    console.error = error;
+    await rm(proj, { recursive: true, force: true });
   }
 }, 120000);
 

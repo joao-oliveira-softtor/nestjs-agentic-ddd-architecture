@@ -119,7 +119,9 @@ describe('composeRules', () => {
   test('chave no exclude que também tem arquivo do time é erro', () => {
     const error = failure(() => composeRules([team('a')], ['a']));
     expect(error.source).toBe('agentic.config.ts');
-    expect(error.message).toContain('a');
+    expect(error.message).toContain(
+      '"a", que também tem arquivo em .ai/rules/a.md',
+    );
   });
 });
 
@@ -223,6 +225,43 @@ describe('validação do conteúdo da regra', () => {
     }
   });
 
+  test.each([
+    ['a própria pasta', '.ai/rules'],
+    ['uma pasta pai', '.ai'],
+  ])(
+    'rules.dir que passa por link para fora da raiz (%s) é RuleError',
+    async (_nome, link) => {
+      const outside = await mkdtemp(join(tmpdir(), 'agentic-rules-fora-'));
+      try {
+        await mkdir(join(outside, 'rules'), { recursive: true });
+        await writeFile(join(outside, 'rules/segredo.md'), '- SEGREDO');
+        await mkdir(join(dir, link, '..'), { recursive: true });
+        await symlink(
+          link === '.ai' ? outside : join(outside, 'rules'),
+          join(dir, link),
+          'dir',
+        );
+        const error = await loadRules(config()).catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(RuleError);
+        expect((error as RuleError).source).toBe('.ai/rules');
+        expect((error as RuleError).message).toContain(
+          'aponta para fora da raiz do projeto',
+        );
+      } finally {
+        await rm(outside, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test('rules.dir com link que fica dentro da raiz é lido normalmente', async () => {
+    await mkdir(join(dir, 'regras-reais'), { recursive: true });
+    await writeFile(join(dir, 'regras-reais/ok.md'), '- ok');
+    await mkdir(join(dir, '.ai'), { recursive: true });
+    await symlink(join(dir, 'regras-reais'), join(dir, '.ai/rules'), 'dir');
+    const team = (await loadRules(config())).filter((r) => r.file !== null);
+    expect(team.map((r) => r.key)).toEqual(['ok']);
+  });
+
   test('glob com ./ é normalizado e casa com o caminho do item', async () => {
     await write('a.md', '---\npaths: ["./app/**"]\n---\n- a');
     const rule = (await loadRules(config())).find((r) => r.key === 'a')!;
@@ -271,22 +310,66 @@ describe('validação do conteúdo da regra', () => {
   });
 
   test.each([
-    ['frontmatter YAML inválido', '---\na: [\n---\ncorpo'],
-    ['frontmatter sem fechamento', '---\npaths: ["app/**"]\n- corpo'],
-    ['frontmatter que não é objeto', '---\n- a\n---\ncorpo'],
-    ['chave de frontmatter desconhecida', '---\nfoo: 1\n---\ncorpo'],
-    ['paths vazio', '---\npaths: []\n---\ncorpo'],
-    ['paths que não é lista', '---\npaths: app/**\n---\ncorpo'],
-    ['paths com item vazio', '---\npaths: [""]\n---\ncorpo'],
-    ['glob absoluto', '---\npaths: ["/app/**"]\n---\ncorpo'],
-    ['glob com ..', '---\npaths: ["app/../x"]\n---\ncorpo'],
-    ['corpo vazio', '---\npaths: ["a/**"]\n---\n  \n'],
-    ['título Markdown', '- ok\n## Título\n- ok'],
-    ['marcador begin', '- <!-- agentic-ddd:begin -->'],
-    ['marcador end', '- <!-- agentic-ddd:end -->'],
-  ])('erro: %s', async (_nome, content) => {
+    [
+      'frontmatter YAML inválido',
+      '---\na: [\n---\ncorpo',
+      'frontmatter YAML inválido',
+    ],
+    [
+      'frontmatter sem fechamento',
+      '---\npaths: ["app/**"]\n- corpo',
+      'sem o "---" de fechamento',
+    ],
+    [
+      'frontmatter que não é objeto',
+      '---\n- a\n---\ncorpo',
+      'o frontmatter não é um objeto',
+    ],
+    [
+      'chave de frontmatter desconhecida',
+      '---\nfoo: 1\n---\ncorpo',
+      'chave de frontmatter desconhecida "foo"',
+    ],
+    ['paths vazio', '---\npaths: []\n---\ncorpo', '"paths" deve ser uma lista'],
+    [
+      'paths que não é lista',
+      '---\npaths: app/**\n---\ncorpo',
+      '"paths" deve ser uma lista',
+    ],
+    [
+      'paths com item vazio',
+      '---\npaths: [""]\n---\ncorpo',
+      '"paths" deve ser uma lista',
+    ],
+    [
+      'glob absoluto',
+      '---\npaths: ["/app/**"]\n---\ncorpo',
+      'o glob "/app/**" deve ser relativo',
+    ],
+    [
+      'glob com ..',
+      '---\npaths: ["app/../x"]\n---\ncorpo',
+      'o glob "app/../x" deve ser relativo à raiz e sem segmento ".."',
+    ],
+    [
+      'corpo vazio',
+      '---\npaths: ["a/**"]\n---\n  \n',
+      'o corpo da regra está vazio',
+    ],
+    ['título Markdown', '- ok\n## Título\n- ok', 'linha de título Markdown'],
+    [
+      'marcador begin',
+      '- <!-- agentic-ddd:begin -->',
+      'marcador <!-- agentic-ddd:begin -->',
+    ],
+    [
+      'marcador end',
+      '- <!-- agentic-ddd:end -->',
+      'marcador <!-- agentic-ddd:end -->',
+    ],
+  ])('erro: %s', async (_nome, content, expected) => {
     const error = await loadError('r.md', content);
     expect(error.source).toBe('.ai/rules/r.md');
-    expect(error.message.length).toBeGreaterThan(10);
+    expect(error.message).toContain(expected);
   });
 });
