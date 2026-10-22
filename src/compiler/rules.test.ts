@@ -245,13 +245,37 @@ describe('validação do conteúdo da regra', () => {
         expect(error).toBeInstanceOf(RuleError);
         expect((error as RuleError).source).toBe('.ai/rules');
         expect((error as RuleError).message).toContain(
-          'aponta para fora da raiz do projeto',
+          'aponta para a raiz ou para fora da raiz do projeto',
         );
       } finally {
         await rm(outside, { recursive: true, force: true });
       }
     },
   );
+
+  test('rules.dir que é link para a própria raiz é RuleError (o scan varreria o projeto)', async () => {
+    await mkdir(join(dir, '.ai'), { recursive: true });
+    await symlink(dir, join(dir, '.ai/rules'), 'dir');
+    const error = await loadRules(config()).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RuleError);
+    expect((error as RuleError).message).toContain(
+      'aponta para a raiz ou para fora da raiz',
+    );
+  });
+
+  test('pasta de regras chamada ..regras é válida', async () => {
+    await mkdir(join(dir, '..regras'), { recursive: true });
+    await writeFile(join(dir, '..regras/ok.md'), '- ok');
+    const rules = await loadRules(
+      resolveConfig(
+        { modules: [{ name: 'x', path: 'x' }], rules: { dir: '..regras' } },
+        dir,
+      ),
+    );
+    expect(rules.filter((r) => r.file !== null).map((r) => r.file)).toEqual([
+      '..regras/ok.md',
+    ]);
+  });
 
   test('rules.dir com link que fica dentro da raiz é lido normalmente', async () => {
     await mkdir(join(dir, 'regras-reais'), { recursive: true });
@@ -357,6 +381,11 @@ describe('validação do conteúdo da regra', () => {
       'o corpo da regra está vazio',
     ],
     ['título Markdown', '- ok\n## Título\n- ok', 'linha de título Markdown'],
+    [
+      'corpo que não começa com item de lista',
+      'Parágrafo solto.\n- item',
+      'deve começar com um item de lista "- "',
+    ],
     [
       'marcador begin',
       '- <!-- agentic-ddd:begin -->',

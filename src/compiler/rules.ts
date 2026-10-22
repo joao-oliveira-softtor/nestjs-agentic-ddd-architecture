@@ -135,6 +135,10 @@ function parseRule(key: string, file: string, raw: string): Rule {
     throw fail(
       'o corpo não pode ter linha de título Markdown (#); use uma lista com "- "',
     );
+  // Os corpos entram em sequência, sem linha em branco: um parágrafo depois de
+  // um item `- ` viraria continuação dele.
+  if (!body.startsWith('- '))
+    throw fail('o corpo deve começar com um item de lista "- "');
   for (const marker of BLOCK_MARKERS)
     if (body.includes(marker))
       throw fail(`o corpo não pode conter o marcador ${marker}`);
@@ -188,11 +192,18 @@ export async function loadRules(config: ResolvedConfig): Promise<Rule[]> {
   // apontar para fora do projeto e levar texto alheio ao AGENTS.md e aos briefs.
   const real = await realpath(cwd).catch(() => null);
   if (real !== null) {
-    const inside = relative(await realpath(config.root), real);
-    if (inside.startsWith('..') || isAbsolute(inside))
+    // Mesmo critério do rules.dir em config.ts: nem a raiz (o scan varreria o
+    // repositório) nem fora dela; `..regras` é um nome válido.
+    const inside = toPosix(relative(await realpath(config.root), real));
+    if (
+      inside === '' ||
+      inside === '..' ||
+      inside.startsWith('../') ||
+      isAbsolute(inside)
+    )
       throw new RuleError(
         config.rules.dir,
-        `${config.rules.dir}: a pasta de regras aponta para fora da raiz do projeto (${real})`,
+        `${config.rules.dir}: a pasta de regras aponta para a raiz ou para fora da raiz do projeto (${real})`,
       );
   }
   try {

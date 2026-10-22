@@ -19,6 +19,7 @@ export {
   type ProjectAnalysis,
 } from './compile';
 export {
+  DEFAULT_RULES_MAX_TOKENS,
   defineConfig,
   loadConfig,
   resolveConfig,

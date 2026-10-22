@@ -146,6 +146,13 @@ describe('configuração das regras do time', () => {
     });
   });
 
+  test('resolveConfig tira todos os ./ iniciais de rules.dir', () => {
+    expect(
+      resolveConfig({ ...base, rules: { dir: '././docs/regras' } }, dir).rules
+        .dir,
+    ).toBe('docs/regras');
+  });
+
   test('resolveConfig rejeita rules.dir fora da raiz', () => {
     expect(() =>
       resolveConfig({ ...base, rules: { dir: '../fora' } }, dir),

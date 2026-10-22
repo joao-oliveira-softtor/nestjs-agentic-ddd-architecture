@@ -4,6 +4,9 @@ import { pathToFileURL } from 'node:url';
 import { toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
 
+/** Sub-orçamento padrão das regras do time no brief (ADR-0005 D4). */
+export const DEFAULT_RULES_MAX_TOKENS = 2000;
+
 export interface ModuleConfig {
   readonly name: string;
   readonly path: string;
@@ -102,7 +105,7 @@ export function resolveConfig(
     owners.set(posix, module.name);
   }
   const rulesDir = toPosix(config.rules?.dir ?? '.ai/rules')
-    .replace(/^\.\//, '')
+    .replace(/^(\.\/)+/, '')
     .replace(/\/+$/, '');
   const rulesFromRoot = relative(root, resolve(root, rulesDir));
   if (isAbsolute(rulesDir) || /^[A-Za-z]:/.test(rulesDir))
@@ -118,7 +121,8 @@ export function resolveConfig(
     throw new Error(
       'agentic.config.ts: rules.dir não pode apontar para a raiz nem para fora da raiz do projeto',
     );
-  const briefMaxTokens = config.rules?.briefMaxTokens ?? 2000;
+  const briefMaxTokens =
+    config.rules?.briefMaxTokens ?? DEFAULT_RULES_MAX_TOKENS;
   if (!Number.isInteger(briefMaxTokens) || briefMaxTokens <= 0)
     throw new Error(
       `agentic.config.ts: rules.briefMaxTokens deve ser um inteiro positivo (recebido ${String(briefMaxTokens)})`,

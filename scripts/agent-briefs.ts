@@ -4,6 +4,7 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { match, P } from 'ts-pattern';
 import {
+  DEFAULT_RULES_MAX_TOKENS,
   approxTokens,
   briefRules,
   loadConfig,
@@ -36,7 +37,6 @@ export interface BriefInput {
 }
 
 export const DEFAULT_MAX_TOKENS = 6000;
-export const DEFAULT_RULES_MAX_TOKENS = 2000;
 export const DEFAULT_OUT = '.agentic-tasks/briefs';
 /** Caminhos escritos pelo compilador ou pelo instalador; briefs não entram aqui. */
 export const GENERATED_PATHS = [
