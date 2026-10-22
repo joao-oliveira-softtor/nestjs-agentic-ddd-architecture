@@ -204,6 +204,21 @@ describe('validação do conteúdo da regra', () => {
     expect(await loadRules(config())).toEqual([...CORE_RULES]);
   });
 
+  test('pasta de regras que é arquivo vira RuleError com a pasta como fonte', async () => {
+    await mkdir(join(dir, '.ai'), { recursive: true });
+    await writeFile(join(dir, '.ai/rules'), 'não é pasta');
+    const error = await loadRules(config()).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RuleError);
+    expect((error as RuleError).source).toBe('.ai/rules');
+  });
+
+  test('glob com ./ é normalizado e casa com o caminho do item', async () => {
+    await write('a.md', '---\npaths: ["./app/**"]\n---\n- a');
+    const rule = (await loadRules(config())).find((r) => r.key === 'a')!;
+    expect(rule.paths).toEqual(['app/**']);
+    expect(rulesFor([rule], ['app/domain/x.ts'])).toEqual([rule]);
+  });
+
   test('lê subpasta, CRLF, frontmatter e ordena', async () => {
     await write(
       'testes.md',

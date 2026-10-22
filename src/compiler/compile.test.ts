@@ -4,6 +4,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  readdir,
   rm,
   writeFile,
 } from 'node:fs/promises';
@@ -329,5 +330,19 @@ export default defineConfig({
     const result = await run('write');
     expect(result.ok).toBe(false);
     expect(result.errors[0]!.source).toBe(`.tmp/${basename(proj)}/rules/x.md`);
+  });
+
+  test('regra inválida com --draft-change não grava rascunho', async () => {
+    await writeFile(join(rulesDir, 'x.md'), '# título proibido\n');
+    const result = await compile({
+      configPath: cfg(),
+      outRoot: out,
+      mode: 'write',
+      draftChange: 'com-regra-invalida',
+    });
+    expect(result.ok).toBe(false);
+    expect(result.drafted).toBeNull();
+    const changes = await readdir(join(out, 'changes')).catch(() => []);
+    expect(changes.some((d) => d.endsWith('com-regra-invalida'))).toBe(false);
   });
 });

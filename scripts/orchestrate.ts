@@ -660,15 +660,17 @@ export async function main(argv: readonly string[]): Promise<number> {
         dependsOn: byId.get(id)!.dependsOn,
       })),
     );
+    // Renderiza todos os briefs antes de qualquer invocação paga: estouro de
+    // orçamento das regras falha aqui, e não no meio de uma onda.
+    const plan = await planRun(
+      planned,
+      gates,
+      cli.policy,
+      undefined,
+      rules,
+      config.rules.briefMaxTokens,
+    );
     if (!cli.real) {
-      const plan = await planRun(
-        planned,
-        gates,
-        cli.policy,
-        undefined,
-        rules,
-        config.rules.briefMaxTokens,
-      );
       console.log(JSON.stringify({ mode: 'plan', items: plan }, null, 2));
       return 0;
     }

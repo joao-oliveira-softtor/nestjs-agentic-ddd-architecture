@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+import { match, P } from 'ts-pattern';
 import {
   approxTokens,
   briefRules,
@@ -275,14 +276,25 @@ function parseCli(argv: readonly string[]): CliOptions | string {
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
     const value = (): string | undefined => argv[++i];
-    if (arg === '--config') {
-      config = value() ?? '';
-      configExplicit = true;
-    } else if (arg === '--out') out = value() ?? '';
-    else if (arg === '--packet-file') packetFile = value();
-    else if (arg === '--max-tokens') maxTokens = Number(value());
-    else if (arg.startsWith('--')) return `opção desconhecida: ${arg}`;
-    else items.push(arg);
+    const unknown = match(arg)
+      .with('--config', () => {
+        config = value() ?? '';
+        configExplicit = true;
+      })
+      .with('--out', () => {
+        out = value() ?? '';
+      })
+      .with('--packet-file', () => {
+        packetFile = value();
+      })
+      .with('--max-tokens', () => {
+        maxTokens = Number(value());
+      })
+      .with(P.string.startsWith('--'), () => `opção desconhecida: ${arg}`)
+      .otherwise(() => {
+        items.push(arg);
+      });
+    if (unknown) return unknown;
   }
   if (!config || !out) return 'valor ausente para --config/--out';
   if (!Number.isInteger(maxTokens) || maxTokens <= 0)

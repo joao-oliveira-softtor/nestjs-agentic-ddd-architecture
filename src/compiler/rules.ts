@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { sha256 } from './canonical';
 import type { ResolvedConfig } from './config';
-import { FRONTMATTER } from './changes/proposal';
+import { FRONTMATTER, parseFrontmatterData } from './changes/proposal';
 import { toPosix } from './ir';
 
 export interface Rule {
@@ -97,19 +97,12 @@ function parseRule(key: string, file: string, raw: string): Rule {
   let paths: string[] | null = null;
   let body = text;
   if (!match && text.startsWith('---\n'))
-    throw fail('frontmatter sem o "---" de fechamento');
+    throw fail('frontmatter vazio ou sem o "---" de fechamento');
   if (match) {
     body = match[2]!;
     let data: Record<string, unknown>;
     try {
-      const parsed: unknown = Bun.YAML.parse(match[1]!);
-      if (
-        parsed === null ||
-        typeof parsed !== 'object' ||
-        Array.isArray(parsed)
-      )
-        throw new Error('o frontmatter não é um objeto');
-      data = parsed as Record<string, unknown>;
+      data = parseFrontmatterData(match[1]!);
     } catch (error) {
       throw fail(`frontmatter YAML inválido: ${(error as Error).message}`);
     }
@@ -126,12 +119,13 @@ function parseRule(key: string, file: string, raw: string): Rule {
         !value.every((p) => typeof p === 'string' && p.trim() !== '')
       )
         throw fail('"paths" deve ser uma lista não vazia de globs (texto)');
-      for (const glob of value as string[])
+      // `./app/**` nunca casaria com `app/x.ts`: normaliza como o rules.dir.
+      paths = (value as string[]).map((g) => g.trim().replace(/^(\.\/)+/, ''));
+      for (const glob of paths)
         if (glob.startsWith('/') || glob.split('/').includes('..'))
           throw fail(
             `o glob "${glob}" deve ser relativo à raiz e sem segmento ".."`,
           );
-      paths = value as string[];
     }
   }
   body = body.trim();
@@ -197,7 +191,12 @@ export async function loadRules(config: ResolvedConfig): Promise<Rule[]> {
       files.push(toPosix(rel));
   } catch (error) {
     // Pasta inexistente = nenhuma regra do time.
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code !== 'ENOENT')
+      throw new RuleError(
+        config.rules.dir,
+        `${config.rules.dir}: não foi possível ler a pasta de regras (${code ?? (error as Error).message})`,
+      );
   }
   for (const posix of files)
     team.push(
