@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="6" assertions="34" failures="0" skipped="0" time="0.0846807">
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="1" assertions="8" failures="0" skipped="0" time="0.080626528" hostname="softtords">
+    <testsuite name="complete_task" file="app/test/usecase-complete_task.test.ts" line="13" tests="1" assertions="8" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente" classname="complete_task" time="0.00078" file="app/test/usecase-complete_task.test.ts" line="14" assertions="8" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="8" failures="0" skipped="0" time="0.000390273" hostname="softtords">
+    <testsuite name="Task.complete" file="app/test/method-Task-complete.test.ts" line="7" tests="1" assertions="8" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pendente, emite TaskCompleted e rejeita repetição" classname="Task.complete" time="0.00007" file="app/test/method-Task-complete.test.ts" line="8" assertions="8" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="3" assertions="10" failures="0" skipped="0" time="0.000380806" hostname="softtords">
+    <testsuite name="Task" file="app/test/entity-Task.test.ts" line="7" tests="3" assertions="10" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente com título normalizado e emite TaskCreated" classname="Task" time="0.000039" file="app/test/entity-Task.test.ts" line="8" assertions="6" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título inválido &quot;&quot;" classname="Task" time="0.000045" file="app/test/entity-Task.test.ts" line="20" assertions="2" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título inválido &quot;   &quot;" classname="Task" time="0.000004" file="app/test/entity-Task.test.ts" line="20" assertions="2" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="1" assertions="8" failures="0" skipped="0" time="0.00119852" hostname="softtords">
+    <testsuite name="create_task" file="app/test/usecase-create_task.test.ts" line="12" tests="1" assertions="8" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] salva, publica TaskCreated, retorna pending e rejeita duplicado" classname="create_task" time="0.000239" file="app/test/usecase-create_task.test.ts" line="13" assertions="8" />
+    </testsuite>
+  </testsuite>
+</testsuites>

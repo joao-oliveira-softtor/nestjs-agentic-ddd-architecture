@@ -1,0 +1,134 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementei o corpo de Task.complete em app/domain/task.ts (mesmas 14 linhas, sem alterar imports, decorators ou outros corpos): rejeita status diferente de pending com DomainError TASK_ALREADY_COMPLETED, define status completed e registra TaskCompleted com taskId. Criei app/test/method-Task-complete.test.ts com covers(['method:Task.complete', 'criterion:0001/conclusao']) cobrindo conclusão, evento e repetição rejeitada. bun test: 3 pass, 0 fail (incluindo o teste existente). verify --item method:Task.complete --spec-hash eb3ac392…8364 retornou done (I1–I5 passed, exit 0).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "5583d359-c1f9-4456-b59c-673fee7a5af4",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-haiku-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 125054,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 110844,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 4747,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 14194,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-haiku-5-5": {
+        "uncachedInputTokens": 16,
+        "cacheWriteInputTokens": 14194,
+        "cacheReadInputTokens": 110844,
+        "outputTokens": 4747,
+        "reportedCostUSD": 0.006322339999999999
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 6787,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 6787
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 996,
+          "cacheReadInputTokens": 11780,
+          "cacheWrite1hInputTokens": 996
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1221,
+          "cacheReadInputTokens": 12776,
+          "cacheWrite1hInputTokens": 1221
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1163,
+          "cacheReadInputTokens": 13997,
+          "cacheWrite1hInputTokens": 1163
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1359,
+          "cacheReadInputTokens": 15160,
+          "cacheWrite1hInputTokens": 1359
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 892,
+          "cacheReadInputTokens": 16519,
+          "cacheWrite1hInputTokens": 892
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 797,
+          "cacheReadInputTokens": 17411,
+          "cacheWrite1hInputTokens": 797
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 979,
+          "cacheReadInputTokens": 18208,
+          "cacheWrite1hInputTokens": 979
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 34376.506255,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r1/implementation/a3-routed/method-Task-complete/attempt-1/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r1/implementation/a3-routed/method-Task-complete/attempt-1/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r1/implementation/a3-routed/method-Task-complete/attempt-1/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 10,
+    "source": "claude.result.num_turns"
+  }
+}

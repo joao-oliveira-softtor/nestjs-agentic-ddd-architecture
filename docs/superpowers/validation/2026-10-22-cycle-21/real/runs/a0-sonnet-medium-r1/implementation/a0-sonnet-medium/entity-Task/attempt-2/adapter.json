@@ -1,0 +1,99 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementei Task.create em app/domain/task.ts mantendo o arquivo com 47 linhas, como no original (o corpo tem a mesma quantidade de linhas). O corpo normaliza o título com trim, lança DomainError TASK_TITLE_REQUIRED se ficar vazio, cria a tarefa pendente e registra TaskCreated. Criei app/test/entity-Task.test.ts com covers para invariant:Task/titulo-obrigatorio, method:Task.create, criterion:0001/titulo-invalido e criterion:0001/criacao. O comando verify --item com o specHash original retornou done (gates I1 a I5 passaram).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "c0026ba3-c5c6-463d-82aa-60d4cdbb27a0",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-sonnet-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 42017,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 31582,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 1830,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 10429,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-sonnet-5-5": {
+        "uncachedInputTokens": 6,
+        "cacheWriteInputTokens": 10429,
+        "cacheReadInputTokens": 31582,
+        "outputTokens": 1830,
+        "reportedCostUSD": 0.0631862
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 8056,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 8056
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 491,
+          "cacheReadInputTokens": 13049,
+          "cacheWrite1hInputTokens": 491
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1882,
+          "cacheReadInputTokens": 13540,
+          "cacheWrite1hInputTokens": 1882
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 20346.850575000004,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r1/implementation/a0-sonnet-medium/entity-Task/attempt-2/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r1/implementation/a0-sonnet-medium/entity-Task/attempt-2/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r1/implementation/a0-sonnet-medium/entity-Task/attempt-2/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 3,
+    "source": "claude.result.num_turns"
+  }
+}

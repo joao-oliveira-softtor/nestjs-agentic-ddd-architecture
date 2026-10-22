@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "/home/jvtuta/.local/share/claude/versions/2.1.308",
+    "--version"
+  ],
+  "cwd": "/tmp/eval-probe-mbDjmW",
+  "transport": "finished",
+  "exitCode": 0,
+  "signal": null,
+  "durationMs": 8.81791500000054,
+  "diagnostic": null,
+  "outputBytes": 22,
+  "streamsWithheld": false,
+  "redacted": false
+}

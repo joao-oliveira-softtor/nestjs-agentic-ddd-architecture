@@ -1,0 +1,141 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementei o corpo de Task.create em app/domain/task.ts, com a mesma quantidade de linhas (47). O corpo remove os espaços do título, lança DomainError TASK_TITLE_REQUIRED se o título ficar vazio, cria a tarefa pendente e registra TaskCreated. Criei app/test/entity-Task.test.ts, que cobre invariant:Task/titulo-obrigatorio, method:Task.create, criterion:0001/titulo-invalido e criterion:0001/criacao com covers. Os 2 testes passam. O verify --item entity:Task, com o specHash original e a config atual, retornou done (I1 a I5 passed).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "2fb11fca-063c-43d7-b5ac-207485aad820",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-sonnet-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 127966,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 114664,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 2521,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 13284,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-sonnet-5-5": {
+        "uncachedInputTokens": 18,
+        "cacheWriteInputTokens": 13284,
+        "cacheReadInputTokens": 114664,
+        "outputTokens": 2521,
+        "reportedCostUSD": 0.0898484
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 5774,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 5774
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 881,
+          "cacheReadInputTokens": 10767,
+          "cacheWrite1hInputTokens": 881
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 586,
+          "cacheReadInputTokens": 11648,
+          "cacheWrite1hInputTokens": 586
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 933,
+          "cacheReadInputTokens": 12234,
+          "cacheWrite1hInputTokens": 933
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 331,
+          "cacheReadInputTokens": 13167,
+          "cacheWrite1hInputTokens": 331
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 682,
+          "cacheReadInputTokens": 13498,
+          "cacheWrite1hInputTokens": 682
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1936,
+          "cacheReadInputTokens": 14180,
+          "cacheWrite1hInputTokens": 1936
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1945,
+          "cacheReadInputTokens": 16116,
+          "cacheWrite1hInputTokens": 1945
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 216,
+          "cacheReadInputTokens": 18061,
+          "cacheWrite1hInputTokens": 216
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 46518.885922,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r2/implementation/a0-sonnet-medium/entity-Task/attempt-1/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r2/implementation/a0-sonnet-medium/entity-Task/attempt-1/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r2/implementation/a0-sonnet-medium/entity-Task/attempt-1/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 10,
+    "source": "claude.result.num_turns"
+  }
+}

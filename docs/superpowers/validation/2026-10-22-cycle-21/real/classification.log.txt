@@ -1,0 +1,5 @@
+a0 a0-sonnet-medium aceitos 10 inconcl false custo {"status":"available","expensive":0.9764292,"cheap":0.9764292,"floor":0.9764292,"lowerBound":false} lowerBound false porItem(exp) 0.0976
+a1 a1-sonnet-low aceitos 4 inconcl false custo {"status":"available","expensive":0.7141708,"cheap":0.7141708,"floor":0.7141708,"lowerBound":false} lowerBound false porItem(exp) 0.1785
+a2 a2-opus-low aceitos 10 inconcl false custo {"status":"available","expensive":1.9230206,"cheap":1.9230206,"floor":1.9230206,"lowerBound":false} lowerBound false porItem(exp) 0.1923
+a3 a3-routed aceitos 10 inconcl false custo {"status":"available","expensive":0.9913308000000001,"cheap":0.9913308000000001,"floor":0.9913308000000001,"lowerBound":false} lowerBound false porItem(exp) 0.0991
+{"classification":"S","reason":"rule","bands":{"expensive":"S","cheap":"S"}}

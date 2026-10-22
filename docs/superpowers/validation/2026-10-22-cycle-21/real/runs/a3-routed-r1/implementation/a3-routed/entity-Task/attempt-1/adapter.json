@@ -1,0 +1,155 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementei Task.create em app/domain/task.ts (somente o interior do corpo, mantendo as 47 linhas do arquivo): normaliza o título com trim, rejeita título vazio ou só com espaços com DomainError 'TASK_TITLE_REQUIRED', cria a tarefa pendente e registra TaskCreated. Criei app/test/entity-Task.test.ts com covers para invariant:Task/titulo-obrigatorio, criterion:0001/titulo-invalido, method:Task.create e criterion:0001/criacao, cobrindo também entradas inválidas. bun test: 2 pass, 0 fail. bun run agentic verify --item entity:Task --spec-hash e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c --config /tmp/agentic-eval-ZvuMfH/attempt-JdrUeP/workspace/agentic.config.ts --json retornou status done (I1–I5 passed, exit 0). Não alterei decorators, declarações, propostas, configuração nem arquivos gerados.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "395fe73a-17a9-4b0d-b94c-8d6cfdcbb233",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-haiku-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 184590,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 164931,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 7481,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 19637,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-haiku-5-5": {
+        "uncachedInputTokens": 22,
+        "cacheWriteInputTokens": 19637,
+        "cacheReadInputTokens": 164931,
+        "outputTokens": 7481,
+        "reportedCostUSD": 0.00931941
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 6558,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 6558
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1018,
+          "cacheReadInputTokens": 11551,
+          "cacheWrite1hInputTokens": 1018
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 440,
+          "cacheReadInputTokens": 12569,
+          "cacheWrite1hInputTokens": 440
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 711,
+          "cacheReadInputTokens": 13009,
+          "cacheWrite1hInputTokens": 711
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 524,
+          "cacheReadInputTokens": 13720,
+          "cacheWrite1hInputTokens": 524
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 386,
+          "cacheReadInputTokens": 14244,
+          "cacheWrite1hInputTokens": 386
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1345,
+          "cacheReadInputTokens": 14630,
+          "cacheWrite1hInputTokens": 1345
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 2645,
+          "cacheReadInputTokens": 15975,
+          "cacheWrite1hInputTokens": 2645
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 3487,
+          "cacheReadInputTokens": 18620,
+          "cacheWrite1hInputTokens": 3487
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1406,
+          "cacheReadInputTokens": 22107,
+          "cacheWrite1hInputTokens": 1406
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1117,
+          "cacheReadInputTokens": 23513,
+          "cacheWrite1hInputTokens": 1117
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 47175.470973,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r1/implementation/a3-routed/entity-Task/attempt-1/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r1/implementation/a3-routed/entity-Task/attempt-1/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r1/implementation/a3-routed/entity-Task/attempt-1/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 12,
+    "source": "claude.result.num_turns"
+  }
+}

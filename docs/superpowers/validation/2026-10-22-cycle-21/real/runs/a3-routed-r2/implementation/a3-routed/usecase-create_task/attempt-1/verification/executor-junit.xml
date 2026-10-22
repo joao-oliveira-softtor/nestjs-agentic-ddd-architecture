@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="10" assertions="51" failures="0" skipped="0" time="0.094570462">
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="1" assertions="8" failures="0" skipped="0" time="0.089836733" hostname="softtords">
+    <testsuite name="complete_task" file="app/test/usecase-complete_task.test.ts" line="20" tests="1" assertions="8" failures="0" skipped="0" time="0.001" hostname="softtords">
+      <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND" classname="complete_task" time="0.001047" file="app/test/usecase-complete_task.test.ts" line="21" assertions="8" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="3" assertions="12" failures="0" skipped="0" time="0.000613764" hostname="softtords">
+    <testsuite name="Task.complete" file="app/test/method-Task-complete.test.ts" line="7" tests="3" assertions="12" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pending, registra TaskCompleted e rejeita repetição" classname="Task.complete" time="0.000076" file="app/test/method-Task-complete.test.ts" line="8" assertions="8" />
+      <testcase name="[covers: method:Task.complete] repetição de conclusão falha com TASK_ALREADY_COMPLETED" classname="Task.complete" time="0.000091" file="app/test/method-Task-complete.test.ts" line="32" assertions="2" />
+      <testcase name="[covers: method:Task.complete] tarefa pending registra exatamente um TaskCompleted com o id da tarefa" classname="Task.complete" time="0.000028" file="app/test/method-Task-complete.test.ts" line="44" assertions="2" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="5" assertions="22" failures="0" skipped="0" time="0.000740502" hostname="softtords">
+    <testsuite name="Task" file="app/test/entity-Task.test.ts" line="7" tests="5" assertions="22" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: invariant:Task/titulo-obrigatorio] rejeita título vazio ou só com espaços" classname="Task" time="0.000052" file="app/test/entity-Task.test.ts" line="8" assertions="6" />
+      <testcase name="[covers: method:Task.create] cria tarefa pendente com título normalizado e registra TaskCreated" classname="Task" time="0.000059" file="app/test/entity-Task.test.ts" line="21" assertions="6" />
+      <testcase name="[covers: invariant:Task/titulo-obrigatorio, method:Task.create] criação com título válido não lança e não registra evento vazio" classname="Task" time="0.000018" file="app/test/entity-Task.test.ts" line="33" assertions="3" />
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] id t1 e título com espaços nas extremidades" classname="Task" time="0.00007" file="app/test/entity-Task.test.ts" line="40" assertions="4" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] título vazio ou só com espaços rejeita com TASK_TITLE_REQUIRED" classname="Task" time="0.00007" file="app/test/entity-Task.test.ts" line="49" assertions="3" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="1" assertions="9" failures="0" skipped="0" time="0.001165936" hostname="softtords">
+    <testsuite name="create_task" file="app/test/usecase-create_task.test.ts" line="19" tests="1" assertions="9" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS" classname="create_task" time="0.00026" file="app/test/usecase-create_task.test.ts" line="20" assertions="9" />
+    </testsuite>
+  </testsuite>
+</testsuites>

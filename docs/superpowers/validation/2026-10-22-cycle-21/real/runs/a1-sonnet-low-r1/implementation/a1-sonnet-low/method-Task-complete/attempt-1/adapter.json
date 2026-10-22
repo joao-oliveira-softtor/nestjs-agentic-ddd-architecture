@@ -1,0 +1,120 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementei Task.complete em app/domain/task.ts: lança TASK_ALREADY_COMPLETED se a tarefa não estiver pendente; caso contrário muda para completed e registra TaskCompleted. O corpo continua com a mesma quantidade de linhas (o arquivo tem 46). Criei app/test/method-Task-complete.test.ts, que cobre method:Task.complete e criterion:0001/conclusao com covers. O verify --item com o specHash original retornou done (I1 a I5 passaram).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "18232d9d-6985-44f9-9d9b-a3697162ef72",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-sonnet-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 78880,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 68791,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 1738,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 10077,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-sonnet-5-5": {
+        "uncachedInputTokens": 12,
+        "cacheWriteInputTokens": 10077,
+        "cacheReadInputTokens": 68791,
+        "outputTokens": 1738,
+        "reportedCostUSD": 0.0645911
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 5998,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 5998
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 985,
+          "cacheReadInputTokens": 10991,
+          "cacheWrite1hInputTokens": 985
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1093,
+          "cacheReadInputTokens": 11976,
+          "cacheWrite1hInputTokens": 1093
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 357,
+          "cacheReadInputTokens": 13069,
+          "cacheWrite1hInputTokens": 357
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 910,
+          "cacheReadInputTokens": 13426,
+          "cacheWrite1hInputTokens": 910
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 734,
+          "cacheReadInputTokens": 14336,
+          "cacheWrite1hInputTokens": 734
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 41402.014473999996,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a1-sonnet-low-r1/implementation/a1-sonnet-low/method-Task-complete/attempt-1/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a1-sonnet-low-r1/implementation/a1-sonnet-low/method-Task-complete/attempt-1/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a1-sonnet-low-r1/implementation/a1-sonnet-low/method-Task-complete/attempt-1/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 9,
+    "source": "claude.result.num_turns"
+  }
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "path": "app/test/operator-task-operator.test.ts",
+    "before": null,
+    "after": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "089406cb48724d4fc38cbf1d5e3c4ca71eea541ff07b217072cf7061f6f4a6d4",
+      "content": "import { describe, expect, test } from 'bun:test';\nimport { resolve } from 'node:path';\nimport { OperatorRuntime } from '@agentic-ddd/runtime';\nimport { FakeLlm, covers } from '@agentic-ddd/testing';\nimport { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';\nimport { CreateTask } from '../application/create-task';\nimport { CompleteTask } from '../application/complete-task';\nimport { TaskOperator } from '../operators/task.operator';\n\nconst root = resolve(import.meta.dir, '../..');\n\ndescribe('task-operator', () => {\n  test(covers(['operator:task-operator', 'criterion:0001/tools'], 'cria e conclui a tarefa usando só suas duas tools e publica os dois eventos'), async () => {\n    const repo = new InMemoryTaskRepository();\n    const llm = new FakeLlm([\n      { stopReason: 'tool_calls', content: [{ type: 'tool_call', id: 'a', name: 'create_task', input: { task_id: 't1', title: 'Escrever testes' } }] },\n      { stopReason: 'tool_calls', content: [{ type: 'tool_call', id: 'b', name: 'complete_task', input: { task_id: 't1' } }] },\n      { stopReason: 'end', content: [{ type: 'text', text: 'Tarefa criada e concluída.' }] },\n    ]);\n    const runtime = new OperatorRuntime({ llm, root, modules: [{ name: 'tasks', path: 'app' }] });\n    const seen: string[] = [];\n    runtime.eventBus.subscribe((event) => { seen.push(event.name); });\n    await runtime.register(TaskOperator, new Map<any, any>([[CreateTask, new CreateTask(repo)], [CompleteTask, new CompleteTask(repo)]]));\n\n    const result = await runtime.run('task-operator', { message: 'Crie a tarefa t1 e conclua-a.' });\n\n    expect(result.status).toBe('completed');\n    expect(result.output).toBe('Tarefa criada e concluída.');\n    expect(llm.requests[0]!.tools.map((t) => t.name)).toEqual(['complete_task', 'create_task']);\n    expect((await repo.findById('t1'))!.status).toBe('completed');\n    expect(result.events.map((e) => e.name)).toEqual(['TaskCreated', 'TaskCompleted']);\n    expect(seen).toEqual(['TaskCreated', 'TaskCompleted']);\n  });\n});\n"
+    }
+  }
+]

@@ -13,8 +13,11 @@
         "sha256": "11f364c2883f6d0739a5510c673d0211e79dd1d734c9c80b9840897933b213d2"
       },
       "result": {
-        "status": "not_run",
-        "reason": "not_executed_yet"
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-22-cycle-21/real/runs/a0-sonnet-medium-r1/report.json",
+          "sha256": "5341afd5faa87b780f6e0d4c065cdfd0ebc36e4dce64e48ef816d6de5c38dcb0"
+        }
       }
     },
     {
@@ -27,8 +30,11 @@
         "sha256": "78d8c70f99bc10da4bb6335525c407174aa0ad925bbdd5fbf666038441486474"
       },
       "result": {
-        "status": "not_run",
-        "reason": "not_executed_yet"
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-22-cycle-21/real/runs/a1-sonnet-low-r1/report.json",
+          "sha256": "e3a93757904e279d678e557e60441a664efb1a7a6646034f85f91613ef013228"
+        }
       }
     },
     {
@@ -41,8 +47,11 @@
         "sha256": "7de416b7434349af18c4522513dddea32c7c8327dda0054f91623f9e74c33e96"
       },
       "result": {
-        "status": "not_run",
-        "reason": "not_executed_yet"
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-22-cycle-21/real/runs/a2-opus-low-r1/report.json",
+          "sha256": "90e837f866a37568a37711388b0a0a018aa2386b43c3b71e67012db6ca6a51df"
+        }
       }
     },
     {
@@ -55,8 +64,11 @@
         "sha256": "d5c2466f054ec0573d0100a8af97c1ac899e49e494fb89e11f8c5dc7b786fec1"
       },
       "result": {
-        "status": "not_run",
-        "reason": "not_executed_yet"
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-22-cycle-21/real/runs/a3-routed-r1/report.json",
+          "sha256": "dc6b5a6a9282284c4cf41251064be2442fc36f175ca6c1e6679f03c68281b0fd"
+        }
       }
     },
     {
@@ -69,8 +81,11 @@
         "sha256": "11f364c2883f6d0739a5510c673d0211e79dd1d734c9c80b9840897933b213d2"
       },
       "result": {
-        "status": "not_run",
-        "reason": "not_executed_yet"
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-22-cycle-21/real/runs/a0-sonnet-medium-r2/report.json",
+          "sha256": "72d81410da3122e1ee054d85757ecb551e48ee9754a39c104dfc3b57f9a988f5"
+        }
       }
     },
     {
@@ -83,8 +98,11 @@
         "sha256": "78d8c70f99bc10da4bb6335525c407174aa0ad925bbdd5fbf666038441486474"
       },
       "result": {
-        "status": "not_run",
-        "reason": "not_executed_yet"
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-22-cycle-21/real/runs/a1-sonnet-low-r2/report.json",
+          "sha256": "1212ac215de47b5d2dbffb4c9ddaf6fd3c52a0fee5a08d53676e6083e7f841d0"
+        }
       }
     },
     {
@@ -97,8 +115,11 @@
         "sha256": "7de416b7434349af18c4522513dddea32c7c8327dda0054f91623f9e74c33e96"
       },
       "result": {
-        "status": "not_run",
-        "reason": "not_executed_yet"
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-22-cycle-21/real/runs/a2-opus-low-r2/report.json",
+          "sha256": "16556aa8e62a6adf8b2f71bc02879228fdebf8d62699db7bdc0dc759bf0cfeec"
+        }
       }
     },
     {
@@ -111,8 +132,11 @@
         "sha256": "d5c2466f054ec0573d0100a8af97c1ac899e49e494fb89e11f8c5dc7b786fec1"
       },
       "result": {
-        "status": "not_run",
-        "reason": "not_executed_yet"
+        "status": "executed",
+        "report": {
+          "path": "../../../docs/superpowers/validation/2026-10-22-cycle-21/real/runs/a3-routed-r2/report.json",
+          "sha256": "60c456702bb8129d4464efb516ab1ef1c013ee876f50952af80d9a525f08bf51"
+        }
       }
     }
   ]

@@ -1,0 +1,27 @@
+[
+  {
+    "path": "app/domain/task.ts",
+    "before": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "a90661721bcc8b9f9e0acbcfe01d26afce175b88ac170a4d25aaece6f7643e99",
+      "content": "import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\nimport { TaskCreated, TaskCompleted } from './task.events';\n\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\nexport class Task extends AggregateRoot<string> {\n  #status: 'pending' | 'completed' = 'pending';\n  private constructor(id: string, readonly title: string) { super(id); }\n  get status(): 'pending' | 'completed' { return this.#status; }\n\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\n  static create(id: string, title: string): Task {\n    const normalized = title.trim();\n\n    if (normalized === '') {\n      throw new DomainError('TASK_TITLE_REQUIRED', 'Toda tarefa precisa de título não vazio.');\n    }\n\n    const task = new Task(id, normalized);\n    task.record(new TaskCreated({ taskId: id, title: normalized }));\n    return task;\n\n\n\n\n\n  }\n\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\n  complete(): void {\n    return notImplemented();\n\n\n\n\n\n\n\n\n\n\n\n\n\n  }\n}\n"
+    },
+    "after": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "af398359a6d64238f5f88853f00077b7788540d8f3282c314b209d7e23adcd6e",
+      "content": "import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';\nimport { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';\nimport { TaskCreated, TaskCompleted } from './task.events';\n\n@AgentEntity({ description: 'Tarefa com título e ciclo de vida pendente ou concluído.', states: ['pending', 'completed'] })\n@Invariant({ id: 'titulo-obrigatorio', text: 'Toda tarefa precisa de título não vazio.' })\nexport class Task extends AggregateRoot<string> {\n  #status: 'pending' | 'completed' = 'pending';\n  private constructor(id: string, readonly title: string) { super(id); }\n  get status(): 'pending' | 'completed' { return this.#status; }\n\n  @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })\n  static create(id: string, title: string): Task {\n    const normalized = title.trim();\n\n    if (normalized === '') {\n      throw new DomainError('TASK_TITLE_REQUIRED', 'Toda tarefa precisa de título não vazio.');\n    }\n\n    const task = new Task(id, normalized);\n    task.record(new TaskCreated({ taskId: id, title: normalized }));\n    return task;\n\n\n\n\n\n  }\n\n  @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })\n  complete(): void {\n    if (this.#status !== 'pending') {\n      throw new DomainError('TASK_ALREADY_COMPLETED', 'Tarefa já está concluída.');\n    }\n\n    this.#status = 'completed';\n    this.record(new TaskCompleted({ taskId: this.id }));\n\n\n\n\n\n\n\n\n  }\n}\n"
+    }
+  },
+  {
+    "path": "app/test/method-Task-complete.test.ts",
+    "before": null,
+    "after": {
+      "kind": "file",
+      "mode": 33188,
+      "hash": "ebb09f64bd8a6f443fae39960049fccb60e3289994a6abadef563755315a1d55",
+      "content": "import { describe, expect, test } from 'bun:test';\nimport { DomainError } from '@agentic-ddd/core';\nimport { covers } from '@agentic-ddd/testing';\nimport { Task } from '../domain/task';\nimport { TaskCompleted } from '../domain/task.events';\n\ndescribe('Task.complete', () => {\n  test(covers(['method:Task.complete', 'criterion:0001/conclusao'], 'conclui tarefa pending, registra TaskCompleted e rejeita repetição com TASK_ALREADY_COMPLETED'), () => {\n    const task = Task.create('t1', 'Comprar pão');\n    task.pullEvents();\n\n    task.complete();\n\n    expect(task.status).toBe('completed');\n    const events = task.pullEvents();\n    expect(events).toHaveLength(1);\n    expect(events[0]).toBeInstanceOf(TaskCompleted);\n    expect(events[0]!.payload).toEqual({ taskId: 't1' });\n\n    let error: unknown;\n    try {\n      task.complete();\n    } catch (caught) {\n      error = caught;\n    }\n    expect(error).toBeInstanceOf(DomainError);\n    expect((error as DomainError).code).toBe('TASK_ALREADY_COMPLETED');\n    expect(task.status).toBe('completed');\n    expect(task.pullEvents()).toHaveLength(0);\n  });\n});\n"
+    }
+  }
+]

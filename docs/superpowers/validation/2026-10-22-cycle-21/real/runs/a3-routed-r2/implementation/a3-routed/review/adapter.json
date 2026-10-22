@@ -1,0 +1,85 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"approved\",\"findings\":[]}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "fdb3614a-0b8e-4379-95c0-74a2c53e6d2a",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-opus-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 21592,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 3223,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 103,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 18367,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-opus-5-5": {
+        "uncachedInputTokens": 2,
+        "cacheWriteInputTokens": 18367,
+        "cacheReadInputTokens": 3223,
+        "outputTokens": 103,
+        "reportedCostUSD": 0.14964860000000002
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-opus-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 18367,
+          "cacheReadInputTokens": 3223,
+          "cacheWrite1hInputTokens": 18367
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 4206.179330999992,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r2/implementation/a3-routed/review/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r2/implementation/a3-routed/review/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r2/implementation/a3-routed/review/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 1,
+    "source": "claude.result.num_turns"
+  }
+}

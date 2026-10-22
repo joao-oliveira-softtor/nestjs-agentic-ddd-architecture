@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="5" assertions="22" failures="0" skipped="0" time="0.092286315">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="5" assertions="22" failures="0" skipped="0" time="0.090240716" hostname="softtords">
+    <testsuite name="Task" file="app/test/entity-Task.test.ts" line="7" tests="5" assertions="22" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: invariant:Task/titulo-obrigatorio] rejeita título vazio ou só com espaços" classname="Task" time="0.000096" file="app/test/entity-Task.test.ts" line="8" assertions="6" />
+      <testcase name="[covers: method:Task.create] cria tarefa pendente com título normalizado e registra TaskCreated" classname="Task" time="0.000219" file="app/test/entity-Task.test.ts" line="21" assertions="6" />
+      <testcase name="[covers: invariant:Task/titulo-obrigatorio, method:Task.create] criação com título válido não lança e não registra evento vazio" classname="Task" time="0.000026" file="app/test/entity-Task.test.ts" line="33" assertions="3" />
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] id t1 e título com espaços nas extremidades" classname="Task" time="0.000028" file="app/test/entity-Task.test.ts" line="40" assertions="4" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] título vazio ou só com espaços rejeita com TASK_TITLE_REQUIRED" classname="Task" time="0.000068" file="app/test/entity-Task.test.ts" line="49" assertions="3" />
+    </testsuite>
+  </testsuite>
+</testsuites>

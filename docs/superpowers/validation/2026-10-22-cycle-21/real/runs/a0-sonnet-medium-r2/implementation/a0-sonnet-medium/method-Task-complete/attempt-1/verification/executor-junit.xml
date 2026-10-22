@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="3" assertions="16" failures="0" skipped="0" time="0.087274204">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="9" failures="0" skipped="0" time="0.085078214" hostname="softtords">
+    <testsuite name="Task.create" file="app/test/entity-Task.test.ts" line="6" tests="2" assertions="9" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só com espaços" classname="Task.create" time="0.000204" file="app/test/entity-Task.test.ts" line="7" assertions="3" />
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente com título normalizado e registra TaskCreated" classname="Task.create" time="0.000281" file="app/test/entity-Task.test.ts" line="13" assertions="6" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="7" failures="0" skipped="0" time="0.00037858" hostname="softtords">
+    <testsuite name="Task.complete" file="app/test/method-Task-complete.test.ts" line="6" tests="1" assertions="7" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pendente, registra TaskCompleted e rejeita repetição" classname="Task.complete" time="0.000098" file="app/test/method-Task-complete.test.ts" line="7" assertions="7" />
+    </testsuite>
+  </testsuite>
+</testsuites>

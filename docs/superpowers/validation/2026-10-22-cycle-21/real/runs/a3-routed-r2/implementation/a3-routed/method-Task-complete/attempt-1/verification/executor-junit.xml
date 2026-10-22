@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="8" assertions="34" failures="0" skipped="0" time="0.092257063">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="5" assertions="22" failures="0" skipped="0" time="0.089543938" hostname="softtords">
+    <testsuite name="Task" file="app/test/entity-Task.test.ts" line="7" tests="5" assertions="22" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: invariant:Task/titulo-obrigatorio] rejeita título vazio ou só com espaços" classname="Task" time="0.000117" file="app/test/entity-Task.test.ts" line="8" assertions="6" />
+      <testcase name="[covers: method:Task.create] cria tarefa pendente com título normalizado e registra TaskCreated" classname="Task" time="0.000296" file="app/test/entity-Task.test.ts" line="21" assertions="6" />
+      <testcase name="[covers: invariant:Task/titulo-obrigatorio, method:Task.create] criação com título válido não lança e não registra evento vazio" classname="Task" time="0.000033" file="app/test/entity-Task.test.ts" line="33" assertions="3" />
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] id t1 e título com espaços nas extremidades" classname="Task" time="0.000027" file="app/test/entity-Task.test.ts" line="40" assertions="4" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] título vazio ou só com espaços rejeita com TASK_TITLE_REQUIRED" classname="Task" time="0.000065" file="app/test/entity-Task.test.ts" line="49" assertions="3" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="3" assertions="12" failures="0" skipped="0" time="0.000639855" hostname="softtords">
+    <testsuite name="Task.complete" file="app/test/method-Task-complete.test.ts" line="7" tests="3" assertions="12" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pending, registra TaskCompleted e rejeita repetição" classname="Task.complete" time="0.000103" file="app/test/method-Task-complete.test.ts" line="8" assertions="8" />
+      <testcase name="[covers: method:Task.complete] repetição de conclusão falha com TASK_ALREADY_COMPLETED" classname="Task.complete" time="0.000067" file="app/test/method-Task-complete.test.ts" line="32" assertions="2" />
+      <testcase name="[covers: method:Task.complete] tarefa pending registra exatamente um TaskCompleted com o id da tarefa" classname="Task.complete" time="0.000025" file="app/test/method-Task-complete.test.ts" line="44" assertions="2" />
+    </testsuite>
+  </testsuite>
+</testsuites>

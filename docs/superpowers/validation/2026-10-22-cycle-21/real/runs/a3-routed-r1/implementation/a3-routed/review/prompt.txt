@@ -1,0 +1,1165 @@
+# Revisor
+
+Você vê só o diff, os packets e os resultados dos gates, sem o histórico de quem implementou. Revise se a mudança cumpre o contrato.
+
+**Pode ler:** o diff, os packets dos itens revisados, os resultados dos gates e os arquivos que o diff toca. Não leia a conversa nem o relatório do executor. Não edite arquivos: devolva só o relatório.
+
+- Cada achado cita o ID de uma obrigação do packet (invariante, critério, método, caso de uso ou operator, como aparecem em "Obrigações de teste"), ou o gate que falhou (I1 a I5 de `verify --item`, ou o gate de fronteira). Sem ID ou gate, não é achado.
+- Não relate lacunas fora do escopo do packet nem proponha engenharia adicional.
+- Os gates verdes não provam que um teste verifica comportamento (I4 só exige `covers` passando e I5 só roda o typecheck): confira se cada teste exercita a regra e não apenas passa, por exemplo `expect(true)`.
+- Confira se só o corpo e os testes mudaram e se nenhuma camada importa em direção proibida.
+- No máximo 2 ciclos de revisão por item; depois, devolva o que continua aberto.
+
+Resposta final: apenas um objeto JSON, sem prosa, no formato do exemplo: `{"status":"changes_requested","findings":[{"ref":"I4","message":"o teste não exercita a regra"}]}`. `status` é `approved` ou `changes_requested`; `ref` é o ID da obrigação do packet ou do gate. `approved` leva `findings` vazio e `changes_requested` leva ao menos um achado.
+
+## Itens revisados
+
+- `entity:Task` — specHash `e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c`
+- `method:Task.complete` — specHash `eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364`
+- `usecase:create_task` — specHash `daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6`
+- `usecase:complete_task` — specHash `c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d`
+- `operator:task-operator` — specHash `78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1`
+
+## Packets
+
+# Identificação
+
+- ID: `entity:Task`
+- Camada: domain
+- Módulo: tasks
+- source: `app/domain/task.ts:5`
+- Estado: declared
+- specHash: `e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c`
+- Dependências: —
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "declaration": {
+    "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+    "id": "entity:Task",
+    "invariants": [
+      {
+        "id": "invariant:Task/titulo-obrigatorio",
+        "on": null,
+        "text": "Toda tarefa precisa de título não vazio."
+      }
+    ],
+    "methods": [
+      {
+        "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+        "emits": [
+          "event:TaskCreated"
+        ],
+        "id": "method:Task.create",
+        "name": "create",
+        "static": true,
+        "transition": null
+      }
+    ],
+    "module": "tasks",
+    "name": "Task",
+    "states": [
+      "pending",
+      "completed"
+    ]
+  }
+}
+```
+
+## Obrigações de teste
+
+- `invariant:Task/titulo-obrigatorio` — teste com `covers`.
+- `method:Task.create` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item entity:Task --spec-hash e812964d310ea8fde3c4fa0dc8891177adc0150b7579cbea24c2fa8c61c8837c --config /tmp/agentic-eval-ZvuMfH/attempt-phEHZW/workspace/agentic.config.ts --json
+```
+
+# Identificação
+
+- ID: `method:Task.complete`
+- Camada: domain
+- Módulo: tasks
+- source: `app/domain/task.ts:30`
+- Estado: declared
+- specHash: `eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364`
+- Dependências: `entity:Task`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi concluída.",
+      "id": "event:TaskCompleted",
+      "module": "tasks",
+      "name": "TaskCompleted",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "declaration": {
+    "description": "Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.",
+    "emits": [
+      "event:TaskCompleted"
+    ],
+    "entity": {
+      "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+      "id": "entity:Task",
+      "invariants": [
+        {
+          "id": "invariant:Task/titulo-obrigatorio",
+          "on": null,
+          "text": "Toda tarefa precisa de título não vazio."
+        }
+      ],
+      "methods": [
+        {
+          "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+          "emits": [
+            "event:TaskCreated"
+          ],
+          "id": "method:Task.create",
+          "name": "create",
+          "static": true,
+          "transition": null
+        }
+      ],
+      "module": "tasks",
+      "name": "Task",
+      "states": [
+        "pending",
+        "completed"
+      ]
+    },
+    "id": "method:Task.complete",
+    "invariants": [],
+    "name": "complete",
+    "static": false,
+    "transition": {
+      "from": [
+        "pending"
+      ],
+      "to": "completed"
+    }
+  }
+}
+```
+
+## Obrigações de teste
+
+- `method:Task.complete` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item method:Task.complete --spec-hash eb3ac3925470d446828c910dd206e6dd06b593b8dea5cd2ec4d247a0c8d88364 --config /tmp/agentic-eval-ZvuMfH/attempt-gdcfnD/workspace/agentic.config.ts --json
+```
+
+# Identificação
+
+- ID: `usecase:create_task`
+- Camada: application
+- Módulo: tasks
+- source: `app/application/create-task.ts:13`
+- Estado: declared
+- specHash: `daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6`
+- Dependências: `entity:Task`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+      "emits": [
+        "event:TaskCreated"
+      ],
+      "entity": {
+        "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+        "id": "entity:Task",
+        "invariants": [
+          {
+            "id": "invariant:Task/titulo-obrigatorio",
+            "on": null,
+            "text": "Toda tarefa precisa de título não vazio."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+            "emits": [
+              "event:TaskCreated"
+            ],
+            "id": "method:Task.create",
+            "name": "create",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "tasks",
+        "name": "Task",
+        "states": [
+          "pending",
+          "completed"
+        ]
+      },
+      "id": "method:Task.create",
+      "invariants": [],
+      "name": "create",
+      "static": true,
+      "transition": null
+    }
+  ],
+  "declaration": {
+    "description": "Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.",
+    "emits": [
+      "event:TaskCreated"
+    ],
+    "id": "usecase:create_task",
+    "inputSchema": {
+      "properties": {
+        "task_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "title"
+      ],
+      "type": "object"
+    },
+    "module": "tasks",
+    "name": "create_task",
+    "outputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "pending",
+          "type": "string"
+        },
+        "task_id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "title",
+        "status"
+      ],
+      "type": "object"
+    },
+    "uses": [
+      "method:Task.create"
+    ],
+    "whenNotToUse": "Para concluir tarefa existente.",
+    "whenToUse": "Quando o usuário deseja criar uma tarefa."
+  }
+}
+```
+
+## Obrigações de teste
+
+- `usecase:create_task` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item usecase:create_task --spec-hash daa3754aaa800ad41c37c1a18b62bc96b13314acac58caa0d1db37251389a4f6 --config /tmp/agentic-eval-ZvuMfH/attempt-46qTr5/workspace/agentic.config.ts --json
+```
+
+# Identificação
+
+- ID: `usecase:complete_task`
+- Camada: application
+- Módulo: tasks
+- source: `app/application/complete-task.ts:12`
+- Estado: declared
+- specHash: `c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d`
+- Dependências: `method:Task.complete`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi concluída.",
+      "id": "event:TaskCompleted",
+      "module": "tasks",
+      "name": "TaskCompleted",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.",
+      "emits": [
+        "event:TaskCompleted"
+      ],
+      "entity": {
+        "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+        "id": "entity:Task",
+        "invariants": [
+          {
+            "id": "invariant:Task/titulo-obrigatorio",
+            "on": null,
+            "text": "Toda tarefa precisa de título não vazio."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+            "emits": [
+              "event:TaskCreated"
+            ],
+            "id": "method:Task.create",
+            "name": "create",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "tasks",
+        "name": "Task",
+        "states": [
+          "pending",
+          "completed"
+        ]
+      },
+      "id": "method:Task.complete",
+      "invariants": [],
+      "name": "complete",
+      "static": false,
+      "transition": {
+        "from": [
+          "pending"
+        ],
+        "to": "completed"
+      }
+    }
+  ],
+  "declaration": {
+    "description": "Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.",
+    "emits": [
+      "event:TaskCompleted"
+    ],
+    "id": "usecase:complete_task",
+    "inputSchema": {
+      "properties": {
+        "task_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id"
+      ],
+      "type": "object"
+    },
+    "module": "tasks",
+    "name": "complete_task",
+    "outputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "const": "completed",
+          "type": "string"
+        },
+        "task_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "status"
+      ],
+      "type": "object"
+    },
+    "uses": [
+      "method:Task.complete"
+    ],
+    "whenNotToUse": "Para criar uma nova tarefa.",
+    "whenToUse": "Quando o usuário terminou uma tarefa."
+  }
+}
+```
+
+## Obrigações de teste
+
+- `usecase:complete_task` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item usecase:complete_task --spec-hash c51f2de963ef8c242f9c9ba599d98f288b705342798064b5aa5bc4edf2d2428d --config /tmp/agentic-eval-ZvuMfH/attempt-rA4uWF/workspace/agentic.config.ts --json
+```
+
+# Identificação
+
+- ID: `operator:task-operator`
+- Camada: operators
+- Módulo: tasks
+- source: `app/operators/task.operator.ts:5`
+- Estado: implemented
+- specHash: `78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1`
+- Dependências: `usecase:complete_task`, `usecase:create_task`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+```json
+{
+  "contracts": [
+    {
+      "description": "Uma tarefa foi concluída.",
+      "id": "event:TaskCompleted",
+      "module": "tasks",
+      "name": "TaskCompleted",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Uma tarefa foi criada.",
+      "id": "event:TaskCreated",
+      "module": "tasks",
+      "name": "TaskCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId",
+          "title"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.",
+      "emits": [
+        "event:TaskCompleted"
+      ],
+      "entity": {
+        "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+        "id": "entity:Task",
+        "invariants": [
+          {
+            "id": "invariant:Task/titulo-obrigatorio",
+            "on": null,
+            "text": "Toda tarefa precisa de título não vazio."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+            "emits": [
+              "event:TaskCreated"
+            ],
+            "id": "method:Task.create",
+            "name": "create",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "tasks",
+        "name": "Task",
+        "states": [
+          "pending",
+          "completed"
+        ]
+      },
+      "id": "method:Task.complete",
+      "invariants": [],
+      "name": "complete",
+      "static": false,
+      "transition": {
+        "from": [
+          "pending"
+        ],
+        "to": "completed"
+      }
+    },
+    {
+      "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+      "emits": [
+        "event:TaskCreated"
+      ],
+      "entity": {
+        "description": "Tarefa com título e ciclo de vida pendente ou concluído.",
+        "id": "entity:Task",
+        "invariants": [
+          {
+            "id": "invariant:Task/titulo-obrigatorio",
+            "on": null,
+            "text": "Toda tarefa precisa de título não vazio."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cria uma tarefa pendente e remove espaços nas extremidades do título.",
+            "emits": [
+              "event:TaskCreated"
+            ],
+            "id": "method:Task.create",
+            "name": "create",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "tasks",
+        "name": "Task",
+        "states": [
+          "pending",
+          "completed"
+        ]
+      },
+      "id": "method:Task.create",
+      "invariants": [],
+      "name": "create",
+      "static": true,
+      "transition": null
+    },
+    {
+      "description": "Carrega, conclui, salva e publica a tarefa; id ausente falha com TASK_NOT_FOUND.",
+      "emits": [
+        "event:TaskCompleted"
+      ],
+      "id": "usecase:complete_task",
+      "inputSchema": {
+        "properties": {
+          "task_id": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id"
+        ],
+        "type": "object"
+      },
+      "module": "tasks",
+      "name": "complete_task",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "const": "completed",
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "status"
+        ],
+        "type": "object"
+      },
+      "uses": [
+        "method:Task.complete"
+      ],
+      "whenNotToUse": "Para criar uma nova tarefa.",
+      "whenToUse": "Quando o usuário terminou uma tarefa."
+    },
+    {
+      "description": "Cria, salva e publica uma tarefa pendente; id repetido falha com TASK_ALREADY_EXISTS.",
+      "emits": [
+        "event:TaskCreated"
+      ],
+      "id": "usecase:create_task",
+      "inputSchema": {
+        "properties": {
+          "task_id": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "module": "tasks",
+      "name": "create_task",
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "const": "pending",
+            "type": "string"
+          },
+          "task_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "title",
+          "status"
+        ],
+        "type": "object"
+      },
+      "uses": [
+        "method:Task.create"
+      ],
+      "whenNotToUse": "Para concluir tarefa existente.",
+      "whenToUse": "Quando o usuário deseja criar uma tarefa."
+    }
+  ],
+  "declaration": {
+    "description": "Cria e conclui tarefas conforme pedido do usuário.",
+    "id": "operator:task-operator",
+    "instructions": "Use as tools para criar e concluir tarefas. Identifique a tarefa pelo id e responda em português.",
+    "limits": {
+      "maxSteps": 8,
+      "timeoutMs": 30000
+    },
+    "model": "default",
+    "module": "tasks",
+    "name": "task-operator",
+    "requiresApproval": [],
+    "useCases": [
+      "usecase:complete_task",
+      "usecase:create_task"
+    ]
+  }
+}
+```
+
+## Obrigações de teste
+
+- `operator:task-operator` — teste com `covers`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+```bash
+bun run agentic verify --item operator:task-operator --spec-hash 78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1 --config /tmp/agentic-eval-ZvuMfH/attempt-1GAt4l/workspace/agentic.config.ts --json
+```
+
+## Seções adicionais (fora do specHash)
+
+Estas seções não fazem parte do packet e não são cobertas pelo `specHash`; cada uma traz o próprio hash.
+
+### Diff (sha256: `9c81e5d56e83ca7507176ce7f3c2d450a3dc725177854255bfe5f37a43c4beda`)
+
+diff --git aapp/domain/task.ts bapp/domain/task.ts
+index 8c9b7cc..eaca4d0 100644
+--- aapp/domain/task.ts
++++ bapp/domain/task.ts
+@@ -11,15 +11,15 @@ export class Task extends AggregateRoot<string> {
+ 
+   @AgentMethod({ description: 'Cria uma tarefa pendente e remove espaços nas extremidades do título.', emits: [TaskCreated] })
+   static create(id: string, title: string): Task {
+-    return notImplemented();
+-
+-
+-
+-
+-
+-
++    const normalized = title.trim();
+ 
++    if (normalized === '') {
++      throw new DomainError('TASK_TITLE_REQUIRED', 'Toda tarefa precisa de título não vazio.');
++    }
+ 
++    const task = new Task(id, normalized);
++    task.record(new TaskCreated({ taskId: id, title: normalized }));
++    return task;
+ 
+ 
+ 
+@@ -29,12 +29,12 @@ export class Task extends AggregateRoot<string> {
+ 
+   @AgentMethod({ description: 'Conclui uma tarefa pendente; repetição falha com TASK_ALREADY_COMPLETED.', transition: { from: ['pending'], to: 'completed' }, emits: [TaskCompleted] })
+   complete(): void {
+-    return notImplemented();
+-
+-
+-
+-
++    if (this.#status !== 'pending') {
++      throw new DomainError('TASK_ALREADY_COMPLETED', 'Tarefa já está concluída.');
++    }
+ 
++    this.#status = 'completed';
++    this.record(new TaskCompleted({ taskId: this.id }));
+ 
+ 
+ 
+
+diff --git aapp/test/entity-Task.test.ts bapp/test/entity-Task.test.ts
+new file mode 100644
+index 0000000..7365212
+--- /dev/null
++++ bapp/test/entity-Task.test.ts
+@@ -0,0 +1,34 @@
++import { describe, expect, test } from 'bun:test';
++import { DomainError } from '@agentic-ddd/core';
++import { covers } from '@agentic-ddd/testing';
++import { Task } from '../domain/task';
++import { TaskCreated } from '../domain/task.events';
++
++describe('Task', () => {
++  test(covers(['invariant:Task/titulo-obrigatorio', 'criterion:0001/titulo-invalido'], 'rejeita título vazio ou só com espaços com TASK_TITLE_REQUIRED'), () => {
++    for (const title of ['', '   ', '\t\n']) {
++      let error: unknown;
++      try {
++        Task.create('t1', title);
++      } catch (caught) {
++        error = caught;
++      }
++      expect(error).toBeInstanceOf(DomainError);
++      expect((error as DomainError).code).toBe('TASK_TITLE_REQUIRED');
++    }
++  });
++
++  test(covers(['method:Task.create', 'criterion:0001/criacao'], 'cria tarefa pendente, normaliza título e registra TaskCreated'), () => {
++    const task = Task.create('t1', '  Comprar pão  ');
++
++    expect(task.id).toBe('t1');
++    expect(task.title).toBe('Comprar pão');
++    expect(task.status).toBe('pending');
++
++    const events = task.pullEvents();
++    expect(events).toHaveLength(1);
++    expect(events[0]).toBeInstanceOf(TaskCreated);
++    expect(events[0]!.payload).toEqual({ taskId: 't1', title: 'Comprar pão' });
++    expect(task.pullEvents()).toHaveLength(0);
++  });
++});
+
+diff --git aapp/test/method-Task-complete.test.ts bapp/test/method-Task-complete.test.ts
+new file mode 100644
+index 0000000..6129302
+--- /dev/null
++++ bapp/test/method-Task-complete.test.ts
+@@ -0,0 +1,31 @@
++import { describe, expect, test } from 'bun:test';
++import { DomainError } from '@agentic-ddd/core';
++import { covers } from '@agentic-ddd/testing';
++import { Task } from '../domain/task';
++import { TaskCompleted } from '../domain/task.events';
++
++describe('Task.complete', () => {
++  test(covers(['method:Task.complete', 'criterion:0001/conclusao'], 'conclui tarefa pending, registra TaskCompleted e rejeita repetição com TASK_ALREADY_COMPLETED'), () => {
++    const task = Task.create('t1', 'Comprar pão');
++    task.pullEvents();
++
++    task.complete();
++
++    expect(task.status).toBe('completed');
++    const events = task.pullEvents();
++    expect(events).toHaveLength(1);
++    expect(events[0]).toBeInstanceOf(TaskCompleted);
++    expect(events[0]!.payload).toEqual({ taskId: 't1' });
++
++    let error: unknown;
++    try {
++      task.complete();
++    } catch (caught) {
++      error = caught;
++    }
++    expect(error).toBeInstanceOf(DomainError);
++    expect((error as DomainError).code).toBe('TASK_ALREADY_COMPLETED');
++    expect(task.status).toBe('completed');
++    expect(task.pullEvents()).toHaveLength(0);
++  });
++});
+
+diff --git aapp/application/create-task.ts bapp/application/create-task.ts
+index d207c04..0760b2f 100644
+--- aapp/application/create-task.ts
++++ bapp/application/create-task.ts
+@@ -14,13 +14,13 @@ export type CreateTaskOutput = z.infer<typeof createTaskOutput>;
+ export class CreateTask implements UseCase<CreateTaskInput, CreateTaskOutput> {
+   constructor(private readonly tasks: TaskRepository) {}
+   async execute(input: CreateTaskInput, ctx: UseCaseContext): Promise<CreateTaskOutput> {
+-    return notImplemented();
+-
+-
+-
+-
+-
+-
++    if ((await this.tasks.findById(input.task_id)) !== null) {
++      throw new DomainError('TASK_ALREADY_EXISTS', 'Tarefa já existe.');
++    }
++    const task = Task.create(input.task_id, input.title);
++    await this.tasks.save(task);
++    await ctx.publish(task.pullEvents());
++    return { task_id: task.id, title: task.title, status: 'pending' };
+ 
+ 
+ 
+
+diff --git aapp/test/usecase-create_task.test.ts bapp/test/usecase-create_task.test.ts
+new file mode 100644
+index 0000000..ec33b3c
+--- /dev/null
++++ bapp/test/usecase-create_task.test.ts
+@@ -0,0 +1,42 @@
++import { describe, expect, test } from 'bun:test';
++import { DomainError, type DomainEvent, type UseCaseContext } from '@agentic-ddd/core';
++import { covers } from '@agentic-ddd/testing';
++import { TaskCreated } from '../domain/task.events';
++import { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';
++import { CreateTask } from '../application/create-task';
++
++function setup() {
++  const published: DomainEvent[] = [];
++  const ctx: UseCaseContext = {
++    correlationId: 'c1',
++    causationId: 'k1',
++    async publish(events) { published.push(...events); },
++  };
++  const repo = new InMemoryTaskRepository();
++  return { published, ctx, repo, useCase: new CreateTask(repo) };
++}
++
++describe('create_task', () => {
++  test(covers(['usecase:create_task', 'criterion:0001/persistencia-criacao'], 'salva, publica TaskCreated, retorna pending e rejeita duplicado com TASK_ALREADY_EXISTS'), async () => {
++    const { published, ctx, repo, useCase } = setup();
++
++    const out = await useCase.execute({ task_id: 't1', title: '  Comprar pão  ' }, ctx);
++
++    expect(out).toEqual({ task_id: 't1', title: 'Comprar pão', status: 'pending' });
++    expect((await repo.findById('t1'))!.status).toBe('pending');
++    expect(published).toHaveLength(1);
++    expect(published[0]).toBeInstanceOf(TaskCreated);
++    expect(published[0]!.payload).toEqual({ taskId: 't1', title: 'Comprar pão' });
++
++    let error: unknown;
++    try {
++      await useCase.execute({ task_id: 't1', title: 'Outra' }, ctx);
++    } catch (caught) {
++      error = caught;
++    }
++    expect(error).toBeInstanceOf(DomainError);
++    expect((error as DomainError).code).toBe('TASK_ALREADY_EXISTS');
++    expect(published).toHaveLength(1);
++    expect((await repo.findById('t1'))!.title).toBe('Comprar pão');
++  });
++});
+
+diff --git aapp/application/complete-task.ts bapp/application/complete-task.ts
+index 3aa7782..7ab32ab 100644
+--- aapp/application/complete-task.ts
++++ bapp/application/complete-task.ts
+@@ -13,14 +13,14 @@ export type CompleteTaskOutput = z.infer<typeof completeTaskOutput>;
+ export class CompleteTask implements UseCase<CompleteTaskInput, CompleteTaskOutput> {
+   constructor(private readonly tasks: TaskRepository) {}
+   async execute(input: CompleteTaskInput, ctx: UseCaseContext): Promise<CompleteTaskOutput> {
+-    return notImplemented();
+-
+-
+-
+-
+-
+-
+-
++    const task = await this.tasks.findById(input.task_id);
++    if (task === null) {
++      throw new DomainError('TASK_NOT_FOUND', 'Tarefa não encontrada.');
++    }
++    task.complete();
++    await this.tasks.save(task);
++    await ctx.publish(task.pullEvents());
++    return { task_id: task.id, status: 'completed' };
+ 
+ 
+ 
+
+diff --git aapp/test/usecase-complete_task.test.ts bapp/test/usecase-complete_task.test.ts
+new file mode 100644
+index 0000000..772bc86
+--- /dev/null
++++ bapp/test/usecase-complete_task.test.ts
+@@ -0,0 +1,45 @@
++import { describe, expect, test } from 'bun:test';
++import { DomainError, type DomainEvent, type UseCaseContext } from '@agentic-ddd/core';
++import { covers } from '@agentic-ddd/testing';
++import { Task } from '../domain/task';
++import { TaskCompleted } from '../domain/task.events';
++import { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';
++import { CompleteTask } from '../application/complete-task';
++
++function setup() {
++  const published: DomainEvent[] = [];
++  const ctx: UseCaseContext = {
++    correlationId: 'c1',
++    causationId: 'k1',
++    async publish(events) { published.push(...events); },
++  };
++  const repo = new InMemoryTaskRepository();
++  return { published, ctx, repo, useCase: new CompleteTask(repo) };
++}
++
++describe('complete_task', () => {
++  test(covers(['usecase:complete_task', 'criterion:0001/persistencia-conclusao'], 'salva completed, publica TaskCompleted e rejeita id ausente com TASK_NOT_FOUND'), async () => {
++    const { published, ctx, repo, useCase } = setup();
++    const task = Task.create('t1', 'Comprar pão');
++    task.pullEvents();
++    await repo.save(task);
++
++    const out = await useCase.execute({ task_id: 't1' }, ctx);
++
++    expect(out).toEqual({ task_id: 't1', status: 'completed' });
++    expect((await repo.findById('t1'))!.status).toBe('completed');
++    expect(published).toHaveLength(1);
++    expect(published[0]).toBeInstanceOf(TaskCompleted);
++    expect(published[0]!.payload).toEqual({ taskId: 't1' });
++
++    let error: unknown;
++    try {
++      await useCase.execute({ task_id: 'missing' }, ctx);
++    } catch (caught) {
++      error = caught;
++    }
++    expect(error).toBeInstanceOf(DomainError);
++    expect((error as DomainError).code).toBe('TASK_NOT_FOUND');
++    expect(published).toHaveLength(1);
++  });
++});
+
+diff --git aapp/test/operator-task-operator.test.ts bapp/test/operator-task-operator.test.ts
+new file mode 100644
+index 0000000..9b4dffc
+--- /dev/null
++++ bapp/test/operator-task-operator.test.ts
+@@ -0,0 +1,40 @@
++import { describe, expect, test } from 'bun:test';
++import { resolve } from 'node:path';
++import { OperatorRuntime } from '@agentic-ddd/runtime';
++import { covers, FakeLlm } from '@agentic-ddd/testing';
++import { TaskCompleted, TaskCreated } from '../domain/task.events';
++import { InMemoryTaskRepository } from '../infrastructure/in-memory-task.repository';
++import { CreateTask } from '../application/create-task';
++import { CompleteTask } from '../application/complete-task';
++import { TaskOperator } from '../operators/task.operator';
++
++describe('task-operator', () => {
++  test(covers(['operator:task-operator', 'criterion:0001/tools'], 'cria e conclui a tarefa usando somente create_task e complete_task e publica os dois eventos'), async () => {
++    const repo = new InMemoryTaskRepository();
++    const llm = new FakeLlm([
++      { stopReason: 'tool_calls', content: [{ type: 'tool_call', id: 'c1', name: 'create_task', input: { task_id: 't1', title: 'Comprar pão' } }] },
++      { stopReason: 'tool_calls', content: [{ type: 'tool_call', id: 'c2', name: 'complete_task', input: { task_id: 't1' } }] },
++      { stopReason: 'end', content: [{ type: 'text', text: 'Pronto.' }] },
++    ]);
++    const runtime = new OperatorRuntime({
++      llm,
++      root: resolve(import.meta.dir, '../..'),
++      modules: [{ name: 'tasks', path: 'app' }],
++    });
++    await runtime.register(TaskOperator, new Map<any, any>([
++      [CreateTask, new CreateTask(repo)],
++      [CompleteTask, new CompleteTask(repo)],
++    ]));
++
++    const result = await runtime.run('task-operator', { message: 'Crie a tarefa t1 e conclua-a.' });
++
++    expect(result.status).toBe('completed');
++    expect(result.output).toBe('Pronto.');
++    expect(llm.requests[0]!.tools.map((t) => t.name)).toEqual(['complete_task', 'create_task']);
++    expect(result.steps.flatMap((s) => s.tools.map((t) => t.result!.isError))).toEqual([false, false]);
++    expect((await repo.findById('t1'))!.status).toBe('completed');
++    expect(result.events).toHaveLength(2);
++    expect(result.events[0]).toBeInstanceOf(TaskCreated);
++    expect(result.events[1]).toBeInstanceOf(TaskCompleted);
++  });
++});
+
+### Resultado dos gates (sha256: `a5f15034d503332414e2a85b82d1308c0c53febe344a5ffa45180626fd65e76d`)
+
+entity:Task: aceito pela verificação independente (1 tentativa(s), degrau 0)
+method:Task.complete: aceito pela verificação independente (1 tentativa(s), degrau 0)
+usecase:create_task: aceito pela verificação independente (1 tentativa(s), degrau 1)
+usecase:complete_task: aceito pela verificação independente (1 tentativa(s), degrau 1)
+operator:task-operator: aceito pela verificação independente (1 tentativa(s), degrau 1)

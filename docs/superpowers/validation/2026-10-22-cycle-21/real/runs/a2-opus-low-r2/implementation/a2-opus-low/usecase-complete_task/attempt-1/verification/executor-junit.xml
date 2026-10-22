@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="4" assertions="25" failures="0" skipped="0" time="0.172494238">
+  <testsuite name="app/test/method-Task-complete.test.ts" file="app/test/method-Task-complete.test.ts" tests="1" assertions="8" failures="0" skipped="0" time="0.1633282" hostname="softtords">
+    <testsuite name="Task.complete" file="app/test/method-Task-complete.test.ts" line="7" tests="1" assertions="8" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/conclusao, method:Task.complete] conclui tarefa pendente, registra TaskCompleted e rejeita repetição" classname="Task.complete" time="0.000904" file="app/test/method-Task-complete.test.ts" line="8" assertions="8" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="9" failures="0" skipped="0" time="0.001131271" hostname="softtords">
+    <testsuite name="Task.create" file="app/test/entity-Task.test.ts" line="7" tests="2" assertions="9" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente com título normalizado e registra TaskCreated" classname="Task.create" time="0.000143" file="app/test/entity-Task.test.ts" line="8" assertions="5" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só com espaços" classname="Task.create" time="0.00013" file="app/test/entity-Task.test.ts" line="18" assertions="4" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/usecase-complete_task.test.ts" file="app/test/usecase-complete_task.test.ts" tests="1" assertions="8" failures="0" skipped="0" time="0.005064884" hostname="softtords">
+    <testsuite name="complete_task" file="app/test/usecase-complete_task.test.ts" line="9" tests="1" assertions="8" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/persistencia-conclusao, usecase:complete_task] salva completed, publica TaskCompleted e rejeita id ausente" classname="complete_task" time="0.000453" file="app/test/usecase-complete_task.test.ts" line="10" assertions="8" />
+    </testsuite>
+  </testsuite>
+</testsuites>

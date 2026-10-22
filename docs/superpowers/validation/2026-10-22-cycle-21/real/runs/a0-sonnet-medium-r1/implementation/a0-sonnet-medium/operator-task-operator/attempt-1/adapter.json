@@ -1,0 +1,141 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Criei app/test/operator-task-operator.test.ts. Um FakeLlm pede create_task e depois complete_task, e o teste roda o task-operator num OperatorRuntime com repositório em memória. O teste confere que a tarefa fica completed, que as tools expostas são só complete_task e create_task, e que TaskCreated e TaskCompleted são publicados. Ele usa covers com operator:task-operator e criterion:0001/tools. Não alterei nenhum corpo de código. `bun test` passou (6 testes), e o verify com o specHash 78ae1ebe71bf55c9ce94b721f28f7f2850d9116d63a0d5beedfaba1148bbebf1 retornou done, com exit 0.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "5df0b7c6-5bb5-43b5-ad77-4825dba542e5",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-sonnet-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 185223,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 162911,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 2621,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 22294,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-sonnet-5-5": {
+        "uncachedInputTokens": 18,
+        "cacheWriteInputTokens": 22294,
+        "cacheReadInputTokens": 162911,
+        "outputTokens": 2621,
+        "reportedCostUSD": 0.1317131
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 7231,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 7231
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 3113,
+          "cacheReadInputTokens": 12224,
+          "cacheWrite1hInputTokens": 3113
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1720,
+          "cacheReadInputTokens": 15337,
+          "cacheWrite1hInputTokens": 1720
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 894,
+          "cacheReadInputTokens": 17057,
+          "cacheWrite1hInputTokens": 894
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 965,
+          "cacheReadInputTokens": 17951,
+          "cacheWrite1hInputTokens": 965
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 5294,
+          "cacheReadInputTokens": 18916,
+          "cacheWrite1hInputTokens": 5294
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1197,
+          "cacheReadInputTokens": 24210,
+          "cacheWrite1hInputTokens": 1197
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1409,
+          "cacheReadInputTokens": 25407,
+          "cacheWrite1hInputTokens": 1409
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 471,
+          "cacheReadInputTokens": 26816,
+          "cacheWrite1hInputTokens": 471
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 48757.706451000005,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r1/implementation/a0-sonnet-medium/operator-task-operator/attempt-1/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r1/implementation/a0-sonnet-medium/operator-task-operator/attempt-1/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r1/implementation/a0-sonnet-medium/operator-task-operator/attempt-1/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 10,
+    "source": "claude.result.num_turns"
+  }
+}

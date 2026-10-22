@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="5" assertions="19" failures="0" skipped="0" time="0.190424396">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="4" assertions="12" failures="0" skipped="0" time="0.181427169" hostname="softtords">
+    <testsuite name="Task" file="app/test/entity-Task.test.ts" line="7" tests="4" assertions="12" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título inválido &quot;&quot;" classname="Task" time="0.000614" file="app/test/entity-Task.test.ts" line="9" assertions="2" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título inválido &quot;   &quot;" classname="Task" time="0.000024" file="app/test/entity-Task.test.ts" line="9" assertions="2" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título inválido &quot;\t\n&quot;" classname="Task" time="0.000017" file="app/test/entity-Task.test.ts" line="9" assertions="2" />
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente, normaliza título e registra TaskCreated" classname="Task" time="0.000573" file="app/test/entity-Task.test.ts" line="20" assertions="6" />
+    </testsuite>
+  </testsuite>
+  <testsuite name="app/test/usecase-create_task.test.ts" file="app/test/usecase-create_task.test.ts" tests="1" assertions="7" failures="0" skipped="0" time="0.004218064" hostname="softtords">
+    <testsuite name="CreateTask" file="app/test/usecase-create_task.test.ts" line="8" tests="1" assertions="7" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/persistencia-criacao, usecase:create_task] salva, publica TaskCreated, retorna pending e rejeita duplicado" classname="CreateTask" time="0.000719" file="app/test/usecase-create_task.test.ts" line="9" assertions="7" />
+    </testsuite>
+  </testsuite>
+</testsuites>

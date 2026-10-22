@@ -1,0 +1,1050 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": "adapters/a2-opus-low/probe/process.json",
+      "sha256": "aaa6b6ee1ceeb4fe15d9ef75425c4759e466d2b30fd5844191b5a4a28742ac4e",
+      "bytes": 317
+    },
+    {
+      "path": "adapters/a2-opus-low/probe/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "adapters/a2-opus-low/probe/stdout.log",
+      "sha256": "b354fe63f3ea7b46441790aa41c704340be3e4722cd759d1b77da284764c82ef",
+      "bytes": 22
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/adapter.json",
+      "sha256": "a204a0f6271abe0e9b824b26d5a0462beec73e6b58f34275342f6400e6e90fef",
+      "bytes": 5189
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/attempt.json",
+      "sha256": "34a19fd913f859d64e71606efe9de9e52f64003919068545bd585ebbd92b9a46",
+      "bytes": 24552
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/handoff.json",
+      "sha256": "ddcc467507d397bdf9051c7c2c61e010b2677ff1f9243a047ca9d8bea9eedfe3",
+      "bytes": 3003
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/process.json",
+      "sha256": "0f208000a6e14d75a12769217c7d1278d970ffae4d11b3cd6532f7f3d213a3de",
+      "bytes": 10934
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/prompt.txt",
+      "sha256": "0fd39e5b9eaaf352009aeb5dc51daf7f5d64fc764992556e4ddd0fd3c709fb9d",
+      "bytes": 5756
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/stdout.log",
+      "sha256": "9ecd03c4af203eba62fc62f77df95faf40cfa6e815c2af123afebbe795a56a9f",
+      "bytes": 54582
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/submission.json",
+      "sha256": "b59632e45bcc4b4c9911eefd132e078d341d41b2ff40585f093674999e343490",
+      "bytes": 4789
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/compile-check/process.json",
+      "sha256": "8cb4011359f47ea12bace3b5c9b592b0a6d60bbbbf8949d3bc6f3dab43e38c12",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/executor-junit.xml",
+      "sha256": "2f845daa2d471a6e39e2e87f906fab56213936a6788c8ec07b4241f64f2a8c4f",
+      "bytes": 1225
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "1f693b0d916abdb2c7c0665fd161fbb64954eb377ef22fa793e569849ec21c0b",
+      "bytes": 1885
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "04b5b070216c396d0480de6a26eba36a76795ee889d9b5251e1f58dad776b6c3",
+      "bytes": 495
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/reference-junit.xml",
+      "sha256": "f9853667ef00ee52532cead9d7f8a6bd1980a46f68bf1717779e78374a1900bc",
+      "bytes": 980
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "8adaaff608620830bb75ab21afda0afe3a0a63ed84d11e5376667727a3d47ba4",
+      "bytes": 2138
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "8cf2c39ede5abc2cb76ce3445fd258c53382d968486185e9cdcfe6a0ce262c54",
+      "bytes": 323
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/verify-item/process.json",
+      "sha256": "81d7d23d6c8d436d8c7f15f1cb6673a0913f1c55403dbe40e624fd43f90a0536",
+      "bytes": 1869
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "717f87a62d03fb04d52fe306896d8b22f233a6bc9820a13348b955fada6631b6",
+      "bytes": 163
+    },
+    {
+      "path": "implementation/a2-opus-low/entity-Task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "ca40d866891a5e9be3558a9ee6d4a37966d231c075cfc2839e61163fe36a2d79",
+      "bytes": 719
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/adapter.json",
+      "sha256": "1a09975a3b7bfd4c14fba99489c34b817dab54523b8d5e6451c0f2fd9bc3dfeb",
+      "bytes": 3742
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/attempt.json",
+      "sha256": "bacb1d09e9baf51875255d5b660c29d0d78f2bc74147d1d07317f11fa8d53fd7",
+      "bytes": 23792
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/handoff.json",
+      "sha256": "928b4e16cf43d867eee2f9d7a4f1116daf93358e8a768ef04c2cc36f52723cf6",
+      "bytes": 3755
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/process.json",
+      "sha256": "31630a8978dd6d160d91fa4f25cacfe00aa70d9485d44f7b6ed9fdb1aa017c5f",
+      "bytes": 11894
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/prompt.txt",
+      "sha256": "89cc672f1e9c9539325ac81d399630fb1d2894da16d7125277c6f4ad88845010",
+      "bytes": 6436
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/stdout.log",
+      "sha256": "d52115e69a46804ee76d39e209aea4b4e5ab8d7487a2cdb519743088a10b6216",
+      "bytes": 36926
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/submission.json",
+      "sha256": "52ec83d80248d3b7ef0668147465c06156421c7dd7a4b11aa806d37049493ec9",
+      "bytes": 4859
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/compile-check/process.json",
+      "sha256": "6c847b554b61487f4e974ef6d24c5a36c7244d121831caf09eebae0411dc0e97",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/executor-junit.xml",
+      "sha256": "624e3f228f0d623d589345c694a9b75a6dcaef59c5a0bacb73ee21db53031416",
+      "bytes": 1883
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/executor-tests/process.json",
+      "sha256": "bb7a973f450c8eeb8588c0909030396378574d5bdd79ad519e8822b371756e2a",
+      "bytes": 1885
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "a08a6f3c4cf93d45a4236f307f62c7918a0845f6bc4a2a47aefc976c6a5f7a7f",
+      "bytes": 692
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/reference-junit.xml",
+      "sha256": "fa66b92dd6d3a1e9b54f690b00820cb952e9613f8e1fee611d8c33d85fbee5cd",
+      "bytes": 659
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/reference-tests/process.json",
+      "sha256": "bad4220c7fee466f1e7fd2d168ec79a4a6745fc0569ee53fac5f54232748a86c",
+      "bytes": 2138
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "d0a430ef56543628aa5d3833b6d12958eb8c58aca20badb3263e6d8f5cb2efd9",
+      "bytes": 214
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/verify-item/process.json",
+      "sha256": "3a67b18278b89f0ed975b6021b8ff7c890d47ee2c6bc625f9f7b44297b432a15",
+      "bytes": 1877
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "932b6b6e279448fba63acc82ac0af5f975755570cdb1b83122a232d83d06067c",
+      "bytes": 172
+    },
+    {
+      "path": "implementation/a2-opus-low/method-Task-complete/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "a52a132ca17be8b0ca7662766ceee15909324603ec337a21c77d3ee118dca36e",
+      "bytes": 728
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/adapter.json",
+      "sha256": "f93de65d67889d4a1682180682a31ae19cf77244fe68c75e575e4889097ebdc9",
+      "bytes": 5170
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/attempt.json",
+      "sha256": "228f71f8b36ac48842b62afbced4664d24e5a696a9bf0ce563abb2f41c9d55a4",
+      "bytes": 29304
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/handoff.json",
+      "sha256": "c0f521e081bdc49e429fe03115a66b58b73e111eca2b14666777450f67885552",
+      "bytes": 8278
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/process.json",
+      "sha256": "660285bd42baedfb9d195b0e991c4785679e81386e9c11ff131e8e89d6bcdc49",
+      "bytes": 16373
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/prompt.txt",
+      "sha256": "72d3309f1ca3fbc5ba9b02f10cb938cf7aed387ace976d6a29b58c027020277a",
+      "bytes": 10069
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/stdout.log",
+      "sha256": "3ac7e6d90a1aec97eb53bad43245bee8528746f3341095e3e5d01c02ea6a9199",
+      "bytes": 88462
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/submission.json",
+      "sha256": "9851e5d3f0a60c177438b1843f1ec036ff641f298a8f6c3829adb00d62799cc3",
+      "bytes": 2496
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/compile-check/process.json",
+      "sha256": "256c20ec286600039b1714a133bd1f91b570297fda3f6fa526d164e418371def",
+      "bytes": 1746
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/executor-junit.xml",
+      "sha256": "56c86820c9affccaa74b4b1db2bb81236155342b7b15836c7605e1bf46c6a789",
+      "bytes": 3885
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/executor-tests/process.json",
+      "sha256": "400b3c775432a55e95b1cc336b9899327ee0c0dc2009bc8df1cf202c41602080",
+      "bytes": 1884
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "5d6b9212d47ac4ef7eae0bb7ec3a7b37b4b44dd198b800824c2b692888c4d166",
+      "bytes": 1296
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/reference-junit.xml",
+      "sha256": "62d39ce459de5da26acef35dfae3bb50747c48c1f23b0c83b3fd299736702e17",
+      "bytes": 679
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/reference-tests/process.json",
+      "sha256": "c3045dd6af8297462ae8774a47068112e7f38de6adef2deb168ddf24361b35cb",
+      "bytes": 2139
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "d16b603aab86cdce799e688d138c3d70e610ee2b6333e5276f60b166c0394b14",
+      "bytes": 234
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/verify-item/process.json",
+      "sha256": "953e098b441800dc507cb341e69a558bd340a638959dc3f4aaa9ecf7fd9c4652",
+      "bytes": 1879
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "cf6be3c3b71013d42a521ae4ba42a2e55980759e2abc9cbf8252b02b79509a86",
+      "bytes": 174
+    },
+    {
+      "path": "implementation/a2-opus-low/operator-task-operator/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "f9ca5cde986b80b435edfa0b633f494ad6004583fd7d04ef3b4931c14c607588",
+      "bytes": 730
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-entity-Task/process.json",
+      "sha256": "4974d915d3cf7252b6ff1a255285cd7e03d122524819d937e276acfcecfc4bdc",
+      "bytes": 1754
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-entity-Task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-entity-Task/stdout.log",
+      "sha256": "2e8a5eaf1fd1ce68907bb9f5591400092863dc77a0699b5be6a48a8c4536c4e9",
+      "bytes": 2146
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-method-Task-complete/process.json",
+      "sha256": "acae34b70c57d60d4eefb1a6e31592232e4965989c3452f69418aa609668ca9b",
+      "bytes": 1762
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-method-Task-complete/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-method-Task-complete/stdout.log",
+      "sha256": "9c41335d8402d9eb88a1e99083f6a45f89cc2d866e4ec8d349ce893c13c461e3",
+      "bytes": 2935
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-operator-task-operator/process.json",
+      "sha256": "41b86f8b39fd67e2a86f532a98e97ff03bbad5dba910bad272abab212f519f34",
+      "bytes": 1764
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-operator-task-operator/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-operator-task-operator/stdout.log",
+      "sha256": "0d811dc108b821df899fc90285cabc7b6e0906043bd8c9b69cf1a4d976a2a4c8",
+      "bytes": 6972
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-usecase-complete_task/process.json",
+      "sha256": "f9c74f26b39135afcebb90d42da0de8714138e005e26428208855677ab7fe195",
+      "bytes": 1764
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-usecase-complete_task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-usecase-complete_task/stdout.log",
+      "sha256": "7b7188ece54c9bcf1cb909391d98e48ab900e8aca4607866a72869d9976d529c",
+      "bytes": 4010
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-usecase-create_task/process.json",
+      "sha256": "d153e15fe5a11c89512dfbda32ae62a5e0fa788c50bd775237fdbcdc6e85a047",
+      "bytes": 1762
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-usecase-create_task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/packet-usecase-create_task/stdout.log",
+      "sha256": "847efc09ea7661dc8e7ebb748d1597535fd6fc9245640af4f6d51d3c536e0c6a",
+      "bytes": 3678
+    },
+    {
+      "path": "implementation/a2-opus-low/query-0/next/process.json",
+      "sha256": "1afcce47a379e47b6bc1072f27a3d01b14602f6687f272cd68015e123fa4d13d",
+      "bytes": 1774
+    },
+    {
+      "path": "implementation/a2-opus-low/query-0/next/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/a2-opus-low/query-0/next/stdout.log",
+      "sha256": "cce0416411f98295fbbe81ec9575170bc5e4551731d1608c578487395658c043",
+      "bytes": 347
+    },
+    {
+      "path": "implementation/a2-opus-low/query-0/status/process.json",
+      "sha256": "53f4ed5cdacbe0c820a2339a00c8e97975163fa711e894677cf6f5b32979dc5c",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/a2-opus-low/query-0/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/a2-opus-low/query-0/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "implementation/a2-opus-low/query-1/next/process.json",
+      "sha256": "1dce4d2241e01d77253b90f4d21f8a3e906b09db78ebb46f879826bb3a2d255b",
+      "bytes": 1774
+    },
+    {
+      "path": "implementation/a2-opus-low/query-1/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-1/next/stdout.log",
+      "sha256": "81e40eb53da28081a00b1ce05d8e1c409b3463968a8bbbb978f9de3970bab4e5",
+      "bytes": 219
+    },
+    {
+      "path": "implementation/a2-opus-low/query-1/status/process.json",
+      "sha256": "7eed1df2c5bdaf988a73077c959ba067057fc2be7ce796de01264517ce0dc32f",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/a2-opus-low/query-1/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-1/status/stdout.log",
+      "sha256": "1c3d41a34edccaca304d4fb861b5728f58e9204c2989f214270ecb5f44224986",
+      "bytes": 2863
+    },
+    {
+      "path": "implementation/a2-opus-low/query-2/next/process.json",
+      "sha256": "5b739b2421fc071261c0b62bfc46c5ebe6f98b747280d251c1e7fd5ec9bb2fbf",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/a2-opus-low/query-2/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-2/next/stdout.log",
+      "sha256": "5dfef10222ed61dbf80b2931a02bbcfbf1c00fba26701cbf82aa373dee3122db",
+      "bytes": 177
+    },
+    {
+      "path": "implementation/a2-opus-low/query-2/status/process.json",
+      "sha256": "0792333fec71c28bb377c2fff363063a2429616471c3888e96175c36e5abc5e4",
+      "bytes": 1747
+    },
+    {
+      "path": "implementation/a2-opus-low/query-2/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-2/status/stdout.log",
+      "sha256": "16623fd2bda3dd35258478027e7522fc33fbcd502715d777f83d02ba0236034f",
+      "bytes": 2780
+    },
+    {
+      "path": "implementation/a2-opus-low/query-3/next/process.json",
+      "sha256": "1ae6f2784e74985d850b0a2c04ee07f7109b92aba0ea02cdb3fad331b0ee481a",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/a2-opus-low/query-3/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-3/next/stdout.log",
+      "sha256": "2d0bbf64e14bc6a5a59fa283df9364b35d4e650547b4dc5034061fff26a93151",
+      "bytes": 146
+    },
+    {
+      "path": "implementation/a2-opus-low/query-3/status/process.json",
+      "sha256": "80d1f4ba169d6c98ada83bdf2eca3a92cef0b62aeffa6d5f618938a46d6a45d8",
+      "bytes": 1749
+    },
+    {
+      "path": "implementation/a2-opus-low/query-3/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-3/status/stdout.log",
+      "sha256": "207a605dcc5c5b855d614e31510dfe7afd6c2963caa19e9903ecf91ff2b312ea",
+      "bytes": 2700
+    },
+    {
+      "path": "implementation/a2-opus-low/query-4/next/process.json",
+      "sha256": "72211ff7f68b2418393625e9f3a258aa63d46958bdba9998fe63bf965d41539c",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/a2-opus-low/query-4/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-4/next/stdout.log",
+      "sha256": "cb83a89c5ced6620172e3707b56652c71b2a48828f3e02e2615212118bed8b9c",
+      "bytes": 105
+    },
+    {
+      "path": "implementation/a2-opus-low/query-4/status/process.json",
+      "sha256": "49735e3c496a5a75bf8a7d4a3a23c26b6eaabcd9ac23aa760e94b83d2688240f",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/a2-opus-low/query-4/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-4/status/stdout.log",
+      "sha256": "9bf3c1011f900e19cb6122978ba24d25edcf2081b99ef5291277b59a562b2dc5",
+      "bytes": 2622
+    },
+    {
+      "path": "implementation/a2-opus-low/query-5/next/process.json",
+      "sha256": "b8c3f90f6a588d85b51c1263effdb86657fc86979488ee58855d2825d0065aad",
+      "bytes": 1772
+    },
+    {
+      "path": "implementation/a2-opus-low/query-5/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-5/next/stdout.log",
+      "sha256": "7ff710317c2edbc437dc8efd872fd05db715d42145a74a4a9bc733bf3d5c01ce",
+      "bytes": 59
+    },
+    {
+      "path": "implementation/a2-opus-low/query-5/status/process.json",
+      "sha256": "29cf8a00c1c172a58839b441c1e99c68a54d0899691f441119d6e2dc026e3cde",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/a2-opus-low/query-5/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/query-5/status/stdout.log",
+      "sha256": "bcb8107ef35bec82a14ed19700652b5809008d2cf5c8033b1675080af7bfdf7c",
+      "bytes": 2568
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/adapter.json",
+      "sha256": "41e3d31c31bca8c6b08298ff97614fcbc4dafe5425bc0c6a9604d609c0069f60",
+      "bytes": 4487
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/attempt.json",
+      "sha256": "d97c41670e4eccfcba7142c1451563d28d33066f28609bfbe4a58aa5ecc8e44a",
+      "bytes": 26931
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/handoff.json",
+      "sha256": "ebd2f59030f2287ffece7c377acdba38f06f519f38d7bac0ad018cf2f320603c",
+      "bytes": 4971
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/process.json",
+      "sha256": "d1f33a42d4507fac782b6716362974ec9a0938e2e5398e9a5ebc22431e88a121",
+      "bytes": 12786
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/prompt.txt",
+      "sha256": "95744bbfd7ee38846fe06f767b67a3118f5c5bcf6076e4d4dc3ba0ed7e8e843e",
+      "bytes": 7190
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/stdout.log",
+      "sha256": "bcf5c0d0042f72bfcd2fe2df7f830c7a02ac8ea2a0ae059f704629ce0649295a",
+      "bytes": 53260
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/submission.json",
+      "sha256": "fad4185a57701ebc3d1bff773dfc41041627ae066b1d5d7a77555b43c11b8686",
+      "bytes": 5226
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/compile-check/process.json",
+      "sha256": "360ad027b0c9b9f008f504ab09cdc4b48fe6b1b566dd690c529fef67e84bafd0",
+      "bytes": 1746
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/executor-junit.xml",
+      "sha256": "98fbccee2c6b50ae71f82bfa6b79973593353a89ec45c2529c1b98bb2191e3ea",
+      "bytes": 2554
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "fad7767472a305f9290c47c6fc812ecdd6ae95c9e73c2edd42eb3418820774bb",
+      "bytes": 1885
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "27d2c5c1bc0781dcce530c26434171821706e984a9a8626b04364aab13362ce2",
+      "bytes": 896
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/reference-junit.xml",
+      "sha256": "2c0b2ee52d281f0ff8e908f0f05a7f3728c53d144609228d0660f0aa350d2253",
+      "bytes": 682
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "424bd260dc0b1e807630dd35709743cab7e6660844762185cc8f3e08175cc22d",
+      "bytes": 2139
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "85e4d9e7d3b30728feff5691bd5db9e2f42fe17cb120b12c9ffd1dcfa35250f3",
+      "bytes": 236
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/verify-item/process.json",
+      "sha256": "436e09ae34b83a119a85052c8b95a527ab383370e3fb7bfc27b86d515f26615b",
+      "bytes": 1879
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "1421da5ce68b1dcb8aa02403c6040f60632ab390ad0795de1f8b48d08248e3eb",
+      "bytes": 173
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-complete_task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "aa4b1361eb87f5a163999c8f40562c7e1feab3442b971356f0fe9028ea993285",
+      "bytes": 729
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-1/adapter.json",
+      "sha256": "8a161c27dc0a1701624e92522c36fe656da0fbc21cc63433506ab40ebde1f952",
+      "bytes": 3855
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-1/attempt.json",
+      "sha256": "afaf7079ae461189201356768e961a6e5dd21e3bdeec3a72ff637fad695ce4d8",
+      "bytes": 15585
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-1/handoff.json",
+      "sha256": "8e2ee394939d7cb323f864c3665dd9c15f87fb949ee3e2952eeaf638c5edc7aa",
+      "bytes": 4607
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-1/process.json",
+      "sha256": "a00045817a2d611c7a6dbb2ec2cbc244e774664dd8a1e511e61d9ea7e1ef0777",
+      "bytes": 12630
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-1/prompt.txt",
+      "sha256": "6af59cfbdf4ad742950f1b21e1a5737b2d0e7b7a8a73dc1051483b994364a245",
+      "bytes": 6860
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-1/stdout.log",
+      "sha256": "d1b028bf37ce13a26714e678f2854681e0d446d1949767018839162b65c2f3e8",
+      "bytes": 42840
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-1/submission.json",
+      "sha256": "09f2b96510b09383fe229348e5d1cd80345702ade0d67692881667856ec683bf",
+      "bytes": 5446
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/adapter.json",
+      "sha256": "d3d4b3e0f3dfb5dec75f8660f38e7e2de75d347072b2ab4e911482cce4c02eed",
+      "bytes": 3843
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/attempt.json",
+      "sha256": "6b443e801acd7b669f04acbbb11a49743641f40fec44dd4565cb35be5d61c905",
+      "bytes": 26533
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/handoff.json",
+      "sha256": "8e2ee394939d7cb323f864c3665dd9c15f87fb949ee3e2952eeaf638c5edc7aa",
+      "bytes": 4607
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/process.json",
+      "sha256": "f286c641e7e0f5e52100a42ccbecba8df4a658c4c0e54d26585b0700f393ec2c",
+      "bytes": 18452
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/prompt.txt",
+      "sha256": "a3d210879c248bdea4231ee59caa89872835b0520a7eddc08c64c6eefd963ece",
+      "bytes": 12501
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/stdout.log",
+      "sha256": "0bae5ce0443edb7f1ba57ef74a4d7af30146e727fb4764c677714021dcbc5030",
+      "bytes": 23910
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/submission.json",
+      "sha256": "a29b7e8507351186897cb301f53ed16be030902d1de5c48c3840905819bef8ad",
+      "bytes": 5330
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/compile-check/process.json",
+      "sha256": "0a8c047394b53fdf549a4063d381a5d31f28db37a2499d5582afd3a816b3a507",
+      "bytes": 1744
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/executor-junit.xml",
+      "sha256": "ded63ae5448717b8c119c48d867db96b4d72f46d39d806790d645690e3e426dc",
+      "bytes": 3208
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/executor-tests/process.json",
+      "sha256": "1cec90c5dcca81916a9abb8c9ab58ee6067ada233b3b939f31319275816165a4",
+      "bytes": 1886
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/executor-tests/stderr.log",
+      "sha256": "08e76c756d9c65cf70e5678e0fc6fc05bd5cafef246f33664a1b3a0d4f26ebd8",
+      "bytes": 1096
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/executor-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/reference-junit.xml",
+      "sha256": "6122fb036b5221ed2ce24ebced8baedb97938d2d9c6d726b27d43afc1f8c0ebe",
+      "bytes": 664
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/reference-tests/process.json",
+      "sha256": "6c443ba3e31d4e41d26169edfb71d232d18ad5b1b3bfc8d93e5f195d7a2a76ba",
+      "bytes": 2139
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/reference-tests/stderr.log",
+      "sha256": "a6ca79614e7b1dfc2861f367fb879d9c71182b877b43ef6a8bbe9b0db181efee",
+      "bytes": 216
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/reference-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/verify-item/process.json",
+      "sha256": "160e5ed578c5d234b3cd0509dc2324441aa6747ad47d6bed35fc975715097e27",
+      "bytes": 1876
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/verify-item/stderr.log",
+      "sha256": "8d04f4cc8e7a6094b8f20ea882579236fecb08a7c849d0756e31af71e9eabd8f",
+      "bytes": 171
+    },
+    {
+      "path": "implementation/a2-opus-low/usecase-create_task/attempt-2/verification/verify-item/stdout.log",
+      "sha256": "50e807ab3870ddc5599ede5ed1c862a5181977a16fe6f07861a2303f36951723",
+      "bytes": 727
+    },
+    {
+      "path": "implementation/a2-opus-low/verify-change/process.json",
+      "sha256": "a0de748443ee260326139080d20833315ee95bb69501494dc402f78413ddd88c",
+      "bytes": 1761
+    },
+    {
+      "path": "implementation/a2-opus-low/verify-change/stderr.log",
+      "sha256": "1e4eee259595ae3edc363e9df3a59ec7edd6a56d958ce2e6f1be15193f670551",
+      "bytes": 168
+    },
+    {
+      "path": "implementation/a2-opus-low/verify-change/stdout.log",
+      "sha256": "68af3716a3fa68f257891601638ef27ce25976df4d6844d7be5510178edb5bb3",
+      "bytes": 975
+    },
+    {
+      "path": "implementation/initial-status/process.json",
+      "sha256": "a9b015e75dfb9a5a71a735d8283ce44e16c0bf04ca8181a159dcb792f4e801b2",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/initial-status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/initial-status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "preparation/baseline-tree.json",
+      "sha256": "8a1fe840c87c9133b9ce1692ece2c772d1d925b574984af50976c42ee30ff13f",
+      "bytes": 50635
+    },
+    {
+      "path": "preparation/compile/process.json",
+      "sha256": "90ba851b40ac82831b45660e4d5aa5a3ee9edcee4ad0c87fc51d8e2e1bdf5ba0",
+      "bytes": 1730
+    },
+    {
+      "path": "preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "preparation/compile-check/process.json",
+      "sha256": "7d2bb0f467328c4bb0ff0c97de39f82fdb2a40afbd6531a5e00852d2d24730a7",
+      "bytes": 1748
+    },
+    {
+      "path": "preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "preparation/create-tutorial/process.json",
+      "sha256": "85558e17863fe8ae4a9f554b04ecec01c98a96c9a774732e8c014d94880d2d44",
+      "bytes": 1659
+    },
+    {
+      "path": "preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/create-tutorial/stdout.log",
+      "sha256": "c6de05ebca06454865049057c704ebf1eed85b06bc9da7707d70abed84565f79",
+      "bytes": 96
+    },
+    {
+      "path": "preparation/status/process.json",
+      "sha256": "3ba0661feb60618f04acdd47414c5e7eb1d16fbf110cc045e926f3c18a248aa0",
+      "bytes": 1749
+    },
+    {
+      "path": "preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "skills/preflight/process.json",
+      "sha256": "cecf81f857acd62962ba2dbd0f8da75f86dac8afded9e8881cf49f4d694e21ce",
+      "bytes": 1672
+    },
+    {
+      "path": "skills/preflight/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/preflight/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "startup/preparation/baseline-tree.json",
+      "sha256": "8a1fe840c87c9133b9ce1692ece2c772d1d925b574984af50976c42ee30ff13f",
+      "bytes": 50635
+    },
+    {
+      "path": "startup/preparation/compile/process.json",
+      "sha256": "2c94cbcb5abfc606882533eeb07f31643f6d62c007dc18164d4131fe067900f9",
+      "bytes": 1731
+    },
+    {
+      "path": "startup/preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "startup/preparation/compile-check/process.json",
+      "sha256": "96f80ea840d43579ab0faec55c386ff4fb86e4061d7fe07e36aeeaa35e663363",
+      "bytes": 1748
+    },
+    {
+      "path": "startup/preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "startup/preparation/create-tutorial/process.json",
+      "sha256": "2f78c6714af26076aac288ebc516a318c8eb436bbbf09b5d1eb3bd43edcc200f",
+      "bytes": 1658
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stdout.log",
+      "sha256": "890f34d7c8723b77b991b0723e21c18fb260a504ec169edb1f8a478489e7bfcd",
+      "bytes": 96
+    },
+    {
+      "path": "startup/preparation/status/process.json",
+      "sha256": "0834366eefde4697b1c6678510c3ead8504cc69abc4da7174c80c463631f0b80",
+      "bytes": 1748
+    },
+    {
+      "path": "startup/preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "startup/preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "report.json",
+      "sha256": "90e837f866a37568a37711388b0a0a018aa2386b43c3b71e67012db6ca6a51df",
+      "bytes": 218434
+    },
+    {
+      "path": "report.md",
+      "sha256": "2e7c04ebabbb4be38d06bae9bc88861a20baa18f5bafd6a4ee1e95b90d7217ec",
+      "bytes": 2768
+    }
+  ]
+}

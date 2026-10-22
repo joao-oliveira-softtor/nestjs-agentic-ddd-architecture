@@ -1,0 +1,120 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementado o corpo de Task.complete em app/domain/task.ts: rejeita com TASK_ALREADY_COMPLETED se o status não for pending, define completed e registra TaskCompleted com o taskId. A contagem de linhas do corpo foi mantida (14 linhas, sem reformatar). Criado app/test/method-Task-complete.test.ts com covers para method:Task.complete e criterion:0001/conclusao, incluindo a repetição rejeitada e o evento único. bun test app/test: 8 pass, 0 fail. verify --item method:Task.complete com o specHash original eb3ac39...8d88364 retornou done (exit 0; I1 a I5 passed). Nenhum outro arquivo foi alterado.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "24487071-66f7-49e3-a0a6-e740b9417e94",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-haiku-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 91224,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 77729,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 3865,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 13483,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-haiku-5-5": {
+        "uncachedInputTokens": 12,
+        "cacheWriteInputTokens": 13483,
+        "cacheReadInputTokens": 77729,
+        "outputTokens": 3865,
+        "reportedCostUSD": 0.0054075899999999994
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 6786,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 6786
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1019,
+          "cacheReadInputTokens": 11779,
+          "cacheWrite1hInputTokens": 1019
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1714,
+          "cacheReadInputTokens": 12798,
+          "cacheWrite1hInputTokens": 1714
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1754,
+          "cacheReadInputTokens": 14512,
+          "cacheWrite1hInputTokens": 1754
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1115,
+          "cacheReadInputTokens": 16266,
+          "cacheWrite1hInputTokens": 1115
+        },
+        {
+          "model": "claude-haiku-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1095,
+          "cacheReadInputTokens": 17381,
+          "cacheWrite1hInputTokens": 1095
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 26105.236909,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r2/implementation/a3-routed/method-Task-complete/attempt-1/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r2/implementation/a3-routed/method-Task-complete/attempt-1/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r2/implementation/a3-routed/method-Task-complete/attempt-1/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 9,
+    "source": "claude.result.num_turns"
+  }
+}

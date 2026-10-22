@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="3" assertions="10" failures="0" skipped="0" time="0.079505937">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="3" assertions="10" failures="0" skipped="0" time="0.077564688" hostname="softtords">
+    <testsuite name="Task" file="app/test/entity-Task.test.ts" line="7" tests="3" assertions="10" failures="0" skipped="0" time="0" hostname="softtords">
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente com título normalizado e emite TaskCreated" classname="Task" time="0.000221" file="app/test/entity-Task.test.ts" line="8" assertions="6" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título inválido &quot;&quot;" classname="Task" time="0.000047" file="app/test/entity-Task.test.ts" line="20" assertions="2" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título inválido &quot;   &quot;" classname="Task" time="0.000009" file="app/test/entity-Task.test.ts" line="20" assertions="2" />
+    </testsuite>
+  </testsuite>
+</testsuites>

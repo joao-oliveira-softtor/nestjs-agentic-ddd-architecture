@@ -1,0 +1,92 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"approved\",\"findings\":[]}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "fc73aaaa-508a-4da5-9d63-e52b84515205",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-opus-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 43424,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 24031,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 417,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 19389,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-opus-5-5": {
+        "uncachedInputTokens": 4,
+        "cacheWriteInputTokens": 19389,
+        "cacheReadInputTokens": 24031,
+        "outputTokens": 417,
+        "reportedCostUSD": 0.1682742
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-opus-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 17585,
+          "cacheReadInputTokens": 3223,
+          "cacheWrite1hInputTokens": 17585
+        },
+        {
+          "model": "claude-opus-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1804,
+          "cacheReadInputTokens": 20808,
+          "cacheWrite1hInputTokens": 1804
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 6596.668389999977,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r1/implementation/a3-routed/review/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r1/implementation/a3-routed/review/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a3-routed-r1/implementation/a3-routed/review/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 4,
+    "source": "claude.result.num_turns"
+  }
+}

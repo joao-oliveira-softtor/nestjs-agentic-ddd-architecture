@@ -1,0 +1,106 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementei o corpo de Task.complete em app/domain/task.ts e mantive a contagem de linhas do corpo. O método lança TASK_ALREADY_COMPLETED se a tarefa não está pendente, muda o estado para completed e registra TaskCompleted. Criei app/test/method-Task-complete.test.ts com covers para method:Task.complete e criterion:0001/conclusao. O verify --item, com o specHash original, retornou done: os gates I1 a I5 passaram.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "aaef58e5-a367-464d-8c4e-2e3f119544c9",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-sonnet-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 57258,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 45968,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 1831,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 11282,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-sonnet-5-5": {
+        "uncachedInputTokens": 8,
+        "cacheWriteInputTokens": 11282,
+        "cacheReadInputTokens": 45968,
+        "outputTokens": 1831,
+        "reportedCostUSD": 0.06805080000000001
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 8174,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 8174
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 307,
+          "cacheReadInputTokens": 13167,
+          "cacheWrite1hInputTokens": 307
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 860,
+          "cacheReadInputTokens": 13474,
+          "cacheWrite1hInputTokens": 860
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1941,
+          "cacheReadInputTokens": 14334,
+          "cacheWrite1hInputTokens": 1941
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 20918.129608000003,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a1-sonnet-low-r1/implementation/a1-sonnet-low/method-Task-complete/attempt-2/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a1-sonnet-low-r1/implementation/a1-sonnet-low/method-Task-complete/attempt-2/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a1-sonnet-low-r1/implementation/a1-sonnet-low/method-Task-complete/attempt-2/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 8,
+    "source": "claude.result.num_turns"
+  }
+}

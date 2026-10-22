@@ -1,0 +1,113 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Implementei Task.complete no arquivo app/domain/task.ts. Se o status não for pending, o método lança DomainError TASK_ALREADY_COMPLETED. Caso contrário, muda o status para completed e registra TaskCompleted({ taskId }). O arquivo continua com 47 linhas e as linhas 31-46 do corpo estão no lugar original. Criei o teste app/test/method-Task-complete.test.ts com covers ['method:Task.complete','criterion:0001/conclusao']. Ele confere o caminho feliz e verifica que a repetição é rejeitada sem mudar o estado nem gerar evento. Rodei verify --item com o specHash original e a config atual: a primeira execução retornou done com exit 0. Depois disso ajustei uma linha em branco para manter a contagem e rodei verify de novo: todos os gates I1-I5 passaram e o resultado foi done, mas nessa segunda execução o exit code não foi capturado.\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "5fa76399-665b-4ee8-9007-e176c7a4731c",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-opus-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 67560,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 56704,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 2357,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 10846,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-opus-5-5": {
+        "uncachedInputTokens": 10,
+        "cacheWriteInputTokens": 10846,
+        "cacheReadInputTokens": 56704,
+        "outputTokens": 2357,
+        "reportedCostUSD": 0.14528880000000002
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-opus-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 6004,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 6004
+        },
+        {
+          "model": "claude-opus-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1509,
+          "cacheReadInputTokens": 10997,
+          "cacheWrite1hInputTokens": 1509
+        },
+        {
+          "model": "claude-opus-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1059,
+          "cacheReadInputTokens": 12506,
+          "cacheWrite1hInputTokens": 1059
+        },
+        {
+          "model": "claude-opus-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1078,
+          "cacheReadInputTokens": 13565,
+          "cacheWrite1hInputTokens": 1078
+        },
+        {
+          "model": "claude-opus-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1196,
+          "cacheReadInputTokens": 14643,
+          "cacheWrite1hInputTokens": 1196
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 57027.593762000004,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a2-opus-low-r2/implementation/a2-opus-low/method-Task-complete/attempt-1/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a2-opus-low-r2/implementation/a2-opus-low/method-Task-complete/attempt-1/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a2-opus-low-r2/implementation/a2-opus-low/method-Task-complete/attempt-1/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 9,
+    "source": "claude.result.num_turns"
+  }
+}

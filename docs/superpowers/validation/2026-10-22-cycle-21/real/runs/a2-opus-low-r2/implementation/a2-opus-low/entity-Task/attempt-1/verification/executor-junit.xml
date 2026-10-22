@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="bun test" tests="2" assertions="9" failures="0" skipped="0" time="0.35840557">
+  <testsuite name="app/test/entity-Task.test.ts" file="app/test/entity-Task.test.ts" tests="2" assertions="9" failures="0" skipped="0" time="0.348578405" hostname="softtords">
+    <testsuite name="Task.create" file="app/test/entity-Task.test.ts" line="7" tests="2" assertions="9" failures="0" skipped="0" time="0.001" hostname="softtords">
+      <testcase name="[covers: criterion:0001/criacao, method:Task.create] cria tarefa pendente com título normalizado e registra TaskCreated" classname="Task.create" time="0.001733" file="app/test/entity-Task.test.ts" line="8" assertions="5" />
+      <testcase name="[covers: criterion:0001/titulo-invalido, invariant:Task/titulo-obrigatorio] rejeita título vazio ou só com espaços" classname="Task.create" time="0.00058" file="app/test/entity-Task.test.ts" line="18" assertions="4" />
+    </testsuite>
+  </testsuite>
+</testsuites>

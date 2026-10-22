@@ -1,0 +1,710 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "path": "adapters/a1-sonnet-low/probe/process.json",
+      "sha256": "eabf671576fcedf909b66bbc1abafca5478b91b12d339a1966d91f3413c9bc63",
+      "bytes": 317
+    },
+    {
+      "path": "adapters/a1-sonnet-low/probe/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "adapters/a1-sonnet-low/probe/stdout.log",
+      "sha256": "b354fe63f3ea7b46441790aa41c704340be3e4722cd759d1b77da284764c82ef",
+      "bytes": 22
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/adapter.json",
+      "sha256": "551b4b41f2a9709a92a2fa8daef2b365198e6aef0403fe682cec57dddab75788",
+      "bytes": 5030
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/attempt.json",
+      "sha256": "a65543b88e717b3d37767e6f9227f3adf3a4c14dd2f688accae629800f8565a4",
+      "bytes": 24718
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/handoff.json",
+      "sha256": "b3bd035445d34852948225bf3665120cf6bfa3b3186e5d4e2c0c9186e4306fce",
+      "bytes": 3003
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/process.json",
+      "sha256": "4b955f1f3216763bdc1970563841e0eb4f95b0241bfeafbced728659344567d1",
+      "bytes": 10936
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/prompt.txt",
+      "sha256": "f07735c6f37f8bbc68119580d43c172461af30947dfa916ea29f56f27029eac8",
+      "bytes": 5756
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/stdout.log",
+      "sha256": "1e2e268cb6587470f9c1e8279b666e9efa06d416833614f1be56d2b9b5a58a2c",
+      "bytes": 56121
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/submission.json",
+      "sha256": "2451b5b59a09b727f2fcb53a900ad7332e09a9b0822f892b058dff1ea1494b8c",
+      "bytes": 4758
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/compile-check/process.json",
+      "sha256": "422d5db87d113eddc280aaea6499bc7ec9a85f82a148991531a552ca0f0eeb39",
+      "bytes": 1746
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/executor-junit.xml",
+      "sha256": "0ec5351a40a190516d1058776a7daf057b153759c2540d7858ce0fb969811961",
+      "bytes": 1460
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/executor-tests/process.json",
+      "sha256": "c4367bb69cc15cd6a9fd25a17839a2b169afa562faf77e699d224c132c1298b9",
+      "bytes": 1885
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/executor-tests/stderr.log",
+      "sha256": "7974e1d9c05c92227c0318ecf3ec6ff9583ef60197ed3d0d8bf5264fa8b90726",
+      "bytes": 625
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/executor-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/reference-junit.xml",
+      "sha256": "db9732fea1c3ffabe5f2369bddf67ed3050f160ee33f4d451013be3e84b8954a",
+      "bytes": 982
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/reference-tests/process.json",
+      "sha256": "6d8eb09885e2c63dfd2ff70ba7b3b1185829b0405888cc335b1ed49fd61cf4b4",
+      "bytes": 2138
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/reference-tests/stderr.log",
+      "sha256": "1bc2e3a037e04029a27bbc11f3822c46b2bf73db13077cc9a0f57080a51c757f",
+      "bytes": 323
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/reference-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/verify-item/process.json",
+      "sha256": "22bf1da482f945a76e724fba3c605f72bdb5501265e40eb3b58133007b4695cb",
+      "bytes": 1862
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/verify-item/stderr.log",
+      "sha256": "717f87a62d03fb04d52fe306896d8b22f233a6bc9820a13348b955fada6631b6",
+      "bytes": 163
+    },
+    {
+      "path": "implementation/a1-sonnet-low/entity-Task/attempt-1/verification/verify-item/stdout.log",
+      "sha256": "ca40d866891a5e9be3558a9ee6d4a37966d231c075cfc2839e61163fe36a2d79",
+      "bytes": 719
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-1/adapter.json",
+      "sha256": "c28467765f41e211d1a97b87a89ed85bbb2e5548d5ba1f1420a5261c36f435de",
+      "bytes": 3726
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-1/attempt.json",
+      "sha256": "f1164c0f69dd25fa2b55aa94aab880129b9f0af5795ed55005c5fcbfc1540583",
+      "bytes": 13767
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-1/handoff.json",
+      "sha256": "64b3de51aad472c10ca283a688576365f904eeeba8899e1e600c4123546218ce",
+      "bytes": 3755
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-1/process.json",
+      "sha256": "20197d0e6b85dd9f13a5085938b3b5ecf99db3bdf04a7d9c7a5a4b501db18a7c",
+      "bytes": 11896
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-1/prompt.txt",
+      "sha256": "a7d22bc8c26ebfce5f288be088ebc1945bcc57e615a63fedf01adf2857682acb",
+      "bytes": 6436
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-1/stdout.log",
+      "sha256": "cc9f0b4f7e625614ce645ccb207bc946463ab50fd3ecdfa7f23e9f87186cfb53",
+      "bytes": 34863
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-1/submission.json",
+      "sha256": "8da8ec9c638cdfe9f0abc5d6d992a66a3ddddba17b4a9c9631b5db90da124fcf",
+      "bytes": 4775
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-2/adapter.json",
+      "sha256": "263e6ae84f055942fdccf69fcacd4e3fc794c5bc75ffaa386bbf7f6c2f1bcd6e",
+      "bytes": 3588
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-2/attempt.json",
+      "sha256": "b9f59361f895ebeb19af2ec442db52f0e7b909874b27066090073d0c8ccd9e2f",
+      "bytes": 13501
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-2/handoff.json",
+      "sha256": "64b3de51aad472c10ca283a688576365f904eeeba8899e1e600c4123546218ce",
+      "bytes": 3755
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-2/process.json",
+      "sha256": "33780e52fad3aaee9bde8bf17e43c51f094eb0453b4d48d42fb095dbfcb33f42",
+      "bytes": 17060
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-2/prompt.txt",
+      "sha256": "9b496b2f1ec9d0ca93fde4ad0e337a59aaf1a1dcf8e2605e9753c7255d27fb66",
+      "bytes": 11394
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-2/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-2/stdout.log",
+      "sha256": "5c58cf99de6d8472bb6cb3ad1871097299141f1b5ded0cd4c1b241f818df6fe3",
+      "bytes": 34801
+    },
+    {
+      "path": "implementation/a1-sonnet-low/method-Task-complete/attempt-2/submission.json",
+      "sha256": "8da8ec9c638cdfe9f0abc5d6d992a66a3ddddba17b4a9c9631b5db90da124fcf",
+      "bytes": 4775
+    },
+    {
+      "path": "implementation/a1-sonnet-low/packet-entity-Task/process.json",
+      "sha256": "2cb39a6bf42b80fb45a756c2a908c4cf33b06203b7afa5e6d6c8ebe902e13771",
+      "bytes": 1754
+    },
+    {
+      "path": "implementation/a1-sonnet-low/packet-entity-Task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/packet-entity-Task/stdout.log",
+      "sha256": "b52dbd1e28959ee6e9218a7e98e97a9280a578cda330931f01ec49538a59feac",
+      "bytes": 2146
+    },
+    {
+      "path": "implementation/a1-sonnet-low/packet-method-Task-complete/process.json",
+      "sha256": "27e40889a523d003fc673f168fea77536d6e56a2008995bd188038554fc38e01",
+      "bytes": 1762
+    },
+    {
+      "path": "implementation/a1-sonnet-low/packet-method-Task-complete/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/packet-method-Task-complete/stdout.log",
+      "sha256": "2debc89e7d57b180c88291f2e2270baab2a1cf08f98bed28274d414e2352b980",
+      "bytes": 2935
+    },
+    {
+      "path": "implementation/a1-sonnet-low/packet-usecase-create_task/process.json",
+      "sha256": "a865f2bebc5456b6ab89ac2a9fe9a48190cd4aa6e29ca2d6e9817fe548e9f9a3",
+      "bytes": 1760
+    },
+    {
+      "path": "implementation/a1-sonnet-low/packet-usecase-create_task/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/packet-usecase-create_task/stdout.log",
+      "sha256": "bb7768d0ee6cd2b6d18f1f798fa2caeb9b1310f46cd79eb0bc6ce27e6b845f84",
+      "bytes": 3678
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-0/next/process.json",
+      "sha256": "047569f147c8060057479ca83a66b9c4e5ee30636f8e441c7365ea03d30bbdf6",
+      "bytes": 1774
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-0/next/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-0/next/stdout.log",
+      "sha256": "cce0416411f98295fbbe81ec9575170bc5e4551731d1608c578487395658c043",
+      "bytes": 347
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-0/status/process.json",
+      "sha256": "33395d5c3e2ab8f087e400d73bb1bbc99cd3c898dd36a743197db76d87f8a5bc",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-0/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-0/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-1/next/process.json",
+      "sha256": "a03126d7883246c9a2d25b09a19ea72b517f71d224b09ff520f7416d001e1104",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-1/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-1/next/stdout.log",
+      "sha256": "81e40eb53da28081a00b1ce05d8e1c409b3463968a8bbbb978f9de3970bab4e5",
+      "bytes": 219
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-1/status/process.json",
+      "sha256": "0ca3343322f234d53f59826b6de4426c17d8e6f1967589bc9e2480958e69cf43",
+      "bytes": 1749
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-1/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-1/status/stdout.log",
+      "sha256": "1c3d41a34edccaca304d4fb861b5728f58e9204c2989f214270ecb5f44224986",
+      "bytes": 2863
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-2/next/process.json",
+      "sha256": "55d8822ee8b49d6423b625c571be3b202fbc4301de789450098a80630620cdf8",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-2/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-2/next/stdout.log",
+      "sha256": "81e40eb53da28081a00b1ce05d8e1c409b3463968a8bbbb978f9de3970bab4e5",
+      "bytes": 219
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-2/status/process.json",
+      "sha256": "c12c71ed8851fa54a424fe6105ee2bba68a25cc1b544cf0319596525b1b40579",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-2/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-2/status/stdout.log",
+      "sha256": "1c3d41a34edccaca304d4fb861b5728f58e9204c2989f214270ecb5f44224986",
+      "bytes": 2863
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-3/next/process.json",
+      "sha256": "bdeeeff5490ae65645b2dd57912e99388e753cb5e40142ac61f9c2df4930c48f",
+      "bytes": 1773
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-3/next/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-3/next/stdout.log",
+      "sha256": "b3b2821ae21ce7331c7437f4004c8900458aa6ab5af1d642083d7248e61e00e4",
+      "bytes": 190
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-3/status/process.json",
+      "sha256": "99b75e4106f0d09b08a35f6c2a08dd2d6081098bd30a1cf115625e0dc753e230",
+      "bytes": 1749
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-3/status/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/query-3/status/stdout.log",
+      "sha256": "76598246f68de1a914df31ff911640bfc6b97a7d6636d22b5fe989c5d71d65c7",
+      "bytes": 2787
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-1/adapter.json",
+      "sha256": "c93c0dc3399ac6f86784b28b5a099129e375c261477d2b6b6fee3e7af9650825",
+      "bytes": 5006
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-1/attempt.json",
+      "sha256": "32f9c6d833904809c09d3a47c6ca47f9443f763373ec3a83621d009d98e06b97",
+      "bytes": 16242
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-1/handoff.json",
+      "sha256": "7098e1e6c087b567ebfe5a3fb87d35efab21170d1b23a5dd69509c4ce63a6fba",
+      "bytes": 4607
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-1/process.json",
+      "sha256": "e7ede8ae6f639d0b5bd050f1217350ae5d2823fd2f8b7122b0df579626ffaaaf",
+      "bytes": 12215
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-1/prompt.txt",
+      "sha256": "31c3094b54058fed60bdffce8dc7d24a85529b4bd7bf7553b52fc12847330fa3",
+      "bytes": 6860
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-1/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-1/stdout.log",
+      "sha256": "6354dc6134abaed1504c6a4fcf1f50359eae0b72bb0878252bd2698ffa1ab8f6",
+      "bytes": 62212
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-1/submission.json",
+      "sha256": "c711063b3d935ae9b3f904db6eeb53094a0e10b3e9e4d49c08fb25682412f1ae",
+      "bytes": 5076
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/adapter.json",
+      "sha256": "6b1d25cab19763ffd3aa9da02360995d3178eb2eafb45ab2316f815e54cef0b3",
+      "bytes": 4839
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/attempt.json",
+      "sha256": "ea986dc8e3968227ce5a9c05e626e7c448a1867527fbedc7351b0a7dfd18d32c",
+      "bytes": 26576
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/handoff.json",
+      "sha256": "7098e1e6c087b567ebfe5a3fb87d35efab21170d1b23a5dd69509c4ce63a6fba",
+      "bytes": 4607
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/process.json",
+      "sha256": "9a80e289e94d8eea95ab401c9d76b964826be1d6ae788efab90f0b512568cd48",
+      "bytes": 17667
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/prompt.txt",
+      "sha256": "9b0b1177259b4849793486eb7c919850a9621ff96fec1d50f88393730a2cb63e",
+      "bytes": 12131
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/stdout.log",
+      "sha256": "fa5eaf8acdf8b448786cf7dc7199ce4a2504d940ef9f5b1a1e25838b92190aa7",
+      "bytes": 51950
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/submission.json",
+      "sha256": "dbe6a276832121e84dd0421f429a82a77c66d432540ec2ff972ec0fc7f8441d9",
+      "bytes": 5074
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/compile-check/process.json",
+      "sha256": "36805fe78812579d048d7206d58648d6ae2d22a69b708eb80681a1c53296f79f",
+      "bytes": 1745
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/executor-junit.xml",
+      "sha256": "303eb08a4b64b9b728f0bf7b98bcb764019d37ba2f4c561d3b2057f1a00fbbb7",
+      "bytes": 2115
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/executor-tests/process.json",
+      "sha256": "3217d4789459a496c7a283842bc41a9110b1ea7e46dc1a36f63d2641b1b9413f",
+      "bytes": 1884
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/executor-tests/stderr.log",
+      "sha256": "80d8c02024eb155ab8bf1f554fda8c04c05ba740b4afd3a37369b55e7b272a50",
+      "bytes": 835
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/executor-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/reference-junit.xml",
+      "sha256": "1ac5227a57e3031be6cd5eb5ccb828f2cc136fab0d31342ff959fa12d643e343",
+      "bytes": 662
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/reference-tests/process.json",
+      "sha256": "8d9792c0c73bf5c6319eb67880b08cec0eb5971b38626c283e9e9053b3546d56",
+      "bytes": 2139
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/reference-tests/stderr.log",
+      "sha256": "f23b215057c5754b461bc9ef25fe1f9f478415d8edfc6d01c89939ef06c348b7",
+      "bytes": 217
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/reference-tests/stdout.log",
+      "sha256": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+      "bytes": 28
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/verify-item/process.json",
+      "sha256": "f9c61a866ccd68994e1350d6b73a66ccc9aae85905163759b45741cc609ec6b0",
+      "bytes": 1876
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/verify-item/stderr.log",
+      "sha256": "8d04f4cc8e7a6094b8f20ea882579236fecb08a7c849d0756e31af71e9eabd8f",
+      "bytes": 171
+    },
+    {
+      "path": "implementation/a1-sonnet-low/usecase-create_task/attempt-2/verification/verify-item/stdout.log",
+      "sha256": "50e807ab3870ddc5599ede5ed1c862a5181977a16fe6f07861a2303f36951723",
+      "bytes": 727
+    },
+    {
+      "path": "implementation/a1-sonnet-low/verify-change/process.json",
+      "sha256": "549ee172be9c2b988ff0a7f4c699927e24d48be096834180789151e1cec22875",
+      "bytes": 1760
+    },
+    {
+      "path": "implementation/a1-sonnet-low/verify-change/stderr.log",
+      "sha256": "3f8122403aaa63734400562a9884e8f3ca7dc854dd10991a93beae78ce3b2a55",
+      "bytes": 1618
+    },
+    {
+      "path": "implementation/a1-sonnet-low/verify-change/stdout.log",
+      "sha256": "ff031c3be8a639359c53812e1cee01bc352b132c82f6c4283c1c5a6a9ced7733",
+      "bytes": 3157
+    },
+    {
+      "path": "implementation/initial-status/process.json",
+      "sha256": "13f0b5a32475f342f280b84e14a433a318e64fda0621e1984e7f8acc95786cc8",
+      "bytes": 1748
+    },
+    {
+      "path": "implementation/initial-status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "implementation/initial-status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "preparation/baseline-tree.json",
+      "sha256": "9bcae33964774353ffff265db0ea1df524909fb8e84242be846224dd5bb51f8c",
+      "bytes": 50635
+    },
+    {
+      "path": "preparation/compile/process.json",
+      "sha256": "3107714ef9ff749518a06ef30545d5d4d8079ca79ba863d83c6ce6dc92e04e2c",
+      "bytes": 1730
+    },
+    {
+      "path": "preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "preparation/compile-check/process.json",
+      "sha256": "f1546cf6c74ca588fbf4909ecdae5a0c3e61a62f88adb4e5a84463488541489d",
+      "bytes": 1748
+    },
+    {
+      "path": "preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "preparation/create-tutorial/process.json",
+      "sha256": "877ece3c325f0d4fa9e9708cd2683821e0684dc86d5ae8a88f8879e1cc62eb9f",
+      "bytes": 1658
+    },
+    {
+      "path": "preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "preparation/create-tutorial/stdout.log",
+      "sha256": "3add3c9573da4f294f2f0d6c0eb7020e8586f0b3350da150c69bc5e499beb6f7",
+      "bytes": 96
+    },
+    {
+      "path": "preparation/status/process.json",
+      "sha256": "a3c39955e4f573d9a70e8095be54b09cc8bab784d91b3b032b9e8de4e010c40c",
+      "bytes": 1749
+    },
+    {
+      "path": "preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "skills/preflight/process.json",
+      "sha256": "fc7be1f4e2aaa171be92b05607571ef8a5276adbc4394ba2fef8fe9ad1088862",
+      "bytes": 1673
+    },
+    {
+      "path": "skills/preflight/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "skills/preflight/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "startup/preparation/baseline-tree.json",
+      "sha256": "9bcae33964774353ffff265db0ea1df524909fb8e84242be846224dd5bb51f8c",
+      "bytes": 50635
+    },
+    {
+      "path": "startup/preparation/compile/process.json",
+      "sha256": "79223bf9b927d256fe5e89ecc6161266e242f54789b8e1765dd14cb30b2cb1b1",
+      "bytes": 1730
+    },
+    {
+      "path": "startup/preparation/compile/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile/stdout.log",
+      "sha256": "d27e09831a3871b2fb9ab49a261aac1b68b70f9eec95c88afb39dfa78f05c349",
+      "bytes": 89
+    },
+    {
+      "path": "startup/preparation/compile-check/process.json",
+      "sha256": "3a95b71ddc1063583a1973dbd90e9b3a2609ddb97daf7606b42f7b8d7413cf79",
+      "bytes": 1748
+    },
+    {
+      "path": "startup/preparation/compile-check/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/compile-check/stdout.log",
+      "sha256": "44b8167911a5109807b5156267b21dfab0f90d669f31fa796d0a143e64f6d701",
+      "bytes": 44
+    },
+    {
+      "path": "startup/preparation/create-tutorial/process.json",
+      "sha256": "6969975fdd5f054de4d1243bb7752a6243e62212899b5ec21c2a13fb20a78341",
+      "bytes": 1659
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "startup/preparation/create-tutorial/stdout.log",
+      "sha256": "f1df3be6a7f5c6a6ba8c69b95990a19a35fe82d41ea5deb4a4f71b377de6ba4b",
+      "bytes": 96
+    },
+    {
+      "path": "startup/preparation/status/process.json",
+      "sha256": "3651eda8e62140a5556b866726c0855172852dbcfc87844d75540a6bc3148409",
+      "bytes": 1748
+    },
+    {
+      "path": "startup/preparation/status/stderr.log",
+      "sha256": "e3d61ff3755c267c45246aca28f800738d1812478549f8c9fc785192eb1a8530",
+      "bytes": 86
+    },
+    {
+      "path": "startup/preparation/status/stdout.log",
+      "sha256": "a7339b061146559f450d1edcf2f1d89e82a0877d2137a6a17b45a462383d5629",
+      "bytes": 3103
+    },
+    {
+      "path": "report.json",
+      "sha256": "1212ac215de47b5d2dbffb4c9ddaf6fd3c52a0fee5a08d53676e6083e7f841d0",
+      "bytes": 151084
+    },
+    {
+      "path": "report.md",
+      "sha256": "2a3258c7873c17d181418b7899f22e36f3e0d06f3d3fe7df1248418e73c9c6f2",
+      "bytes": 2861
+    }
+  ]
+}

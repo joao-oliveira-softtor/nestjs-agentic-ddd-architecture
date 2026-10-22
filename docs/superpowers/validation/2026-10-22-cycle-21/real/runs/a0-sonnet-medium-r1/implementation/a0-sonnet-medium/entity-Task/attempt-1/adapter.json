@@ -1,0 +1,134 @@
+{
+  "transport": "finished",
+  "finalText": "{\"status\":\"done\",\"summary\":\"Task.create implementada: remove espaços do título, rejeita título vazio com TASK_TITLE_REQUIRED, devolve a tarefa pendente e registra TaskCreated. O corpo manteve a mesma contagem de linhas. Criei app/test/entity-Task.test.ts, que cobre a invariante, o método e os critérios 0001/titulo-invalido e 0001/criacao com covers. Os 2 testes passam. O comando verify --item entity:Task com o specHash original e o config atual retornou done (exit 0).\"}",
+  "exitCode": 0,
+  "signal": null,
+  "sessionId": {
+    "status": "available",
+    "value": "5136e3f3-97e6-436f-97ed-62f381980ba5",
+    "source": "claude.result.session_id"
+  },
+  "observedModel": {
+    "status": "available",
+    "value": "claude-sonnet-5-5",
+    "source": "claude.result.modelUsage"
+  },
+  "modelRevision": {
+    "status": "unavailable",
+    "reason": "not_reported"
+  },
+  "usage": {
+    "inputTokens": {
+      "status": "available",
+      "value": 115293,
+      "source": "claude.result.modelUsage.*.inputTokens+cacheCreationInputTokens+cacheReadInputTokens"
+    },
+    "cachedInputTokens": {
+      "status": "available",
+      "value": 102422,
+      "source": "claude.result.modelUsage.*.cacheReadInputTokens"
+    },
+    "outputTokens": {
+      "status": "available",
+      "value": 2645,
+      "source": "claude.result.modelUsage.*.outputTokens"
+    },
+    "cost": {
+      "status": "unavailable",
+      "reason": "derived_cost_not_adopted"
+    },
+    "cacheWriteInputTokens": {
+      "status": "available",
+      "value": 12855,
+      "source": "claude.result.modelUsage.*.cacheCreationInputTokens"
+    },
+    "byModel": {
+      "claude-sonnet-5-5": {
+        "uncachedInputTokens": 16,
+        "cacheWriteInputTokens": 12855,
+        "cacheReadInputTokens": 102422,
+        "outputTokens": 2645,
+        "reportedCostUSD": 0.08814419999999998
+      }
+    },
+    "requests": {
+      "status": "reconciled",
+      "items": [
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 5768,
+          "cacheReadInputTokens": 4993,
+          "cacheWrite1hInputTokens": 5768
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 879,
+          "cacheReadInputTokens": 10761,
+          "cacheWrite1hInputTokens": 879
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 731,
+          "cacheReadInputTokens": 11640,
+          "cacheWrite1hInputTokens": 731
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 794,
+          "cacheReadInputTokens": 12371,
+          "cacheWrite1hInputTokens": 794
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 2255,
+          "cacheReadInputTokens": 13165,
+          "cacheWrite1hInputTokens": 2255
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 1306,
+          "cacheReadInputTokens": 15420,
+          "cacheWrite1hInputTokens": 1306
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 620,
+          "cacheReadInputTokens": 16726,
+          "cacheWrite1hInputTokens": 620
+        },
+        {
+          "model": "claude-sonnet-5-5",
+          "uncachedInputTokens": 2,
+          "cacheWriteInputTokens": 502,
+          "cacheReadInputTokens": 17346,
+          "cacheWrite1hInputTokens": 502
+        }
+      ],
+      "residual": {}
+    }
+  },
+  "durationMs": 56317.815053000006,
+  "evidence": [
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r1/implementation/a0-sonnet-medium/entity-Task/attempt-1/stdout.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r1/implementation/a0-sonnet-medium/entity-Task/attempt-1/stderr.log",
+    "/home/jvtuta/agentic-evals-runs/cycle-21-pilot/a0-sonnet-medium-r1/implementation/a0-sonnet-medium/entity-Task/attempt-1/process.json"
+  ],
+  "diagnostic": null,
+  "authSource": {
+    "status": "available",
+    "value": "none",
+    "source": "claude.init.apiKeySource"
+  },
+  "numTurns": {
+    "status": "available",
+    "value": 10,
+    "source": "claude.result.num_turns"
+  }
+}
