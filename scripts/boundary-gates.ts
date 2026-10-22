@@ -1,6 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { posix } from 'node:path';
+import { match } from 'ts-pattern';
 import ts from 'typescript';
+import { DEFAULT_CONVENTIONS } from '../src/compiler/config';
+import type { ResolvedConventions } from '../src/compiler/config';
 
 export interface BodyRange {
   readonly start: number;
@@ -139,16 +142,27 @@ const FRAMEWORK_RUNTIME = new Set([
   '@agentic-ddd/runtime',
   '@agentic-ddd/nestjs',
 ]);
-const OUTER_LAYERS: Readonly<Record<GateLayer, readonly string[]>> = {
-  domain: ['application', 'operators', 'infrastructure', 'infra'],
-  application: ['operators', 'infrastructure', 'infra'],
-  operators: [],
-};
+/** Pastas que a camada não pode importar, a partir das convenções. */
+export function outerFolders(
+  conventions: ResolvedConventions,
+  layer: 'domain' | 'application',
+): string[] {
+  return conventions.forbiddenImports[layer].flatMap((target) =>
+    match(target)
+      .with('application', 'operators', (name) => [conventions.layers[name]])
+      .with('infrastructure', () => [...conventions.infrastructure])
+      .exhaustive(),
+  );
+}
 
 /** Diretório da camada: o último ancestral com o nome da camada; senão, o do próprio arquivo. */
-function layerRoot(path: string, layer: GateLayer): string {
+function layerRoot(
+  path: string,
+  layer: GateLayer,
+  conventions: ResolvedConventions,
+): string {
   const parts = posix.dirname(path).split('/');
-  const index = parts.lastIndexOf(layer);
+  const index = parts.lastIndexOf(conventions.layers[layer]);
   return index === -1 ? parts.join('/') : parts.slice(0, index + 1).join('/');
 }
 
@@ -167,6 +181,7 @@ export function importDirectionFindings(
   path: string,
   text: string,
   layer: GateLayer,
+  conventions: ResolvedConventions = DEFAULT_CONVENTIONS,
 ): string[] {
   if (layer === 'operators') return [];
   const findings: string[] = [];
@@ -175,7 +190,7 @@ export function importDirectionFindings(
     findings.push(
       `Forbidden import in ${path}: import()/require() com argumento não literal não é verificável (${unresolved})`,
     );
-  const root = layerRoot(path, layer);
+  const root = layerRoot(path, layer, conventions);
   for (const specifier of specifiers) {
     if (specifier.startsWith('@nestjs/') || FRAMEWORK_RUNTIME.has(specifier)) {
       findings.push(
@@ -189,7 +204,7 @@ export function importDirectionFindings(
       posix.join(posix.dirname(path), specifier),
     );
     const outer = relative.split('/').find((segment) => segment !== '..');
-    if (outer && OUTER_LAYERS[layer].includes(outer))
+    if (outer && outerFolders(conventions, layer).includes(outer))
       findings.push(
         `Forbidden import in ${path}: ${specifier} (${layer} não importa ${outer})`,
       );
@@ -213,7 +228,7 @@ export function main(argv: readonly string[]): number {
   const findings: string[] = [];
   if (command === 'imports') {
     const layer = option(args, '--layer') as GateLayer | undefined;
-    if (!layer || !(layer in OUTER_LAYERS)) {
+    if (!layer || !['domain', 'application', 'operators'].includes(layer)) {
       console.error(USAGE);
       return 2;
     }

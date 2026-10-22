@@ -1,4 +1,5 @@
 import type { IR } from '../ir';
+import type { ResolvedConventions } from '../config';
 import { CORE_RULES, fillMarkers, ruleHash, type Rule } from '../rules';
 import { code, table } from './markdown';
 
@@ -15,6 +16,7 @@ export function renderAgentsBlock(
   ir: IR,
   paths: AgentsPaths,
   rules: readonly Rule[] = CORE_RULES,
+  layers?: ResolvedConventions['layers'],
 ): string {
   const changes = paths.changesDir ?? 'changes';
   const lines: string[] = [
@@ -44,6 +46,7 @@ export function renderAgentsBlock(
     changes,
     devSkills: paths.devSkills,
     runtimeSkills: paths.runtimeSkills,
+    layers,
   };
   for (const rule of rules)
     if (rule.paths === null)

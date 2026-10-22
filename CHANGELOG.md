@@ -7,6 +7,10 @@ Regras do time (#66):
 - Arquivos `.ai/rules/*.md` (pasta em `rules.dir`) viram regras do projeto: sem `paths` entram em "Convenções" do bloco do AGENTS.md; com `paths` entram no índice "Regras por caminho" do bloco e na seção "Regras do time" das skills de dev que casam. As convenções fixas do bloco viram regras do núcleo (`core/...`): um arquivo com a mesma chave substitui uma, e `rules.exclude` remove. Sem `.ai/rules`, a saída do `compile` não muda.
 - Os briefs de executor e revisor (`agent-briefs` e `orchestrate`) recebem as regras do time aplicáveis ao arquivo do item, até `rules.briefMaxTokens` (padrão 2000); acima disso o brief falha em vez de truncar. O núcleo de cada papel ganha uma linha: regra do time nunca vence um gate.
 
+Convenções de layout (#67, ADR-0005 D6):
+
+- `conventions` em `agentic.config.ts` troca o nome da pasta de cada camada, os sufixos de eventos e de operators e os imports proibidos de `domain` e `application`. Sem o campo, vale o padrão de hoje; a camada de um item continua vindo do decorator.
+
 Runtime dos operators:
 
 - **Mudança de compatibilidade (#63):** o runtime dos operators recusa evento publicado por `ctx.publish` que não esteja em `emits` do use-case (pelo nome da classe, como na IR: subclasse não vale). O use-case termina em `failed/use_case_error`, nada do lote recusado chega ao bus e as publicações seguintes da mesma chamada também são recusadas, mesmo que o use-case engula o erro. `emits` omitido vale `[]`, então use-case sem `emits` que publique algo passa a falhar. O `compile` passa a exigir que o `emits` do use-case cubra tudo o que os métodos em `uses` emitem, para o erro aparecer no build e não depois de o use-case gravar dados. `createTestContext` continua aceitando qualquer evento.

@@ -1,3 +1,4 @@
+import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../config';
 import { irHash, type IR } from '../ir';
 import type { LockChange } from '../lock';
 import type { Rule } from '../rules';
@@ -32,6 +33,7 @@ export interface RenderOptions {
   readonly history?: readonly LockChange[];
   readonly changesDir?: string;
   readonly rules?: readonly Rule[];
+  readonly conventions?: ResolvedConventions;
 }
 
 export function renderAll(
@@ -40,12 +42,14 @@ export function renderAll(
   options: RenderOptions = {},
 ): Rendered {
   const hash = irHash(ir);
+  const conventions = options.conventions ?? DEFAULT_CONVENTIONS;
   const entries: [string, string][] = [];
   for (const module of ir.modules) {
     for (const [rel, content] of renderDevSkill(ir, module, hash, {
       history: options.history,
       devSkillsDir: out.devSkills,
       rules: options.rules,
+      conventions,
     }))
       entries.push([`${out.devSkills}/${module.name}-dev/${rel}`, content]);
   }
@@ -60,6 +64,7 @@ export function renderAll(
       ir,
       { ...out, changesDir: options.changesDir ?? 'changes' },
       options.rules,
+      conventions.layers,
     ),
     devSkillDirs: ir.modules.map((m) => `${m.name}-dev`),
     runtimeSkillDirs: ir.operators.map((o) => o.name),

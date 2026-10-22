@@ -43,3 +43,26 @@ Testes: `test(covers(['method:Task.create', 'invariant:Task/titulo-obrigatorio',
 ## Regras do time
 
 As regras do time ficam em `.ai/rules/*.md` (pasta trocável por `rules.dir`); cada arquivo é uma regra e a chave é o caminho sem `.md`, como `testes` para `.ai/rules/testes.md`. Um frontmatter opcional com só `paths:` (globs relativos à raiz) limita a regra: sem ele, ela entra inteira em "Convenções" do AGENTS.md; com ele, entra no índice "Regras por caminho" e na seção "Regras do time" das skills de dev cujos arquivos casam. O corpo é lista com `- `, sem título `#`. Um arquivo com a mesma chave de uma regra do núcleo (`core/...`) substitui essa regra, e `rules.exclude` remove uma; os briefs de executor e revisor recebem as regras do time aplicáveis ao arquivo do item (as do núcleo não; uma substituição sua, inclusive de regra de coordenação como `core/coordination`, chega ao executor), até `rules.briefMaxTokens` (padrão 2000), e acima do limite o brief falha em vez de truncar. Gates (verify, specHash, fronteiras, `covers`) sempre vencem uma regra. Depois de editar, recompile: `compile --check` reprova regra alterada sem recompilação.
+
+## Convenções de layout
+
+Por padrão, as camadas são `domain`, `application` e `operators` dentro de cada módulo. Para mudar nomes de pasta, sufixos ou imports proibidos, use `conventions` em `agentic.config.ts`:
+
+```ts
+export default defineConfig({
+  modules: [{ name: 'shop', path: 'src/shop/core' }],
+  conventions: {
+    layers: { domain: 'model' },
+    suffixes: { events: '.evt.ts' },
+  },
+});
+```
+
+Aqui, entidades e eventos ficam em `src/shop/core/model`, com eventos em `.evt.ts`; `application` e `operators` seguem o padrão.
+
+- Cada camada é o nome de uma pasta só dentro do módulo. Layout aninhado, como `src/<bc>/core/domain`, se faz por `modules[].path`; camadas em pais diferentes não são suportadas.
+- A camada de um item continua vindo do decorator, não da pasta.
+- `forbiddenImports` diz o que `domain` e `application` não podem importar. Uma lista substitui o padrão, não soma a ele; declarar uma camada mantém o padrão da outra. `[]` desliga a regra de pastas daquela camada, mas a barreira a `@nestjs/*` e ao runtime continua. `operators` não tem regra de import.
+- Essas convenções valem para a tabela "Como estender" da skill de dev, para o texto de camadas no bloco do AGENTS.md e para o gate de import do `orchestrate`.
+- Uma regra do time com a chave `core/layers` muda só o texto; o gate continua o mesmo.
+- O CLI `bun scripts/boundary-gates.ts imports` usa só o padrão; ele não lê o `agentic.config.ts`.

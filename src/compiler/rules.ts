@@ -1,7 +1,11 @@
 import { realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
 import { sha256 } from './canonical';
-import type { ResolvedConfig } from './config';
+import {
+  DEFAULT_CONVENTIONS,
+  type ResolvedConfig,
+  type ResolvedConventions,
+} from './config';
 import { FRONTMATTER, parseFrontmatterData } from './changes/proposal';
 import { toPosix } from './ir';
 
@@ -36,7 +40,7 @@ export const CORE_RULES: readonly Rule[] = [
   ),
   core(
     'layers',
-    '- Onde criar: `<caminho do módulo>/domain` (entidades, eventos, ports), `<caminho do módulo>/application` (use-cases, sempre com `uses`), `<caminho do módulo>/operators` (operators). A skill de dev do módulo tem os caminhos exatos.',
+    '- Onde criar: `<caminho do módulo>/{{layer.domain}}` (entidades, eventos, ports), `<caminho do módulo>/{{layer.application}}` (use-cases, sempre com `uses`), `<caminho do módulo>/{{layer.operators}}` (operators). A skill de dev do módulo tem os caminhos exatos.',
   ),
   core(
     'private-methods',
@@ -78,12 +82,17 @@ export function fillMarkers(
     changes: string;
     devSkills: string;
     runtimeSkills: string;
+    layers?: ResolvedConventions['layers'];
   },
 ): string {
+  const layers = values.layers ?? DEFAULT_CONVENTIONS.layers;
   return body
     .replaceAll('{{changes}}', values.changes)
     .replaceAll('{{devSkills}}', values.devSkills)
-    .replaceAll('{{runtimeSkills}}', values.runtimeSkills);
+    .replaceAll('{{runtimeSkills}}', values.runtimeSkills)
+    .replaceAll('{{layer.domain}}', layers.domain)
+    .replaceAll('{{layer.application}}', layers.application)
+    .replaceAll('{{layer.operators}}', layers.operators);
 }
 
 const BLOCK_MARKERS = [

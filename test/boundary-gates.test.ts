@@ -8,7 +8,9 @@ import {
   importDirectionFindings,
   importSpecifiers,
   main,
+  outerFolders,
 } from '../scripts/boundary-gates';
+import { DEFAULT_CONVENTIONS } from '../src/compiler/config';
 
 const ROOT = resolve(import.meta.dir, '..');
 const BASE = `import { x } from './x';
@@ -273,4 +275,54 @@ test('limitação conhecida: especificadores não relativos (aliases) não são 
       'domain',
     ),
   ).toEqual([]);
+});
+
+test('outerFolders com o padrão reproduz as pastas externas históricas', () => {
+  expect({
+    domain: outerFolders(DEFAULT_CONVENTIONS, 'domain'),
+    application: outerFolders(DEFAULT_CONVENTIONS, 'application'),
+  }).toEqual({
+    domain: ['application', 'operators', 'infrastructure', 'infra'],
+    application: ['operators', 'infrastructure', 'infra'],
+  });
+});
+
+test('conventions: nomes de camada configurados valem para a direção de import', () => {
+  const conventions = {
+    ...DEFAULT_CONVENTIONS,
+    layers: {
+      domain: 'model',
+      application: 'use-cases',
+      operators: 'operators',
+    },
+  };
+  const file = 'src/shop/core/model/x.ts';
+  expect(
+    importDirectionFindings(
+      file,
+      `import { y } from '../use-cases/y';`,
+      'domain',
+      conventions,
+    ),
+  ).toHaveLength(1);
+  expect(
+    importDirectionFindings(
+      file,
+      `import { y } from '../application/y';`,
+      'domain',
+      conventions,
+    ),
+  ).toEqual([]);
+});
+
+test('conventions: infraestrutura configurada é barrada no domínio', () => {
+  const conventions = { ...DEFAULT_CONVENTIONS, infrastructure: ['adapters'] };
+  expect(
+    importDirectionFindings(
+      'src/shop/domain/x.ts',
+      `import { db } from '../adapters/db';`,
+      'domain',
+      conventions,
+    ),
+  ).toHaveLength(1);
 });

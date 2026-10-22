@@ -916,6 +916,30 @@ test('gates reais: fronteira acusa import proibido e restore devolve o arquivo',
   }
 });
 
+test('gates reais: a fronteira segue as conventions recebidas', async () => {
+  const { createCliGates } = await import('../scripts/orchestrate-ports');
+  const { DEFAULT_CONVENTIONS } = await import('../src/compiler/config');
+  const { writeFile } = await import('node:fs/promises');
+  const { root, original, facts, file } = await gitRepo();
+  try {
+    const gates = createCliGates({
+      root,
+      config: 'agentic.config.ts',
+      conventions: {
+        ...DEFAULT_CONVENTIONS,
+        layers: { ...DEFAULT_CONVENTIONS.layers, application: 'use-cases' },
+      },
+    });
+    const snapshot = await gates.snapshot(facts);
+    await writeFile(file, `import { x } from '../use-cases/run';\n${original}`);
+    const outcome = await gates.verify(facts, snapshot);
+    expect(outcome.passed).toBe(false);
+    expect(outcome.report).toContain('domain não importa use-cases');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('gates reais: o escopo cobre o worktree inteiro e a restauração devolve o baseline', async () => {
   const { createCliGates } = await import('../scripts/orchestrate-ports');
   const { writeFile, mkdir } = await import('node:fs/promises');

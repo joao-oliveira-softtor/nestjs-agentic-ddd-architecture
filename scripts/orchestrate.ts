@@ -648,6 +648,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       root,
       config: cli.config,
       ignore: [relative(root, out)],
+      conventions: config.conventions,
     });
     const statusArgs = [
       resolve(import.meta.dir, '../src/cli/main.ts'),
