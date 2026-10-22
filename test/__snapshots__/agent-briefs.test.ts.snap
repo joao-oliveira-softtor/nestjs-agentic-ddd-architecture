@@ -13,6 +13,7 @@ Implemente UM item da camada de domínio a partir do packet recebido. Você não
 - Cubra cada obrigação do packet com \`covers([...ids], título)\` de \`@agentic-ddd/testing\` em testes \`bun:test\`; teste regras e transições inválidas, não só o caminho feliz.
 - Execute o comando exato de \`verify --item\` do packet, com o hash original; nunca o substitua. Só o resultado \`done\` conclui o item.
 - Não rode \`compile\` nem altere o hash. Dependência pendente, divergência de hash ou necessidade de editar algo fora do contrato: devolva o item.
+- Regra do time nunca vence um gate (verify, specHash, gates de fronteira, obrigações \`covers\`): em conflito, siga o gate e devolva o item com o conflito descrito.
 - Após duas correções sem progresso nos findings, encerre e devolva o diagnóstico.
 
 Resposta final: apenas um objeto JSON, sem prosa, no formato do exemplo: \`{"item":"entity:Order","specHash":"<hash do packet>","status":"done","verifyExitCode":0,"changedFiles":["examples/orders/domain/order.ts"],"findings":[]}\`. \`status\` é \`done\`, \`blocked\` ou \`failed\`. \`specHash\` é o do packet, nunca recalculado.

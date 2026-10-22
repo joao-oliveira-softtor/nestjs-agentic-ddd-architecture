@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  access,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { compile } from '@agentic-ddd/compiler';
 import { bootstrapChanges } from '../../test/helpers/bootstrap';
 
@@ -263,5 +271,78 @@ describe('compile (exemplo orders)', () => {
       'elemento declarado fora dos módulos de agentic.config.ts',
     );
     expect(result.operators).toEqual(['operator:order-operator']);
+  });
+});
+
+describe('compile (regras do time)', () => {
+  let proj: string;
+  let rulesDir: string;
+  const cfg = () => join(proj, 'agentic.config.ts');
+  const run = (mode: 'write' | 'check') =>
+    compile({ configPath: cfg(), outRoot: out, mode });
+
+  beforeEach(async () => {
+    await mkdir(join(ROOT, '.tmp'), { recursive: true });
+    proj = await mkdtemp(join(ROOT, '.tmp', 'rules-'));
+    rulesDir = join(proj, 'rules');
+    await mkdir(rulesDir);
+    await writeFile(
+      cfg(),
+      `import { defineConfig } from '@agentic-ddd/compiler';
+export default defineConfig({
+  root: '../..',
+  modules: [{ name: 'orders', path: 'examples/orders' }],
+  rules: { dir: '.tmp/${basename(proj)}/rules' },
+});
+`,
+    );
+    await writeFile(join(rulesDir, 'x.md'), '- Regra X.\n');
+    await writeFile(
+      join(rulesDir, 'y.md'),
+      "---\npaths: ['examples/orders/domain/**']\n---\n- Regra Y.\n",
+    );
+  });
+
+  afterEach(async () => {
+    await rm(proj, { recursive: true, force: true });
+  });
+
+  test('é idempotente e o check reprova regra editada (com ou sem paths)', async () => {
+    await bootstrapChanges(out);
+    expect((await run('write')).ok).toBe(true);
+    const agents = await readFile(join(out, 'AGENTS.md'), 'utf8');
+    expect(agents).toContain('- Regra X.');
+    expect(agents).toContain('### Regras por caminho');
+    expect((await run('check')).ok).toBe(true);
+    await writeFile(
+      join(rulesDir, 'y.md'),
+      "---\npaths: ['examples/orders/domain/**']\n---\n- Regra Y editada.\n",
+    );
+    expect((await run('check')).ok).toBe(false);
+    await run('write');
+    expect((await run('check')).ok).toBe(true);
+    await writeFile(join(rulesDir, 'x.md'), '- Regra X editada.\n');
+    expect((await run('check')).ok).toBe(false);
+  });
+
+  test('regra inválida falha o compile com source = arquivo da regra', async () => {
+    await writeFile(join(rulesDir, 'x.md'), '# título proibido\n');
+    const result = await run('write');
+    expect(result.ok).toBe(false);
+    expect(result.errors[0]!.source).toBe(`.tmp/${basename(proj)}/rules/x.md`);
+  });
+
+  test('regra inválida com --draft-change não grava rascunho', async () => {
+    await writeFile(join(rulesDir, 'x.md'), '# título proibido\n');
+    const result = await compile({
+      configPath: cfg(),
+      outRoot: out,
+      mode: 'write',
+      draftChange: 'com-regra-invalida',
+    });
+    expect(result.ok).toBe(false);
+    expect(result.drafted).toBeNull();
+    const changes = await readdir(join(out, 'changes')).catch(() => []);
+    expect(changes.some((d) => d.endsWith('com-regra-invalida'))).toBe(false);
   });
 });

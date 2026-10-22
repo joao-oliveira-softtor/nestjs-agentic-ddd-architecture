@@ -95,6 +95,10 @@ export async function createSkillsExample(destination: string): Promise<void> {
     'AGENTS.md',
     '# Tutorial tasks\n\nUse a skill autoral agentic-ddd instalada e a skill gerada tasks-dev após compile. Executor altera somente corpo atribuído e testes; preserve imports, contratos, propostas e gerados.\n',
   );
+  await put(
+    '.ai/rules/testes.md',
+    "---\npaths: ['app/**']\n---\n- Títulos de teste em português, descrevendo o comportamento observado.\n",
+  );
   await put('.gitignore', 'node_modules/\n');
   await installSkills({ root, scope: 'project', target: 'all' });
 }

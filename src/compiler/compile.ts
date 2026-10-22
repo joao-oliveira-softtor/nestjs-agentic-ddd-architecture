@@ -12,6 +12,7 @@ import type { CompileError, IR } from './ir';
 import { lintRendered, type LintFinding } from './lint';
 import { importModules } from './load';
 import { readLock, serializeLock } from './lock';
+import { loadRules, RuleError, type Rule } from './rules';
 import { renderAll, type Rendered } from './render/index';
 import { registrySizes, scopeRegistry } from './scope';
 import { checkOutputs, writeOutputs, type Drift } from './write';
@@ -98,6 +99,19 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   };
   if (errors.length > 0) return { ...empty, ok: false, errors };
 
+  // Antes de --draft-change: regra inválida não deixa rascunho gravado sem aviso.
+  let rules: Rule[];
+  try {
+    rules = await loadRules(config);
+  } catch (error) {
+    if (!(error instanceof RuleError)) throw error;
+    return {
+      ...empty,
+      ok: false,
+      errors: [{ message: error.message, source: error.source }],
+    };
+  }
+
   const lockAbs = join(config.outRoot, config.out.lock);
   const lock = await readLock(lockAbs, config.out.lock);
   const listed = await listProposals(
@@ -139,6 +153,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     };
 
   const rendered = renderAll(ir, config.out, {
+    rules,
     history: plan.nextLock?.changes ?? [],
     changesDir: config.changesDir,
   });

@@ -2,6 +2,7 @@ import { stableStringify } from '../canonical';
 import { workItems } from '../graph';
 import type { IR, IRModule } from '../ir';
 import type { LockChange } from '../lock';
+import { rulesFor, ruleHash, type Rule } from '../rules';
 import { GENERATED_HEADER, frontmatter } from './frontmatter';
 import { renderHistory } from './history';
 import { code, guardedBy, idList, stripKind, table } from './markdown';
@@ -14,6 +15,7 @@ export function renderDevSkill(
   options: {
     readonly history?: readonly LockChange[];
     readonly devSkillsDir?: string;
+    readonly rules?: readonly Rule[];
   } = {},
 ): Map<string, string> {
   const inModule = <T extends { readonly module: string }>(
@@ -183,6 +185,28 @@ export function renderDevSkill(
     );
   }
 
+  const sources = items.map((i) => i.source.replace(/:\d+$/, ''));
+  const teamRules = rulesFor(
+    (options.rules ?? []).filter((r) => r.paths !== null),
+    sources,
+  );
+  const rulesSection =
+    teamRules.length > 0
+      ? [
+          '## Regras do time',
+          '',
+          table(
+            ['Arquivo', 'Globs', 'sha256'],
+            teamRules.map((r) => [
+              code(r.file!),
+              r.paths!.map(code).join(', '),
+              code(ruleHash(r)),
+            ]),
+          ),
+          '',
+        ]
+      : [];
+
   lines.push(
     '## Como estender',
     '',
@@ -219,6 +243,7 @@ export function renderDevSkill(
     '',
     'Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.',
     '',
+    ...rulesSection,
     '## Referências',
     '',
     '- [Histórico de mudanças](references/history.md)',

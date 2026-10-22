@@ -4,6 +4,9 @@ import { pathToFileURL } from 'node:url';
 import { toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
 
+/** Sub-orçamento padrão das regras do time no brief (ADR-0005 D4). */
+export const DEFAULT_RULES_MAX_TOKENS = 2000;
+
 export interface ModuleConfig {
   readonly name: string;
   readonly path: string;
@@ -14,6 +17,12 @@ export interface VerifyConfig {
   readonly commands?: Readonly<Record<string, readonly string[]>>;
 }
 
+export interface RulesConfig {
+  readonly dir?: string;
+  readonly exclude?: readonly string[];
+  readonly briefMaxTokens?: number;
+}
+
 export interface AgenticConfig {
   readonly root?: string;
   readonly modules: readonly ModuleConfig[];
@@ -21,6 +30,7 @@ export interface AgenticConfig {
   readonly mirrors?: readonly string[];
   readonly changes?: string;
   readonly verify?: VerifyConfig;
+  readonly rules?: RulesConfig;
 }
 
 export interface ResolvedConfig {
@@ -30,6 +40,11 @@ export interface ResolvedConfig {
   readonly out: OutputPaths;
   readonly mirrors: readonly string[];
   readonly changesDir: string;
+  readonly rules: {
+    readonly dir: string;
+    readonly exclude: readonly string[];
+    readonly briefMaxTokens: number;
+  };
   readonly verify: {
     readonly test: readonly string[];
     readonly commands: readonly {
@@ -89,6 +104,29 @@ export function resolveConfig(
       );
     owners.set(posix, module.name);
   }
+  const rulesDir = toPosix(config.rules?.dir ?? '.ai/rules')
+    .replace(/^(\.\/)+/, '')
+    .replace(/\/+$/, '');
+  const rulesFromRoot = relative(root, resolve(root, rulesDir));
+  if (isAbsolute(rulesDir) || /^[A-Za-z]:/.test(rulesDir))
+    throw new Error(
+      'agentic.config.ts: rules.dir deve ser relativo à raiz do projeto',
+    );
+  if (
+    rulesFromRoot === '' ||
+    rulesFromRoot === '..' ||
+    rulesFromRoot.startsWith('../') ||
+    isAbsolute(rulesFromRoot)
+  )
+    throw new Error(
+      'agentic.config.ts: rules.dir não pode apontar para a raiz nem para fora da raiz do projeto',
+    );
+  const briefMaxTokens =
+    config.rules?.briefMaxTokens ?? DEFAULT_RULES_MAX_TOKENS;
+  if (!Number.isInteger(briefMaxTokens) || briefMaxTokens <= 0)
+    throw new Error(
+      `agentic.config.ts: rules.briefMaxTokens deve ser um inteiro positivo (recebido ${String(briefMaxTokens)})`,
+    );
   return {
     root,
     outRoot: overrides.outRoot ? resolve(overrides.outRoot) : root,
@@ -101,6 +139,11 @@ export function resolveConfig(
     changesDir: toPosix(config.changes ?? 'changes')
       .replace(/^\.\//, '')
       .replace(/\/+$/, ''),
+    rules: {
+      dir: rulesDir,
+      exclude: [...(config.rules?.exclude ?? [])],
+      briefMaxTokens,
+    },
     verify: {
       test: [...(config.verify?.test ?? ['bun', 'test'])],
       commands: Object.entries(

@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import {
   jsonlTelemetry,
   memoryTelemetry,
@@ -1045,3 +1045,100 @@ test('CLI: --real exige orçamento; o plano roda sobre o grafo real sem executar
     console.error = error;
   }
 }, 120000);
+
+test('CLI: o plano carrega as regras do config e aplica rules.briefMaxTokens', async () => {
+  const { main } = await import('../scripts/orchestrate');
+  const root = join(import.meta.dir, '..');
+  await mkdir(join(root, '.tmp'), { recursive: true });
+  const proj = await mkdtemp(join(root, '.tmp', 'orchestrate-rules-'));
+  const rel = `.tmp/${basename(proj)}`;
+  await Bun.write(
+    join(proj, 'agentic.config.ts'),
+    `import { defineConfig } from '@agentic-ddd/compiler';
+export default defineConfig({
+  root: '../..',
+  modules: [{ name: 'orders', path: 'examples/orders' }],
+  rules: { dir: '${rel}/rules', briefMaxTokens: 10 },
+});
+`,
+  );
+  await Bun.write(
+    join(proj, 'rules/dominio.md'),
+    `---\npaths: ['examples/orders/**']\n---\n- ${'x'.repeat(400)}\n`,
+  );
+  const errors: string[] = [];
+  const log = console.log;
+  const error = console.error;
+  console.log = () => {};
+  console.error = (...args: unknown[]) => void errors.push(args.join(' '));
+  const cwd = process.cwd();
+  process.chdir(root);
+  try {
+    expect(
+      await main(['--static', '--config', `${rel}/agentic.config.ts`]),
+    ).toBe(1);
+    expect(errors.join('\n')).toContain('regras do time excedem o orçamento');
+  } finally {
+    process.chdir(cwd);
+    console.log = log;
+    console.error = error;
+    await rm(proj, { recursive: true, force: true });
+  }
+}, 120000);
+
+test('regras do time chegam ao executor (por sourcePath), ao revisor e ao planRun', async () => {
+  const a = domain('A');
+  const rule = (key: string, body: string, paths: string[] | null) => ({
+    key,
+    file: `.ai/rules/${key}.md`,
+    paths,
+    body,
+  });
+  const rules = [
+    rule('geral', '- REGRA-GERAL', null),
+    rule('aplica', '- REGRA-APLICA', ['src/**']),
+    rule('fora', '- REGRA-FORA', ['outro/**']),
+  ];
+  const p = ports();
+  p.register(a);
+  const r = reviewer('{"status":"approved","findings":[]}');
+  await orchestrate({
+    waves: [[a]],
+    executor: p.executor,
+    gates: p.gates,
+    reviewer: r.port,
+    budget,
+    telemetry: memoryTelemetry(),
+    rules,
+  });
+  for (const brief of [p.tasks[0]!.brief, r.briefs[0]!]) {
+    expect(brief).toContain('- REGRA-GERAL');
+    expect(brief).toContain('- REGRA-APLICA');
+    expect(brief).not.toContain('REGRA-FORA');
+  }
+  const without = await planRun([[a]], p.gates);
+  const withRules = await planRun([[a]], p.gates, {}, undefined, rules);
+  expect(withRules[0]!.briefTokens).toBeGreaterThan(without[0]!.briefTokens);
+});
+
+test('planRun com revisor reprova a soma das regras antes de qualquer invocação', async () => {
+  const [a, b] = [domain('A'), domain('B')];
+  const rule = (key: string, file: string) => ({
+    key,
+    file: `.ai/rules/${key}.md`,
+    paths: [file],
+    body: `- ${'x'.repeat(4000)}`,
+  });
+  // ~1000 tokens cada: cada executor cabe em 1500, a soma do revisor não.
+  const rules = [rule('a', 'src/entity-A.ts'), rule('b', 'src/entity-B.ts')];
+  const p = ports();
+  p.register(a);
+  p.register(b);
+  const plan = (review: boolean) =>
+    planRun([[a, b]], p.gates, {}, undefined, rules, 1500, review);
+  expect(await plan(false)).toHaveLength(2);
+  expect(await plan(true).catch((e: unknown) => e)).toBeInstanceOf(Error);
+  expect(String(await plan(true).catch((e: unknown) => e))).toMatch(
+    /regras do time excedem o orçamento/,
+  );
+});

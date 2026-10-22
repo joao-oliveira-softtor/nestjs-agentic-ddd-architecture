@@ -9,7 +9,15 @@ export const MOTIVO_PLACEHOLDER =
 
 const CHANGE_DIR = /^(\d{4})-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/;
+export const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/;
+
+/** YAML do frontmatter como objeto; lança se não for um objeto. */
+export function parseFrontmatterData(yaml: string): Record<string, unknown> {
+  const parsed: unknown = Bun.YAML.parse(yaml);
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed))
+    throw new Error('o frontmatter não é um objeto');
+  return parsed as Record<string, unknown>;
+}
 
 export interface Delta {
   readonly added: string[];
@@ -102,10 +110,7 @@ export function parseProposal(
   }
   let data: Record<string, unknown>;
   try {
-    const parsed: unknown = Bun.YAML.parse(match[1]!);
-    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed))
-      throw new Error('o frontmatter não é um objeto');
-    data = parsed as Record<string, unknown>;
+    data = parseFrontmatterData(match[1]!);
   } catch (error) {
     err(`frontmatter YAML inválido: ${(error as Error).message}`);
     return { proposal: null, errors };

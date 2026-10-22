@@ -1,8 +1,14 @@
 import { afterEach, expect, test } from 'bun:test';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { approxTokens } from '@agentic-ddd/compiler';
+import {
+  CORE_RULES,
+  approxTokens,
+  briefRules,
+  composeRules,
+  type Rule,
+} from '@agentic-ddd/compiler';
 import {
   ROLE_CORES,
   assertOutsideGenerated,
@@ -207,6 +213,144 @@ test('CLI recusa dois itens que gerariam o mesmo arquivo, sem escrever nada', as
   try {
     expect(await main(['usecase:a-b', 'usecase:a:b', '--out', out])).toBe(1);
     expect(await readdir(out)).toEqual([]);
+  } finally {
+    process.chdir(cwd);
+  }
+});
+
+const teamRule = (
+  key: string,
+  body: string,
+  paths: string[] | null = null,
+): Rule => ({
+  key,
+  file: `.ai/rules/${key}.md`,
+  paths,
+  body,
+});
+
+test('brief com regras traz só as aplicáveis e a substituição do time, nunca o texto do núcleo', () => {
+  const text = packet('entity:Order');
+  const original = CORE_RULES.find((r) => r.key === 'core/done')!.body;
+  const all = composeRules(
+    [
+      teamRule('core/done', '- Versão do time de done.'),
+      teamRule('geral', '- Regra geral do time.'),
+      teamRule('dominio', '- Só para o domínio.', ['examples/orders/**']),
+      teamRule('outro', '- Só para outro lugar.', ['nada/**']),
+    ],
+    [],
+  );
+  const rules = briefRules(all, ['examples/orders/domain/order.ts']);
+  const brief = renderBrief({ packet: text, rules });
+  expect(brief).toContain('Regras do time');
+  expect(brief).toContain('#### core/done\n\n- Versão do time de done.');
+  expect(brief).toContain('- Regra geral do time.');
+  expect(brief).toContain('- Só para o domínio.');
+  expect(brief).not.toContain('- Só para outro lugar.');
+  expect(brief).not.toContain(original);
+  expect(renderBrief({ packet: text, rules: [] })).toBe(
+    renderBrief({ packet: text }),
+  );
+  const reviewer = renderReviewerBrief({
+    packets: [text],
+    diff: 'd',
+    gates: 'g',
+    rules,
+  });
+  expect(reviewer).toContain('- Regra geral do time.');
+});
+
+test('estouro do sub-orçamento e do teto com regras lista as regras', () => {
+  const text = packet('entity:Order');
+  const rules = [
+    teamRule('grande', `- ${'palavra '.repeat(400)}`),
+    teamRule('pequena', '- curta'),
+  ];
+  expect(() =>
+    renderBrief({ packet: text, rules, rulesMaxTokens: 50 }),
+  ).toThrow(
+    /regras do time excedem o orçamento: ~\d+ > 50 tokens \(grande ~\d+, pequena ~\d+\)/,
+  );
+  expect(() =>
+    renderReviewerBrief({
+      packets: [text],
+      diff: 'd',
+      gates: 'g',
+      rules,
+      rulesMaxTokens: 50,
+    }),
+  ).toThrow('regras do time excedem o orçamento');
+  expect(() =>
+    renderBrief({ packet: text, rules, maxTokens: 1000, rulesMaxTokens: 5000 }),
+  ).toThrow(/brief excede o orçamento: .*grande ~\d+, pequena ~\d+/);
+});
+
+test('CLI com agentic.config.ts e .ai/rules grava as regras aplicáveis e respeita rules.briefMaxTokens', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'agentic-briefs-'));
+  dirs.push(dir);
+  const file = join(dir, 'packet.md');
+  await Bun.write(file, packet('entity:Order'));
+  await mkdir(join(dir, 'm'));
+  // Sem import: defineConfig é identidade e a pasta temporária não resolve @agentic-ddd/*.
+  const config = (budget: number) =>
+    `export default { modules: [{ name: 'orders', path: 'm' }], rules: { briefMaxTokens: ${budget} } };\n`;
+  await Bun.write(join(dir, 'agentic.config.ts'), config(2000));
+  await Bun.write(join(dir, 'pequeno.config.ts'), config(1));
+  await Bun.write(join(dir, '.ai/rules/geral.md'), '- REGRA-GERAL\n');
+  await Bun.write(
+    join(dir, '.ai/rules/dominio.md'),
+    "---\npaths: ['examples/orders/domain/**']\n---\n- REGRA-DOMINIO\n",
+  );
+  await Bun.write(
+    join(dir, '.ai/rules/fora.md'),
+    "---\npaths: ['outro/**']\n---\n- REGRA-FORA\n",
+  );
+  const out = join(dir, 'out');
+  const args = ['entity:Order', '--packet-file', file, '--out', out];
+  const cwd = process.cwd();
+  const error = console.error;
+  const errors: string[] = [];
+  console.error = (...a: unknown[]) => void errors.push(a.join(' '));
+  process.chdir(dir);
+  try {
+    expect(await main(args)).toBe(0);
+    const brief = await readFile(join(out, 'entity-Order.md'), 'utf8');
+    expect(brief).toContain('### Regras do time');
+    expect(brief).toContain('- REGRA-GERAL');
+    expect(brief).toContain('- REGRA-DOMINIO');
+    expect(brief).not.toContain('REGRA-FORA');
+    expect(await main([...args, '--config', 'pequeno.config.ts'])).toBe(1);
+    expect(errors.join('\n')).toContain('regras do time excedem o orçamento');
+  } finally {
+    process.chdir(cwd);
+    console.error = error;
+  }
+});
+
+test('CLI: --packet-file sem agentic.config.ts funciona; --config explícito inexistente falha', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'agentic-briefs-'));
+  dirs.push(dir);
+  const file = join(dir, 'packet.md');
+  await Bun.write(file, packet('entity:Order'));
+  const out = join(dir, 'out');
+  const cwd = process.cwd();
+  process.chdir(dir);
+  try {
+    expect(
+      await main(['entity:Order', '--packet-file', file, '--out', out]),
+    ).toBe(0);
+    expect(
+      await main([
+        'entity:Order',
+        '--packet-file',
+        file,
+        '--out',
+        out,
+        '--config',
+        'inexistente.ts',
+      ]),
+    ).toBe(1);
   } finally {
     process.chdir(cwd);
   }
