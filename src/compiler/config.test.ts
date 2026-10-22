@@ -242,8 +242,15 @@ describe('configuração das convenções', () => {
 
   test('rejeita nome de pasta em infrastructure que não é uma pasta só', () => {
     expect(() => withConventions({ infrastructure: ['a/b'] })).toThrow(
-      'agentic.config.ts: conventions.infrastructure "a/b" deve ser o nome de uma pasta só dentro do módulo',
+      'agentic.config.ts: conventions.infrastructure[0] "a/b" deve ser o nome de uma pasta só dentro do módulo',
     );
+  });
+
+  test('rejeita sufixo de teste, declaração ou com segmento vazio', () => {
+    for (const value of ['.x.test.ts', '.x.d.ts', '..ts'])
+      expect(() => withConventions({ suffixes: { events: value } })).toThrow(
+        `conventions.suffixes.events "${value}" não pode terminar em`,
+      );
   });
 
   test('rejeita sufixo fora do formato ".nome.ts"', () => {

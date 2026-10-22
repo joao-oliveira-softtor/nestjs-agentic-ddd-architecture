@@ -1,6 +1,6 @@
 import { stableStringify } from '../canonical';
 import { workItems } from '../graph';
-import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../config';
+import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../conventions';
 import type { IR, IRModule } from '../ir';
 import type { LockChange } from '../lock';
 import { rulesFor, ruleHash, type Rule } from '../rules';

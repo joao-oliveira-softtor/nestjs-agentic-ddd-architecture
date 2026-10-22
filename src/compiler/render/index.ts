@@ -1,4 +1,4 @@
-import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../config';
+import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../conventions';
 import { irHash, type IR } from '../ir';
 import type { LockChange } from '../lock';
 import type { Rule } from '../rules';

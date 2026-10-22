@@ -2,8 +2,10 @@ import { readFileSync } from 'node:fs';
 import { posix } from 'node:path';
 import { match } from 'ts-pattern';
 import ts from 'typescript';
-import { DEFAULT_CONVENTIONS } from '../src/compiler/config';
-import type { ResolvedConventions } from '../src/compiler/config';
+import {
+  DEFAULT_CONVENTIONS,
+  type ResolvedConventions,
+} from '../src/compiler/conventions';
 
 export interface BodyRange {
   readonly start: number;
@@ -191,6 +193,7 @@ export function importDirectionFindings(
       `Forbidden import in ${path}: import()/require() com argumento não literal não é verificável (${unresolved})`,
     );
   const root = layerRoot(path, layer, conventions);
+  const outers = outerFolders(conventions, layer);
   for (const specifier of specifiers) {
     if (specifier.startsWith('@nestjs/') || FRAMEWORK_RUNTIME.has(specifier)) {
       findings.push(
@@ -204,7 +207,7 @@ export function importDirectionFindings(
       posix.join(posix.dirname(path), specifier),
     );
     const outer = relative.split('/').find((segment) => segment !== '..');
-    if (outer && outerFolders(conventions, layer).includes(outer))
+    if (outer && outers.includes(outer))
       findings.push(
         `Forbidden import in ${path}: ${specifier} (${layer} não importa ${outer})`,
       );

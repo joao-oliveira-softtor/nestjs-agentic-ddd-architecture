@@ -6,7 +6,7 @@ import {
   claudeToolFlags,
   parseClaudeTranscript,
 } from './evals/adapters/claude';
-import type { ResolvedConventions } from '../src/compiler/config';
+import type { ResolvedConventions } from '../src/compiler/conventions';
 import { bodyOnlyFindings, importDirectionFindings } from './boundary-gates';
 import type { GateLayer } from './boundary-gates';
 import type {

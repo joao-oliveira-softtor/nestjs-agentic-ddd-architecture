@@ -1,5 +1,5 @@
 import type { IR } from '../ir';
-import type { ResolvedConventions } from '../config';
+import type { ResolvedConventions } from '../conventions';
 import { CORE_RULES, fillMarkers, ruleHash, type Rule } from '../rules';
 import { code, table } from './markdown';
 

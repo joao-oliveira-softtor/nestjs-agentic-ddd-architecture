@@ -1,8 +1,23 @@
 import { stat } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import {
+  DEFAULT_CONVENTIONS,
+  type ConventionLayer,
+  type ConventionsConfig,
+  type ImportTarget,
+  type ResolvedConventions,
+} from './conventions';
 import { toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
+
+export {
+  DEFAULT_CONVENTIONS,
+  type ConventionLayer,
+  type ConventionsConfig,
+  type ImportTarget,
+  type ResolvedConventions,
+};
 
 /** Sub-orçamento padrão das regras do time no brief (ADR-0005 D4). */
 export const DEFAULT_RULES_MAX_TOKENS = 2000;
@@ -22,44 +37,6 @@ export interface RulesConfig {
   readonly exclude?: readonly string[];
   readonly briefMaxTokens?: number;
 }
-
-/** Camadas com pasta própria dentro de cada módulo. */
-export type ConventionLayer = 'domain' | 'application' | 'operators';
-
-/** Destinos que domain e application podem proibir de importar. */
-export type ImportTarget = 'application' | 'operators' | 'infrastructure';
-
-export interface ConventionsConfig {
-  readonly layers?: Partial<Record<ConventionLayer, string>>;
-  readonly suffixes?: { readonly events?: string; readonly operator?: string };
-  readonly infrastructure?: readonly string[];
-  readonly forbiddenImports?: Partial<
-    Record<'domain' | 'application', readonly ImportTarget[]>
-  >;
-}
-
-export interface ResolvedConventions {
-  readonly layers: Readonly<Record<ConventionLayer, string>>;
-  readonly suffixes: { readonly events: string; readonly operator: string };
-  readonly infrastructure: readonly string[];
-  readonly forbiddenImports: Readonly<
-    Record<'domain' | 'application', readonly ImportTarget[]>
-  >;
-}
-
-export const DEFAULT_CONVENTIONS: ResolvedConventions = {
-  layers: {
-    domain: 'domain',
-    application: 'application',
-    operators: 'operators',
-  },
-  suffixes: { events: '.events.ts', operator: '.operator.ts' },
-  infrastructure: ['infrastructure', 'infra'],
-  forbiddenImports: {
-    domain: ['application', 'operators', 'infrastructure'],
-    application: ['operators', 'infrastructure'],
-  },
-};
 
 export interface AgenticConfig {
   readonly root?: string;
@@ -121,12 +98,12 @@ function checkKeys(
   return object;
 }
 
-function folderName(value: unknown, path: string): string {
+function folderName(value: unknown, path: string, nested = true): string {
   if (typeof value !== 'string')
     throw new Error(`agentic.config.ts: ${path} deve ser um texto`);
   if (value === '' || value === '.' || value === '..' || /[/\\]/.test(value))
     throw new Error(
-      `agentic.config.ts: ${path} "${value}" deve ser o nome de uma pasta só dentro do módulo; layout aninhado se faz por modules[].path`,
+      `agentic.config.ts: ${path} "${value}" deve ser o nome de uma pasta só dentro do módulo${nested ? '; layout aninhado se faz por modules[].path' : ''}`,
     );
   return value;
 }
@@ -134,6 +111,10 @@ function folderName(value: unknown, path: string): string {
 function suffixName(value: unknown, path: string): string {
   if (typeof value !== 'string')
     throw new Error(`agentic.config.ts: ${path} deve ser um texto`);
+  if (/\.(test|spec|d)\.ts$/.test(value) || value.includes('..'))
+    throw new Error(
+      `agentic.config.ts: ${path} "${value}" não pode terminar em ".test.ts", ".spec.ts" ou ".d.ts" (arquivo de teste ou de declaração) nem ter segmento vazio ("..")`,
+    );
   if (
     !value.startsWith('.') ||
     value === '.ts' ||
@@ -218,7 +199,8 @@ function resolveConventions(input: unknown): ResolvedConventions {
     root.infrastructure === undefined
       ? [...DEFAULT_CONVENTIONS.infrastructure]
       : stringList(root.infrastructure, 'conventions.infrastructure').map(
-          (item) => folderName(item, 'conventions.infrastructure'),
+          (item, i) =>
+            folderName(item, `conventions.infrastructure[${i}]`, false),
         );
   if (infrastructure.length === 0)
     throw new Error(

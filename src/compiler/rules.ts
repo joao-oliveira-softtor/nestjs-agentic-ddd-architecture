@@ -1,11 +1,8 @@
 import { realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
 import { sha256 } from './canonical';
-import {
-  DEFAULT_CONVENTIONS,
-  type ResolvedConfig,
-  type ResolvedConventions,
-} from './config';
+import type { ResolvedConfig } from './config';
+import { DEFAULT_CONVENTIONS, type ResolvedConventions } from './conventions';
 import { FRONTMATTER, parseFrontmatterData } from './changes/proposal';
 import { toPosix } from './ir';
 
