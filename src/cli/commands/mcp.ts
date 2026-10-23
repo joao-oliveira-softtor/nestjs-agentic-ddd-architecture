@@ -24,10 +24,10 @@ export async function mcpCommand(
   try {
     mod = await load();
   } catch (error) {
+    const { code, message } = error as { code?: string; message?: string };
     if (
-      !String((error as Error).message).includes(
-        "Cannot find package '@modelcontextprotocol/server'",
-      )
+      code !== 'ERR_MODULE_NOT_FOUND' ||
+      !String(message).includes("'@modelcontextprotocol/server")
     )
       throw error;
     console.error(

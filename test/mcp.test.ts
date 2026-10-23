@@ -46,8 +46,9 @@ describe('agentic mcp (subprocesso)', () => {
       const pending = new Map<number, any>();
       const reader = (async () => {
         let buffer = '';
+        const decoder = new TextDecoder();
         for await (const chunk of proc.stdout as unknown as AsyncIterable<Uint8Array>) {
-          buffer += new TextDecoder().decode(chunk);
+          buffer += decoder.decode(chunk, { stream: true });
           let nl: number;
           while ((nl = buffer.indexOf('\n')) !== -1) {
             const line = buffer.slice(0, nl).trim();
@@ -120,6 +121,15 @@ describe('agentic mcp (subprocesso)', () => {
         if (name === 'rules_for_path')
           expect(JSON.stringify(parsed)).toContain('"r"');
       }
+
+      const absolute = await call('rules_for_path', {
+        path: join(tmp, 'examples/orders/a.ts'),
+      });
+      expect(text(absolute)).toContain('"r"');
+      const outside = (await call('rules_for_path', { path: '/etc/passwd' }))
+        .result;
+      expect(outside.isError).toBe(true);
+      expect(outside.content[0].text).toContain('fora da raiz');
 
       await writeFile(join(tmp, LOCK), `${lockText} `);
       const stale = (await call('domain_overview')).result;

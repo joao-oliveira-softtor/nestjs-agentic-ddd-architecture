@@ -6,7 +6,12 @@ describe('mcpCommand', () => {
     const error = spyOn(console, 'error').mockImplementation(() => {});
     const code = await mcpCommand([], () =>
       Promise.reject(
-        new Error("Cannot find package '@modelcontextprotocol/server'"),
+        Object.assign(
+          new Error(
+            "Cannot find package '@modelcontextprotocol/server' imported from x",
+          ),
+          { code: 'ERR_MODULE_NOT_FOUND' },
+        ),
       ),
     );
     const messages = error.mock.calls.flat().join('\n');

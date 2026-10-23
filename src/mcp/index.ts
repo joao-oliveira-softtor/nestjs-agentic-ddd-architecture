@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
+import { isAbsolute, relative } from 'node:path';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { checkSnapshot } from '../compiler/snapshot';
@@ -68,11 +69,17 @@ export function startMcpServer({ root }: { root: string }): {
       {
         title: 'Regras do time para um arquivo',
         description:
-          'Regras que valem para um arquivo. path é relativo à raiz do projeto, com barra normal (ex.: examples/orders/a.ts).',
+          'Regras que valem para um arquivo. path relativo à raiz do projeto (ex.: examples/orders/a.ts) ou absoluto dentro dela.',
         inputSchema: z.object({ path: z.string() }),
         annotations,
       },
-      guarded<{ path: string }>((s, { path }) => rulesForPath(s.rules, path)),
+      guarded<{ path: string }>((s, { path }) => {
+        // Clientes costumam mandar caminho absoluto; o glob das regras é relativo à raiz.
+        const rel = isAbsolute(path) ? relative(s.root, path) : path;
+        if (isAbsolute(rel) || rel === '..' || rel.startsWith('../'))
+          throw new Error(`${path}: fora da raiz do projeto (${s.root})`);
+        return rulesForPath(s.rules, rel);
+      }),
     );
     return server;
   });

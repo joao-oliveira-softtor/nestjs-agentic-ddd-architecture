@@ -51,9 +51,9 @@ MCP é o protocolo que deixa um agente chamar ferramentas externas. O servidor l
 - `domain_overview`: lista módulos, entidades, use-cases e operators.
 - `domain_element`: devolve o contrato de um elemento pelo id.
 - `domain_changes`: lista as mudanças de regra de negócio, ou só as de um id.
-- `rules_for_path`: lista as regras do time que valem para um arquivo.
+- `rules_for_path`: lista as regras do time que valem para um arquivo (caminho relativo à raiz do projeto, ou absoluto dentro dela).
 
-O servidor não executa código do projeto e não escreve arquivos. Ele lê `.agentic/domain.lock.json` e o snapshot `.agentic/mcp/snapshot.json`, que o `compile` grava quando termina bem (a pasta do snapshot ignora a si mesma no git). Cada chamada revalida o snapshot: se código, regras, config ou lock mudaram desde o último `compile` bem-sucedido, o servidor recusa responder e pede para rodar `compile` de novo. Limite: arquivos importados de fora das pastas dos módulos não entram nessa checagem.
+O servidor não executa código do projeto e não escreve arquivos. Ele lê `.agentic/domain.lock.json` e o snapshot `.agentic/mcp/snapshot.json`, que o `compile` grava quando termina bem (a pasta do snapshot ignora a si mesma no git). Cada chamada revalida o snapshot: se código, regras, config ou lock mudaram desde o último `compile` bem-sucedido, o servidor recusa responder e pede para rodar `compile` de novo. Sem snapshot na pasta do servidor, a recusa mostra onde ele procurou: abra o agente na raiz do projeto ou passe `--root`. Limite: arquivos importados de fora das pastas dos módulos não entram nessa checagem.
 
 Na aplicação consumidora, instale o peer opcional e inicie o servidor:
 

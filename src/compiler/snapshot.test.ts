@@ -9,7 +9,12 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { checkSnapshot, SNAPSHOT_PATH, writeSnapshot } from './snapshot';
+import {
+  checkSnapshot,
+  SNAPSHOT_PATH,
+  sourceLines,
+  writeSnapshot,
+} from './snapshot';
 
 const LOCK = JSON.stringify({
   lockVersion: 1,
@@ -81,6 +86,28 @@ describe('snapshot do MCP', () => {
     expect((await checkSnapshot(out)).ok).toBe(true);
     await writeFile(join(proj, 'mod/a.ts'), 'y\n');
     expect((await checkSnapshot(out)).ok).toBe(false);
+  });
+
+  test('fonte editada depois do hash do compile: snapshot nasce desatualizado', async () => {
+    await setup();
+    const place = {
+      root: '.',
+      config: 'agentic.config.ts',
+      rulesDir: '.ai/rules',
+    };
+    const sources = await sourceLines(dir, place, [{ path: 'mod' }]);
+    await writeFile(join(proj, 'mod/a.ts'), 'export const a = 2;\n');
+    await writeSnapshot(
+      dir,
+      {
+        ...place,
+        lock: '.agentic/domain.lock.json',
+        rules: [],
+        modules: [{ path: 'mod' }],
+      },
+      sources,
+    );
+    expect((await checkSnapshot(dir)).ok).toBe(false);
   });
 
   test('projeto sem pasta de regras fica em dia', async () => {

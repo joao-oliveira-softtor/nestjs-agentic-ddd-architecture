@@ -120,8 +120,9 @@ try {
   const mcp = Bun.spawn([cli, 'mcp', '--root', consumer], {
     stdin: 'pipe',
     stdout: 'pipe',
-    stderr: 'pipe',
+    stderr: 'inherit',
   });
+  const timer = setTimeout(() => mcp.kill(), 30_000);
   void mcp.stdin.write(
     [
       {
@@ -156,6 +157,7 @@ try {
     0,
     'agentic-ddd mcp must exit 0 when stdin closes',
   );
+  clearTimeout(timer);
   const source = JSON.parse(
     (await run(['bun', 'src/run.ts'])).trim().split('\n').at(-1)!,
   ) as { hash: string; source: string; status: string };

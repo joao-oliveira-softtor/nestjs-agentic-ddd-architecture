@@ -14,7 +14,7 @@ import { importModules } from './load';
 import { readLock, serializeLock } from './lock';
 import { fillMarkers, loadRules, RuleError, type Rule } from './rules';
 import { renderAll, type Rendered } from './render/index';
-import { removeSnapshot, writeSnapshot } from './snapshot';
+import { removeSnapshot, sourceLines, writeSnapshot } from './snapshot';
 import { stableStringify } from './canonical';
 import { registrySizes, scopeRegistry } from './scope';
 import { checkOutputs, writeOutputs, type Drift } from './write';
@@ -80,10 +80,31 @@ async function claudeWarnings(config: ResolvedConfig): Promise<string[]> {
     : [];
 }
 
+const snapshotPlace = (config: ResolvedConfig, configPath: string) => ({
+  root: toPosix(relative(config.outRoot, config.root)),
+  config: toPosix(relative(config.outRoot, resolve(configPath))),
+  rulesDir: config.rules.dir,
+});
+
 const byPath = (a: Drift, b: Drift): number =>
   a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
 
 export async function compile(options: CompileOptions): Promise<CompileResult> {
+  // Fontes lidas antes de importar: editar durante o compile deixa o snapshot
+  // do MCP desatualizado, nunca falsamente em dia. Falha aqui só impede o snapshot;
+  // o erro real aparece adiante (config, regras).
+  const sources =
+    options.mode === 'write'
+      ? await loadConfig(options.configPath, { outRoot: options.outRoot })
+          .then((early) =>
+            sourceLines(
+              early.outRoot,
+              snapshotPlace(early, options.configPath),
+              early.modules,
+            ),
+          )
+          .catch(() => null)
+      : null;
   const { config, ir, errors, registry } = await analyzeProject(options);
   const empty = {
     registry,
@@ -216,29 +237,32 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   }
   if (
     commit &&
+    sources !== null &&
     plan.nextLock !== null &&
     stableStringify(plan.nextLock.ir) === stableStringify(ir)
   )
-    await writeSnapshot(config.outRoot, {
-      root: toPosix(relative(config.outRoot, config.root)),
-      config: toPosix(relative(config.outRoot, resolve(options.configPath))),
-      lock: config.out.lock,
-      rulesDir: config.rules.dir,
-      modules: ir.modules,
-      rules: rules.map((r) =>
-        r.file === null
-          ? {
-              ...r,
-              body: fillMarkers(r.body, {
-                changes: config.changesDir,
-                devSkills: config.out.devSkills,
-                runtimeSkills: config.out.runtimeSkills,
-                layers: config.conventions?.layers,
-              }),
-            }
-          : r,
-      ),
-    });
+    await writeSnapshot(
+      config.outRoot,
+      {
+        ...snapshotPlace(config, options.configPath),
+        lock: config.out.lock,
+        modules: ir.modules,
+        rules: rules.map((r) =>
+          r.file === null
+            ? {
+                ...r,
+                body: fillMarkers(r.body, {
+                  changes: config.changesDir,
+                  devSkills: config.out.devSkills,
+                  runtimeSkills: config.out.runtimeSkills,
+                  layers: config.conventions?.layers,
+                }),
+              }
+            : r,
+        ),
+      },
+      sources,
+    );
   else await removeSnapshot(config.outRoot);
   return {
     ...empty,

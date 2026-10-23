@@ -1,3 +1,4 @@
+import { match } from 'ts-pattern';
 import {
   lstat,
   mkdir,
@@ -187,35 +188,42 @@ export async function installSkills(
 }
 
 export function parseInstallArgs(args: string[]): InstallOptions {
-  let scope: InstallOptions['scope'] = 'project';
-  let target: InstallOptions['target'] = 'all';
+  let scope = 'project' as InstallOptions['scope'];
+  let target = 'all' as InstallOptions['target'];
   let root: string | undefined;
   let check = false;
   let mcp = false;
   for (let i = 0; i < args.length; i++) {
-    const flag = args[i];
-    if (flag === '--check') {
-      check = true;
-      continue;
-    }
-    if (flag === '--mcp') {
-      mcp = true;
-      continue;
-    }
-    if (!['--scope', '--target', '--root'].includes(flag!))
-      throw new Error(`Opção inválida: ${flag}`);
-    const value = args[++i];
-    if (!value || value.startsWith('--'))
-      throw new Error(`${flag} exige valor`);
-    if (flag === '--scope') {
-      if (value !== 'project' && value !== 'user')
-        throw new Error('--scope exige project|user');
-      scope = value;
-    } else if (flag === '--target') {
-      if (!['all', 'cursor', 'codex', 'claude'].includes(value))
-        throw new Error('--target exige cursor|codex|claude|all');
-      target = value as InstallOptions['target'];
-    } else root = value;
+    match(args[i])
+      .with('--check', () => {
+        check = true;
+      })
+      .with('--mcp', () => {
+        mcp = true;
+      })
+      .with('--scope', '--target', '--root', (flag) => {
+        const value = args[++i];
+        if (!value || value.startsWith('--'))
+          throw new Error(`${flag} exige valor`);
+        match(flag)
+          .with('--scope', () => {
+            if (value !== 'project' && value !== 'user')
+              throw new Error('--scope exige project|user');
+            scope = value;
+          })
+          .with('--target', () => {
+            if (!['all', 'cursor', 'codex', 'claude'].includes(value))
+              throw new Error('--target exige cursor|codex|claude|all');
+            target = value as InstallOptions['target'];
+          })
+          .with('--root', () => {
+            root = value;
+          })
+          .exhaustive();
+      })
+      .otherwise((flag) => {
+        throw new Error(`Opção inválida: ${flag}`);
+      });
   }
   if (mcp && scope === 'user')
     throw new Error('--mcp só vale com --scope project');
