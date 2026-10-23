@@ -9,10 +9,12 @@ export {
   AgentEntity,
   AgentEvent,
   AgentMethod,
+  AgentValueObject,
   Invariant,
   type AgentEntityOptions,
   type AgentEventOptions,
   type AgentMethodOptions,
+  type AgentValueObjectOptions,
   type InvariantOptions,
 } from './domain';
 export {
@@ -30,5 +32,6 @@ export {
   type OperatorRecord,
   type TransitionSpec,
   type UseCaseRecord,
+  type ValueObjectRecord,
 } from './registry';
 export { captureSource, parseFrame, type SourceLoc } from './source';

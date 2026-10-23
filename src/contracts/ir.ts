@@ -43,6 +43,15 @@ export interface IREntity {
   readonly source: string;
 }
 
+export interface IRValueObject {
+  readonly id: string;
+  readonly name: string;
+  readonly module: string;
+  readonly description: string;
+  readonly invariants: IRInvariant[];
+  readonly source: string;
+}
+
 export interface IREvent {
   readonly id: string;
   readonly name: string;
@@ -84,6 +93,7 @@ export interface IR {
   readonly irVersion: 1;
   readonly modules: IRModule[];
   readonly entities: IREntity[];
+  readonly valueObjects?: IRValueObject[];
   readonly events: IREvent[];
   readonly useCases: IRUseCase[];
   readonly operators: IROperator[];
@@ -219,6 +229,28 @@ export function buildIR(
     })
     .sort(byId);
 
+  const vos = registry.valueObjects
+    .map((rec): IRValueObject => {
+      const name = rec.target.name;
+      return {
+        id: `valueobject:${name}`,
+        name,
+        module: moduleOf(rec.source),
+        description: rec.description,
+        invariants: registry.invariants
+          .filter((i) => i.entity === rec.target)
+          .map((i): IRInvariant => ({
+            id: `invariant:${name}/${i.id}`,
+            text: i.text,
+            on: null,
+            source: loc(i.source),
+          }))
+          .sort(byId),
+        source: loc(rec.source),
+      };
+    })
+    .sort(byId);
+
   const events = registry.events
     .map((rec): IREvent => ({
       id: `event:${rec.target.name}`,
@@ -298,7 +330,7 @@ export function buildIR(
     })
     .sort(byId);
 
-  // ADR-0006 D2: toda chave nova da IR, em qualquer nível, entra como ...(xs.length > 0 && { xs }); nunca xs: undefined nem xs: [].
+  // ADR-0006 D2: chave nova em elemento já existente (e no topo da IR) entra como ...(xs.length > 0 && { xs }); nunca xs: undefined nem xs: [].
   return {
     ir: {
       irVersion: 1,
@@ -306,6 +338,7 @@ export function buildIR(
         .map((m) => ({ name: m.name, path: m.path }))
         .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)),
       entities,
+      ...(vos.length > 0 && { valueObjects: vos }),
       events,
       useCases,
       operators,

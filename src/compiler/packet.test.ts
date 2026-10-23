@@ -7,6 +7,13 @@ import { itemSpecification, specHash } from './item-spec';
 import { renderPacket } from './packet';
 import { evaluateStatus } from './state';
 import { implementation } from './implementation';
+import { ValueObject } from '@agentic-ddd/core';
+import {
+  AgentValueObject,
+  Invariant,
+  createRegistry,
+  withRegistry,
+} from '@agentic-ddd/decorators';
 
 const registry = defineShop();
 const ir = analyze(registry, {
@@ -137,4 +144,48 @@ test('spec de item enriquecido não duplica critérios e preserva o hash publica
     spec.obligations.filter((id) => id === 'criterion:0009/novo'),
   ).toHaveLength(1);
   expect(specHash(spec)).toBe(item.specHash);
+});
+
+const VO_MODULE = { name: 'vo', path: 'src/compiler' } as const;
+const voOptions = {
+  root: resolve(import.meta.dir, '../..'),
+  modules: [VO_MODULE],
+};
+const defineVo = () => {
+  const registry = createRegistry();
+  withRegistry(registry, () => {
+    @AgentValueObject({ description: 'Valor monetário.' })
+    @Invariant({ id: 'nao-negativo', text: 'Dinheiro nunca é negativo.' })
+    class Dinheiro extends ValueObject<{ v: number }> {
+      private constructor(p: { v: number }) {
+        super(p);
+      }
+      #check() {}
+      soma() {
+        return this.#check();
+      }
+    }
+    void Dinheiro;
+  });
+  return registry;
+};
+
+test('pacote de value object traz declaração e obrigações', () => {
+  const vos = defineVo();
+  const voIr = analyze(vos, voOptions).ir;
+  const voReport = evaluateStatus({
+    ir: voIr,
+    implemented: implementation(voIr, vos),
+    proposals: [],
+    mode: 'dynamic',
+    evidence: { exitCode: 0, cases: [] },
+  });
+  const item = voReport.items.find((i) => i.id === 'valueobject:Dinheiro')!;
+  const packet = renderPacket(
+    item,
+    itemSpecification(voIr, item, []),
+    'agentic.config.ts',
+  );
+  expect(packet).toContain('invariant:Dinheiro/nao-negativo');
+  expect(packet).toMatchSnapshot('valueobject:Dinheiro');
 });

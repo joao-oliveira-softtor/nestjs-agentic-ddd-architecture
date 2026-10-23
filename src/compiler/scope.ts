@@ -3,6 +3,7 @@ import { createRegistry, type Registry } from '@agentic-ddd/decorators';
 
 const KEYS = [
   'entities',
+  'valueObjects',
   'invariants',
   'methods',
   'events',
@@ -15,6 +16,7 @@ export type RegistrySizes = Record<(typeof KEYS)[number], number>;
 export function registrySizes(registry: Registry): RegistrySizes {
   return {
     entities: registry.entities.length,
+    valueObjects: registry.valueObjects.length,
     invariants: registry.invariants.length,
     methods: registry.methods.length,
     events: registry.events.length,

@@ -19,6 +19,23 @@ export function AgentEntity(options: AgentEntityOptions): ClassDecorator {
   };
 }
 
+export interface AgentValueObjectOptions {
+  readonly description: string;
+}
+
+export function AgentValueObject(
+  options: AgentValueObjectOptions,
+): ClassDecorator {
+  const source = captureSource();
+  return (target) => {
+    activeRegistry().valueObjects.push({
+      target,
+      description: options.description,
+      source,
+    });
+  };
+}
+
 export interface InvariantOptions {
   readonly id: string;
   readonly text: string;

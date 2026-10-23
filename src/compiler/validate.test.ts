@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { z } from 'zod';
-import { AggregateRoot, DomainEvent } from '@agentic-ddd/core';
+import { AggregateRoot, DomainEvent, ValueObject } from '@agentic-ddd/core';
 import {
   AgentEntity,
   AgentEvent,
   AgentMethod,
   AgentUseCase,
+  AgentValueObject,
   Invariant,
   Operator,
   createRegistry,
@@ -593,7 +594,148 @@ describe('validate: @Invariant em use-case', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain(
-      '@Invariant solta em Plain, que não tem @AgentEntity nem @AgentUseCase',
+      '@Invariant solta em Plain, que não tem @AgentEntity, @AgentUseCase nem @AgentValueObject',
     );
+  });
+
+  describe('value object', () => {
+    type P = { v: number };
+    test('válido não gera erro', () => {
+      expect(
+        errorsOf(() => {
+          @AgentValueObject({ description: 'Dinheiro.' })
+          @Invariant({ id: 'ok', text: 'Regra.' })
+          class Dinheiro extends ValueObject<P> {}
+          void Dinheiro;
+        }),
+      ).toEqual([]);
+    });
+
+    test('nome não PascalCase, description vazia e invariante inválida', () => {
+      const errors = errorsOf(() => {
+        @AgentValueObject({ description: ' ' })
+        @Invariant({ id: 'Ruim', text: 'Regra.' })
+        class dinheiro extends ValueObject<P> {}
+        void dinheiro;
+      });
+      expect(
+        errors.some((e) =>
+          e.includes(
+            'valueobject:dinheiro: o nome da classe deve ser PascalCase',
+          ),
+        ),
+      ).toBe(true);
+      expect(
+        errors.some((e) =>
+          e.includes('valueobject:dinheiro: description é obrigatório'),
+        ),
+      ).toBe(true);
+      expect(
+        errors.some((e) =>
+          e.includes(
+            'invariant:dinheiro/Ruim: o id da invariante deve ser kebab-case',
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    test('não estender ValueObject é erro com source', () => {
+      const errors = errorsOf(() => {
+        @AgentValueObject({ description: 'Solto.' })
+        class Solto {}
+        void Solto;
+      });
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toMatch(HERE);
+      expect(errors[0]).toContain(
+        'valueobject:Solto: não estende ValueObject de @agentic-ddd/core (projeto e CLI com cópias diferentes do pacote?)',
+      );
+    });
+
+    test('nome igual ao de uma entidade é erro', () => {
+      const errors = errorsOf(() => {
+        @AgentEntity({ description: 'Coisa.' })
+        class Igual extends AggregateRoot<string> {}
+        void Igual;
+        const Vo = class Igual extends ValueObject<P> {};
+        AgentValueObject({ description: 'VO.' })(Vo);
+      });
+      expect(
+        errors.some((e) => e.includes('Igual') && e.includes('entidade')),
+      ).toBe(true);
+    });
+
+    test('mesmo nome de VO em dois lugares gera ID duplicado', () => {
+      const errors = errorsOf(() => {
+        {
+          @AgentValueObject({ description: 'Dinheiro A.' })
+          class Dinheiro extends ValueObject<P> {}
+          void Dinheiro;
+        }
+        {
+          @AgentValueObject({ description: 'Dinheiro B.' })
+          class Dinheiro extends ValueObject<P> {}
+          void Dinheiro;
+        }
+      });
+      expect(
+        errors.some((e) =>
+          e.includes(
+            'ID duplicado valueobject:Dinheiro (também declarado em src/compiler/validate.test.ts:',
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    test('VO com @AgentUseCase e @Invariant na classe é ambíguo', () => {
+      const errors = errorsOf(() => {
+        @AgentValueObject({ description: 'VO.' })
+        @AgentUseCase({ ...base, name: 'caso' })
+        @Invariant({ id: 'dupla', text: 'Regra.' })
+        class Dupla extends ValueObject<P> {}
+        void Dupla;
+      });
+      expect(
+        errors.some((e) =>
+          e.includes(
+            '@Invariant dupla em Dupla: a classe tem mais de um entre @AgentEntity, @AgentUseCase e @AgentValueObject, e o dono da invariante fica ambíguo',
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    test('@Invariant em método de VO é erro', () => {
+      const errors = errorsOf(() => {
+        @AgentValueObject({ description: 'VO.' })
+        class Dinheiro extends ValueObject<P> {
+          @Invariant({ id: 'regra', text: 'Regra.' })
+          soma(): void {}
+        }
+        void Dinheiro;
+      });
+      expect(
+        errors.some((e) =>
+          e.includes(
+            '@Invariant regra em Dinheiro.soma: em value object, @Invariant vai na classe',
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    test('VO fora dos módulos é erro', () => {
+      const registry = createRegistry();
+      withRegistry(registry, () => {
+        @AgentValueObject({ description: 'VO.' })
+        class Fora extends ValueObject<P> {}
+        void Fora;
+      });
+      const { errors } = analyze(registry, {
+        root: ROOT,
+        modules: [{ name: 'x', path: 'src/outro' }],
+      });
+      expect(errors.some((e) => e.message.includes('fora dos módulos'))).toBe(
+        true,
+      );
+    });
   });
 });

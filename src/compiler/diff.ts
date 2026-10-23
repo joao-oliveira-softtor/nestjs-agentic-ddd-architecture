@@ -2,7 +2,13 @@ import { sha256, stableStringify } from './canonical';
 import type { IR, JsonSchema } from './ir';
 
 export type ElementKind =
-  'entity' | 'invariant' | 'method' | 'event' | 'usecase' | 'operator';
+  | 'entity'
+  | 'valueobject'
+  | 'invariant'
+  | 'method'
+  | 'event'
+  | 'usecase'
+  | 'operator';
 export type ChangeKind = 'added' | 'modified' | 'removed';
 export type Classification = 'breaking' | 'behavioral' | 'docs';
 
@@ -124,6 +130,25 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
         model: o.model,
       },
     });
+  }
+  for (const vo of ir.valueObjects ?? []) {
+    add({
+      id: vo.id,
+      kind: 'valueobject',
+      module: vo.module,
+      content: {
+        name: vo.name,
+        module: vo.module,
+        description: vo.description,
+      },
+    });
+    for (const i of vo.invariants)
+      add({
+        id: i.id,
+        kind: 'invariant',
+        module: vo.module,
+        content: { text: i.text, on: i.on },
+      });
   }
   return elements;
 }

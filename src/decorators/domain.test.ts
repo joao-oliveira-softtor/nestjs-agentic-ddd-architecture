@@ -5,6 +5,7 @@ import {
   AgentEntity,
   AgentEvent,
   AgentMethod,
+  AgentValueObject,
   Invariant,
   createRegistry,
   defaultRegistry,
@@ -101,5 +102,34 @@ describe('decorators de domínio', () => {
     expect(defaultRegistry.entities.some((e) => e.target === Product)).toBe(
       false,
     );
+  });
+
+  test('@AgentValueObject registra descrição, classe e fonte', () => {
+    const registry = createRegistry();
+    const Money = withRegistry(registry, () => {
+      @AgentValueObject({ description: 'Valor em centavos.' })
+      class Money {}
+      return Money;
+    });
+    expect(registry.valueObjects).toHaveLength(1);
+    expect(registry.valueObjects[0]!.target).toBe(Money);
+    expect(registry.valueObjects[0]!.description).toBe('Valor em centavos.');
+    expect(
+      registry.valueObjects[0]!.source.file.endsWith(
+        '/src/decorators/domain.test.ts',
+      ),
+    ).toBe(true);
+  });
+
+  test('reset esvazia valueObjects', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentValueObject({ description: 'Valor em centavos.' })
+      class Money {}
+      return Money;
+    });
+    expect(registry.valueObjects).toHaveLength(1);
+    registry.reset();
+    expect(registry.valueObjects).toEqual([]);
   });
 });

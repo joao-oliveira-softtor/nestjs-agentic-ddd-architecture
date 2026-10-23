@@ -666,3 +666,56 @@ bun run agentic verify --item operator:catalog-operator --spec-hash d1fb1f6910d0
 \`\`\`
 "
 `;
+
+exports[`pacote de value object traz declaração e obrigações: valueobject:Dinheiro 1`] = `
+"# Identificação
+
+- ID: \`valueobject:Dinheiro\`
+- Camada: domain
+- Módulo: vo
+- source: \`src/compiler/packet.test.ts:157\`
+- Estado: implemented
+- specHash: \`c0634298f217a038e048f539defcc47c11de603b62ab37e0b182baaa086e459a\`
+- Dependências: —
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+\`\`\`json
+{
+  "contracts": [],
+  "declaration": {
+    "description": "Valor monetário.",
+    "id": "valueobject:Dinheiro",
+    "invariants": [
+      {
+        "id": "invariant:Dinheiro/nao-negativo",
+        "on": null,
+        "text": "Dinheiro nunca é negativo."
+      }
+    ],
+    "module": "vo",
+    "name": "Dinheiro"
+  }
+}
+\`\`\`
+
+## Obrigações de teste
+
+- \`invariant:Dinheiro/nao-negativo\` — teste com \`covers\`.
+- \`valueobject:Dinheiro\` — teste com \`covers\`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+\`\`\`bash
+bun run agentic verify --item valueobject:Dinheiro --spec-hash c0634298f217a038e048f539defcc47c11de603b62ab37e0b182baaa086e459a --config agentic.config.ts --json
+\`\`\`
+"
+`;

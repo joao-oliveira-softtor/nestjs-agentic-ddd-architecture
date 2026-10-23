@@ -11,8 +11,10 @@ function entityOf(id: string): string | null {
   // dono snake_case = use-case (validate.ts garante PascalCase em entidade), vale também para item já removido
   if (/^invariant:[a-z]/.test(id)) return null;
   const match =
-    /^(?:entity:([^/.]+)$|invariant:([^/]+)\/|method:([^.]+)\.)/.exec(id);
-  return match ? (match[1] ?? match[2] ?? match[3] ?? null) : null;
+    /^(?:entity:([^/.]+)$|valueobject:([^/.]+)$|invariant:([^/]+)\/|method:([^.]+)\.)/.exec(
+      id,
+    );
+  return match ? (match[1] ?? match[2] ?? match[3] ?? match[4] ?? null) : null;
 }
 
 export function renderHistory(
@@ -59,6 +61,9 @@ export function renderHistory(
       ...ir.entities
         .filter((entity) => entity.module === module.name)
         .map((entity) => entity.name),
+      ...(ir.valueObjects ?? [])
+        .filter((vo) => vo.module === module.name)
+        .map((vo) => vo.name),
       ...relevant.flatMap(({ items }) =>
         items
           .map((item) => entityOf(item.id))

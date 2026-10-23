@@ -53,6 +53,15 @@ export function workItems(ir: IR): WorkItem[] {
       });
     }
   }
+  for (const vo of ir.valueObjects ?? [])
+    items.push({
+      id: vo.id,
+      layer: 'domain',
+      module: vo.module,
+      source: vo.source,
+      dependsOn: [],
+      obligations: [vo.id, ...vo.invariants.map((i) => i.id)].sort(),
+    });
   for (const useCase of ir.useCases) {
     items.push({
       id: useCase.id,

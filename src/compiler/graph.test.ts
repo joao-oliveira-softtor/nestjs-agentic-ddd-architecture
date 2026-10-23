@@ -4,6 +4,13 @@ import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
 import { analyze } from './analyze';
 import { workItems } from './graph';
 import type { IR } from './ir';
+import { ValueObject } from '@agentic-ddd/core';
+import {
+  AgentValueObject,
+  Invariant,
+  createRegistry,
+  withRegistry,
+} from '@agentic-ddd/decorators';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const { ir } = analyze(defineShop(), { root: ROOT, modules: [SHOP_MODULE] });
@@ -208,5 +215,44 @@ test('use-case é dono das suas invariantes, em ordem por id', () => {
     'invariant:matricular_aluno/aluno-ativo',
     'invariant:matricular_aluno/vaga',
     'usecase:matricular_aluno',
+  ]);
+});
+
+const VO_MODULE = { name: 'vo', path: 'src/compiler' } as const;
+const voOptions = {
+  root: resolve(import.meta.dir, '../..'),
+  modules: [VO_MODULE],
+};
+const defineVo = () => {
+  const registry = createRegistry();
+  withRegistry(registry, () => {
+    @AgentValueObject({ description: 'Valor monetário.' })
+    @Invariant({ id: 'nao-negativo', text: 'Dinheiro nunca é negativo.' })
+    class Dinheiro extends ValueObject<{ v: number }> {
+      private constructor(p: { v: number }) {
+        super(p);
+      }
+      #check() {}
+      soma() {
+        return this.#check();
+      }
+    }
+    void Dinheiro;
+  });
+  return registry;
+};
+
+test('value object vira item de domínio sem dependências, dono do id e das invariantes', () => {
+  const registry = defineVo();
+  const { ir } = analyze(registry, voOptions);
+  expect(workItems(ir)).toEqual([
+    {
+      id: 'valueobject:Dinheiro',
+      layer: 'domain',
+      module: 'vo',
+      source: expect.any(String),
+      dependsOn: [],
+      obligations: ['invariant:Dinheiro/nao-negativo', 'valueobject:Dinheiro'],
+    },
   ]);
 });

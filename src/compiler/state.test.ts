@@ -8,6 +8,14 @@ import type { IR, IRUseCase } from './ir';
 import type { TestCaseResult } from './verify/test-run';
 import { parseProposal } from './changes/proposal';
 import { workItems } from './graph';
+import { implementation } from './implementation';
+import { ValueObject, notImplemented } from '@agentic-ddd/core';
+import {
+  AgentValueObject,
+  Invariant,
+  createRegistry,
+  withRegistry,
+} from '@agentic-ddd/decorators';
 
 const ir = analyze(defineShop(), {
   root: resolve(import.meta.dir, '../..'),
@@ -222,4 +230,68 @@ test('operator que usa o use-case muda o specHash quando o use-case ganha invari
     ),
   };
   expect(specHash(itemSpecification(changed, operator, []))).not.toBe(before);
+});
+
+const VO_MODULE = { name: 'vo', path: 'src/compiler' } as const;
+const voOptions = {
+  root: resolve(import.meta.dir, '../..'),
+  modules: [VO_MODULE],
+};
+const voState = (skeleton: boolean, covered: boolean) => {
+  const registry = createRegistry();
+  withRegistry(registry, () => {
+    if (skeleton) {
+      @AgentValueObject({ description: 'Valor monetário.' })
+      @Invariant({ id: 'nao-negativo', text: 'Dinheiro nunca é negativo.' })
+      class Dinheiro extends ValueObject<{ v: number }> {
+        private constructor(p: { v: number }) {
+          super(p);
+          notImplemented();
+        }
+        #check() {}
+        soma() {
+          return this.#check();
+        }
+      }
+      void Dinheiro;
+    } else {
+      @AgentValueObject({ description: 'Valor monetário.' })
+      @Invariant({ id: 'nao-negativo', text: 'Dinheiro nunca é negativo.' })
+      class Dinheiro extends ValueObject<{ v: number }> {
+        private constructor(p: { v: number }) {
+          super(p);
+        }
+        #check() {}
+        soma() {
+          return this.#check();
+        }
+      }
+      void Dinheiro;
+    }
+  });
+  const voIr = analyze(registry, voOptions).ir;
+  const cases: TestCaseResult[] = covered
+    ? [
+        {
+          name: '[covers: valueobject:Dinheiro, invariant:Dinheiro/nao-negativo] soma',
+          covers: ['valueobject:Dinheiro', 'invariant:Dinheiro/nao-negativo'],
+          file: 'test.ts',
+          line: 1,
+          status: 'passed',
+        },
+      ]
+    : [];
+  return evaluateStatus({
+    ir: voIr,
+    implemented: implementation(voIr, registry),
+    proposals: [],
+    evidence: { cases, exitCode: 0 },
+    mode: 'dynamic',
+  }).items[0]!;
+};
+
+test('value object: esqueleto é declared, implementado sem teste é implemented, com teste fica done', () => {
+  expect(voState(true, true).baseState).toBe('declared');
+  expect(voState(false, false).baseState).toBe('implemented');
+  expect(voState(false, true).state).toBe('done');
 });

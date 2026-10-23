@@ -15,22 +15,22 @@ Antes de mudar regra, escreva proposta no diretório configurado:
 
 ```yaml
 ---
-id: "0001"
+id: '0001'
 title: Criar tarefas
 status: proposed
 origin: proposal-first
 delta:
-  added: ["entity:Task", "method:Task.create", "invariant:Task/titulo-obrigatorio"]
+  added:
+    ['entity:Task', 'method:Task.create', 'invariant:Task/titulo-obrigatorio']
   modified: []
   removed: []
 acceptance:
   - id: titulo-invalido
-    covers: ["invariant:Task/titulo-obrigatorio"]
+    covers: ['invariant:Task/titulo-obrigatorio']
     given: título vazio
     when: criar uma tarefa
     then: rejeita com TASK_TITLE_REQUIRED
 ---
-
 ## Motivo
 
 O usuário precisa de tarefas identificadas com um título válido.
@@ -39,6 +39,24 @@ O usuário precisa de tarefas identificadas com um título válido.
 Preencha delta completo (eventos/use-cases/operators inclusive) e critérios Given/When/Then automáticos ou `manual: true`. Depois declare e rode `bun run agentic compile --config <config>`. Se código já mudou, `compile --draft-change <slug>` apenas gera rascunho; preencha Motivo/critérios antes de compilar. Compare lock/skills gerados e não os edite.
 
 Testes: `test(covers(['method:Task.create', 'invariant:Task/titulo-obrigatorio', 'criterion:0001/titulo-invalido'], 'rejeita título vazio'), () => { ... });`. IDs do packet determinam obrigações; não use cobertura sem asserções reais.
+
+## Value objects
+
+Value object (objeto de valor, definido pelos seus valores e sem identidade própria) usa `@AgentValueObject({ description })` em classe que estende `ValueObject` de `@agentic-ddd/core`. Vira o item `valueobject:<Nome>` da camada `domain`.
+
+- Aceita `@Invariant` na classe (`invariant:<Nome>/<id>`); em método é erro.
+- Obrigações: o próprio `valueobject:<Nome>` e cada invariante, cobertos por `covers([...])` nos testes.
+- Esqueleto: a chamada literal `notImplemented()` em qualquer corpo da classe (construtor, `#privado` ou método).
+- Não instancie um VO esqueleto no topo do módulo (ex.: `static ZERO = new Dinheiro(...)`): o `compile` importa o arquivo e lança erro.
+- O arquivo do VO precisa ser importado pela aplicação, como o de uma entidade; o `irHash` do runtime inclui os VOs.
+
+```ts
+@AgentValueObject({ description: 'Valor monetário em centavos.' })
+@Invariant({ id: 'nao-negativo', text: 'Dinheiro não é negativo.' })
+export class Dinheiro extends ValueObject<{ centavos: number; moeda: string }> {
+  // corpo com notImplemented() enquanto estiver pendente
+}
+```
 
 ## Regras do time
 

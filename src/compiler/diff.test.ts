@@ -641,3 +641,92 @@ describe('invariante de use-case no semanticDiff', () => {
     ]);
   });
 });
+
+describe('value object no semanticDiff', () => {
+  const valueObject = (
+    text = 'Valor não negativo.',
+    description = 'Dinheiro.',
+  ) => ({
+    id: 'valueobject:Dinheiro',
+    name: 'Dinheiro',
+    module: 'shop',
+    description,
+    invariants: [
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        text,
+        on: null,
+        source: 'x.ts:1',
+      },
+    ],
+    source: 'x.ts:1',
+  });
+
+  test('value object novo: added behavioral, com a invariante dele', () => {
+    const ir = clone();
+    ir.valueObjects = [valueObject()];
+    expect(semanticDiff(base, ir)).toEqual([
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+      {
+        id: 'valueobject:Dinheiro',
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('texto de invariante do VO muda → modified behavioral, sem marcar o VO', () => {
+    const before = clone();
+    before.valueObjects = [valueObject()];
+    const after = structuredClone(before);
+    after.valueObjects[0].invariants[0].text = 'Outro texto.';
+    expect(semanticDiff(before, after)).toEqual([
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('só a descrição do VO muda → docs, como na entidade', () => {
+    const before = clone();
+    before.valueObjects = [valueObject()];
+    const after = structuredClone(before);
+    after.valueObjects[0].description = 'Outra descrição.';
+    expect(semanticDiff(before, after)).toEqual([
+      {
+        id: 'valueobject:Dinheiro',
+        kind: 'modified',
+        classification: 'docs',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('value object removido: removed behavioral, com a invariante dele', () => {
+    const before = clone();
+    before.valueObjects = [valueObject()];
+    expect(semanticDiff(before, clone())).toEqual([
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        kind: 'removed',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+      {
+        id: 'valueobject:Dinheiro',
+        kind: 'removed',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+});
