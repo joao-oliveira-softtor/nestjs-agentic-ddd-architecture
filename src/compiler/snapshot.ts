@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { sha256, stableStringify } from './canonical';
 import { moduleFiles } from './load';
@@ -40,6 +40,8 @@ export async function inputsHash(
   ];
   const lines = await Promise.all(
     files.map(async (f) => {
+      // O snapshot vem do disco: caminho para dispositivo ou FIFO travaria a leitura.
+      if (!(await stat(f)).isFile()) throw new Error(`${f}: não é arquivo`);
       const text = await readFile(f, 'utf8');
       return `${toPosix(relative(outRoot, f))}\0${sha256(text)}`;
     }),

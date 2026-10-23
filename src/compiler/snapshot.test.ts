@@ -8,7 +8,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { checkSnapshot, SNAPSHOT_PATH, writeSnapshot } from './snapshot';
 
 const LOCK = JSON.stringify({
@@ -117,6 +117,16 @@ describe('snapshot do MCP', () => {
         const f = join(dir, SNAPSHOT_PATH);
         const j = JSON.parse(await readFile(f, 'utf8'));
         j.rules = [{ key: 'x', file: null, paths: [], body: 'x' }];
+        await writeFile(f, JSON.stringify(j));
+      },
+    ],
+    [
+      // snapshot adulterado não pode travar o servidor lendo um dispositivo
+      'config apontando para /dev/zero',
+      async () => {
+        const f = join(dir, SNAPSHOT_PATH);
+        const j = JSON.parse(await readFile(f, 'utf8'));
+        j.config = relative(dir, '/dev/zero');
         await writeFile(f, JSON.stringify(j));
       },
     ],
