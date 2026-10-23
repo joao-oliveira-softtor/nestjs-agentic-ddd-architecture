@@ -11,6 +11,7 @@ import {
   AgentEntity,
   AgentEvent,
   AgentMethod,
+  AgentPort,
   AgentUseCase,
   AgentValueObject,
   Invariant,
@@ -18,6 +19,15 @@ import {
   createRegistry,
   withRegistry,
 } from '@agentic-ddd/decorators';
+import {
+  PORTS_MODULE,
+  definePortConcreto,
+  definePortDivergente,
+  definePortEmpilhado,
+  definePortOk,
+  definePortSobrecarga,
+  definePortsHomonimos,
+} from './__fixtures__/ports';
 import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
 import { analyze } from './analyze';
 import { buildIR } from './ir';
@@ -889,5 +899,149 @@ describe('relationWarnings', () => {
       'entity:Filha: entidade contida estende AggregateRoot',
       'entity:Raiz: raiz de agregado não estende AggregateRoot',
     ]);
+  });
+});
+
+describe('validate: ports', () => {
+  test('nome, description, método sem descrição e raiz', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'Filha.' })
+      class Filha extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'Raiz.', contains: () => [Filha] })
+      class Raiz extends AggregateRoot<string> {}
+      @AgentPort({ description: ' ', root: () => Filha, methods: { a: ' ' } })
+      abstract class repo_ruim {}
+      void [Raiz, repo_ruim];
+    });
+    expect(errors).toEqual(
+      expect.arrayContaining([expect.stringMatching(HERE)]),
+    );
+    const text = errors.join('\n');
+    expect(text).toContain(
+      'port:repo_ruim: o nome da classe deve ser PascalCase',
+    );
+    expect(text).toContain('port:repo_ruim: description é obrigatório');
+    expect(text).toContain('port:repo_ruim.a: description é obrigatório');
+    expect(text).toContain(
+      'port:repo_ruim: root cita entity:Filha, que não é raiz de agregado',
+    );
+  });
+
+  test('ID duplicado entre dois ports de mesmo nome', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({ description: 'A.', root: () => Conta, methods: {} })
+      abstract class Repo {}
+      void Repo;
+    });
+    expect(errors.filter((e) => e.includes('ID duplicado'))).toEqual([]);
+    const dup = errorsOf(() => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({ description: 'A.', root: () => Conta, methods: {} })
+      abstract class Repo {}
+      void Repo;
+      {
+        @AgentPort({ description: 'B.', root: () => Conta, methods: {} })
+        abstract class Repo {}
+        void Repo;
+      }
+    });
+    expect(dup.some((e) => e.includes('ID duplicado port:Repo'))).toBe(true);
+  });
+
+  test('port fora dos módulos usa a regra do moduleOf', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({ description: 'A.', root: () => Conta, methods: {} })
+      abstract class Repo {}
+      void Repo;
+    });
+    const { errors } = analyze(registry, {
+      root: ROOT,
+      modules: [{ name: 'x', path: 'src/outro' }],
+    });
+    expect(
+      errors.filter((e) => e.message.includes('fora dos módulos')).length,
+    ).toBe(2);
+  });
+});
+
+describe('validate: métodos abstratos do port (árvore sintática)', () => {
+  const check = (registry: ReturnType<typeof createRegistry>) =>
+    analyze(registry, { root: ROOT, modules: [PORTS_MODULE] }).errors.map(
+      (e) => e.message,
+    );
+
+  test('port correto não gera erro (método concreto auxiliar não conta)', () => {
+    expect(check(definePortOk())).toEqual([]);
+  });
+
+  test('método abstrato faltando e sobrando em methods', () => {
+    expect(check(definePortDivergente())).toEqual([
+      'port:Faltando: métodos abstratos sem declaração em methods: buscar',
+      'port:Sobrando: methods declara métodos que a classe não tem abstratos: apagar',
+    ]);
+  });
+
+  test('decorator empilhado acima de @AgentPort', () => {
+    expect(check(definePortEmpilhado())).toEqual([]);
+  });
+
+  test('classes homônimas são conferidas cada uma contra a sua', () => {
+    // o ID duplicado é esperado (mesmo nome); o que importa é cada AST ser conferida contra a classe certa
+    expect(
+      check(definePortsHomonimos()).filter(
+        (m) => !m.startsWith('ID duplicado'),
+      ),
+    ).toEqual([
+      'port:Repo: methods declara métodos que a classe não tem abstratos: listar',
+      'port:Repo: métodos abstratos sem declaração em methods: buscar',
+    ]);
+  });
+
+  test('método sobrecarregado conta uma vez', () => {
+    expect(check(definePortSobrecarga())).toEqual([]);
+  });
+
+  test('classe sem abstract é erro', () => {
+    expect(check(definePortConcreto())).toEqual([
+      'port:Concreto: a classe precisa ser abstract',
+    ]);
+  });
+
+  test('classe não encontrada no arquivo do source é erro com source', () => {
+    const registry = definePortOk();
+    (registry.ports[0]!.source as { line: number }).line = 1;
+    const { errors } = analyze(registry, {
+      root: ROOT,
+      modules: [PORTS_MODULE],
+    });
+    expect(errors.map((e) => e.message)).toEqual([
+      'port:ContaRepository: classe não encontrada no arquivo de origem para conferir os métodos abstratos',
+    ]);
+    expect(errors[0]!.source).toBe('src/compiler/__fixtures__/ports.ts:1');
+  });
+
+  test('arquivo de origem ilegível é erro com source', () => {
+    const registry = definePortOk();
+    (registry.ports[0]!.source as { file: string }).file = resolve(
+      ROOT,
+      'src/compiler/__fixtures__/inexistente.ts',
+    );
+    const { errors } = analyze(registry, {
+      root: ROOT,
+      modules: [PORTS_MODULE],
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]!.message).toContain(
+      'port:ContaRepository: não foi possível ler o arquivo de origem',
+    );
+    expect(errors[0]!.source).toStartWith(
+      'src/compiler/__fixtures__/inexistente.ts:',
+    );
   });
 });

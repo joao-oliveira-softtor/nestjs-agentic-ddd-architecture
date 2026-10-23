@@ -1173,3 +1173,190 @@ bun run agentic verify --item usecase:publish_product --spec-hash 9b2db32ad779aa
 \`\`\`
 "
 `;
+
+exports[`use-case com port traz o port com seus métodos no pacote: usecase com port 1`] = `
+"# Identificação
+
+- ID: \`usecase:publish_product\`
+- Camada: application
+- Módulo: shop
+- source: \`src/compiler/__fixtures__/shop.ts:69\`
+- Estado: blocked(declared)
+- specHash: \`b657bdec6bbc40ad9877332f23ca7aeb299686182133a0b4321224b0361cb894\`
+- Dependências: \`method:Product.publish\`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+\`\`\`json
+{
+  "contracts": [
+    {
+      "description": "Um produto foi criado como rascunho.",
+      "id": "event:ProductCreated",
+      "module": "shop",
+      "name": "ProductCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Um produto foi publicado no catálogo.",
+      "id": "event:ProductPublished",
+      "module": "shop",
+      "name": "ProductPublished",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Publica o produto no catálogo.",
+      "emits": [
+        "event:ProductPublished"
+      ],
+      "entity": {
+        "description": "Produto do catálogo da loja.",
+        "id": "entity:Product",
+        "invariants": [
+          {
+            "id": "invariant:Product/preco-positivo",
+            "on": null,
+            "text": "O preço de um produto é sempre maior que zero."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cria um produto em rascunho.",
+            "emits": [
+              "event:ProductCreated"
+            ],
+            "id": "method:Product.create",
+            "name": "create",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "shop",
+        "name": "Product",
+        "states": [
+          "draft",
+          "published"
+        ]
+      },
+      "id": "method:Product.publish",
+      "invariants": [
+        {
+          "id": "invariant:Product/publicacao-exige-estoque",
+          "on": "method:Product.publish",
+          "text": "Só é possível publicar um produto com estoque maior que zero."
+        }
+      ],
+      "name": "publish",
+      "static": false,
+      "transition": {
+        "from": [
+          "draft"
+        ],
+        "to": "published"
+      }
+    },
+    {
+      "description": "Persistência de produtos.",
+      "id": "port:Repo",
+      "methods": [
+        {
+          "description": "Grava.",
+          "name": "salvar"
+        }
+      ],
+      "module": "shop",
+      "name": "Repo",
+      "root": "entity:Product"
+    }
+  ],
+  "declaration": {
+    "description": "Publica um produto em rascunho no catálogo.",
+    "emits": [
+      "event:ProductPublished"
+    ],
+    "id": "usecase:publish_product",
+    "inputSchema": {
+      "properties": {
+        "product_id": {
+          "description": "Id do produto a publicar",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id"
+      ],
+      "type": "object"
+    },
+    "module": "shop",
+    "name": "publish_product",
+    "outputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "product_id": {
+          "type": "string"
+        },
+        "status": {
+          "const": "published",
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "status"
+      ],
+      "type": "object"
+    },
+    "ports": [
+      "port:Repo"
+    ],
+    "uses": [
+      "method:Product.publish"
+    ],
+    "whenNotToUse": "Para alterar preço ou estoque.",
+    "whenToUse": "Quando pedirem para disponibilizar um produto para venda."
+  }
+}
+\`\`\`
+
+## Obrigações de teste
+
+- \`usecase:publish_product\` — teste com \`covers\`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+\`\`\`bash
+bun run agentic verify --item usecase:publish_product --spec-hash b657bdec6bbc40ad9877332f23ca7aeb299686182133a0b4321224b0361cb894 --config agentic.config.ts --json
+\`\`\`
+"
+`;

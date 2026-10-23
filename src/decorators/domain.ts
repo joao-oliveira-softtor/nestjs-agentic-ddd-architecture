@@ -104,3 +104,22 @@ export function AgentEvent(options: AgentEventOptions): ClassDecorator {
     });
   };
 }
+
+export interface AgentPortOptions {
+  readonly description: string;
+  readonly root: () => ClassRef;
+  readonly methods: Readonly<Record<string, string>>;
+}
+
+export function AgentPort(options: AgentPortOptions): ClassDecorator {
+  const source = captureSource();
+  return (target) => {
+    activeRegistry().ports.push({
+      target,
+      description: options.description,
+      root: options.root,
+      methods: options.methods,
+      source,
+    });
+  };
+}

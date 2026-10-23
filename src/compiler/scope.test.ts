@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
-import { ValueObject } from '@agentic-ddd/core';
+import { AggregateRoot, ValueObject } from '@agentic-ddd/core';
 import {
+  AgentEntity,
+  AgentPort,
   AgentValueObject,
   createRegistry,
   withRegistry,
@@ -52,5 +54,45 @@ describe('escopo com value objects', () => {
       { name: 'compiler', path: 'src/compiler' },
     ]);
     expect(scoped.valueObjects.map((v) => v.target.name)).toEqual(['Dentro']);
+  });
+});
+
+describe('escopo com ports', () => {
+  function twoPorts() {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({ description: 'Dentro.', root: () => Conta, methods: {} })
+      abstract class Dentro {}
+      @AgentPort({ description: 'Fora.', root: () => Conta, methods: {} })
+      abstract class Fora {}
+      void [Dentro, Fora];
+    });
+    (registry.ports[1]!.source as { file: string }).file = resolve(
+      ROOT,
+      'src/outro/x.ts',
+    );
+    return registry;
+  }
+
+  test('registrySizes conta ports', () => {
+    expect(registrySizes(twoPorts()).ports).toBe(2);
+  });
+
+  test('scopeRegistry mantém o port do arquivo importado e descarta o de fora', () => {
+    const registry = twoPorts();
+    const scoped = scopeRegistry(registry, [registry.ports[0]!.source.file], {
+      ...registrySizes(registry),
+      ports: 2,
+    });
+    expect(scoped.ports.map((p) => p.target.name)).toEqual(['Dentro']);
+  });
+
+  test('declarationsInModules mantém o port do módulo e descarta o de fora', () => {
+    const scoped = declarationsInModules(twoPorts(), ROOT, [
+      { name: 'compiler', path: 'src/compiler' },
+    ]);
+    expect(scoped.ports.map((p) => p.target.name)).toEqual(['Dentro']);
   });
 });

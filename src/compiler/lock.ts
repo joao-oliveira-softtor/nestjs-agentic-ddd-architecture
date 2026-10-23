@@ -44,6 +44,7 @@ function isValidLockStructure(lock: unknown): lock is DomainLock {
   }
   if (irObj.valueObjects !== undefined && !Array.isArray(irObj.valueObjects))
     return false;
+  if (irObj.ports !== undefined && !Array.isArray(irObj.ports)) return false;
   if (!Array.isArray(obj.changes)) return false;
   for (const change of obj.changes) {
     if (change === null || typeof change !== 'object' || Array.isArray(change))

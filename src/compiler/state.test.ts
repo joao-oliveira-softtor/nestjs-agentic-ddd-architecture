@@ -295,3 +295,54 @@ test('value object: esqueleto é declared, implementado sem teste é implemented
   expect(voState(false, false).baseState).toBe('implemented');
   expect(voState(false, true).state).toBe('done');
 });
+
+const portOf = (description: string) => ({
+  id: 'port:Repo',
+  name: 'Repo',
+  module: 'shop',
+  description,
+  root: 'entity:Product',
+  methods: [{ name: 'salvar', description: 'Grava.' }],
+  source: 'src/compiler/__fixtures__/shop.ts:9',
+});
+const portIr: IR = {
+  ...ir,
+  ports: [portOf('Persistência.')],
+  useCases: ir.useCases.map((u) =>
+    u.id === 'usecase:publish_product' ? { ...u, ports: ['port:Repo'] } : u,
+  ),
+};
+const portChange = {
+  ...proposal,
+  delta: { added: [], modified: ['port:Repo'], removed: [] },
+};
+
+test('delta só de port seleciona o use-case que o usa', () => {
+  const report = evaluateStatus({
+    ir: portIr,
+    implemented: new Map(),
+    proposals: [],
+    evidence: { cases: [], exitCode: 0 },
+    mode: 'dynamic',
+  });
+  expect(
+    selectChange(report, portIr, portChange).items.map((i) => i.id),
+  ).toContain('usecase:publish_product');
+});
+
+test('G7 com delta só de port reprova o use-case que o usa quando está em esqueleto', async () => {
+  const { workItemFindings } = await import('./verify/work-items');
+  const declared = evaluateStatus({
+    ir: portIr,
+    implemented: new Map(),
+    proposals: [],
+    evidence: { cases: [], exitCode: 0 },
+    mode: 'dynamic',
+  });
+  expect(workItemFindings(portIr, declared, portChange)).toMatchObject([
+    {
+      message: 'usecase:publish_product está blocked(declared)',
+      fix: 'bun run agentic packet usecase:publish_product',
+    },
+  ]);
+});

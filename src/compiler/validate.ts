@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
 import { AggregateRoot, ValueObject } from '@agentic-ddd/core';
 import type { Registry } from '@agentic-ddd/decorators';
 import { limitsError } from '../contracts/limits';
@@ -14,6 +16,56 @@ const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SNAKE = /^[a-z][a-z0-9_]{0,63}$/;
 const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
 const STATIC_BUILTINS = new Set(['length', 'name', 'prototype']);
+
+// Métodos abstratos da classe do @AgentPort, lidos da árvore sintática (o abstract não existe em runtime).
+// Acha a ClassDeclaration pelo decorator que começa na linha do source; null se não achar.
+function abstractMethods(
+  file: string,
+  line: number,
+  name: string,
+): { abstract: boolean; methods: Set<string> } | null {
+  const sf = ts.createSourceFile(
+    file,
+    readFileSync(file, 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  let found: ts.ClassDeclaration | null = null;
+  const visit = (node: ts.Node): void => {
+    if (
+      found === null &&
+      ts.isClassDeclaration(node) &&
+      node.name?.text === name &&
+      (ts.getDecorators(node) ?? []).some(
+        (d) =>
+          sf.getLineAndCharacterOfPosition(d.expression.getStart(sf)).line +
+            1 ===
+          line,
+      )
+    )
+      found = node;
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  const cls = found as ts.ClassDeclaration | null;
+  if (cls === null) return null;
+  return {
+    abstract: !!ts
+      .getModifiers(cls)
+      ?.some((m) => m.kind === ts.SyntaxKind.AbstractKeyword),
+    methods: new Set(
+      cls.members
+        .filter(
+          (m): m is ts.MethodDeclaration =>
+            ts.isMethodDeclaration(m) &&
+            !!ts
+              .getModifiers(m)
+              ?.some((x) => x.kind === ts.SyntaxKind.AbstractKeyword),
+        )
+        .map((m) => m.name.getText(sf)),
+    ),
+  };
+}
 
 export function validate(
   ir: IR,
@@ -178,6 +230,69 @@ export function validate(
     if (!PASCAL.test(event.name))
       err(`${event.id}: o nome da classe deve ser PascalCase`, event.source);
     required(event.description, `${event.id}: description`, event.source);
+  }
+
+  const roots = aggregateRoots(ir);
+  for (const port of ir.ports ?? []) {
+    claim(port.id, port.source);
+    if (!PASCAL.test(port.name))
+      err(`${port.id}: o nome da classe deve ser PascalCase`, port.source);
+    required(port.description, `${port.id}: description`, port.source);
+    for (const method of port.methods)
+      required(
+        method.description,
+        `${port.id}.${method.name}: description`,
+        port.source,
+      );
+    if (!roots.has(port.root))
+      err(
+        `${port.id}: root cita ${port.root}, que não é raiz de agregado`,
+        port.source,
+      );
+  }
+  for (const rec of registry.ports) {
+    const id = `port:${rec.target.name}`;
+    if (
+      !ir.ports?.some(
+        (p) => p.id === id && p.source === sourceOf(root, rec.source),
+      )
+    )
+      continue;
+    const source = sourceOf(root, rec.source);
+    let ast: ReturnType<typeof abstractMethods>;
+    try {
+      ast = abstractMethods(rec.source.file, rec.source.line, rec.target.name);
+    } catch (error) {
+      err(
+        `${id}: não foi possível ler o arquivo de origem (${error instanceof Error ? error.message : String(error)})`,
+        source,
+      );
+      continue;
+    }
+    if (ast === null) {
+      err(
+        `${id}: classe não encontrada no arquivo de origem para conferir os métodos abstratos`,
+        source,
+      );
+      continue;
+    }
+    if (!ast.abstract) {
+      err(`${id}: a classe precisa ser abstract`, source);
+      continue;
+    }
+    const declared = new Set(Object.keys(rec.methods));
+    const missing = [...ast.methods].filter((m) => !declared.has(m)).sort();
+    const extra = [...declared].filter((m) => !ast.methods.has(m)).sort();
+    if (missing.length > 0)
+      err(
+        `${id}: métodos abstratos sem declaração em methods: ${missing.join(', ')}`,
+        source,
+      );
+    if (extra.length > 0)
+      err(
+        `${id}: methods declara métodos que a classe não tem abstratos: ${extra.join(', ')}`,
+        source,
+      );
   }
 
   for (const useCase of ir.useCases) {

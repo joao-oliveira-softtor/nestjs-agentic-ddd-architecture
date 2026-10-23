@@ -152,6 +152,49 @@ describe('reconcile', () => {
     });
   });
 
+  test('só a description de um port muda, sem proposta: fica pendente', () => {
+    const port = {
+      id: 'port:Repo',
+      name: 'Repo',
+      module: 'shop',
+      description: 'Antes.',
+      root: 'entity:Product',
+      methods: [],
+      source: 'x.ts:1',
+    };
+    const applied = proposal({
+      motivo: 'Base.',
+      archived: true,
+      applied: true,
+    });
+    const before: IR = { ...structuredClone(ir), ports: [port] };
+    const lock: DomainLock = {
+      lockVersion: 1,
+      ir: before,
+      changes: [
+        {
+          id: '0001',
+          title: 'estado inicial',
+          path: applied.path,
+          summary: 'Base.',
+          hash: sha256(applied.raw),
+          items: [],
+        },
+      ],
+    };
+    const current: IR = {
+      ...structuredClone(ir),
+      ports: [{ ...port, description: 'Depois.' }],
+    };
+    const plan = reconcile(input(lock, [applied], current));
+    expect(plan.errors).toEqual([]);
+    expect(plan.apply).toBeNull();
+    expect(plan.pending).toEqual([
+      expect.stringContaining('há 1 mudança(s) de domínio sem proposta'),
+    ]);
+    expect(plan.nextLock).toBe(lock);
+  });
+
   test('proposta aberta sem mudança no código fica pendente', () => {
     const applied = proposal({
       motivo: 'Base.',

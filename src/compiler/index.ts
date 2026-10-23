@@ -41,6 +41,7 @@ export {
   type IREntity,
   type IRValueObject,
   type IREvent,
+  type IRPort,
   type IRInvariant,
   type IRMethod,
   type IRModule,

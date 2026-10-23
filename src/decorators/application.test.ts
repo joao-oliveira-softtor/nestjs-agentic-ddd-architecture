@@ -64,4 +64,51 @@ describe('decorators de aplicação', () => {
     });
     expect(operator.model).toBe('default');
   });
+
+  test('@AgentUseCase grava ports sem chamar a função e omite a chave sem ports', () => {
+    class ProductRepository {}
+    let portsCalls = 0;
+    const registry = createRegistry();
+    const { ListProducts, CountProducts } = withRegistry(registry, () => {
+      @AgentUseCase({
+        name: 'list_products',
+        description: 'Lista produtos.',
+        whenToUse: 'Quando pedirem a lista.',
+        input: z.object({}),
+        output: z.object({}),
+        uses: ['method:Product.list'],
+        ports: () => {
+          portsCalls++;
+          return [ProductRepository];
+        },
+      })
+      class ListProducts {
+        execute(): Promise<never> {
+          return notImplemented();
+        }
+      }
+
+      @AgentUseCase({
+        name: 'count_products',
+        description: 'Conta produtos.',
+        whenToUse: 'Quando pedirem o total.',
+        input: z.object({}),
+        output: z.object({}),
+        uses: ['method:Product.count'],
+      })
+      class CountProducts {
+        execute(): Promise<never> {
+          return notImplemented();
+        }
+      }
+
+      return { ListProducts, CountProducts };
+    });
+    const [withPorts, withoutPorts] = registry.useCases;
+    expect(withPorts!.target).toBe(ListProducts);
+    expect(withoutPorts!.target).toBe(CountProducts);
+    expect(portsCalls).toBe(0);
+    expect(withPorts!.ports!()).toEqual([ProductRepository]);
+    expect('ports' in withoutPorts!).toBe(false);
+  });
 });

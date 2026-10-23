@@ -12,6 +12,7 @@ import { AggregateRoot } from '@agentic-ddd/core';
 import {
   AgentEntity,
   AgentEvent,
+  AgentPort,
   AgentUseCase,
   AgentValueObject,
   Invariant,
@@ -414,5 +415,147 @@ describe('buildIR: contains e references', () => {
       'entity:A: references cita Solta, sem @AgentEntity nem @AgentValueObject',
     ]);
     expect('contains' in ir.entities[0]!).toBe(false);
+  });
+});
+
+describe('buildIR: ports', () => {
+  const mods = {
+    root: ROOT,
+    modules: [{ name: 'compiler', path: 'src/compiler' }],
+  };
+  const io = { input: z.object({}), output: z.object({}) };
+  const build = (define: () => void) => {
+    const registry = createRegistry();
+    withRegistry(registry, define);
+    return buildIR(registry, mods);
+  };
+
+  test('ids, ordem, métodos ordenados e ports do use-case', () => {
+    const { ir, errors } = build(() => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({
+        description: 'Z.',
+        root: () => Conta,
+        methods: { salvar: 'Grava.', buscar: 'Busca.' },
+      })
+      abstract class ZRepo {}
+      @AgentPort({ description: 'A.', root: () => Conta, methods: {} })
+      abstract class ARepo {}
+      @AgentUseCase({
+        name: 'faz',
+        description: 'Faz.',
+        whenToUse: 'Sempre.',
+        ...io,
+        uses: [],
+        emits: [],
+        ports: () => [ZRepo, ARepo, ZRepo],
+      })
+      class Faz {}
+      void Faz;
+    });
+    expect(errors).toEqual([]);
+    expect(ir.ports!.map((p) => p.id)).toEqual(['port:ARepo', 'port:ZRepo']);
+    expect(ir.ports![1]).toMatchObject({
+      name: 'ZRepo',
+      module: 'compiler',
+      description: 'Z.',
+      root: 'entity:Conta',
+      methods: [
+        { name: 'buscar', description: 'Busca.' },
+        { name: 'salvar', description: 'Grava.' },
+      ],
+    });
+    expect(ir.useCases[0]!.ports).toEqual(['port:ARepo', 'port:ZRepo']);
+  });
+
+  test('sem port não há chave na IR nem no use-case', () => {
+    const { ir } = build(() => {
+      @AgentUseCase({
+        name: 'faz',
+        description: 'Faz.',
+        whenToUse: 'Sempre.',
+        ...io,
+        uses: [],
+        emits: [],
+      })
+      class Faz {}
+      void Faz;
+    });
+    expect('ports' in ir).toBe(false);
+    expect('ports' in ir.useCases[0]!).toBe(false);
+  });
+
+  test('root que lança, não é classe ou não é entidade: erro e o port sai da IR', () => {
+    class Solta {}
+    const { ir, errors } = build(() => {
+      @AgentPort({
+        description: 'A.',
+        root: () => {
+          throw new Error('boom');
+        },
+        methods: {},
+      })
+      abstract class A {}
+      @AgentPort({ description: 'B.', root: () => 1 as never, methods: {} })
+      abstract class B {}
+      @AgentPort({ description: 'C.', root: () => Solta, methods: {} })
+      abstract class C {}
+      @AgentUseCase({
+        name: 'faz',
+        description: 'Faz.',
+        whenToUse: 'Sempre.',
+        ...io,
+        uses: [],
+        emits: [],
+        ports: () => [A],
+      })
+      class Faz {}
+      void [A, B, C, Faz];
+    });
+    expect(errors.map((e) => e.message).sort()).toEqual([
+      'port:A: root lançou boom',
+      'port:B: root não devolveu uma classe',
+      'port:C: root cita Solta, sem @AgentEntity',
+    ]);
+    expect(
+      errors.every((e) => /^src\/compiler\/ir\.test\.ts:\d+$/.test(e.source!)),
+    ).toBe(true);
+    expect('ports' in ir).toBe(false);
+    expect('ports' in ir.useCases[0]!).toBe(false);
+  });
+
+  test('use-case que cita classe sem @AgentPort ou thunk que lança: erro com source do use-case', () => {
+    class Solta {}
+    const { ir, errors } = build(() => {
+      @AgentUseCase({
+        name: 'a',
+        description: 'A.',
+        whenToUse: 'Sempre.',
+        ...io,
+        uses: [],
+        emits: [],
+        ports: () => [Solta],
+      })
+      class A {}
+      @AgentUseCase({
+        name: 'b',
+        description: 'B.',
+        whenToUse: 'Sempre.',
+        ...io,
+        uses: [],
+        emits: [],
+        ports: () => {
+          throw new Error('boom');
+        },
+      })
+      class B {}
+      void [A, B];
+    });
+    expect(errors.map((e) => e.message).sort()).toEqual([
+      'usecase:a: ports cita Solta, sem @AgentPort',
+      'usecase:b: ports lançou boom',
+    ]);
+    expect(ir.useCases.every((u) => !('ports' in u))).toBe(true);
   });
 });
