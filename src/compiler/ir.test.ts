@@ -10,6 +10,7 @@ import {
 } from '@agentic-ddd/core';
 import { AggregateRoot } from '@agentic-ddd/core';
 import {
+  AgentAdapter,
   AgentEntity,
   AgentEvent,
   AgentPort,
@@ -557,5 +558,87 @@ describe('buildIR: ports', () => {
       'usecase:b: ports lançou boom',
     ]);
     expect(ir.useCases.every((u) => !('ports' in u))).toBe(true);
+  });
+});
+
+describe('buildIR: adapters', () => {
+  const mods = {
+    root: ROOT,
+    modules: [{ name: 'compiler', path: 'src/compiler' }],
+  };
+  const build = (define: () => void, m = mods) => {
+    const registry = createRegistry();
+    withRegistry(registry, define);
+    return buildIR(registry, m);
+  };
+
+  test('id, módulo, implements e ordem por id', () => {
+    const { ir, errors } = build(() => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({ description: 'R.', root: () => Conta, methods: { a: 'A.' } })
+      abstract class Repo {
+        abstract a(): void;
+      }
+      @AgentPort({ description: 'S.', root: () => Conta, methods: { a: 'A.' } })
+      abstract class Outro {
+        abstract a(): void;
+      }
+      @AgentAdapter({ description: 'Z.', implements: () => Repo })
+      class ZAdapter extends Repo {
+        a() {}
+      }
+      @AgentAdapter({ description: 'A.', implements: () => Outro })
+      class AAdapter extends Outro {
+        a() {}
+      }
+      void [ZAdapter, AAdapter];
+    });
+    expect(errors).toEqual([]);
+    expect(ir.adapters!.map((a) => a.id)).toEqual([
+      'adapter:AAdapter',
+      'adapter:ZAdapter',
+    ]);
+    expect(ir.adapters![1]).toMatchObject({
+      name: 'ZAdapter',
+      module: 'compiler',
+      description: 'Z.',
+      implements: 'port:Repo',
+    });
+  });
+
+  test('sem adapter não há chave na IR', () => {
+    const { ir } = build(() => {});
+    expect('adapters' in ir).toBe(false);
+  });
+
+  test('implements que lança, não é classe ou sem @AgentPort: erro com source do adapter e o adapter sai', () => {
+    class Solta {}
+    const { ir, errors } = build(() => {
+      @AgentAdapter({ description: 'A.', implements: () => Solta })
+      class A {}
+      @AgentAdapter({
+        description: 'B.',
+        implements: () => {
+          throw new Error('boom');
+        },
+      })
+      class B {}
+      @AgentAdapter({
+        description: 'C.',
+        implements: (() => 1) as never,
+      })
+      class C {}
+      void [A, B, C];
+    });
+    expect(errors.map((e) => e.message).sort()).toEqual([
+      'adapter:A: implements cita Solta, sem @AgentPort',
+      'adapter:B: implements lançou boom',
+      'adapter:C: implements não devolveu uma classe',
+    ]);
+    expect(
+      errors.every((e) => /^src\/compiler\/ir\.test\.ts:\d+$/.test(e.source!)),
+    ).toBe(true);
+    expect('adapters' in ir).toBe(false);
   });
 });

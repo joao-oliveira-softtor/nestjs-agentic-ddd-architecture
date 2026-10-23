@@ -11,8 +11,10 @@ import {
   loadRules,
   type Rule,
 } from '@agentic-ddd/compiler';
+import { isClassScopeItem } from '../src/compiler/packet';
 
-export type BriefRole = 'domain' | 'application' | 'reviewer';
+export type BriefRole =
+  'domain' | 'application' | 'infrastructure' | 'reviewer';
 export interface PacketFacts {
   readonly id: string;
   readonly layer: string;
@@ -81,6 +83,20 @@ export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
     '',
     RESPONSE_FORMAT,
   ].join('\n'),
+  infrastructure: [
+    '# Papel: executor de infraestrutura',
+    '',
+    'Implemente UM adapter (classe que implementa um port) a partir do packet abaixo. O port e seus métodos são o contrato; não os edite.',
+    '',
+    '- Altere só a classe deste item (corpos e membros `#privados`, mesma quantidade de linhas) e arquivos de teste. Imports e campos `#privados` já vêm no esqueleto; não mude `extends`/`implements`, decorators nem a assinatura pública. Não reformate o arquivo.',
+    '- Pode usar bibliotecas externas já importadas. Sem efeito colateral no import.',
+    "- Teste cada método do port com `covers(['port:<Port>.<método>'], título)` de `@agentic-ddd/testing` em testes `bun:test`.",
+    '- Não rode `compile` nem altere o hash. Dependência pendente, divergência de hash ou necessidade de editar algo fora do contrato: devolva o item.',
+    '- Regra do time nunca vence um gate (verify, specHash, gates de fronteira, obrigações `covers`): em conflito, siga o gate e devolva o item com o conflito descrito.',
+    '- Após duas correções sem progresso nos findings, encerre e devolva o diagnóstico.',
+    '',
+    RESPONSE_FORMAT,
+  ].join('\n'),
   reviewer: readFileSync(REVIEWER_CORE, 'utf8').trimEnd(),
 };
 
@@ -120,9 +136,32 @@ export function parsePacket(packet: string): PacketFacts {
 }
 
 export function roleForLayer(layer: string): BriefRole {
-  if (layer === 'domain') return 'domain';
-  if (layer === 'application' || layer === 'operators') return 'application';
-  throw new Error(`camada sem papel de executor: ${layer}`);
+  return match(layer)
+    .returnType<BriefRole>()
+    .with('domain', () => 'domain')
+    .with('application', 'operators', () => 'application')
+    .with('infrastructure', () => 'infrastructure')
+    .otherwise((x) => {
+      throw new Error(`camada sem papel de executor: ${x}`);
+    });
+}
+
+const BODY_LINES = [
+  '- Altere só o interior do corpo indicado em "Arquivos" e arquivos de teste. Preserve imports, assinaturas, decorators, schemas, IDs de regras, propostas, configuração e arquivos gerados.',
+  '- Preserve a contagem de linhas do corpo (as coordenadas `source` entram nos gerados). Não reformate o arquivo. Sem espaço suficiente, devolva ao gerente.',
+];
+const CLASS_LINES = [
+  '- Altere só a classe indicada em "Arquivos" (corpos e membros `#privados`, mesma quantidade de linhas) e arquivos de teste. Não mude `extends`/`implements`, decorators nem a assinatura pública. Preserve imports, schemas, IDs de regras, propostas, configuração e arquivos gerados.',
+  '- Preserve a contagem de linhas da classe (as coordenadas `source` entram nos gerados). Não reformate o arquivo. Sem espaço suficiente, devolva ao gerente.',
+];
+
+/** Item de classe (VO/adapter): troca as linhas de corpo do núcleo de domínio pelas de classe. */
+function classScopeCore(core: string): string {
+  return BODY_LINES.reduce((text, line, i) => {
+    if (!text.includes(line))
+      throw new Error('núcleo de domínio sem a linha de corpo esperada');
+    return text.replace(line, CLASS_LINES[i]!);
+  }, core);
 }
 
 function renderExtras(extras: readonly BriefSection[]): string[] {
@@ -180,13 +219,16 @@ export function renderBrief(input: BriefInput): string {
       `specHash divergente: esperado ${input.expectedSpecHash}, packet ${facts.specHash}`,
     );
   const role = roleForLayer(facts.layer);
+  const classItem = isClassScopeItem(facts.id);
   return checkBudget(
     [
-      ROLE_CORES[role],
+      classItem && role === 'domain'
+        ? classScopeCore(ROLE_CORES.domain)
+        : ROLE_CORES[role],
       '',
       '## Arquivos',
       '',
-      `- Pode alterar: \`${facts.sourcePath}\` (somente o interior do corpo de \`${facts.id}\`, mesma quantidade de linhas) e arquivos \`*.test.ts\`.`,
+      `- Pode alterar: \`${facts.sourcePath}\` (somente ${classItem ? 'a classe' : 'o interior do corpo'} de \`${facts.id}\`, mesma quantidade de linhas) e arquivos \`*.test.ts\`.`,
       `- Não pode alterar: ${FORBIDDEN.join('; ')}.`,
       '',
       '## Packet',

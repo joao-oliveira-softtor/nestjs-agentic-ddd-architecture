@@ -2,7 +2,13 @@ import { expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { defineShop, SHOP_MODULE } from './__fixtures__/shop';
 import { analyze } from './analyze';
-import { evaluateStatus, ownerOf, selectChange, waves } from './state';
+import {
+  evaluateStatus,
+  ownerOf,
+  selectChange,
+  usersOfPort,
+  waves,
+} from './state';
 import { itemSpecification, specHash } from './item-spec';
 import type { IR, IRUseCase } from './ir';
 import type { TestCaseResult } from './verify/test-run';
@@ -345,4 +351,46 @@ test('G7 com delta só de port reprova o use-case que o usa quando está em esqu
       fix: 'bun run agentic packet usecase:publish_product',
     },
   ]);
+});
+
+const adapterIr: IR = {
+  ...portIr,
+  adapters: [
+    {
+      id: 'adapter:MemoryRepo',
+      name: 'MemoryRepo',
+      module: 'shop',
+      description: 'Em memória.',
+      implements: 'port:Repo',
+      source: 'x.ts:2',
+    },
+  ],
+};
+
+test('usersOfPort devolve use-cases e adapters do port', () => {
+  expect(usersOfPort(adapterIr, 'port:Repo')).toEqual([
+    'usecase:publish_product',
+    'adapter:MemoryRepo',
+  ]);
+});
+
+test('item de adapter: spec com port e raiz nos contratos; G7 de port reprova adapter em esqueleto', async () => {
+  const { workItemFindings } = await import('./verify/work-items');
+  const item = workItems(adapterIr).find((i) => i.id === 'adapter:MemoryRepo')!;
+  const spec = itemSpecification(adapterIr, item, []);
+  expect(spec.declaration).toMatchObject({ id: 'adapter:MemoryRepo' });
+  expect((spec.contracts as { id: string }[]).map((c) => c.id)).toEqual([
+    'entity:Product',
+    'port:Repo',
+  ]);
+  const declared = evaluateStatus({
+    ir: adapterIr,
+    implemented: new Map(),
+    proposals: [],
+    evidence: { cases: [], exitCode: 0 },
+    mode: 'dynamic',
+  });
+  expect(
+    workItemFindings(adapterIr, declared, portChange).map((f) => f.message),
+  ).toContain('adapter:MemoryRepo está blocked(declared)');
 });

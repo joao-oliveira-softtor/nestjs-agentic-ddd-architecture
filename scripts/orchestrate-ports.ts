@@ -7,7 +7,11 @@ import {
   parseClaudeTranscript,
 } from './evals/adapters/claude';
 import type { ResolvedConventions } from '../src/compiler/conventions';
-import { bodyOnlyFindings, importDirectionFindings } from './boundary-gates';
+import {
+  bodyOnlyFindings,
+  classScopeFindings,
+  importDirectionFindings,
+} from './boundary-gates';
 import type { GateLayer } from './boundary-gates';
 import type {
   Executor,
@@ -152,17 +156,32 @@ export function createCliGates(options: CliGatesOptions): Gates {
         facts.layer as GateLayer,
         options.conventions,
       );
-      const method = /^method:([^.]+)\.(.+)$/.exec(facts.id);
-      if (method)
-        findings.push(
-          ...bodyOnlyFindings(
-            before.source.text,
-            after,
-            method[1]!,
-            method[2]!,
-            facts.sourcePath,
-          ),
-        );
+      findings.push(
+        ...match(facts.id.split(':')[0])
+          .with('method', () => {
+            const ref = facts.id.slice('method:'.length);
+            const dot = ref.indexOf('.');
+            return bodyOnlyFindings(
+              before.source.text,
+              after,
+              ref.slice(0, dot),
+              ref.slice(dot + 1),
+              facts.sourcePath,
+            );
+          })
+          .with('valueobject', 'adapter', () =>
+            classScopeFindings(
+              before.source.text,
+              after,
+              facts.id.split(':')[1]!,
+              facts.sourcePath,
+            ),
+          )
+          .with('entity', 'usecase', 'operator', () => [])
+          .otherwise(() => {
+            throw new Error(`item sem gate de escopo: ${facts.id}`);
+          }),
+      );
       if (findings.length)
         return {
           passed: false,

@@ -57,6 +57,13 @@ export interface PortRecord {
   readonly source: SourceLoc;
 }
 
+export interface AdapterRecord {
+  readonly target: ClassRef;
+  readonly description: string;
+  readonly implements: () => ClassRef;
+  readonly source: SourceLoc;
+}
+
 export interface UseCaseRecord {
   readonly target: ClassRef;
   readonly name: string;
@@ -95,6 +102,7 @@ export class Registry {
   readonly methods: MethodRecord[] = [];
   readonly events: EventRecord[] = [];
   readonly ports: PortRecord[] = [];
+  readonly adapters: AdapterRecord[] = [];
   readonly useCases: UseCaseRecord[] = [];
   readonly operators: OperatorRecord[] = [];
 
@@ -105,6 +113,7 @@ export class Registry {
     this.methods.length = 0;
     this.events.length = 0;
     this.ports.length = 0;
+    this.adapters.length = 0;
     this.useCases.length = 0;
     this.operators.length = 0;
   }

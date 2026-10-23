@@ -8,6 +8,7 @@ import {
   ValueObject,
 } from '@agentic-ddd/core';
 import {
+  AgentAdapter,
   AgentEntity,
   AgentEvent,
   AgentMethod,
@@ -1048,5 +1049,133 @@ describe('validate: métodos abstratos do port (árvore sintática)', () => {
     expect(errors[0]!.source).toStartWith(
       'src/compiler/__fixtures__/inexistente.ts:',
     );
+  });
+});
+
+describe('validate: adapters', () => {
+  test('adapter válido não gera erro', () => {
+    expect(
+      errorsOf(() => {
+        @AgentEntity({ description: 'Conta.' })
+        class Conta extends AggregateRoot<string> {}
+        @AgentPort({
+          description: 'R.',
+          root: () => Conta,
+          methods: { a: 'A.' },
+        })
+        abstract class Repo {
+          abstract a(): void;
+        }
+        @AgentAdapter({ description: 'Impl.', implements: () => Repo })
+        class MemRepo extends Repo {
+          a() {}
+        }
+        void MemRepo;
+      }),
+    ).toEqual([]);
+  });
+
+  test('nome, description, não estende o port, port sem métodos', () => {
+    const text = errorsOf(() => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({ description: 'R.', root: () => Conta, methods: {} })
+      abstract class Repo {}
+      @AgentAdapter({ description: ' ', implements: () => Repo })
+      class mem_repo {}
+      void mem_repo;
+    }).join('\n');
+    expect(text).toMatch(HERE);
+    expect(text).toContain(
+      'adapter:mem_repo: o nome da classe deve ser PascalCase',
+    );
+    expect(text).toContain('adapter:mem_repo: description é obrigatório');
+    expect(text).toContain('adapter:mem_repo: não estende port:Repo');
+    expect(text).toContain(
+      'adapter:mem_repo: port:Repo não declara métodos; adapter ficaria sem obrigações',
+    );
+  });
+
+  test('segundo adapter para o mesmo port', () => {
+    const text = errorsOf(() => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({
+        description: 'R.',
+        root: () => Conta,
+        methods: { a: 'A.' },
+      })
+      abstract class Repo {
+        abstract a(): void;
+      }
+      @AgentAdapter({ description: 'A.', implements: () => Repo })
+      class AdapterA extends Repo {
+        a() {}
+      }
+      @AgentAdapter({ description: 'B.', implements: () => Repo })
+      class AdapterB extends Repo {
+        a() {}
+      }
+      void [AdapterA, AdapterB];
+    }).join('\n');
+    expect(text).toContain(
+      'adapter:AdapterB: o port port:Repo já tem o adapter adapter:AdapterA',
+    );
+  });
+
+  test('ID duplicado entre dois adapters de mesmo nome', () => {
+    const text = errorsOf(() => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({
+        description: 'R.',
+        root: () => Conta,
+        methods: { a: 'A.' },
+      })
+      abstract class Repo {
+        abstract a(): void;
+      }
+      @AgentAdapter({ description: 'A.', implements: () => Repo })
+      class Mem extends Repo {
+        a() {}
+      }
+      void Mem;
+      {
+        @AgentAdapter({ description: 'B.', implements: () => Repo })
+        class Mem extends Repo {
+          a() {}
+        }
+        void Mem;
+      }
+    }).join('\n');
+    expect(text).toContain('ID duplicado adapter:Mem');
+  });
+
+  test('adapter fora dos módulos usa a regra do moduleOf', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentEntity({ description: 'Conta.' })
+      class Conta extends AggregateRoot<string> {}
+      @AgentPort({
+        description: 'R.',
+        root: () => Conta,
+        methods: { a: 'A.' },
+      })
+      abstract class Repo {
+        abstract a(): void;
+      }
+      @AgentAdapter({ description: 'A.', implements: () => Repo })
+      class Mem extends Repo {
+        a() {}
+      }
+      void Mem;
+    });
+    const { errors } = analyze(registry, {
+      root: ROOT,
+      modules: [{ name: 'x', path: 'src/outro' }],
+    });
+    expect(
+      errors.filter((e) => e.message.includes('fora dos módulos')).length,
+    ).toBe(3);
   });
 });

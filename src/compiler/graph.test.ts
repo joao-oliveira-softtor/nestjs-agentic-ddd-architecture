@@ -326,3 +326,45 @@ describe('relações entre entidades', () => {
     expect(relation['entity:ItemDoPedido']!.dependsOn).toEqual([]);
   });
 });
+
+describe('adapter', () => {
+  const port = {
+    id: 'port:Repo',
+    name: 'Repo',
+    module: 'shop',
+    description: 'Persistência.',
+    root: 'entity:Product',
+    methods: [
+      { name: 'salvar', description: 'Grava.' },
+      { name: 'buscar', description: 'Lê.' },
+    ],
+    source: 'x.ts:1',
+  };
+  const adapter = {
+    id: 'adapter:MemoryRepo',
+    name: 'MemoryRepo',
+    module: 'shop',
+    description: 'Em memória.',
+    implements: 'port:Repo',
+    source: 'x.ts:2',
+  };
+
+  test('vira item em infrastructure, depende da raiz e tem uma obrigação por método', () => {
+    const item = workItems({ ...ir, ports: [port], adapters: [adapter] }).find(
+      (i) => i.id === adapter.id,
+    );
+    expect(item).toMatchObject({
+      layer: 'infrastructure',
+      dependsOn: ['entity:Product'],
+      obligations: ['port:Repo.buscar', 'port:Repo.salvar'],
+    });
+  });
+
+  test('port fora da IR: sem item', () => {
+    expect(
+      workItems({ ...ir, adapters: [adapter] }).some(
+        (i) => i.id === adapter.id,
+      ),
+    ).toBe(false);
+  });
+});

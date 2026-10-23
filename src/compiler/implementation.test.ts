@@ -5,8 +5,11 @@ import { analyze } from './analyze';
 import { implementation } from './implementation';
 import { renderAll, DEFAULT_OUT } from './render';
 import { contentHash, elementsOf } from './diff';
-import { ValueObject, notImplemented } from '@agentic-ddd/core';
+import { AggregateRoot, ValueObject, notImplemented } from '@agentic-ddd/core';
 import {
+  AgentAdapter,
+  AgentEntity,
+  AgentPort,
   AgentValueObject,
   Invariant,
   createRegistry,
@@ -158,4 +161,39 @@ test('value object com notImplemented() no construtor, em #privado ou em método
       void Dinheiro;
     }),
   ).toBe(false);
+});
+
+test('adapter com notImplemented() não está implementado', () => {
+  const adapterImplemented = (stub: boolean) => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentEntity({ description: 'Raiz.' })
+      class Raiz extends AggregateRoot<string> {}
+      @AgentPort({
+        description: 'Persistência.',
+        root: () => Raiz,
+        methods: { salvar: 'Grava.' },
+      })
+      abstract class Repo {}
+      if (stub) {
+        @AgentAdapter({ description: 'Em memória.', implements: () => Repo })
+        class MemoryRepo extends Repo {
+          constructor() {
+            super();
+            notImplemented();
+          }
+        }
+        void MemoryRepo;
+      } else {
+        @AgentAdapter({ description: 'Em memória.', implements: () => Repo })
+        class MemoryRepo extends Repo {}
+        void MemoryRepo;
+      }
+    });
+    return implementation(analyze(registry, voOptions).ir, registry).get(
+      'adapter:MemoryRepo',
+    );
+  };
+  expect(adapterImplemented(true)).toBe(false);
+  expect(adapterImplemented(false)).toBe(true);
 });

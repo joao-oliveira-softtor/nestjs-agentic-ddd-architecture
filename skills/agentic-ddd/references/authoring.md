@@ -85,3 +85,30 @@ Aqui, entidades e eventos ficam em `src/shop/core/model`, com eventos em `.evt.t
 - Essas convenções valem para a tabela "Como estender" da skill de dev, para o texto de camadas no bloco do AGENTS.md e para o gate de import do `orchestrate`.
 - Uma regra do time com a chave `core/layers` muda só o texto; o gate continua o mesmo.
 - O CLI `bun scripts/boundary-gates.ts imports` usa só o padrão; ele não lê o `agentic.config.ts`.
+
+## Adapters
+
+Adapter (implementação de um port, o contrato de repositório que o domínio usa) usa `@AgentAdapter({ description, implements: () => Port })` em classe que estende o port, declarado como classe abstrata com `@AgentPort`. Fica em `<módulo>/infrastructure` (as pastas aceitas estão em `conventions.infrastructure`; padrão `infrastructure` ou `infra`) e vira o item `adapter:<Nome>` da camada `infrastructure`, que depende da raiz do port.
+
+- Obrigações: um id `port:<Port>.<método>` por método do port, cada um coberto por `covers([...])` no teste do adapter.
+- Um adapter por port na v0.5; um segundo adapter do mesmo port é erro.
+- Escopo de classe: o executor altera corpos e membros `#privados`, mas não os decorators, o `extends`/`implements` nem a assinatura pública.
+- Imports e campos `#privados` já vêm no esqueleto.
+- O arquivo não pode ter efeito colateral no import (o `compile` importa todo `.ts` do módulo): conexões ficam no construtor ou numa fábrica.
+
+```ts
+@AgentAdapter({
+  description: 'Matrículas em memória.',
+  implements: () => MatriculaRepository,
+})
+export class InMemoryMatriculaRepository extends MatriculaRepository {
+  #itens = new Map<string, Matricula>();
+
+  async save(matricula: Matricula): Promise<void> {
+    return notImplemented();
+  }
+  async contarPorTurma(turma: TurmaId): Promise<number> {
+    return notImplemented();
+  }
+}
+```

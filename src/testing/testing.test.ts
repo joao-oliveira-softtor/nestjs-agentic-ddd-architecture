@@ -5,6 +5,12 @@ import { covers, createTestContext, parseCovers } from '@agentic-ddd/testing';
 class Ping extends DomainEvent<object> {}
 
 describe('covers', () => {
+  test('aceita ID de port com método', () => {
+    expect(covers(['port:PedidoRepository.salvar'], 'grava')).toBe(
+      '[covers: port:PedidoRepository.salvar] grava',
+    );
+  });
+
   test('ordena, remove duplicatas e prefixa o título', () => {
     expect(
       covers(

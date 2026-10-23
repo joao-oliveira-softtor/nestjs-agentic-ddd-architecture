@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { z } from 'zod';
 import { AggregateRoot, DomainEvent, notImplemented } from '@agentic-ddd/core';
 import {
+  AgentAdapter,
   AgentEntity,
   AgentEvent,
   AgentMethod,
@@ -205,5 +206,33 @@ describe('@AgentPort', () => {
     expect(port.root()).toBe(Product);
     registry.reset();
     expect(registry.ports).toEqual([]);
+  });
+});
+
+describe('@AgentAdapter', () => {
+  test('grava descrição, port e origem sem chamar implements', () => {
+    const registry = createRegistry();
+    let implementsCalls = 0;
+    class ProductRepository {}
+    const InMemoryProductRepository = withRegistry(registry, () => {
+      @AgentAdapter({
+        description: 'Repositório de produtos em memória.',
+        implements: () => {
+          implementsCalls++;
+          return ProductRepository;
+        },
+      })
+      class InMemoryProductRepositoryAdapter {}
+      return InMemoryProductRepositoryAdapter;
+    });
+    expect(implementsCalls).toBe(0);
+    expect(registry.adapters).toHaveLength(1);
+    const adapter = registry.adapters[0]!;
+    expect(adapter.target).toBe(InMemoryProductRepository);
+    expect(adapter.description).toBe('Repositório de produtos em memória.');
+    expect(adapter.implements()).toBe(ProductRepository);
+    expect(adapter.source.file.endsWith('domain.test.ts')).toBe(true);
+    registry.reset();
+    expect(registry.adapters).toEqual([]);
   });
 });

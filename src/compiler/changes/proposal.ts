@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { CompileError } from '../ir';
 
 export const ELEMENT_ID =
-  /^(entity|invariant|method|event|usecase|operator|valueobject|port):\S+$/;
+  /^(entity|invariant|method|event|usecase|operator|valueobject|port|adapter):\S+$/;
 export const MOTIVO_PLACEHOLDER =
   '<!-- Escreva aqui por que esta mudança existe (obrigatório). O compilador só aplica a proposta com o Motivo preenchido. -->';
 
