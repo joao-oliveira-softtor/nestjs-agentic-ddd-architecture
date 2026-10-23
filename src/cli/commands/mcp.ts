@@ -24,10 +24,14 @@ export async function mcpCommand(
   try {
     mod = await load();
   } catch (error) {
-    if (!(error as Error).message?.includes('@modelcontextprotocol/server'))
+    if (
+      !String((error as Error).message).includes(
+        "Cannot find package '@modelcontextprotocol/server'",
+      )
+    )
       throw error;
     console.error(
-      'agentic-ddd: instale @modelcontextprotocol/server@2.3.1 para usar `agentic mcp`',
+      'agentic-ddd: instale @modelcontextprotocol/server@2.3.1 para usar `agentic-ddd mcp`',
     );
     return 1;
   }

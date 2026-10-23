@@ -34,39 +34,16 @@ const ROLE_NAMES = {
   executor: 'executor',
   reviewer: 'revisor',
 } as const;
+// Cursor usa o mesmo formato do Claude: o cursor-agent não expande ${workspaceFolder} (validado na #68).
+const mcpJson = (cli: string) =>
+  JSON.stringify(
+    { mcpServers: { 'agentic-ddd': { command: 'bun', args: [cli, 'mcp'] } } },
+    null,
+    2,
+  ) + '\n';
 const MCP_CONFIG = {
-  claude: {
-    path: '.mcp.json',
-    content: (cli: string) =>
-      JSON.stringify(
-        {
-          mcpServers: { 'agentic-ddd': { command: 'bun', args: [cli, 'mcp'] } },
-        },
-        null,
-        2,
-      ) + '\n',
-  },
-  cursor: {
-    path: '.cursor/mcp.json',
-    content: (cli: string) =>
-      JSON.stringify(
-        {
-          mcpServers: {
-            'agentic-ddd': {
-              command: 'bun',
-              args: [
-                '${workspaceFolder}/' + cli,
-                'mcp',
-                '--root',
-                '${workspaceFolder}',
-              ],
-            },
-          },
-        },
-        null,
-        2,
-      ) + '\n',
-  },
+  claude: { path: '.mcp.json', content: mcpJson },
+  cursor: { path: '.cursor/mcp.json', content: mcpJson },
   codex: {
     path: '.codex/config.toml',
     content: (cli: string) =>

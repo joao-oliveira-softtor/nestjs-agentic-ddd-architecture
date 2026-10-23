@@ -1,6 +1,6 @@
 # Usar o framework em outra aplicação
 
-A distribuição usa um pacote ESM único com seis fronteiras. O nome `nestjs-agentic-ddd-architecture` é provisório para testar tarballs locais; não foi validado para publicação. `private: true` bloqueia inclusive a publicação direta do tarball; `prepublishOnly` fornece um segundo gate no checkout. Pacotes privados ainda permitem npm pack e instalação local. Esta mudança não publica nem cria uma nova release npm.
+A distribuição usa um pacote ESM único com sete fronteiras. O nome `nestjs-agentic-ddd-architecture` é provisório para testar tarballs locais; não foi validado para publicação. `private: true` bloqueia inclusive a publicação direta do tarball; `prepublishOnly` fornece um segundo gate no checkout. Pacotes privados ainda permitem npm pack e instalação local. Esta mudança não publica nem cria uma nova release npm.
 
 ## Compatibilidade
 
@@ -32,6 +32,7 @@ Não adicione paths de `@agentic-ddd/*` ao tsconfig do consumidor. Esses aliases
 | `nestjs-agentic-ddd-architecture/runtime` | OperatorRuntime, ports, tipos e event bus |
 | `nestjs-agentic-ddd-architecture/nestjs` | AgenticModule e tokens de DI |
 | `nestjs-agentic-ddd-architecture/testing` | covers, context e fakes; não exige bun:test |
+| `nestjs-agentic-ddd-architecture/mcp` | Servidor MCP local (stdio), somente leitura; requer o peer opcional @modelcontextprotocol/server 2.3.1 |
 
 A aplicação fornece agentic.config.ts com defineConfig do export compiler, decorators nas classes e imports de AgenticModule.forRoot/forFeature. O exemplo isolado completo está em test/fixtures/package-consumer.
 
@@ -42,6 +43,68 @@ A aplicação fornece agentic.config.ts com defineConfig do export compiler, dec
 ```
 
 CLI e compilador interpretam os caminhos a partir do config do consumidor. As instruções geradas usam o nome público do pacote. Imports privados de dist não são parte da API.
+
+## Servidor MCP local
+
+MCP é o protocolo que deixa um agente chamar ferramentas externas. O servidor local deste pacote roda por stdio (o cliente o inicia como processo e conversa pela entrada e saída padrão) e expõe quatro ferramentas de leitura sobre o domínio compilado:
+
+- `domain_overview`: lista módulos, entidades, use-cases e operators.
+- `domain_element`: devolve o contrato de um elemento pelo id.
+- `domain_changes`: lista as mudanças de regra de negócio, ou só as de um id.
+- `rules_for_path`: lista as regras do time que valem para um arquivo.
+
+O servidor não executa código do projeto e não escreve arquivos. Ele lê `.agentic/domain.lock.json` e o snapshot `.agentic/mcp/snapshot.json`, que o `compile` grava quando termina bem (a pasta do snapshot ignora a si mesma no git). Cada chamada revalida o snapshot: se código, regras, config ou lock mudaram desde o último `compile` bem-sucedido, o servidor recusa responder e pede para rodar `compile` de novo. Limite: arquivos importados de fora das pastas dos módulos não entram nessa checagem.
+
+Na aplicação consumidora, instale o peer opcional e inicie o servidor:
+
+```bash
+npm install @modelcontextprotocol/server@2.3.1
+./node_modules/.bin/agentic-ddd mcp [--root <dir>]
+```
+
+Sem `--root`, o servidor usa a pasta atual. Sem o peer, o comando encerra com código 1 e uma mensagem pedindo a instalação.
+
+A partir deste checkout, o instalador grava a configuração do servidor para cada agente. É opt-in e só vale com `--scope project`:
+
+```bash
+bun run skills:install --mcp --scope project --root <projeto>
+```
+
+Os trechos abaixo são os que o instalador gera. `<CLI>` é o caminho relativo, a partir do projeto, até `src/cli/main.ts` deste checkout. Se o arquivo já existe com outro conteúdo, o instalador recusa substituí-lo: mescle o trecho à mão.
+
+- Claude Code, `.mcp.json`:
+
+  ```json
+  {
+    "mcpServers": {
+      "agentic-ddd": { "command": "bun", "args": ["<CLI>", "mcp"] }
+    }
+  }
+  ```
+
+- Cursor, `.cursor/mcp.json`:
+
+  ```json
+  {
+    "mcpServers": {
+      "agentic-ddd": { "command": "bun", "args": ["<CLI>", "mcp"] }
+    }
+  }
+  ```
+
+- Codex, `.codex/config.toml`:
+
+  ```toml
+  [mcp_servers.agentic-ddd]
+  command = "bun"
+  args = ["<CLI>", "mcp"]
+  ```
+
+Notas por cliente:
+
+- Claude Code pede aprovação para servidores do `.mcp.json` do projeto. Como o trecho não passa `--root`, o servidor usa a pasta em que o Claude Code foi aberto.
+- Codex só lê `.codex/config.toml` de projeto marcado como confiável. Também não passa `--root`, então deve ser iniciado na raiz do projeto.
+- Cursor: mesmo formato do Claude Code, porque o `cursor-agent` não expande `${workspaceFolder}`. O servidor usa a pasta em que o Cursor foi aberto, e ele também pede aprovação para servidores do projeto.
 
 ## Build e verificação
 

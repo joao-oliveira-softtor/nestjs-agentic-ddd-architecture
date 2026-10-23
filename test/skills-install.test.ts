@@ -219,7 +219,7 @@ test('--mcp grava a config MCP de cada target com o CLI relativo à raiz e reins
     .join('/');
   const files = {
     '.mcp.json': `${JSON.stringify({ mcpServers: { 'agentic-ddd': { command: 'bun', args: [cli, 'mcp'] } } }, null, 2)}\n`,
-    '.cursor/mcp.json': `${JSON.stringify({ mcpServers: { 'agentic-ddd': { command: 'bun', args: ['${workspaceFolder}/' + cli, 'mcp', '--root', '${workspaceFolder}'] } } }, null, 2)}\n`,
+    '.cursor/mcp.json': `${JSON.stringify({ mcpServers: { 'agentic-ddd': { command: 'bun', args: [cli, 'mcp'] } } }, null, 2)}\n`,
     '.codex/config.toml': `# Instalado por skills:install --mcp.\n[mcp_servers.agentic-ddd]\ncommand = "bun"\nargs = ${JSON.stringify([cli, 'mcp'])}\n`,
   };
   expect(install(root, '--target', 'all', '--mcp').code).toBe(0);

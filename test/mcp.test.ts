@@ -122,9 +122,16 @@ describe('agentic mcp (subprocesso)', () => {
       }
 
       await writeFile(join(tmp, LOCK), `${lockText} `);
-      expect((await call('domain_overview')).result.isError).toBe(true);
+      const stale = (await call('domain_overview')).result;
+      expect(stale.isError).toBe(true);
+      expect(stale.content[0].text).toContain('rode `bun run agentic compile`');
+
       await writeFile(join(tmp, LOCK), lockText);
       expect((await call('domain_overview')).result.isError).toBeFalsy();
+      const unknown = (await call('domain_element', { id: 'entity:Nope' }))
+        .result;
+      expect(unknown.isError).toBe(true);
+      expect(unknown.content[0].text).toContain('id desconhecido');
 
       await writeFile(join(tmp, 'examples/orders/a.ts'), 'changed\n');
       expect((await call('domain_overview')).result.isError).toBe(true);

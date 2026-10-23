@@ -1,9 +1,5 @@
-import { afterEach, describe, expect, spyOn, test } from 'bun:test';
+import { describe, expect, spyOn, test } from 'bun:test';
 import { mcpCommand } from './mcp';
-
-afterEach(() => {
-  process.exitCode = undefined;
-});
 
 describe('mcpCommand', () => {
   test('SDK ausente: explica a instalação e sai com 1', async () => {
