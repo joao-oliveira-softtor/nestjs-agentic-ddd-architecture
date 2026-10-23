@@ -506,3 +506,94 @@ describe('validate', () => {
     );
   });
 });
+
+describe('validate: @Invariant em use-case', () => {
+  const base = {
+    description: 'Caso.',
+    whenToUse: 'Teste.',
+    ...io,
+    uses: [],
+    emits: [],
+  };
+
+  test('kebab-case, duplicado e texto vazio valem no use-case', () => {
+    const errors = errorsOf(() => {
+      @AgentUseCase({ ...base, name: 'caso' })
+      @Invariant({ id: 'Id Ruim', text: 'Regra.' })
+      @Invariant({ id: 'dup', text: 'A.' })
+      @Invariant({ id: 'dup', text: 'B.' })
+      @Invariant({ id: 'vazia', text: '' })
+      class Caso {}
+      void Caso;
+    });
+    expect(
+      errors.some((e) =>
+        e.includes(
+          'invariant:caso/Id Ruim: o id da invariante deve ser kebab-case',
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      errors.some((e) => e.includes('ID duplicado invariant:caso/dup')),
+    ).toBe(true);
+    expect(
+      errors.some((e) =>
+        e.includes('invariant:caso/vazia: text é obrigatório'),
+      ),
+    ).toBe(true);
+  });
+
+  test('invariante válida em use-case não gera erro', () => {
+    expect(
+      errorsOf(() => {
+        @AgentUseCase({ ...base, name: 'caso' })
+        @Invariant({ id: 'ok', text: 'Regra.' })
+        class Caso {}
+        void Caso;
+      }),
+    ).toEqual([]);
+  });
+
+  test('@Invariant em método de use-case é erro com source', () => {
+    const errors = errorsOf(() => {
+      @AgentUseCase({ ...base, name: 'caso' })
+      class Caso {
+        @Invariant({ id: 'regra', text: 'Regra.' })
+        execute(): void {}
+      }
+      void Caso;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(HERE);
+    expect(errors[0]).toContain(
+      '@Invariant regra em Caso.execute: em use-case, @Invariant vai na classe',
+    );
+  });
+
+  test('@Invariant em classe com @AgentEntity e @AgentUseCase é ambígua', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'Coisa.' })
+      @AgentUseCase({ ...base, name: 'caso' })
+      @Invariant({ id: 'dupla', text: 'Regra.' })
+      class Dupla extends AggregateRoot<string> {}
+      void Dupla;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(HERE);
+    expect(errors[0]).toContain(
+      '@Invariant dupla em Dupla: a classe tem @AgentEntity e @AgentUseCase, e o dono da invariante fica ambíguo',
+    );
+  });
+
+  test('@Invariant em classe sem decorator cita entidade e use-case', () => {
+    const errors = errorsOf(() => {
+      @Invariant({ id: 'solta', text: 'Regra.' })
+      class Plain {}
+      void Plain;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain(
+      '@Invariant solta em Plain, que não tem @AgentEntity nem @AgentUseCase',
+    );
+  });
+});

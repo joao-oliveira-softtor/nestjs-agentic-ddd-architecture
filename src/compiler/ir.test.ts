@@ -10,6 +10,7 @@ import {
 import {
   AgentEvent,
   AgentUseCase,
+  Invariant,
   Registry,
   createRegistry,
   withRegistry,
@@ -137,6 +138,52 @@ describe('buildIR', () => {
     expect(errors.some((e) => e.message.includes('fora dos módulos'))).toBe(
       true,
     );
+  });
+
+  test('invariantes de use-case: id, on null, ordem e chave ausente sem elas', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      const base = {
+        description: 'Caso.',
+        whenToUse: 'Teste.',
+        input: z.object({}),
+        output: z.object({}),
+        uses: [],
+        emits: [],
+      };
+      @AgentUseCase({ ...base, name: 'matricular_aluno' })
+      @Invariant({ id: 'zeta', text: 'Z.' })
+      @Invariant({ id: 'aluno-ativo', text: 'Aluno ativo.' })
+      class Matricular {
+        execute(): Promise<object> {
+          return notImplemented();
+        }
+      }
+      @AgentUseCase({ ...base, name: 'sem_regra' })
+      class SemRegra {
+        execute(): Promise<object> {
+          return notImplemented();
+        }
+      }
+      void Matricular;
+      void SemRegra;
+    });
+    const { ir, errors } = buildIR(registry, {
+      root: ROOT,
+      modules: [{ name: 'compiler', path: 'src/compiler' }],
+    });
+    expect(errors).toEqual([]);
+    const withInv = ir.useCases.find((u) => u.name === 'matricular_aluno')!;
+    expect(withInv.invariants!.map((i) => i.id)).toEqual([
+      'invariant:matricular_aluno/aluno-ativo',
+      'invariant:matricular_aluno/zeta',
+    ]);
+    expect(withInv.invariants![0]).toMatchObject({
+      text: 'Aluno ativo.',
+      on: null,
+    });
+    const without = ir.useCases.find((u) => u.name === 'sem_regra')!;
+    expect('invariants' in without).toBe(false);
   });
 
   test('inputSchema omite campos com default do required', () => {

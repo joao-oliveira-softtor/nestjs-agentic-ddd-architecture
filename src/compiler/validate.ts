@@ -1,6 +1,12 @@
 import type { Registry } from '@agentic-ddd/decorators';
 import { limitsError } from '../contracts/limits';
-import { sourceOf, type CompileError, type IR, type IRMethod } from './ir';
+import {
+  sourceOf,
+  type CompileError,
+  type IR,
+  type IRInvariant,
+  type IRMethod,
+} from './ir';
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SNAKE = /^[a-z][a-z0-9_]{0,63}$/;
@@ -29,6 +35,17 @@ export function validate(
     else seen.set(id, source);
   };
 
+  const checkInvariant = (invariant: IRInvariant): void => {
+    claim(invariant.id, invariant.source);
+    const local = invariant.id.slice(invariant.id.indexOf('/') + 1);
+    if (!KEBAB.test(local))
+      err(
+        `${invariant.id}: o id da invariante deve ser kebab-case (ex.: total-nao-negativo)`,
+        invariant.source,
+      );
+    required(invariant.text, `${invariant.id}: text`, invariant.source);
+  };
+
   const methodsById = new Map<string, IRMethod>(
     ir.entities.flatMap((e) => e.methods.map((m) => [m.id, m] as const)),
   );
@@ -48,14 +65,7 @@ export function validate(
       );
     }
     for (const invariant of entity.invariants) {
-      claim(invariant.id, invariant.source);
-      const local = invariant.id.slice(invariant.id.indexOf('/') + 1);
-      if (!KEBAB.test(local))
-        err(
-          `${invariant.id}: o id da invariante deve ser kebab-case (ex.: total-nao-negativo)`,
-          invariant.source,
-        );
-      required(invariant.text, `${invariant.id}: text`, invariant.source);
+      checkInvariant(invariant);
       if (invariant.on !== null && !methodsById.has(invariant.on)) {
         err(
           `${invariant.id} está num método sem @AgentMethod (${invariant.on})`,
@@ -109,6 +119,7 @@ export function validate(
       );
     required(useCase.description, `${useCase.id}: description`, useCase.source);
     required(useCase.whenToUse, `${useCase.id}: whenToUse`, useCase.source);
+    for (const invariant of useCase.invariants ?? []) checkInvariant(invariant);
     const reachable = new Set<string>();
     const declared = new Set(useCase.emits);
     for (const use of useCase.uses) {
@@ -179,10 +190,23 @@ export function validate(
       );
     }
   }
+  const useCaseTargets = new Set(registry.useCases.map((u) => u.target));
   for (const invariant of registry.invariants) {
-    if (!entityTargets.has(invariant.entity)) {
+    const isEntity = entityTargets.has(invariant.entity);
+    const isUseCase = useCaseTargets.has(invariant.entity);
+    if (isEntity && isUseCase) {
       err(
-        `@Invariant ${invariant.id} em ${invariant.entity.name}, que não tem @AgentEntity`,
+        `@Invariant ${invariant.id} em ${invariant.entity.name}: a classe tem @AgentEntity e @AgentUseCase, e o dono da invariante fica ambíguo`,
+        sourceOf(root, invariant.source),
+      );
+    } else if (!isEntity && !isUseCase) {
+      err(
+        `@Invariant ${invariant.id} em ${invariant.entity.name}, que não tem @AgentEntity nem @AgentUseCase`,
+        sourceOf(root, invariant.source),
+      );
+    } else if (!isEntity && invariant.method !== null) {
+      err(
+        `@Invariant ${invariant.id} em ${invariant.entity.name}.${invariant.method}: em use-case, @Invariant vai na classe`,
         sourceOf(root, invariant.source),
       );
     }

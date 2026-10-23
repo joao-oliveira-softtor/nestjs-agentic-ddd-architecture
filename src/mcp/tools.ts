@@ -48,8 +48,12 @@ const FINDERS: Readonly<Record<string, Finder>> = {
       e.invariants.some((i) => i.id === id),
     );
     const invariant = entity?.invariants.find((i) => i.id === id);
-    if (!entity || !invariant) return undefined;
-    return { ...invariant, entity: entity.id };
+    if (entity && invariant) return { ...invariant, entity: entity.id };
+    for (const useCase of lock.ir.useCases) {
+      const useCaseInvariant = useCase.invariants?.find((i) => i.id === id);
+      if (useCaseInvariant) return { ...useCaseInvariant, useCase: useCase.id };
+    }
+    return undefined;
   },
   event: (lock, id) => {
     const event = lock.ir.events.find((e) => e.id === id);

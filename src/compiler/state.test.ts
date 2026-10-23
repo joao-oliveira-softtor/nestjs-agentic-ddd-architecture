@@ -2,7 +2,9 @@ import { expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { defineShop, SHOP_MODULE } from './__fixtures__/shop';
 import { analyze } from './analyze';
-import { evaluateStatus, selectChange, waves } from './state';
+import { evaluateStatus, ownerOf, selectChange, waves } from './state';
+import { itemSpecification, specHash } from './item-spec';
+import type { IR, IRUseCase } from './ir';
 import type { TestCaseResult } from './verify/test-run';
 import { parseProposal } from './changes/proposal';
 import { workItems } from './graph';
@@ -149,4 +151,75 @@ test('G7 resolve fábrica e invariantes em um único proprietário, ignora event
     message: 'entity:Product está declared',
     fix: 'bun run agentic packet entity:Product',
   });
+});
+
+const aluno: IRUseCase = {
+  id: 'usecase:matricular_aluno',
+  name: 'matricular_aluno',
+  module: 'shop',
+  description: 'Matricula aluno',
+  whenToUse: 'sempre',
+  whenNotToUse: null,
+  inputSchema: {},
+  outputSchema: {},
+  uses: [],
+  emits: [],
+  invariants: [
+    {
+      id: 'invariant:matricular_aluno/aluno-ativo',
+      text: 'Aluno ativo',
+      on: null,
+      source: 'src/m:1',
+    },
+  ],
+  source: 'src/m:1',
+};
+
+test('invariante de use-case tem o use-case como dono e exige covers próprio', () => {
+  const withAluno: IR = { ...ir, useCases: [...ir.useCases, aluno] };
+  expect(ownerOf(withAluno, 'invariant:matricular_aluno/aluno-ativo')).toBe(
+    'usecase:matricular_aluno',
+  );
+  const impl = new Map(workItems(withAluno).map((i) => [i.id, true]));
+  const cases: TestCaseResult[] = workItems(withAluno).flatMap((i) =>
+    i.obligations.map((id) => ({
+      name: id,
+      covers: [id],
+      file: 'test.ts',
+      line: 1,
+      status: 'passed' as const,
+    })),
+  );
+  const statusOf = (list: TestCaseResult[]) =>
+    evaluateStatus({
+      ir: withAluno,
+      implemented: impl,
+      proposals: [],
+      evidence: { cases: list, exitCode: 0 },
+      mode: 'dynamic',
+    }).items.find((i) => i.id === 'usecase:matricular_aluno')!;
+  expect(
+    statusOf(
+      cases.filter(
+        (t) => !t.covers.includes('invariant:matricular_aluno/aluno-ativo'),
+      ),
+    ).missingObligations,
+  ).toEqual(['invariant:matricular_aluno/aluno-ativo']);
+  expect(statusOf(cases).missingObligations).toEqual([]);
+});
+
+test('operator que usa o use-case muda o specHash quando o use-case ganha invariante', () => {
+  const operator = workItems(ir).find(
+    (i) => i.id === 'operator:catalog-operator',
+  )!;
+  const before = specHash(itemSpecification(ir, operator, []));
+  const changed: IR = {
+    ...ir,
+    useCases: ir.useCases.map((u) =>
+      u.id === 'usecase:publish_product'
+        ? { ...u, invariants: [aluno.invariants![0]!] }
+        : u,
+    ),
+  };
+  expect(specHash(itemSpecification(changed, operator, []))).not.toBe(before);
 });

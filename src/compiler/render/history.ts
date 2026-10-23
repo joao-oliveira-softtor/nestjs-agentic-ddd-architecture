@@ -8,6 +8,8 @@ import { code, table } from './markdown';
 const HEADERS = ['Change', 'Título', 'Mudanças', 'Motivo'];
 
 function entityOf(id: string): string | null {
+  // dono snake_case = use-case (validate.ts garante PascalCase em entidade), vale também para item já removido
+  if (/^invariant:[a-z]/.test(id)) return null;
   const match =
     /^(?:entity:([^/.]+)$|invariant:([^/]+)\/|method:([^.]+)\.)/.exec(id);
   return match ? (match[1] ?? match[2] ?? match[3] ?? null) : null;

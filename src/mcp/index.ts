@@ -43,7 +43,7 @@ export function startMcpServer({ root }: { root: string }): {
       {
         title: 'Detalhe de um elemento',
         description:
-          'Devolve um elemento pelo id, com as relações. Prefixos: entity:, method:, invariant:, event:, usecase:, operator: (ids de método e invariante aparecem no detalhe da entidade).',
+          'Devolve um elemento pelo id, com as relações. Prefixos: entity:, method:, invariant:, event:, usecase:, operator: (ids de método e invariante aparecem no detalhe da entidade ou do use-case).',
         inputSchema: z.object({ id: z.string() }),
         annotations,
       },

@@ -63,6 +63,7 @@ export interface IRUseCase {
   readonly outputSchema: JsonSchema;
   readonly uses: string[];
   readonly emits: string[];
+  readonly invariants?: IRInvariant[];
   readonly source: string;
 }
 
@@ -235,29 +236,41 @@ export function buildIR(
     .sort(byId);
 
   const useCases = registry.useCases
-    .map((rec): IRUseCase => ({
-      id: `usecase:${rec.name}`,
-      name: rec.name,
-      module: moduleOf(rec.source),
-      description: rec.description,
-      whenToUse: rec.whenToUse,
-      whenNotToUse: rec.whenNotToUse,
-      inputSchema: schema(
-        rec.input,
-        rec.source,
-        `usecase:${rec.name} input`,
-        'input',
-      ),
-      outputSchema: schema(
-        rec.output,
-        rec.source,
-        `usecase:${rec.name} output`,
-        'output',
-      ),
-      uses: [...rec.uses].sort(),
-      emits: rec.emits.map((e) => eventId(e, rec.source)).sort(),
-      source: loc(rec.source),
-    }))
+    .map((rec): IRUseCase => {
+      const invs: IRInvariant[] = registry.invariants
+        .filter((i) => i.entity === rec.target)
+        .map((i) => ({
+          id: `invariant:${rec.name}/${i.id}`,
+          text: i.text,
+          on: null,
+          source: loc(i.source),
+        }))
+        .sort(byId);
+      return {
+        id: `usecase:${rec.name}`,
+        name: rec.name,
+        module: moduleOf(rec.source),
+        description: rec.description,
+        whenToUse: rec.whenToUse,
+        whenNotToUse: rec.whenNotToUse,
+        inputSchema: schema(
+          rec.input,
+          rec.source,
+          `usecase:${rec.name} input`,
+          'input',
+        ),
+        outputSchema: schema(
+          rec.output,
+          rec.source,
+          `usecase:${rec.name} output`,
+          'output',
+        ),
+        uses: [...rec.uses].sort(),
+        emits: rec.emits.map((e) => eventId(e, rec.source)).sort(),
+        ...(invs.length > 0 && { invariants: invs }),
+        source: loc(rec.source),
+      };
+    })
     .sort(byId);
 
   const operators = registry.operators

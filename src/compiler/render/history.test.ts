@@ -76,4 +76,31 @@ describe('renderHistory', () => {
     expect(text).not.toContain('entity:Outro');
     expect(text).toMatchSnapshot();
   });
+
+  test('invariante de use-case não cria seção de entidade e cai em use-cases', () => {
+    const useCaseChange: LockChange[] = [
+      {
+        id: '0003',
+        title: 'Matrícula exige aluno ativo',
+        path: 'changes/archive/0003-matricula-exige-aluno-ativo/proposal.md',
+        summary: 'Só aluno ativo se matricula.',
+        hash: 'h3',
+        items: [
+          {
+            id: 'invariant:matricular_aluno/aluno-ativo',
+            kind: 'added',
+            classification: 'behavioral',
+            module: 'shop',
+          },
+        ],
+      },
+    ];
+    const text = renderHistory(ir, module, useCaseChange, HISTORY);
+    expect(text).not.toContain('## matricular_aluno');
+    expect(text.indexOf('## Eventos, use-cases e operators')).toBeLessThan(
+      text.indexOf(
+        'added `invariant:matricular_aluno/aluno-ativo` (behavioral)',
+      ),
+    );
+  });
 });
