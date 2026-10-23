@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { z } from 'zod';
-import { AggregateRoot, DomainEvent, ValueObject } from '@agentic-ddd/core';
+import {
+  AggregateRoot,
+  DomainEvent,
+  Entity,
+  ValueObject,
+} from '@agentic-ddd/core';
 import {
   AgentEntity,
   AgentEvent,
@@ -15,6 +20,8 @@ import {
 } from '@agentic-ddd/decorators';
 import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
 import { analyze } from './analyze';
+import { buildIR } from './ir';
+import { relationWarnings, validate } from './validate';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const HERE = /^src\/compiler\/validate\.test\.ts:\d+ /;
@@ -737,5 +744,150 @@ describe('validate: @Invariant em use-case', () => {
         true,
       );
     });
+  });
+});
+
+describe('validate: contains e references', () => {
+  const VO = () => {
+    @AgentValueObject({ description: 'Dinheiro.' })
+    class Dinheiro extends ValueObject<{ c: number }> {}
+    return Dinheiro;
+  };
+
+  test('references para VO é erro', () => {
+    const errors = errorsOf(() => {
+      const Dinheiro = VO();
+      @AgentEntity({ description: 'A.', references: () => [Dinheiro] })
+      class A extends AggregateRoot<string> {}
+      void A;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(HERE);
+    expect(errors[0]).toContain(
+      'entity:A: references só aponta para entidade, não para valueobject:Dinheiro',
+    );
+  });
+
+  test('entidade filha com dois donos é erro; VO em vários é aceito', () => {
+    const errors = errorsOf(() => {
+      const Dinheiro = VO();
+      @AgentEntity({ description: 'Filha.' })
+      class Filha extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'A.', contains: () => [Filha, Dinheiro] })
+      class A extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'B.', contains: () => [Filha, Dinheiro] })
+      class B extends AggregateRoot<string> {}
+      void A;
+      void B;
+    });
+    const filha = errors.filter((e) => e.includes('entity:Filha'));
+    expect(filha).toHaveLength(1);
+    expect(filha[0]).toContain(
+      'entity:Filha está no contains de mais de um dono (entity:A, entity:B)',
+    );
+    expect(errors).toHaveLength(1);
+  });
+
+  test('ciclo de contains é erro', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'A.', contains: () => [B] })
+      class A extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'B.', contains: () => [A] })
+      class B extends AggregateRoot<string> {}
+      void A;
+      void B;
+    });
+    expect(errors.some((e) => e.includes('ciclo de contains'))).toBe(true);
+  });
+
+  test('ciclo que não passa pela entidade de partida aponta para quem o fecha', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'A.', contains: () => [B] })
+      class A extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'B.', contains: () => [C] })
+      class B extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'C.', contains: () => [B] })
+      class C extends AggregateRoot<string> {}
+      void A;
+      void B;
+      void C;
+    });
+    const cycle = errors.filter((e) => e.includes('ciclo de contains'));
+    expect(cycle).toHaveLength(1);
+    expect(cycle[0]).toMatch(
+      /^src\/compiler\/validate\.test\.ts:\d+ entity:C: ciclo de contains/,
+    );
+  });
+
+  test('entidade que contém a si mesma é ciclo', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'A.', contains: () => [A] })
+      class A extends AggregateRoot<string> {}
+      void A;
+    });
+    expect(errors.filter((e) => e.includes('ciclo de contains'))).toHaveLength(
+      1,
+    );
+    expect(errors[0]).toContain('entity:A: ciclo de contains');
+  });
+
+  test('contains entre módulos é erro', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentEntity({ description: 'Filha.' })
+      class Filha extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'A.', contains: () => [Filha] })
+      class A extends AggregateRoot<string> {}
+      void A;
+    });
+    const opts = {
+      root: ROOT,
+      modules: [{ name: 'compiler', path: 'src/compiler' }],
+    };
+    const { ir } = buildIR(registry, opts);
+    const moved = {
+      ...ir,
+      entities: ir.entities.map((e) =>
+        e.name === 'Filha' ? { ...e, module: 'outro' } : e,
+      ),
+    };
+    const errors = validate(moved, registry, ROOT).map((e) => e.message);
+    expect(errors).toEqual([
+      'entity:A: contains cita entity:Filha, de outro módulo (outro)',
+    ]);
+  });
+});
+
+describe('relationWarnings', () => {
+  const opts = {
+    root: ROOT,
+    modules: [{ name: 'compiler', path: 'src/compiler' }],
+  };
+
+  test('sem contains nem references, a lista é vazia', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentEntity({ description: 'Solta.' })
+      class Solta extends Entity<string> {}
+      void Solta;
+    });
+    const { ir } = buildIR(registry, opts);
+    expect(relationWarnings(ir, registry)).toEqual([]);
+  });
+
+  test('raiz sem AggregateRoot e filha com AggregateRoot viram aviso', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentEntity({ description: 'Filha.' })
+      class Filha extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'Raiz.', contains: () => [Filha] })
+      class Raiz extends Entity<string> {}
+      void Raiz;
+    });
+    const { ir } = buildIR(registry, opts);
+    expect(relationWarnings(ir, registry)).toEqual([
+      'entity:Filha: entidade contida estende AggregateRoot',
+      'entity:Raiz: raiz de agregado não estende AggregateRoot',
+    ]);
   });
 });

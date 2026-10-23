@@ -40,6 +40,8 @@ export interface IREntity {
   readonly states: string[];
   readonly invariants: IRInvariant[];
   readonly methods: IRMethod[];
+  readonly contains?: string[];
+  readonly references?: string[];
   readonly source: string;
 }
 
@@ -192,9 +194,51 @@ export function buildIR(
     }
   };
 
+  // Chama o thunk e converte em ids dentro do try; o que não resolve fica fora da lista.
+  const relation = (
+    rec: Registry['entities'][number],
+    field: 'contains' | 'references',
+  ): string[] => {
+    const thunk = rec[field];
+    if (!thunk) return [];
+    const owner = `entity:${rec.target.name}`;
+    const fail = (message: string): void => {
+      errors.push({ message: `${owner}: ${message}`, source: loc(rec.source) });
+    };
+    try {
+      const list = thunk();
+      if (!Array.isArray(list)) {
+        fail(`${field} não devolveu uma lista`);
+        return [];
+      }
+      const ids = new Set<string>();
+      for (const cls of list as unknown[]) {
+        if (typeof cls !== 'function') {
+          fail(`${field} tem entrada que não é classe`);
+        } else if (registry.entities.some((e) => e.target === cls)) {
+          ids.add(`entity:${cls.name}`);
+        } else if (registry.valueObjects.some((v) => v.target === cls)) {
+          ids.add(`valueobject:${cls.name}`);
+        } else {
+          fail(
+            `${field} cita ${cls.name}, sem @AgentEntity nem @AgentValueObject`,
+          );
+        }
+      }
+      return [...ids].sort();
+    } catch (error) {
+      fail(
+        `${field} lançou ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return [];
+    }
+  };
+
   const entities = registry.entities
     .map((rec): IREntity => {
       const name = rec.target.name;
+      const contains = relation(rec, 'contains');
+      const references = relation(rec, 'references');
       return {
         id: `entity:${name}`,
         name,
@@ -224,6 +268,8 @@ export function buildIR(
             source: loc(m.source),
           }))
           .sort(byId),
+        ...(contains.length > 0 && { contains }),
+        ...(references.length > 0 && { references }),
         source: loc(rec.source),
       };
     })

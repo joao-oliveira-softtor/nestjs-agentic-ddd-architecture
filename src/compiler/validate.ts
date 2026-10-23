@@ -1,6 +1,7 @@
-import { ValueObject } from '@agentic-ddd/core';
+import { AggregateRoot, ValueObject } from '@agentic-ddd/core';
 import type { Registry } from '@agentic-ddd/decorators';
 import { limitsError } from '../contracts/limits';
+import { aggregateRoots } from './graph';
 import {
   sourceOf,
   type CompileError,
@@ -102,6 +103,53 @@ export function validate(
         }
       }
     }
+  }
+
+  const owners = new Map<string, string[]>();
+  const moduleById = new Map(ir.entities.map((e) => [e.id, e.module]));
+  for (const entity of ir.entities) {
+    for (const id of entity.references ?? []) {
+      if (id.startsWith('valueobject:'))
+        err(
+          `${entity.id}: references só aponta para entidade, não para ${id}`,
+          entity.source,
+        );
+    }
+    for (const id of entity.contains ?? []) {
+      if (!id.startsWith('entity:')) continue;
+      owners.set(id, [...(owners.get(id) ?? []), entity.id]);
+      const other = moduleById.get(id);
+      if (other !== undefined && other !== entity.module)
+        err(
+          `${entity.id}: contains cita ${id}, de outro módulo (${other})`,
+          entity.source,
+        );
+    }
+  }
+  for (const [child, list] of owners) {
+    if (list.length < 2) continue;
+    const source = ir.entities.find((e) => e.id === list[0])!.source;
+    err(
+      `${child} está no contains de mais de um dono (${list.join(', ')})`,
+      source,
+    );
+  }
+  // ciclo: DFS pelas arestas de contains entre entidades (sem ele, as ondas recursam)
+  const state = new Map<string, 'open' | 'done'>();
+  // Erro na entidade cuja aresta cai num nó ainda 'open' (ela fecha o ciclo, e está dentro dele).
+  const visit = (id: string): void => {
+    state.set(id, 'open');
+    const entity = ir.entities.find((e) => e.id === id);
+    for (const c of entity?.contains ?? []) {
+      if (!c.startsWith('entity:')) continue;
+      if (state.get(c) === 'open')
+        err(`${id}: ciclo de contains entre entidades`, entity?.source ?? null);
+      else if (!state.has(c)) visit(c);
+    }
+    state.set(id, 'done');
+  };
+  for (const entity of ir.entities) {
+    if (!state.has(entity.id)) visit(entity.id);
   }
 
   const entityNames = new Set(ir.entities.map((e) => e.name));
@@ -270,4 +318,24 @@ export function validate(
   }
 
   return errors;
+}
+
+// Avisos (não erros) de AggregateRoot: raiz sem a classe base e filha que a estende (ADR-0006 D4).
+export function relationWarnings(ir: IR, registry: Registry): string[] {
+  if (!ir.entities.some((e) => e.contains || e.references)) return [];
+  const roots = aggregateRoots(ir);
+  const classOf = new Map(
+    registry.entities.map((r) => [`entity:${r.target.name}`, r.target]),
+  );
+  const warnings: string[] = [];
+  for (const entity of ir.entities) {
+    const target = classOf.get(entity.id);
+    if (!target) continue;
+    const isAggregate = target.prototype instanceof AggregateRoot;
+    if (roots.has(entity.id) && !isAggregate)
+      warnings.push(`${entity.id}: raiz de agregado não estende AggregateRoot`);
+    if (!roots.has(entity.id) && isAggregate)
+      warnings.push(`${entity.id}: entidade contida estende AggregateRoot`);
+  }
+  return warnings;
 }

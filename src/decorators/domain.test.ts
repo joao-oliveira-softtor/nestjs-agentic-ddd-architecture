@@ -97,6 +97,47 @@ describe('decorators de domínio', () => {
     expect(publish.source.line).toBeGreaterThan(0);
   });
 
+  test('@AgentEntity guarda contains e references como funções, sem chamá-las', () => {
+    const registry = createRegistry();
+    let calls = 0;
+    withRegistry(registry, () => {
+      class Filha {}
+      class Alvo {}
+      @AgentEntity({
+        description: 'Dono.',
+        contains: () => {
+          calls += 1;
+          return [Filha];
+        },
+        references: () => {
+          calls += 1;
+          return [Alvo];
+        },
+      })
+      class Dono {}
+      return Dono;
+    });
+    expect(calls).toBe(0);
+    const record = registry.entities[0]!;
+    expect(typeof record.contains).toBe('function');
+    expect(typeof record.references).toBe('function');
+    expect(record.contains!()).toHaveLength(1);
+    expect(record.references!()).toHaveLength(1);
+    expect(calls).toBe(2);
+  });
+
+  test('@AgentEntity sem contains e references não tem as chaves', () => {
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentEntity({ description: 'Solta.' })
+      class Solta {}
+      return Solta;
+    });
+    const record = registry.entities[0]!;
+    expect('contains' in record).toBe(false);
+    expect('references' in record).toBe(false);
+  });
+
   test('decorators dentro de withRegistry não vazam para o registry default', () => {
     const { Product } = declareProduct();
     expect(defaultRegistry.entities.some((e) => e.target === Product)).toBe(

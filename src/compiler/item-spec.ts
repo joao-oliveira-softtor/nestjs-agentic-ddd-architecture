@@ -68,6 +68,15 @@ export function itemSpecification(
       (i) => i.on === null || e.methods.some((m) => m.static && m.id === i.on),
     ),
   });
+  // Contidos e referenciados entram com a forma que o item usa: entidade em construção, VO inteiro.
+  const declarationOf = (id: string): unknown => {
+    const entity = ir.entities.find((e) => e.id === id);
+    return entity
+      ? construction(entity)
+      : ir.valueObjects?.find((v) => v.id === id);
+  };
+  const relations = (owner: IREntity): unknown[] =>
+    [...(owner.contains ?? []), ...(owner.references ?? [])].map(declarationOf);
   const method = (id: string) => {
     const entity = ir.entities.find((e) => e.methods.some((m) => m.id === id))!;
     const m = entity.methods.find((m) => m.id === id)!;
@@ -90,7 +99,7 @@ export function itemSpecification(
     const m = method(id);
     addEvents(m);
     m.entity.methods.forEach(addEvents);
-    contracts.push(m);
+    contracts.push(m, ...relations(m.entity));
   };
   const addUseCase = (u: IRUseCase) => {
     addEvents(u);
@@ -98,6 +107,7 @@ export function itemSpecification(
   };
   if (entity) {
     declaration = construction(entity);
+    contracts.push(...relations(entity));
     entity.methods.filter((m) => m.static).forEach(addEvents);
   } else if (valueObject) {
     declaration = valueObject;
@@ -116,6 +126,7 @@ export function itemSpecification(
     declaration = m;
     addEvents(m);
     m.entity.methods.forEach(addEvents);
+    contracts.push(...relations(m.entity));
   }
   contracts.push(...ir.events.filter((e) => eventIds.has(e.id)));
   const criteria = applicableCriteria(item, proposals);

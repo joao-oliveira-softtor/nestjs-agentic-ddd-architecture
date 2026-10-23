@@ -20,6 +20,14 @@ export function itemOfMethod(ir: IR, methodId: string): string {
   return methodId;
 }
 
+// Raiz de agregado: entidade que nenhum `contains` cita.
+export function aggregateRoots(ir: IR): Set<string> {
+  const contained = new Set(ir.entities.flatMap((e) => e.contains ?? []));
+  return new Set(
+    ir.entities.map((e) => e.id).filter((id) => !contained.has(id)),
+  );
+}
+
 export function workItems(ir: IR): WorkItem[] {
   const items: WorkItem[] = [];
   for (const entity of ir.entities) {
@@ -34,7 +42,7 @@ export function workItems(ir: IR): WorkItem[] {
       layer: 'domain',
       module: entity.module,
       source: entity.source,
-      dependsOn: [],
+      dependsOn: [...(entity.contains ?? [])].sort(),
       obligations: [...ownedByEntity, ...statics].sort(),
     });
     for (const method of entity.methods.filter((m) => !m.static)) {

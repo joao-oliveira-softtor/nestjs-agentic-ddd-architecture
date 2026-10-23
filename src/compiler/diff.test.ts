@@ -730,3 +730,40 @@ describe('value object no semanticDiff', () => {
     ]);
   });
 });
+
+describe('relações entre entidades no semanticDiff', () => {
+  test('entidade sem relação: content igual ao de hoje, sem chaves de relação', () => {
+    expect(elementsOf(base).get('entity:Product')!.content).toStrictEqual({
+      name: 'Product',
+      module: 'shop',
+      description: 'Produto do catálogo da loja.',
+      states: ['draft', 'published'],
+    });
+  });
+
+  test('contains adicionado numa entidade → modified behavioral', () => {
+    const ir = clone();
+    ir.entities[0].contains = ['valueobject:Dinheiro'];
+    expect(semanticDiff(base, ir)).toEqual([
+      {
+        id: 'entity:Product',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('references removido de uma entidade → modified behavioral', () => {
+    const before = clone();
+    before.entities[0].references = ['entity:Customer'];
+    expect(semanticDiff(before, clone())).toEqual([
+      {
+        id: 'entity:Product',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+});

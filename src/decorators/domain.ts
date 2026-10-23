@@ -5,6 +5,8 @@ import { captureSource } from './source';
 export interface AgentEntityOptions {
   readonly description: string;
   readonly states?: readonly string[];
+  readonly contains?: () => readonly ClassRef[];
+  readonly references?: () => readonly ClassRef[];
 }
 
 export function AgentEntity(options: AgentEntityOptions): ClassDecorator {
@@ -15,6 +17,8 @@ export function AgentEntity(options: AgentEntityOptions): ClassDecorator {
       description: options.description,
       states: options.states ?? [],
       source,
+      ...(options.contains && { contains: options.contains }),
+      ...(options.references && { references: options.references }),
     });
   };
 }
