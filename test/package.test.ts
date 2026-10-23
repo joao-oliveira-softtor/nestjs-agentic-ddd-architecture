@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-test('package exposes only the six public boundaries with declarations', () => {
+test('package exposes only the seven public boundaries with declarations', () => {
   for (const boundary of [
     'core',
     'decorators',
@@ -10,6 +10,7 @@ test('package exposes only the six public boundaries with declarations', () => {
     'runtime',
     'nestjs',
     'testing',
+    'mcp',
   ]) {
     expect(pkg.exports?.[`./${boundary}`]?.types).toBe(
       `./dist/${boundary}/index.d.ts`,
@@ -23,6 +24,7 @@ test('package exposes only the six public boundaries with declarations', () => {
     './compiler',
     './core',
     './decorators',
+    './mcp',
     './nestjs',
     './runtime',
     './testing',

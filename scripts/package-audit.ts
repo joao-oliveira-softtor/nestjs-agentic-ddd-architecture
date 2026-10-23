@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { isAbsolute, resolve } from 'node:path';
 
 const ALLOWED =
-  /^(?:package\.json|README\.md|LICENSE|CHANGELOG\.md|docs\/distribution\.md|bin\/agentic-ddd\.js|dist\/(?:core|decorators|compiler|contracts|runtime|nestjs|testing|cli)\/[a-zA-Z0-9_./-]+\.(?:js|d\.ts)(?:\.map)?)$/;
+  /^(?:package\.json|README\.md|LICENSE|CHANGELOG\.md|docs\/distribution\.md|bin\/agentic-ddd\.js|dist\/(?:core|decorators|compiler|contracts|runtime|nestjs|testing|cli|mcp)\/[a-zA-Z0-9_./-]+\.(?:js|d\.ts)(?:\.map)?)$/;
 const INTERNAL =
   /(?:^|\/)(?:node_modules|__fixtures__|__snapshots__|test|tests)(?:\/|$)|\.(?:test|spec)\./;
 const SECRETS =

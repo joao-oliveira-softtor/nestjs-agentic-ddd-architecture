@@ -26,6 +26,26 @@ async function run(command: string[], cwd = consumer): Promise<string> {
     );
   return stdout;
 }
+// Reads newline-delimited JSON-RPC from stdout until the reply with `id` arrives.
+async function readReply(
+  stdout: ReadableStream<Uint8Array>,
+  id: number,
+): Promise<{ result?: { isError?: boolean } }> {
+  const decoder = new TextDecoder();
+  let buffer = '';
+  for await (const chunk of stdout as unknown as AsyncIterable<Uint8Array>) {
+    buffer += decoder.decode(chunk, { stream: true });
+    let nl: number;
+    while ((nl = buffer.indexOf('\n')) !== -1) {
+      const line = buffer.slice(0, nl).trim();
+      buffer = buffer.slice(nl + 1);
+      if (!line) continue;
+      const msg = JSON.parse(line);
+      if (msg.id === id) return msg;
+    }
+  }
+  throw new Error(`stdout closed before reply ${id}`);
+}
 try {
   console.log('Packing and auditing the actual npm tarball...');
   const packed = JSON.parse(
@@ -92,6 +112,50 @@ try {
   const cli = join(consumer, 'node_modules/.bin/agentic-ddd');
   await run([cli, 'compile']);
   await run([cli, 'compile', '--check']);
+  await run([
+    'bun',
+    '-e',
+    `const mod = await import('${pkg.name}/mcp'); if (typeof mod.startMcpServer !== 'function') throw new Error('startMcpServer is not exported');`,
+  ]);
+  const mcp = Bun.spawn([cli, 'mcp', '--root', consumer], {
+    stdin: 'pipe',
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+  void mcp.stdin.write(
+    [
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2025-11-25',
+          capabilities: {},
+          clientInfo: { name: 'smoke', version: '1' },
+        },
+      },
+      { jsonrpc: '2.0', method: 'notifications/initialized' },
+      {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: { name: 'domain_overview', arguments: {} },
+      },
+    ]
+      .map((m) => `${JSON.stringify(m)}\n`)
+      .join(''),
+  );
+  const reply = await readReply(mcp.stdout, 2);
+  assert(
+    reply.result && reply.result.isError !== true,
+    'domain_overview failed over stdio',
+  );
+  void mcp.stdin.end();
+  assert.equal(
+    await mcp.exited,
+    0,
+    'agentic-ddd mcp must exit 0 when stdin closes',
+  );
   const source = JSON.parse(
     (await run(['bun', 'src/run.ts'])).trim().split('\n').at(-1)!,
   ) as { hash: string; source: string; status: string };

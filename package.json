@@ -79,6 +79,10 @@
     "./testing": {
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
     }
   },
   "main": "./dist/core/index.js",
@@ -94,6 +98,7 @@
     "dist/runtime",
     "dist/nestjs",
     "dist/testing",
+    "dist/mcp",
     "dist/cli",
     "bin/agentic-ddd.js",
     "README.md",
