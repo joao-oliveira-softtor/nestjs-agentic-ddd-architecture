@@ -50,9 +50,12 @@ export function typeNames(node: ts.TypeNode): string[] {
       ? typeNames(node.type)
       : [];
   if (ts.isTupleTypeNode(node)) return node.elements.flatMap(typeNames);
-  if (ts.isNamedTupleMember(node) || ts.isOptionalTypeNode(node))
-    return typeNames(node.type);
-  if (ts.isRestTypeNode(node) || ts.isParenthesizedTypeNode(node))
+  if (
+    ts.isNamedTupleMember(node) ||
+    ts.isOptionalTypeNode(node) ||
+    ts.isRestTypeNode(node) ||
+    ts.isParenthesizedTypeNode(node)
+  )
     return typeNames(node.type);
   if (ts.isUnionTypeNode(node) || ts.isIntersectionTypeNode(node))
     return node.types.flatMap(typeNames);
@@ -100,10 +103,10 @@ export function tacticalFindings(args: {
   sf: ts.SourceFile;
   cls: ts.ClassDeclaration;
   owner: string;
+  kind: 'entity' | 'valueobject';
   ir: IR;
 }): TacticalFinding[] {
-  const { sf, cls, owner, ir } = args;
-  const kind = owner.slice(0, owner.indexOf(':')) as 'entity' | 'valueobject';
+  const { sf, cls, owner, kind, ir } = args;
   const x = owner.slice(owner.indexOf(':') + 1);
   const entities = new Map(ir.entities.map((e) => [e.name, e]));
   const vos = new Set((ir.valueObjects ?? []).map((v) => v.name));
@@ -117,8 +120,8 @@ export function tacticalFindings(args: {
   const reach = (from: string): Set<string> => {
     const seen = new Set<string>([from]);
     const stack = [from];
-    while (stack.length > 0)
-      for (const c of containsOf(stack.pop()!))
+    for (let cur = stack.pop(); cur !== undefined; cur = stack.pop())
+      for (const c of containsOf(cur))
         if (!seen.has(c)) {
           seen.add(c);
           stack.push(c);
@@ -170,7 +173,9 @@ export function tacticalFindings(args: {
     }
   }
   return out.sort(
-    (a, b) => a.line - b.line || a.message.localeCompare(b.message),
+    (a, b) =>
+      a.line - b.line ||
+      (a.message < b.message ? -1 : a.message > b.message ? 1 : 0),
   );
 }
 
@@ -179,15 +184,13 @@ export function tacticalGate(args: {
   record: Pick<EntityRecord, 'target' | 'source'>;
   root: string;
   owner: string;
+  kind: 'entity' | 'valueobject';
 }): Finding[] {
-  const { ir, record, root, owner } = args;
+  const { ir, record, root, owner, kind } = args;
   const name = record.target.name;
-  const failClosed = (): Finding[] => [
-    {
-      message: `T: classe ${name} não encontrada em ${sourceOf(root, record.source)}`,
-      fix: 'confira o decorator na linha do source',
-      source: sourceOf(root, record.source),
-    },
+  const source = sourceOf(root, record.source);
+  const failClosed = (message: string): Finding[] => [
+    { message, fix: 'confira o decorator na linha do source', source },
   ];
   let sf: ts.SourceFile;
   try {
@@ -197,12 +200,18 @@ export function tacticalGate(args: {
       ts.ScriptTarget.Latest,
       true,
     );
-  } catch {
-    return failClosed();
+  } catch (e) {
+    const why =
+      (e as NodeJS.ErrnoException).code ??
+      (e instanceof Error ? e.message : String(e));
+    return failClosed(
+      `T: não foi possível ler ${source.split(':')[0]}: ${why}`,
+    );
   }
   const cls = findDecoratedClass(sf, record.source.line, name);
-  if (cls === null) return failClosed();
-  return tacticalFindings({ sf, cls, owner, ir }).map((f) => ({
+  if (cls === null)
+    return failClosed(`T: classe ${name} não encontrada em ${source}`);
+  return tacticalFindings({ sf, cls, owner, kind, ir }).map((f) => ({
     message: f.message,
     fix: f.fix,
     source: sourceOf(root, { file: record.source.file, line: f.line }),

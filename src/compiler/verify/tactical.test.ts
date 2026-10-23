@@ -64,7 +64,8 @@ function run(owner: string, name: string, body: string) {
   const code = `@AgentEntity({})\nclass ${name} {\n${body}\n}\n`;
   const sf = ts.createSourceFile('x.ts', code, ts.ScriptTarget.Latest, true);
   const cls = sf.statements.find(ts.isClassDeclaration)!;
-  return tacticalFindings({ sf, cls, owner, ir: IR_FIXTURE });
+  const kind = owner.startsWith('valueobject:') ? 'valueobject' : 'entity';
+  return tacticalFindings({ sf, cls, owner, kind, ir: IR_FIXTURE });
 }
 const msgs = (owner: string, name: string, body: string) =>
   run(owner, name, body).map((f) => f.message);
@@ -145,6 +146,7 @@ describe('T2', () => {
         sf,
         cls: sf.statements.find(ts.isClassDeclaration)!,
         owner: 'valueobject:AlunoId',
+        kind: 'valueobject',
         ir: IR_FIXTURE,
       });
     };
@@ -229,6 +231,7 @@ describe('tacticalGate', () => {
       record: record(file),
       root: dir,
       owner: 'entity:Matricula',
+      kind: 'entity',
     });
     expect(out).toEqual([
       {
@@ -245,10 +248,12 @@ describe('tacticalGate', () => {
       record: record(join(dir, 'nao-existe.ts')),
       root: dir,
       owner: 'entity:Matricula',
+      kind: 'entity',
     });
     expect(out.map((f) => f.message)).toEqual([
-      'T: classe Matricula não encontrada em nao-existe.ts:1',
+      'T: não foi possível ler nao-existe.ts: ENOENT',
     ]);
+    expect(out[0]?.message).toContain('não foi possível ler');
   });
 
   test('achado usa o source relativo e a linha do campo', () => {
@@ -262,6 +267,7 @@ describe('tacticalGate', () => {
       record: record(file),
       root: dir,
       owner: 'entity:Matricula',
+      kind: 'entity',
     });
     expect(out.map((f) => f.source)).toEqual(['b.ts:3']);
   });
