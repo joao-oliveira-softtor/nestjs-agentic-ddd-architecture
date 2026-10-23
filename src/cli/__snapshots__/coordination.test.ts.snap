@@ -1,0 +1,97 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`packet e verify item: hash, corpo, cobertura e typecheck; falha não relacionada é ignorada 1`] = `
+"{
+  "item": "entity:Thing",
+  "status": "done",
+  "gates": [
+    {
+      "id": "I1",
+      "name": "Dependências",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I2",
+      "name": "Implementação",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I3",
+      "name": "Especificação",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I4",
+      "name": "Obrigações",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I5",
+      "name": "Typecheck",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    }
+  ]
+}
+"
+`;
+
+exports[`packet e verify item: hash, corpo, cobertura e typecheck; falha não relacionada é ignorada 2`] = `
+"{
+  "item": "entity:Thing",
+  "status": "failed",
+  "gates": [
+    {
+      "id": "I1",
+      "name": "Dependências",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I2",
+      "name": "Implementação",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I3",
+      "name": "Especificação",
+      "status": "failed",
+      "findings": [
+        {
+          "message": "specHash diverge da especificação atual",
+          "fix": "restaure a declaração ou peça novo packet entity:Thing",
+          "source": "app/thing.ts:2"
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "id": "I4",
+      "name": "Obrigações",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "I5",
+      "name": "Typecheck",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    }
+  ]
+}
+"
+`;

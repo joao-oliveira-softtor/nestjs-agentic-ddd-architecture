@@ -294,6 +294,28 @@ describe('evaluateGates', () => {
       'b.test.ts:1',
     ]);
   });
+
+  test('relatório done tem forma estável (snapshot)', () => {
+    const report = evaluateGates(
+      input({ proposal: automaticOnly, lock: lock(automaticOnly.raw) }),
+    );
+    expect(JSON.stringify(report, null, 2)).toMatchSnapshot();
+  });
+
+  test('relatório failed tem forma estável (snapshot)', () => {
+    const report = evaluateGates(
+      input({
+        tests: {
+          exitCode: 0,
+          cases: [
+            testCase(['usecase:cancel_order']),
+            testCase(['invariant:Order/cancelamento-exige-motivo']),
+          ],
+        },
+      }),
+    );
+    expect(JSON.stringify(report, null, 2)).toMatchSnapshot();
+  });
 });
 
 test('G7 reprova um finding por proprietário de ADDED/MODIFIED, preserva needs-human quando done', () => {

@@ -285,6 +285,7 @@ export function buildIR(
     })
     .sort(byId);
 
+  // ADR-0006 D2: toda chave nova da IR, em qualquer nível, entra como ...(xs.length > 0 && { xs }); nunca xs: undefined nem xs: [].
   return {
     ir: {
       irVersion: 1,
