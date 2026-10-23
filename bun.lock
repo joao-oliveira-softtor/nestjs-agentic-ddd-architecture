@@ -9,6 +9,7 @@
         "zod": "^4.6.5",
       },
       "devDependencies": {
+        "@modelcontextprotocol/server": "2.3.1",
         "@nestbun/platform": "^0.1.2",
         "@nestjs/cli": "^12.0.0",
         "@nestjs/mau": "^0.2.6",
@@ -26,11 +27,15 @@
         "typeorm": "^1.1.1",
       },
       "peerDependencies": {
+        "@modelcontextprotocol/server": "2.3.1",
         "@nestjs/common": "^12.0.1",
         "@nestjs/core": "^12.0.1",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.1",
       },
+      "optionalPeers": [
+        "@modelcontextprotocol/server",
+      ],
     },
   },
   "packages": {
@@ -79,6 +84,10 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.6.0", "", {}, "sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw=="],
 
     "@lukeed/csprng": ["@lukeed/csprng@1.1.0", "", {}, "sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA=="],
+
+    "@modelcontextprotocol/core": ["@modelcontextprotocol/core@2.3.1", "", { "dependencies": { "zod": "^4.2.0" } }, "sha512-laVmIhPGpWi7rG9q+0UigblRN0Hws/Yjlb6qLFtVqryXVLkc4h+yN8z731POD2LnAGQlFe7/tXhUm7Bi0YB91g=="],
+
+    "@modelcontextprotocol/server": ["@modelcontextprotocol/server@2.3.1", "", { "dependencies": { "@modelcontextprotocol/core": "2.3.1", "zod": "^4.2.0" } }, "sha512-e59MfWuSssj6DoQ96JCTqdW1AXT5/XtnTl0WWd6MU1Ka434fFUGGosCLJbGNySDhHGvxQWoRWK137FXYFkYNWw=="],
 
     "@nestbun/platform": ["@nestbun/platform@0.1.2", "", { "dependencies": { "cors": "^2.8.6", "path-to-regexp": "^8.4.2" }, "peerDependencies": { "@nestjs/common": "^12.0.0", "@nestjs/core": "^12.0.0" } }, "sha512-xNy7wQzGhzdmImGdgTMCnnDPhOA+qkboi7JEy/J9HFMHXVHnSNyQxKv5mhdjFgN6ppBq2EC96Wn/KUcgmLnt6g=="],
 

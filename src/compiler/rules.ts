@@ -190,6 +190,21 @@ export function composeRules(team: Rule[], exclude: readonly string[]): Rule[] {
   return ordered.filter((r) => !dropped.has(r.key));
 }
 
+// Pasta inexistente = nenhuma regra do time.
+export async function ruleFiles(cwd: string): Promise<string[]> {
+  const files: string[] = [];
+  try {
+    for await (const rel of new Bun.Glob('**/*.md').scan({
+      cwd,
+      onlyFiles: true,
+    }))
+      files.push(toPosix(rel));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+  return files;
+}
+
 export async function loadRules(config: ResolvedConfig): Promise<Rule[]> {
   const cwd = join(config.root, config.rules.dir);
   const team: Rule[] = [];
@@ -213,19 +228,13 @@ export async function loadRules(config: ResolvedConfig): Promise<Rule[]> {
       );
   }
   try {
-    for await (const rel of new Bun.Glob('**/*.md').scan({
-      cwd,
-      onlyFiles: true,
-    }))
-      files.push(toPosix(rel));
+    files.push(...(await ruleFiles(cwd)));
   } catch (error) {
-    // Pasta inexistente = nenhuma regra do time.
     const code = (error as NodeJS.ErrnoException).code;
-    if (code !== 'ENOENT')
-      throw new RuleError(
-        config.rules.dir,
-        `${config.rules.dir}: não foi possível ler a pasta de regras (${code ?? (error as Error).message})`,
-      );
+    throw new RuleError(
+      config.rules.dir,
+      `${config.rules.dir}: não foi possível ler a pasta de regras (${code ?? (error as Error).message})`,
+    );
   }
   for (const posix of files)
     team.push(

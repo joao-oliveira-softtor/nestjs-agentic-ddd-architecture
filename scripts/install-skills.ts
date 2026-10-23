@@ -17,6 +17,7 @@ export interface InstallOptions {
   scope: 'project' | 'user';
   target: Target | 'all';
   check?: boolean;
+  mcp?: boolean;
 }
 type Artifact =
   { path: string; content: string } | { path: string; link: string };
@@ -33,6 +34,47 @@ const ROLE_NAMES = {
   executor: 'executor',
   reviewer: 'revisor',
 } as const;
+const MCP_CONFIG = {
+  claude: {
+    path: '.mcp.json',
+    content: (cli: string) =>
+      JSON.stringify(
+        {
+          mcpServers: { 'agentic-ddd': { command: 'bun', args: [cli, 'mcp'] } },
+        },
+        null,
+        2,
+      ) + '\n',
+  },
+  cursor: {
+    path: '.cursor/mcp.json',
+    content: (cli: string) =>
+      JSON.stringify(
+        {
+          mcpServers: {
+            'agentic-ddd': {
+              command: 'bun',
+              args: [
+                '${workspaceFolder}/' + cli,
+                'mcp',
+                '--root',
+                '${workspaceFolder}',
+              ],
+            },
+          },
+        },
+        null,
+        2,
+      ) + '\n',
+  },
+  codex: {
+    path: '.codex/config.toml',
+    content: (cli: string) =>
+      '# Instalado por skills:install --mcp.\n[mcp_servers.agentic-ddd]\ncommand = "bun"\nargs = ' +
+      JSON.stringify([cli, 'mcp']) +
+      '\n',
+  },
+} satisfies Record<Target, { path: string; content: (cli: string) => string }>;
 
 function artifacts(options: InstallOptions): Artifact[] {
   const targets: Target[] =
@@ -78,6 +120,19 @@ function artifacts(options: InstallOptions): Artifact[] {
         content,
       });
     }
+  if (options.mcp) {
+    const cli = relative(
+      options.root,
+      resolve(import.meta.dir, '../src/cli/main.ts'),
+    )
+      .split('\\')
+      .join('/');
+    for (const target of targets)
+      result.push({
+        path: join(options.root, MCP_CONFIG[target].path),
+        content: MCP_CONFIG[target].content(cli),
+      });
+  }
   return result;
 }
 
@@ -159,10 +214,15 @@ export function parseInstallArgs(args: string[]): InstallOptions {
   let target: InstallOptions['target'] = 'all';
   let root: string | undefined;
   let check = false;
+  let mcp = false;
   for (let i = 0; i < args.length; i++) {
     const flag = args[i];
     if (flag === '--check') {
       check = true;
+      continue;
+    }
+    if (flag === '--mcp') {
+      mcp = true;
       continue;
     }
     if (!['--scope', '--target', '--root'].includes(flag!))
@@ -180,11 +240,14 @@ export function parseInstallArgs(args: string[]): InstallOptions {
       target = value as InstallOptions['target'];
     } else root = value;
   }
+  if (mcp && scope === 'user')
+    throw new Error('--mcp só vale com --scope project');
   return {
     scope,
     target,
     root: resolve(root ?? (scope === 'user' ? homedir() : process.cwd())),
     check,
+    mcp,
   };
 }
 

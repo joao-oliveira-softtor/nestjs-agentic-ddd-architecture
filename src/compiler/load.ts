@@ -6,10 +6,13 @@ import { toPosix } from './ir';
 const SKIPPED_DIR = /(^|\/)(test|__fixtures__|__snapshots__)\//;
 const SKIPPED_FILE = /\.(test|spec)\.ts$|\.d\.ts$/;
 
-export async function importModules(config: ResolvedConfig): Promise<string[]> {
+export async function moduleFiles(
+  root: string,
+  modules: readonly { path: string }[],
+): Promise<string[]> {
   const files: string[] = [];
-  for (const module of config.modules) {
-    const cwd = join(config.root, module.path);
+  for (const module of modules) {
+    const cwd = join(root, module.path);
     for await (const rel of new Bun.Glob('**/*.ts').scan({
       cwd,
       onlyFiles: true,
@@ -19,7 +22,11 @@ export async function importModules(config: ResolvedConfig): Promise<string[]> {
       files.push(join(cwd, rel));
     }
   }
-  files.sort();
+  return files.sort();
+}
+
+export async function importModules(config: ResolvedConfig): Promise<string[]> {
+  const files = await moduleFiles(config.root, config.modules);
   for (const file of files) await import(pathToFileURL(file).href);
   return files;
 }
