@@ -15,7 +15,14 @@ const lock: DomainLock = {
       path: 'changes/archive/0001-estado-inicial/proposal.md',
       summary: 'Base do histórico.',
       hash: 'abc',
-      items: [{ id: 'entity:Order', kind: 'added', classification: 'behavioral', module: 'orders' }],
+      items: [
+        {
+          id: 'entity:Order',
+          kind: 'added',
+          classification: 'behavioral',
+          module: 'orders',
+        },
+      ],
     },
   ],
 };
@@ -45,8 +52,12 @@ describe('lock', () => {
   });
 
   test('versão desconhecida e lock incompleto viram erro', () => {
-    expect(() => parseLock('{"lockVersion":2}', 'l.json')).toThrow('l.json: lockVersion 2 não suportada (esperado 1)');
-    expect(() => parseLock('{"lockVersion":1,"changes":[]}', 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes)');
+    expect(() => parseLock('{"lockVersion":2}', 'l.json')).toThrow(
+      'l.json: lockVersion 2 não suportada (esperado 1)',
+    );
+    expect(() => parseLock('{"lockVersion":1,"changes":[]}', 'l.json')).toThrow(
+      'l.json: lock incompleto (faltam ir ou changes)',
+    );
   });
 
   test('readLock devolve null quando o arquivo não existe', async () => {
@@ -56,14 +67,27 @@ describe('lock', () => {
   });
 
   test('JSON válido que não é objeto vira lock incompleto', () => {
-    expect(() => parseLock('[]', 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
-    expect(() => parseLock('null', 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
-    expect(() => parseLock('5', 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
-    expect(() => parseLock('"x"', 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
+    expect(() => parseLock('[]', 'l.json')).toThrow(
+      'l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git',
+    );
+    expect(() => parseLock('null', 'l.json')).toThrow(
+      'l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git',
+    );
+    expect(() => parseLock('5', 'l.json')).toThrow(
+      'l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git',
+    );
+    expect(() => parseLock('"x"', 'l.json')).toThrow(
+      'l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git',
+    );
   });
 
   test('lock com ir válido mas sem arrays vira incompleto', () => {
-    expect(() => parseLock('{"lockVersion":1,"ir":{"irVersion":1},"changes":[]}', 'l.json')).toThrow(
+    expect(() =>
+      parseLock(
+        '{"lockVersion":1,"ir":{"irVersion":1},"changes":[]}',
+        'l.json',
+      ),
+    ).toThrow(
       'l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git',
     );
   });
@@ -83,7 +107,9 @@ describe('lock', () => {
         },
       ],
     };
-    expect(() => parseLock(JSON.stringify(invalid), 'l.json')).toThrow('l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git');
+    expect(() => parseLock(JSON.stringify(invalid), 'l.json')).toThrow(
+      'l.json: lock incompleto (faltam ir ou changes); restaure-o pelo git',
+    );
   });
 
   test('readLock propaga erro de JSON malformado', async () => {
@@ -91,5 +117,16 @@ describe('lock', () => {
     expect(readLock(join(dir, 'broken.json'), 'broken.json')).rejects.toThrow(
       'broken.json: lock inválido (JSON malformado); restaure-o pelo git',
     );
+  });
+
+  test('lock aceita chave nova da IR (ADR-0006 D2)', () => {
+    const text = JSON.stringify({
+      ...lock,
+      ir: { ...EMPTY_IR, valueObjects: [{ id: 'valueobject:X' }] },
+    });
+    const parsed = parseLock(text, 'lock.json');
+    expect(parsed.ir).toMatchObject({
+      valueObjects: [{ id: 'valueobject:X' }],
+    });
   });
 });

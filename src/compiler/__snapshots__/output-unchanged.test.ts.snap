@@ -1,0 +1,1744 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`saída sem elemento tático orders: arquivos, bloco do AGENTS.md e lock não mudam 1`] = `
+{
+  "agentsBlock": 
+"<!-- agentic-ddd:begin -->
+<!-- GERADO por agentic-ddd compile — não edite este bloco; o texto fora dele é seu. -->
+
+## Domínio (agentic-ddd)
+
+| Módulo | Código | Skill de dev |
+|---|---|---|
+| orders | \`examples/orders\` | \`.agents/skills/orders-dev/SKILL.md\` |
+
+| Operator | Skill de runtime |
+|---|---|
+| order-operator | \`.agentic/runtime/order-operator/SKILL.md\` |
+
+### Convenções
+
+- Entidades, métodos, eventos, use-cases e operators são declarados com \`@AgentEntity\`, \`@AgentMethod\`, \`@AgentEvent\`, \`@AgentUseCase\` e \`@Operator\` de \`@agentic-ddd/decorators\`; cada regra de negócio é um \`@Invariant({ id, text })\` com ID estável.
+- Onde criar: \`<caminho do módulo>/domain\` (entidades, eventos, ports), \`<caminho do módulo>/application\` (use-cases, sempre com \`uses\`), \`<caminho do módulo>/operators\` (operators). A skill de dev do módulo tem os caminhos exatos.
+- Todo método público de entidade tem \`@AgentMethod\`; métodos auxiliares usam \`#privado\`.
+- Corpo declarado e ainda não implementado usa \`notImplemented()\` de \`@agentic-ddd/core\`.
+- Coordenação: consulte \`bun run agentic status\` ou \`next\` (ondas); execute cada item a partir de \`bun run agentic packet <item>\` e valide com \`bun run agentic verify --item <item> --spec-hash <hash>\`. \`status --static\` lê declarações de teste sem executá-las e nunca certifica \`done\`.
+- O sinal de esqueleto reconhece só a chamada literal \`notImplemented()\`; corpo vazio conta como implementado. Estado é calculado sob demanda e não entra nos arquivos gerados.
+- Testes declaram o que cobrem com \`covers([...ids], título)\` de \`@agentic-ddd/testing\`.
+- Mudança de regra de negócio: escreva antes a proposta em \`changes/NNNN-<slug>/proposal.md\` (delta, critérios de aceite e \`## Motivo\`), implemente e rode \`bun run agentic compile\`; para mudança já feita no código, \`bun run agentic compile --draft-change <slug>\` gera o rascunho.
+- Uma tarefa só está concluída quando \`bun run agentic verify <NNNN>\` retorna \`done\` ou \`needs-human\`.
+- Gerados (não edite): \`.agents/skills\`, \`.agentic/runtime\`, os espelhos de skills e este bloco. Altere o código decorado e rode \`bun run agentic compile\`; o CI roda \`bun run agentic compile --check\`.
+<!-- agentic-ddd:end -->"
+,
+  "files": {
+    ".agentic/runtime/order-operator/SKILL.md": 
+"---
+name: order-operator
+description: "Opera o ciclo de vida de pedidos de compra: criar, confirmar e cancelar. Use quando a mensagem pedir uma ação sobre um pedido."
+metadata:
+  agentic-ddd.audience: runtime
+  agentic-ddd.generated: "true"
+  agentic-ddd.ir-hash: "8d34414532936a2c65461c4e84a76bfb3412e42e212778dcad173d625baeb57a"
+---
+<!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders/operators/order.operator.ts:6 -->
+
+# Operator \`order-operator\`
+
+Opera o ciclo de vida de pedidos de compra: criar, confirmar e cancelar. Use quando a mensagem pedir uma ação sobre um pedido.
+
+## Tools
+
+Tools marcadas com **Exige aprovação humana: sim** só executam depois de uma pessoa aprovar; se a aprovação for negada, a tool devolve o erro \`approval_denied\` e nada é alterado.
+
+### \`cancel_order\`
+
+Cancela um pedido pendente ou confirmado.
+
+- **Quando usar:** Quando o cliente desistir de um pedido que ainda não foi cancelado.
+- **Quando não usar:** Para pedidos já cancelados.
+- **Aciona:** \`Order.cancel\`
+- **Emite:** \`OrderCancelled\`
+- **Exige aprovação humana:** sim
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| \`order_id\` | string | sim | Id do pedido a cancelar |
+| \`reason\` | string | sim | Motivo do cancelamento informado pelo cliente |
+
+Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`cancel_order\`.
+
+### \`confirm_order\`
+
+Confirma um pedido pendente.
+
+- **Quando usar:** Quando o cliente ou o atendente confirmar um pedido pendente.
+- **Quando não usar:** Para pedidos já confirmados ou cancelados.
+- **Aciona:** \`Order.confirm\`
+- **Emite:** \`OrderConfirmed\`
+- **Exige aprovação humana:** não
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| \`order_id\` | string | sim | Id do pedido a confirmar |
+
+Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`confirm_order\`.
+
+### \`create_order\`
+
+Cria um pedido pendente para um cliente com os itens informados.
+
+- **Quando usar:** Quando o cliente quer abrir um novo pedido.
+- **Quando não usar:** Para alterar itens de um pedido que já existe.
+- **Aciona:** \`Order.create\`
+- **Emite:** \`OrderCreated\`
+- **Exige aprovação humana:** não
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| \`order_id\` | string | sim | Id do novo pedido |
+| \`customer_id\` | string | sim | Id do cliente |
+| \`items\` | array<object> | sim | Itens do pedido |
+
+Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`create_order\`.
+
+## Regras de negócio
+
+| Invariante | Regra | Garantida por |
+|---|---|---|
+| \`invariant:Order/ao-menos-um-item\` | Um pedido precisa ter ao menos um item. | construção |
+| \`invariant:Order/cancelamento-exige-motivo\` | Todo cancelamento precisa de um motivo não vazio. | \`Order.cancel\` |
+| \`invariant:Order/total-nao-negativo\` | O total do pedido (soma de quantidade × preço unitário) nunca pode ser negativo. | construção |
+
+## Estados e transições
+
+| Método | De | Para |
+|---|---|---|
+| \`Order.cancel\` | \`pending\`, \`confirmed\` | \`cancelled\` |
+| \`Order.confirm\` | \`pending\` | \`confirmed\` |
+
+Detalhes: [schemas das tools](references/tools.schema.json) · [máquina de estados](references/state-machine.md)
+"
+,
+    ".agentic/runtime/order-operator/references/state-machine.md": 
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders/operators/order.operator.ts:6 -->
+
+# Máquina de estados
+
+## Order
+
+Estados: \`pending\`, \`confirmed\`, \`cancelled\`
+
+| Método | De | Para | Emite |
+|---|---|---|---|
+| \`Order.cancel\` | \`pending\`, \`confirmed\` | \`cancelled\` | \`OrderCancelled\` |
+| \`Order.confirm\` | \`pending\` | \`confirmed\` | \`OrderConfirmed\` |
+"
+,
+    ".agentic/runtime/order-operator/references/tools.schema.json": 
+"{
+  "cancel_order": {
+    "input": {
+      "properties": {
+        "order_id": {
+          "description": "Id do pedido a cancelar",
+          "minLength": 1,
+          "type": "string"
+        },
+        "reason": {
+          "description": "Motivo do cancelamento informado pelo cliente",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "output": {
+      "additionalProperties": false,
+      "properties": {
+        "order_id": {
+          "type": "string"
+        },
+        "status": {
+          "const": "cancelled",
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "status"
+      ],
+      "type": "object"
+    }
+  },
+  "confirm_order": {
+    "input": {
+      "properties": {
+        "order_id": {
+          "description": "Id do pedido a confirmar",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id"
+      ],
+      "type": "object"
+    },
+    "output": {
+      "additionalProperties": false,
+      "properties": {
+        "order_id": {
+          "type": "string"
+        },
+        "status": {
+          "const": "confirmed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "status"
+      ],
+      "type": "object"
+    }
+  },
+  "create_order": {
+    "input": {
+      "properties": {
+        "customer_id": {
+          "description": "Id do cliente",
+          "minLength": 1,
+          "type": "string"
+        },
+        "items": {
+          "description": "Itens do pedido",
+          "items": {
+            "properties": {
+              "quantity": {
+                "description": "Quantidade",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer"
+              },
+              "sku": {
+                "description": "Código do produto",
+                "minLength": 1,
+                "type": "string"
+              },
+              "unit_price": {
+                "description": "Preço unitário em reais",
+                "minimum": 0,
+                "type": "number"
+              }
+            },
+            "required": [
+              "sku",
+              "quantity",
+              "unit_price"
+            ],
+            "type": "object"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "order_id": {
+          "description": "Id do novo pedido",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "customer_id",
+        "items"
+      ],
+      "type": "object"
+    },
+    "output": {
+      "additionalProperties": false,
+      "properties": {
+        "order_id": {
+          "type": "string"
+        },
+        "status": {
+          "const": "pending",
+          "type": "string"
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "order_id",
+        "status",
+        "total"
+      ],
+      "type": "object"
+    }
+  }
+}
+"
+,
+    ".agents/skills/orders-dev/SKILL.md": 
+"---
+name: orders-dev
+description: "Domínio orders: entidades Order; use-cases cancel_order, confirm_order, create_order; operators order-operator. Use quando for implementar, alterar, testar ou revisar código em examples/orders."
+metadata:
+  agentic-ddd.audience: dev
+  agentic-ddd.generated: "true"
+  agentic-ddd.ir-hash: "8d34414532936a2c65461c4e84a76bfb3412e42e212778dcad173d625baeb57a"
+---
+<!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders -->
+
+# Módulo \`orders\`
+
+Código em \`examples/orders\`. Esta skill descreve o domínio declarado (requisitos, regras e contratos); ela não registra estado de implementação.
+
+## Entidades
+
+### Order — \`entity:Order\`
+
+Pedido de compra de um cliente, com itens e ciclo de vida pendente, confirmado ou cancelado.
+
+Fonte: \`examples/orders/domain/order.ts:19\` · Estados: \`pending\`, \`confirmed\`, \`cancelled\`
+
+| Invariante | Regra | Garantida por | Fonte |
+|---|---|---|---|
+| \`invariant:Order/ao-menos-um-item\` | Um pedido precisa ter ao menos um item. | construção | \`examples/orders/domain/order.ts:24\` |
+| \`invariant:Order/cancelamento-exige-motivo\` | Todo cancelamento precisa de um motivo não vazio. | \`Order.cancel\` | \`examples/orders/domain/order.ts:108\` |
+| \`invariant:Order/total-nao-negativo\` | O total do pedido (soma de quantidade × preço unitário) nunca pode ser negativo. | construção | \`examples/orders/domain/order.ts:28\` |
+
+| Método | Descrição | Transição | Emite | Fonte |
+|---|---|---|---|---|
+| \`Order.cancel\` | Cancela um pedido pendente ou confirmado. | \`pending\`, \`confirmed\` → \`cancelled\` | \`OrderCancelled\` | \`examples/orders/domain/order.ts:103\` |
+| \`Order.confirm\` | Confirma um pedido pendente. | \`pending\` → \`confirmed\` | \`OrderConfirmed\` | \`examples/orders/domain/order.ts:92\` |
+| \`Order.create\` | Cria um pedido pendente para um cliente. | — | \`OrderCreated\` | \`examples/orders/domain/order.ts:64\` |
+
+## Eventos
+
+| Evento | Descrição | Fonte |
+|---|---|---|
+| \`OrderCancelled\` | Um pedido foi cancelado. | \`examples/orders/domain/order.events.ts:27\` |
+| \`OrderConfirmed\` | Um pedido pendente foi confirmado. | \`examples/orders/domain/order.events.ts:21\` |
+| \`OrderCreated\` | Um pedido foi criado e está pendente. | \`examples/orders/domain/order.events.ts:11\` |
+
+## Use-cases
+
+| Use-case | Descrição | Aciona | Emite | Fonte |
+|---|---|---|---|---|
+| \`cancel_order\` | Cancela um pedido pendente ou confirmado. | \`Order.cancel\` | \`OrderCancelled\` | \`examples/orders/application/cancel-order.ts:22\` |
+| \`confirm_order\` | Confirma um pedido pendente. | \`Order.confirm\` | \`OrderConfirmed\` | \`examples/orders/application/confirm-order.ts:18\` |
+| \`create_order\` | Cria um pedido pendente para um cliente com os itens informados. | \`Order.create\` | \`OrderCreated\` | \`examples/orders/application/create-order.ts:37\` |
+
+## Operators
+
+| Operator | Use-cases | Exige aprovação | Fonte |
+|---|---|---|---|
+| \`order-operator\` | \`cancel_order\`, \`confirm_order\`, \`create_order\` | \`cancel_order\` | \`examples/orders/operators/order.operator.ts:6\` |
+
+## Dependências entre itens
+
+| Item | Camada | Depende de |
+|---|---|---|
+| \`entity:Order\` | domain | — |
+| \`method:Order.cancel\` | domain | \`entity:Order\` |
+| \`method:Order.confirm\` | domain | \`entity:Order\` |
+| \`operator:order-operator\` | operators | \`usecase:cancel_order\`, \`usecase:confirm_order\`, \`usecase:create_order\` |
+| \`usecase:cancel_order\` | application | \`method:Order.cancel\` |
+| \`usecase:confirm_order\` | application | \`method:Order.confirm\` |
+| \`usecase:create_order\` | application | \`entity:Order\` |
+
+## Obrigações de teste
+
+Cada ID abaixo precisa de ao menos um teste nomeado com \`covers([...ids], título)\` de \`@agentic-ddd/testing\`.
+
+| Item | IDs a cobrir |
+|---|---|
+| \`entity:Order\` | \`invariant:Order/ao-menos-um-item\`, \`invariant:Order/total-nao-negativo\`, \`method:Order.create\` |
+| \`method:Order.cancel\` | \`invariant:Order/cancelamento-exige-motivo\`, \`method:Order.cancel\` |
+| \`method:Order.confirm\` | \`method:Order.confirm\` |
+| \`operator:order-operator\` | \`operator:order-operator\` |
+| \`usecase:cancel_order\` | \`usecase:cancel_order\` |
+| \`usecase:confirm_order\` | \`usecase:confirm_order\` |
+| \`usecase:create_order\` | \`usecase:create_order\` |
+
+## Como estender
+
+| Artefato | Onde criar | Como declarar |
+|---|---|---|
+| Entidade | \`examples/orders/domain/<nome>.ts\` | \`@AgentEntity({ description, states })\` + \`@Invariant({ id, text })\` na classe |
+| Método de entidade | na classe da entidade | \`@AgentMethod({ description, transition?, emits? })\`; regra garantida pelo método: \`@Invariant\` no método; auxiliares: \`#privado\` |
+| Evento | \`examples/orders/domain/<agregado>.events.ts\` | \`@AgentEvent({ description, payload })\` estendendo \`DomainEvent\` |
+| Use-case | \`examples/orders/application/<nome>.ts\` | \`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entidade>.<método>'], emits? })\` |
+| Operator | \`examples/orders/operators/<nome>.operator.ts\` | \`@Operator({ name, description, instructions, useCases, requiresApproval? })\` |
+
+Corpo declarado e ainda não implementado usa \`notImplemented()\` de \`@agentic-ddd/core\`.
+
+## Referências
+
+- [Histórico de mudanças](references/history.md)
+- [Schemas de eventos e use-cases](references/schemas.json)
+- [Máquina de estados](references/state-machine.md)
+"
+,
+    ".agents/skills/orders-dev/references/history.md": 
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders -->
+
+# Histórico do módulo \`orders\`
+
+## Order
+
+| Change | Título | Mudanças | Motivo |
+|---|---|---|---|
+| [0001](../../../../changes/archive/0001-estado-inicial/proposal.md) | Estado inicial do domínio orders | added \`entity:Order\` (behavioral); added \`invariant:Order/ao-menos-um-item\` (behavioral); added \`invariant:Order/total-nao-negativo\` (behavioral); added \`method:Order.cancel\` (behavioral); added \`method:Order.confirm\` (behavioral); added \`method:Order.create\` (behavioral) | Registra o estado inicial do domínio \`orders\` — pedido com criação, confirmação e cancelamento, três use-cases e o \`order-operator\` — como base do histórico. A partir daqui, toda mudança de regra de negócio passa por uma proposta em \`changes/\`. |
+| [0002](../../../../changes/archive/0002-cancelamento-exige-motivo/proposal.md) | Cancelamento exige motivo | added \`invariant:Order/cancelamento-exige-motivo\` (behavioral) | O atendimento precisa saber por que cada pedido foi cancelado para tratar reclamações e medir desistências. Hoje \`cancel_order\` aceita cancelar sem nenhuma justificativa. |
+
+## Eventos, use-cases e operators
+
+| Change | Título | Mudanças | Motivo |
+|---|---|---|---|
+| [0001](../../../../changes/archive/0001-estado-inicial/proposal.md) | Estado inicial do domínio orders | added \`event:OrderCancelled\` (behavioral); added \`event:OrderConfirmed\` (behavioral); added \`event:OrderCreated\` (behavioral); added \`operator:order-operator\` (behavioral); added \`usecase:cancel_order\` (behavioral); added \`usecase:confirm_order\` (behavioral); added \`usecase:create_order\` (behavioral) | Registra o estado inicial do domínio \`orders\` — pedido com criação, confirmação e cancelamento, três use-cases e o \`order-operator\` — como base do histórico. A partir daqui, toda mudança de regra de negócio passa por uma proposta em \`changes/\`. |
+| [0002](../../../../changes/archive/0002-cancelamento-exige-motivo/proposal.md) | Cancelamento exige motivo | modified \`usecase:cancel_order\` (breaking) | O atendimento precisa saber por que cada pedido foi cancelado para tratar reclamações e medir desistências. Hoje \`cancel_order\` aceita cancelar sem nenhuma justificativa. |
+"
+,
+    ".agents/skills/orders-dev/references/schemas.json": 
+"{
+  "events": {
+    "OrderCancelled": {
+      "additionalProperties": false,
+      "properties": {
+        "orderId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "orderId"
+      ],
+      "type": "object"
+    },
+    "OrderConfirmed": {
+      "additionalProperties": false,
+      "properties": {
+        "orderId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "orderId"
+      ],
+      "type": "object"
+    },
+    "OrderCreated": {
+      "additionalProperties": false,
+      "properties": {
+        "customerId": {
+          "type": "string"
+        },
+        "orderId": {
+          "type": "string"
+        },
+        "total": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "orderId",
+        "customerId",
+        "total"
+      ],
+      "type": "object"
+    }
+  },
+  "useCases": {
+    "cancel_order": {
+      "input": {
+        "properties": {
+          "order_id": {
+            "description": "Id do pedido a cancelar",
+            "minLength": 1,
+            "type": "string"
+          },
+          "reason": {
+            "description": "Motivo do cancelamento informado pelo cliente",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "cancelled",
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    "confirm_order": {
+      "input": {
+        "properties": {
+          "order_id": {
+            "description": "Id do pedido a confirmar",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "confirmed",
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    "create_order": {
+      "input": {
+        "properties": {
+          "customer_id": {
+            "description": "Id do cliente",
+            "minLength": 1,
+            "type": "string"
+          },
+          "items": {
+            "description": "Itens do pedido",
+            "items": {
+              "properties": {
+                "quantity": {
+                  "description": "Quantidade",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "type": "integer"
+                },
+                "sku": {
+                  "description": "Código do produto",
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "unit_price": {
+                  "description": "Preço unitário em reais",
+                  "minimum": 0,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "sku",
+                "quantity",
+                "unit_price"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "order_id": {
+            "description": "Id do novo pedido",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "customer_id",
+          "items"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "order_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "pending",
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "order_id",
+          "status",
+          "total"
+        ],
+        "type": "object"
+      }
+    }
+  }
+}
+"
+,
+    ".agents/skills/orders-dev/references/state-machine.md": 
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: examples/orders -->
+
+# Máquina de estados
+
+## Order
+
+Estados: \`pending\`, \`confirmed\`, \`cancelled\`
+
+| Método | De | Para | Emite |
+|---|---|---|---|
+| \`Order.cancel\` | \`pending\`, \`confirmed\` | \`cancelled\` | \`OrderCancelled\` |
+| \`Order.confirm\` | \`pending\` | \`confirmed\` | \`OrderConfirmed\` |
+"
+,
+  },
+  "lock": 
+"{
+  "changes": [
+    {
+      "hash": "110fe6f308b80d5956a135c29c10c0a811c2deff84c510d096afbae0e9a2b9f8",
+      "id": "0001",
+      "items": [
+        {
+          "classification": "behavioral",
+          "id": "entity:Order",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "event:OrderCancelled",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "event:OrderConfirmed",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "event:OrderCreated",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "invariant:Order/ao-menos-um-item",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "invariant:Order/total-nao-negativo",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "method:Order.cancel",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "method:Order.confirm",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "method:Order.create",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "operator:order-operator",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "usecase:cancel_order",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "usecase:confirm_order",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "behavioral",
+          "id": "usecase:create_order",
+          "kind": "added",
+          "module": "orders"
+        }
+      ],
+      "path": "changes/archive/0001-estado-inicial/proposal.md",
+      "summary": "Registra o estado inicial do domínio \`orders\` — pedido com criação, confirmação e cancelamento, três use-cases e o \`order-operator\` — como base do histórico. A partir daqui, toda mudança de regra de negócio passa por uma proposta em \`changes/\`.",
+      "title": "Estado inicial do domínio orders"
+    },
+    {
+      "hash": "4717f6747571176cf8fc969ba722801c360b0eac592a9a49e684bdf007c7d7ec",
+      "id": "0002",
+      "items": [
+        {
+          "classification": "behavioral",
+          "id": "invariant:Order/cancelamento-exige-motivo",
+          "kind": "added",
+          "module": "orders"
+        },
+        {
+          "classification": "breaking",
+          "id": "usecase:cancel_order",
+          "kind": "modified",
+          "module": "orders"
+        }
+      ],
+      "path": "changes/archive/0002-cancelamento-exige-motivo/proposal.md",
+      "summary": "O atendimento precisa saber por que cada pedido foi cancelado para tratar reclamações e medir desistências. Hoje \`cancel_order\` aceita cancelar sem nenhuma justificativa.",
+      "title": "Cancelamento exige motivo"
+    }
+  ],
+  "ir": {
+    "entities": [
+      {
+        "description": "Pedido de compra de um cliente, com itens e ciclo de vida pendente, confirmado ou cancelado.",
+        "id": "entity:Order",
+        "invariants": [
+          {
+            "id": "invariant:Order/ao-menos-um-item",
+            "on": null,
+            "source": "examples/orders/domain/order.ts:24",
+            "text": "Um pedido precisa ter ao menos um item."
+          },
+          {
+            "id": "invariant:Order/cancelamento-exige-motivo",
+            "on": "method:Order.cancel",
+            "source": "examples/orders/domain/order.ts:108",
+            "text": "Todo cancelamento precisa de um motivo não vazio."
+          },
+          {
+            "id": "invariant:Order/total-nao-negativo",
+            "on": null,
+            "source": "examples/orders/domain/order.ts:28",
+            "text": "O total do pedido (soma de quantidade × preço unitário) nunca pode ser negativo."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cancela um pedido pendente ou confirmado.",
+            "emits": [
+              "event:OrderCancelled"
+            ],
+            "id": "method:Order.cancel",
+            "name": "cancel",
+            "source": "examples/orders/domain/order.ts:103",
+            "static": false,
+            "transition": {
+              "from": [
+                "pending",
+                "confirmed"
+              ],
+              "to": "cancelled"
+            }
+          },
+          {
+            "description": "Confirma um pedido pendente.",
+            "emits": [
+              "event:OrderConfirmed"
+            ],
+            "id": "method:Order.confirm",
+            "name": "confirm",
+            "source": "examples/orders/domain/order.ts:92",
+            "static": false,
+            "transition": {
+              "from": [
+                "pending"
+              ],
+              "to": "confirmed"
+            }
+          },
+          {
+            "description": "Cria um pedido pendente para um cliente.",
+            "emits": [
+              "event:OrderCreated"
+            ],
+            "id": "method:Order.create",
+            "name": "create",
+            "source": "examples/orders/domain/order.ts:64",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "orders",
+        "name": "Order",
+        "source": "examples/orders/domain/order.ts:19",
+        "states": [
+          "pending",
+          "confirmed",
+          "cancelled"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "description": "Um pedido foi cancelado.",
+        "id": "event:OrderCancelled",
+        "module": "orders",
+        "name": "OrderCancelled",
+        "payloadSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "orderId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "orderId"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/domain/order.events.ts:27"
+      },
+      {
+        "description": "Um pedido pendente foi confirmado.",
+        "id": "event:OrderConfirmed",
+        "module": "orders",
+        "name": "OrderConfirmed",
+        "payloadSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "orderId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "orderId"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/domain/order.events.ts:21"
+      },
+      {
+        "description": "Um pedido foi criado e está pendente.",
+        "id": "event:OrderCreated",
+        "module": "orders",
+        "name": "OrderCreated",
+        "payloadSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "customerId": {
+              "type": "string"
+            },
+            "orderId": {
+              "type": "string"
+            },
+            "total": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "orderId",
+            "customerId",
+            "total"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/domain/order.events.ts:11"
+      }
+    ],
+    "irVersion": 1,
+    "modules": [
+      {
+        "name": "orders",
+        "path": "examples/orders"
+      }
+    ],
+    "operators": [
+      {
+        "description": "Opera o ciclo de vida de pedidos de compra: criar, confirmar e cancelar. Use quando a mensagem pedir uma ação sobre um pedido.",
+        "id": "operator:order-operator",
+        "instructions": "Você opera pedidos de compra. Use apenas as tools disponíveis. Identifique o pedido pelo id antes de agir e responda em português.",
+        "limits": {
+          "maxSteps": 8,
+          "timeoutMs": 30000
+        },
+        "model": "default",
+        "module": "orders",
+        "name": "order-operator",
+        "requiresApproval": [
+          "usecase:cancel_order"
+        ],
+        "source": "examples/orders/operators/order.operator.ts:6",
+        "useCases": [
+          "usecase:cancel_order",
+          "usecase:confirm_order",
+          "usecase:create_order"
+        ]
+      }
+    ],
+    "useCases": [
+      {
+        "description": "Cancela um pedido pendente ou confirmado.",
+        "emits": [
+          "event:OrderCancelled"
+        ],
+        "id": "usecase:cancel_order",
+        "inputSchema": {
+          "properties": {
+            "order_id": {
+              "description": "Id do pedido a cancelar",
+              "minLength": 1,
+              "type": "string"
+            },
+            "reason": {
+              "description": "Motivo do cancelamento informado pelo cliente",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id",
+            "reason"
+          ],
+          "type": "object"
+        },
+        "module": "orders",
+        "name": "cancel_order",
+        "outputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "order_id": {
+              "type": "string"
+            },
+            "status": {
+              "const": "cancelled",
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id",
+            "status"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/application/cancel-order.ts:22",
+        "uses": [
+          "method:Order.cancel"
+        ],
+        "whenNotToUse": "Para pedidos já cancelados.",
+        "whenToUse": "Quando o cliente desistir de um pedido que ainda não foi cancelado."
+      },
+      {
+        "description": "Confirma um pedido pendente.",
+        "emits": [
+          "event:OrderConfirmed"
+        ],
+        "id": "usecase:confirm_order",
+        "inputSchema": {
+          "properties": {
+            "order_id": {
+              "description": "Id do pedido a confirmar",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id"
+          ],
+          "type": "object"
+        },
+        "module": "orders",
+        "name": "confirm_order",
+        "outputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "order_id": {
+              "type": "string"
+            },
+            "status": {
+              "const": "confirmed",
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id",
+            "status"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/application/confirm-order.ts:18",
+        "uses": [
+          "method:Order.confirm"
+        ],
+        "whenNotToUse": "Para pedidos já confirmados ou cancelados.",
+        "whenToUse": "Quando o cliente ou o atendente confirmar um pedido pendente."
+      },
+      {
+        "description": "Cria um pedido pendente para um cliente com os itens informados.",
+        "emits": [
+          "event:OrderCreated"
+        ],
+        "id": "usecase:create_order",
+        "inputSchema": {
+          "properties": {
+            "customer_id": {
+              "description": "Id do cliente",
+              "minLength": 1,
+              "type": "string"
+            },
+            "items": {
+              "description": "Itens do pedido",
+              "items": {
+                "properties": {
+                  "quantity": {
+                    "description": "Quantidade",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991,
+                    "type": "integer"
+                  },
+                  "sku": {
+                    "description": "Código do produto",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "unit_price": {
+                    "description": "Preço unitário em reais",
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "sku",
+                  "quantity",
+                  "unit_price"
+                ],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "order_id": {
+              "description": "Id do novo pedido",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "order_id",
+            "customer_id",
+            "items"
+          ],
+          "type": "object"
+        },
+        "module": "orders",
+        "name": "create_order",
+        "outputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "order_id": {
+              "type": "string"
+            },
+            "status": {
+              "const": "pending",
+              "type": "string"
+            },
+            "total": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "order_id",
+            "status",
+            "total"
+          ],
+          "type": "object"
+        },
+        "source": "examples/orders/application/create-order.ts:37",
+        "uses": [
+          "method:Order.create"
+        ],
+        "whenNotToUse": "Para alterar itens de um pedido que já existe.",
+        "whenToUse": "Quando o cliente quer abrir um novo pedido."
+      }
+    ]
+  },
+  "lockVersion": 1
+}
+"
+,
+}
+`;
+
+exports[`saída sem elemento tático shop: árvore inteira de arquivos gerados não muda 1`] = `
+{
+  "agentsBlock": 
+"<!-- agentic-ddd:begin -->
+<!-- GERADO por agentic-ddd compile — não edite este bloco; o texto fora dele é seu. -->
+
+## Domínio (agentic-ddd)
+
+| Módulo | Código | Skill de dev |
+|---|---|---|
+| shop | \`src/compiler/__fixtures__\` | \`.agents/skills/shop-dev/SKILL.md\` |
+
+| Operator | Skill de runtime |
+|---|---|
+| catalog-operator | \`.agentic/runtime/catalog-operator/SKILL.md\` |
+
+### Convenções
+
+- Entidades, métodos, eventos, use-cases e operators são declarados com \`@AgentEntity\`, \`@AgentMethod\`, \`@AgentEvent\`, \`@AgentUseCase\` e \`@Operator\` de \`@agentic-ddd/decorators\`; cada regra de negócio é um \`@Invariant({ id, text })\` com ID estável.
+- Onde criar: \`<caminho do módulo>/domain\` (entidades, eventos, ports), \`<caminho do módulo>/application\` (use-cases, sempre com \`uses\`), \`<caminho do módulo>/operators\` (operators). A skill de dev do módulo tem os caminhos exatos.
+- Todo método público de entidade tem \`@AgentMethod\`; métodos auxiliares usam \`#privado\`.
+- Corpo declarado e ainda não implementado usa \`notImplemented()\` de \`@agentic-ddd/core\`.
+- Coordenação: consulte \`bun run agentic status\` ou \`next\` (ondas); execute cada item a partir de \`bun run agentic packet <item>\` e valide com \`bun run agentic verify --item <item> --spec-hash <hash>\`. \`status --static\` lê declarações de teste sem executá-las e nunca certifica \`done\`.
+- O sinal de esqueleto reconhece só a chamada literal \`notImplemented()\`; corpo vazio conta como implementado. Estado é calculado sob demanda e não entra nos arquivos gerados.
+- Testes declaram o que cobrem com \`covers([...ids], título)\` de \`@agentic-ddd/testing\`.
+- Mudança de regra de negócio: escreva antes a proposta em \`changes/NNNN-<slug>/proposal.md\` (delta, critérios de aceite e \`## Motivo\`), implemente e rode \`bun run agentic compile\`; para mudança já feita no código, \`bun run agentic compile --draft-change <slug>\` gera o rascunho.
+- Uma tarefa só está concluída quando \`bun run agentic verify <NNNN>\` retorna \`done\` ou \`needs-human\`.
+- Gerados (não edite): \`.agents/skills\`, \`.agentic/runtime\`, os espelhos de skills e este bloco. Altere o código decorado e rode \`bun run agentic compile\`; o CI roda \`bun run agentic compile --check\`.
+<!-- agentic-ddd:end -->"
+,
+  "files": {
+    ".agentic/runtime/catalog-operator/SKILL.md": 
+"---
+name: catalog-operator
+description: "Opera o catálogo de produtos: cadastrar e publicar. Use quando a conversa for sobre produtos da loja."
+metadata:
+  agentic-ddd.audience: runtime
+  agentic-ddd.generated: "true"
+  agentic-ddd.ir-hash: "fbde4870300f60ce0473aa2dbbecd806ec9c39691e2e87ec4afbedadcd625bb4"
+---
+<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__/shop.ts:85 -->
+
+# Operator \`catalog-operator\`
+
+Opera o catálogo de produtos: cadastrar e publicar. Use quando a conversa for sobre produtos da loja.
+
+## Tools
+
+Tools marcadas com **Exige aprovação humana: sim** só executam depois de uma pessoa aprovar; se a aprovação for negada, a tool devolve o erro \`approval_denied\` e nada é alterado.
+
+### \`create_product\`
+
+Cria um produto em rascunho.
+
+- **Quando usar:** Quando pedirem para cadastrar um produto novo.
+- **Aciona:** \`Product.create\`
+- **Emite:** \`ProductCreated\`
+- **Exige aprovação humana:** não
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| \`product_id\` | string | sim | Id do novo produto |
+| \`price\` | number | sim | Preço em reais |
+
+Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`create_product\`.
+
+### \`publish_product\`
+
+Publica um produto em rascunho no catálogo.
+
+- **Quando usar:** Quando pedirem para disponibilizar um produto para venda.
+- **Quando não usar:** Para alterar preço ou estoque.
+- **Aciona:** \`Product.publish\`
+- **Emite:** \`ProductPublished\`
+- **Exige aprovação humana:** sim
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| \`product_id\` | string | sim | Id do produto a publicar |
+
+Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`publish_product\`.
+
+## Regras de negócio
+
+| Invariante | Regra | Garantida por |
+|---|---|---|
+| \`invariant:Product/preco-positivo\` | O preço de um produto é sempre maior que zero. | construção |
+| \`invariant:Product/publicacao-exige-estoque\` | Só é possível publicar um produto com estoque maior que zero. | \`Product.publish\` |
+
+## Estados e transições
+
+| Método | De | Para |
+|---|---|---|
+| \`Product.publish\` | \`draft\` | \`published\` |
+
+Detalhes: [schemas das tools](references/tools.schema.json) · [máquina de estados](references/state-machine.md)
+"
+,
+    ".agentic/runtime/catalog-operator/references/state-machine.md": 
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__/shop.ts:85 -->
+
+# Máquina de estados
+
+## Product
+
+Estados: \`draft\`, \`published\`
+
+| Método | De | Para | Emite |
+|---|---|---|---|
+| \`Product.publish\` | \`draft\` | \`published\` | \`ProductPublished\` |
+"
+,
+    ".agentic/runtime/catalog-operator/references/tools.schema.json": 
+"{
+  "create_product": {
+    "input": {
+      "properties": {
+        "price": {
+          "description": "Preço em reais",
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "product_id": {
+          "description": "Id do novo produto",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "price"
+      ],
+      "type": "object"
+    },
+    "output": {
+      "additionalProperties": false,
+      "properties": {
+        "product_id": {
+          "type": "string"
+        },
+        "status": {
+          "const": "draft",
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "status"
+      ],
+      "type": "object"
+    }
+  },
+  "publish_product": {
+    "input": {
+      "properties": {
+        "product_id": {
+          "description": "Id do produto a publicar",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id"
+      ],
+      "type": "object"
+    },
+    "output": {
+      "additionalProperties": false,
+      "properties": {
+        "product_id": {
+          "type": "string"
+        },
+        "status": {
+          "const": "published",
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "status"
+      ],
+      "type": "object"
+    }
+  }
+}
+"
+,
+    ".agents/skills/shop-dev/SKILL.md": 
+"---
+name: shop-dev
+description: "Domínio shop: entidades Product; use-cases create_product, publish_product; operators catalog-operator. Use quando for implementar, alterar, testar ou revisar código em src/compiler/__fixtures__."
+metadata:
+  agentic-ddd.audience: dev
+  agentic-ddd.generated: "true"
+  agentic-ddd.ir-hash: "fbde4870300f60ce0473aa2dbbecd806ec9c39691e2e87ec4afbedadcd625bb4"
+---
+<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__ -->
+
+# Módulo \`shop\`
+
+Código em \`src/compiler/__fixtures__\`. Esta skill descreve o domínio declarado (requisitos, regras e contratos); ela não registra estado de implementação.
+
+## Entidades
+
+### Product — \`entity:Product\`
+
+Produto do catálogo da loja.
+
+Fonte: \`src/compiler/__fixtures__/shop.ts:26\` · Estados: \`draft\`, \`published\`
+
+| Invariante | Regra | Garantida por | Fonte |
+|---|---|---|---|
+| \`invariant:Product/preco-positivo\` | O preço de um produto é sempre maior que zero. | construção | \`src/compiler/__fixtures__/shop.ts:27\` |
+| \`invariant:Product/publicacao-exige-estoque\` | Só é possível publicar um produto com estoque maior que zero. | \`Product.publish\` | \`src/compiler/__fixtures__/shop.ts:39\` |
+
+| Método | Descrição | Transição | Emite | Fonte |
+|---|---|---|---|---|
+| \`Product.create\` | Cria um produto em rascunho. | — | \`ProductCreated\` | \`src/compiler/__fixtures__/shop.ts:29\` |
+| \`Product.publish\` | Publica o produto no catálogo. | \`draft\` → \`published\` | \`ProductPublished\` | \`src/compiler/__fixtures__/shop.ts:34\` |
+
+## Eventos
+
+| Evento | Descrição | Fonte |
+|---|---|---|
+| \`ProductCreated\` | Um produto foi criado como rascunho. | \`src/compiler/__fixtures__/shop.ts:20\` |
+| \`ProductPublished\` | Um produto foi publicado no catálogo. | \`src/compiler/__fixtures__/shop.ts:23\` |
+
+## Use-cases
+
+| Use-case | Descrição | Aciona | Emite | Fonte |
+|---|---|---|---|---|
+| \`create_product\` | Cria um produto em rascunho. | \`Product.create\` | \`ProductCreated\` | \`src/compiler/__fixtures__/shop.ts:51\` |
+| \`publish_product\` | Publica um produto em rascunho no catálogo. | \`Product.publish\` | \`ProductPublished\` | \`src/compiler/__fixtures__/shop.ts:69\` |
+
+## Operators
+
+| Operator | Use-cases | Exige aprovação | Fonte |
+|---|---|---|---|
+| \`catalog-operator\` | \`create_product\`, \`publish_product\` | \`publish_product\` | \`src/compiler/__fixtures__/shop.ts:85\` |
+
+## Dependências entre itens
+
+| Item | Camada | Depende de |
+|---|---|---|
+| \`entity:Product\` | domain | — |
+| \`method:Product.publish\` | domain | \`entity:Product\` |
+| \`operator:catalog-operator\` | operators | \`usecase:create_product\`, \`usecase:publish_product\` |
+| \`usecase:create_product\` | application | \`entity:Product\` |
+| \`usecase:publish_product\` | application | \`method:Product.publish\` |
+
+## Obrigações de teste
+
+Cada ID abaixo precisa de ao menos um teste nomeado com \`covers([...ids], título)\` de \`@agentic-ddd/testing\`.
+
+| Item | IDs a cobrir |
+|---|---|
+| \`entity:Product\` | \`invariant:Product/preco-positivo\`, \`method:Product.create\` |
+| \`method:Product.publish\` | \`invariant:Product/publicacao-exige-estoque\`, \`method:Product.publish\` |
+| \`operator:catalog-operator\` | \`operator:catalog-operator\` |
+| \`usecase:create_product\` | \`usecase:create_product\` |
+| \`usecase:publish_product\` | \`usecase:publish_product\` |
+
+## Como estender
+
+| Artefato | Onde criar | Como declarar |
+|---|---|---|
+| Entidade | \`src/compiler/__fixtures__/domain/<nome>.ts\` | \`@AgentEntity({ description, states })\` + \`@Invariant({ id, text })\` na classe |
+| Método de entidade | na classe da entidade | \`@AgentMethod({ description, transition?, emits? })\`; regra garantida pelo método: \`@Invariant\` no método; auxiliares: \`#privado\` |
+| Evento | \`src/compiler/__fixtures__/domain/<agregado>.events.ts\` | \`@AgentEvent({ description, payload })\` estendendo \`DomainEvent\` |
+| Use-case | \`src/compiler/__fixtures__/application/<nome>.ts\` | \`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entidade>.<método>'], emits? })\` |
+| Operator | \`src/compiler/__fixtures__/operators/<nome>.operator.ts\` | \`@Operator({ name, description, instructions, useCases, requiresApproval? })\` |
+
+Corpo declarado e ainda não implementado usa \`notImplemented()\` de \`@agentic-ddd/core\`.
+
+## Referências
+
+- [Histórico de mudanças](references/history.md)
+- [Schemas de eventos e use-cases](references/schemas.json)
+- [Máquina de estados](references/state-machine.md)
+"
+,
+    ".agents/skills/shop-dev/references/history.md": 
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__ -->
+
+# Histórico do módulo \`shop\`
+
+_Nenhuma mudança registrada._
+"
+,
+    ".agents/skills/shop-dev/references/schemas.json": 
+"{
+  "events": {
+    "ProductCreated": {
+      "additionalProperties": false,
+      "properties": {
+        "productId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "productId"
+      ],
+      "type": "object"
+    },
+    "ProductPublished": {
+      "additionalProperties": false,
+      "properties": {
+        "productId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "productId"
+      ],
+      "type": "object"
+    }
+  },
+  "useCases": {
+    "create_product": {
+      "input": {
+        "properties": {
+          "price": {
+            "description": "Preço em reais",
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "product_id": {
+            "description": "Id do novo produto",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "price"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "draft",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    "publish_product": {
+      "input": {
+        "properties": {
+          "product_id": {
+            "description": "Id do produto a publicar",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id"
+        ],
+        "type": "object"
+      },
+      "output": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "status": {
+            "const": "published",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    }
+  }
+}
+"
+,
+    ".agents/skills/shop-dev/references/state-machine.md": 
+"<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/compiler/__fixtures__ -->
+
+# Máquina de estados
+
+## Product
+
+Estados: \`draft\`, \`published\`
+
+| Método | De | Para | Emite |
+|---|---|---|---|
+| \`Product.publish\` | \`draft\` | \`published\` | \`ProductPublished\` |
+"
+,
+  },
+  "lock": 
+"{
+  "changes": [],
+  "ir": {
+    "entities": [
+      {
+        "description": "Produto do catálogo da loja.",
+        "id": "entity:Product",
+        "invariants": [
+          {
+            "id": "invariant:Product/preco-positivo",
+            "on": null,
+            "source": "src/compiler/__fixtures__/shop.ts:27",
+            "text": "O preço de um produto é sempre maior que zero."
+          },
+          {
+            "id": "invariant:Product/publicacao-exige-estoque",
+            "on": "method:Product.publish",
+            "source": "src/compiler/__fixtures__/shop.ts:39",
+            "text": "Só é possível publicar um produto com estoque maior que zero."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cria um produto em rascunho.",
+            "emits": [
+              "event:ProductCreated"
+            ],
+            "id": "method:Product.create",
+            "name": "create",
+            "source": "src/compiler/__fixtures__/shop.ts:29",
+            "static": true,
+            "transition": null
+          },
+          {
+            "description": "Publica o produto no catálogo.",
+            "emits": [
+              "event:ProductPublished"
+            ],
+            "id": "method:Product.publish",
+            "name": "publish",
+            "source": "src/compiler/__fixtures__/shop.ts:34",
+            "static": false,
+            "transition": {
+              "from": [
+                "draft"
+              ],
+              "to": "published"
+            }
+          }
+        ],
+        "module": "shop",
+        "name": "Product",
+        "source": "src/compiler/__fixtures__/shop.ts:26",
+        "states": [
+          "draft",
+          "published"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "description": "Um produto foi criado como rascunho.",
+        "id": "event:ProductCreated",
+        "module": "shop",
+        "name": "ProductCreated",
+        "payloadSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "productId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "productId"
+          ],
+          "type": "object"
+        },
+        "source": "src/compiler/__fixtures__/shop.ts:20"
+      },
+      {
+        "description": "Um produto foi publicado no catálogo.",
+        "id": "event:ProductPublished",
+        "module": "shop",
+        "name": "ProductPublished",
+        "payloadSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "productId": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "productId"
+          ],
+          "type": "object"
+        },
+        "source": "src/compiler/__fixtures__/shop.ts:23"
+      }
+    ],
+    "irVersion": 1,
+    "modules": [
+      {
+        "name": "shop",
+        "path": "src/compiler/__fixtures__"
+      }
+    ],
+    "operators": [
+      {
+        "description": "Opera o catálogo de produtos: cadastrar e publicar. Use quando a conversa for sobre produtos da loja.",
+        "id": "operator:catalog-operator",
+        "instructions": "Você gerencia o catálogo. Use apenas as tools disponíveis e confirme o produto pelo id.",
+        "limits": {
+          "maxSteps": 8,
+          "timeoutMs": 30000
+        },
+        "model": "default",
+        "module": "shop",
+        "name": "catalog-operator",
+        "requiresApproval": [
+          "usecase:publish_product"
+        ],
+        "source": "src/compiler/__fixtures__/shop.ts:85",
+        "useCases": [
+          "usecase:create_product",
+          "usecase:publish_product"
+        ]
+      }
+    ],
+    "useCases": [
+      {
+        "description": "Cria um produto em rascunho.",
+        "emits": [
+          "event:ProductCreated"
+        ],
+        "id": "usecase:create_product",
+        "inputSchema": {
+          "properties": {
+            "price": {
+              "description": "Preço em reais",
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            "product_id": {
+              "description": "Id do novo produto",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "product_id",
+            "price"
+          ],
+          "type": "object"
+        },
+        "module": "shop",
+        "name": "create_product",
+        "outputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "product_id": {
+              "type": "string"
+            },
+            "status": {
+              "const": "draft",
+              "type": "string"
+            }
+          },
+          "required": [
+            "product_id",
+            "status"
+          ],
+          "type": "object"
+        },
+        "source": "src/compiler/__fixtures__/shop.ts:51",
+        "uses": [
+          "method:Product.create"
+        ],
+        "whenNotToUse": null,
+        "whenToUse": "Quando pedirem para cadastrar um produto novo."
+      },
+      {
+        "description": "Publica um produto em rascunho no catálogo.",
+        "emits": [
+          "event:ProductPublished"
+        ],
+        "id": "usecase:publish_product",
+        "inputSchema": {
+          "properties": {
+            "product_id": {
+              "description": "Id do produto a publicar",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "product_id"
+          ],
+          "type": "object"
+        },
+        "module": "shop",
+        "name": "publish_product",
+        "outputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "product_id": {
+              "type": "string"
+            },
+            "status": {
+              "const": "published",
+              "type": "string"
+            }
+          },
+          "required": [
+            "product_id",
+            "status"
+          ],
+          "type": "object"
+        },
+        "source": "src/compiler/__fixtures__/shop.ts:69",
+        "uses": [
+          "method:Product.publish"
+        ],
+        "whenNotToUse": "Para alterar preço ou estoque.",
+        "whenToUse": "Quando pedirem para disponibilizar um produto para venda."
+      }
+    ]
+  },
+  "lockVersion": 1
+}
+"
+,
+}
+`;
