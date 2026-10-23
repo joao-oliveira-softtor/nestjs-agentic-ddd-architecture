@@ -104,6 +104,11 @@ export function itemSpecification(
   const addUseCase = (u: IRUseCase) => {
     addEvents(u);
     u.uses.forEach(addMethod);
+    contracts.push(
+      ...(u.ports ?? []).flatMap(
+        (id) => ir.ports?.find((p) => p.id === id) ?? [],
+      ),
+    );
   };
   if (entity) {
     declaration = construction(entity);

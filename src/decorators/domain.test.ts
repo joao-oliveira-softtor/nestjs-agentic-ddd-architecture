@@ -5,6 +5,7 @@ import {
   AgentEntity,
   AgentEvent,
   AgentMethod,
+  AgentPort,
   AgentValueObject,
   Invariant,
   createRegistry,
@@ -172,5 +173,37 @@ describe('decorators de domínio', () => {
     expect(registry.valueObjects).toHaveLength(1);
     registry.reset();
     expect(registry.valueObjects).toEqual([]);
+  });
+});
+
+describe('@AgentPort', () => {
+  test('grava descrição, raiz, métodos e origem sem chamar root', () => {
+    const registry = createRegistry();
+    let rootCalls = 0;
+    class Product extends AggregateRoot<string> {}
+    const ProductRepository = withRegistry(registry, () => {
+      @AgentPort({
+        description: 'Repositório de produtos.',
+        root: () => {
+          rootCalls++;
+          return Product;
+        },
+        methods: { save: 'Grava o produto.' },
+      })
+      abstract class ProductRepositoryPort {
+        abstract save(product: Product): Promise<void>;
+      }
+      return ProductRepositoryPort;
+    });
+    expect(rootCalls).toBe(0);
+    const port = registry.ports[0]!;
+    expect(registry.ports).toHaveLength(1);
+    expect(port.target).toBe(ProductRepository);
+    expect(port.description).toBe('Repositório de produtos.');
+    expect(port.methods).toEqual({ save: 'Grava o produto.' });
+    expect(port.source.file.endsWith('domain.test.ts')).toBe(true);
+    expect(port.root()).toBe(Product);
+    registry.reset();
+    expect(registry.ports).toEqual([]);
   });
 });

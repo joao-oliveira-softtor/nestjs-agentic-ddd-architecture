@@ -63,6 +63,16 @@ export interface IREvent {
   readonly source: string;
 }
 
+export interface IRPort {
+  readonly id: string;
+  readonly name: string;
+  readonly module: string;
+  readonly description: string;
+  readonly root: string;
+  readonly methods: { readonly name: string; readonly description: string }[];
+  readonly source: string;
+}
+
 export interface IRUseCase {
   readonly id: string;
   readonly name: string;
@@ -74,6 +84,7 @@ export interface IRUseCase {
   readonly outputSchema: JsonSchema;
   readonly uses: string[];
   readonly emits: string[];
+  readonly ports?: string[];
   readonly invariants?: IRInvariant[];
   readonly source: string;
 }
@@ -97,6 +108,7 @@ export interface IR {
   readonly entities: IREntity[];
   readonly valueObjects?: IRValueObject[];
   readonly events: IREvent[];
+  readonly ports?: IRPort[];
   readonly useCases: IRUseCase[];
   readonly operators: IROperator[];
 }
@@ -313,8 +325,75 @@ export function buildIR(
     }))
     .sort(byId);
 
+  const portTargets = new Map<ClassRef, string>();
+  const ports = registry.ports
+    .flatMap((rec): IRPort[] => {
+      const id = `port:${rec.target.name}`;
+      const fail = (message: string): IRPort[] => {
+        errors.push({ message: `${id}: ${message}`, source: loc(rec.source) });
+        return [];
+      };
+      let root: unknown;
+      try {
+        root = rec.root();
+      } catch (error) {
+        return fail(
+          `root lançou ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      if (typeof root !== 'function')
+        return fail('root não devolveu uma classe');
+      if (!registry.entities.some((e) => e.target === root))
+        return fail(`root cita ${root.name}, sem @AgentEntity`);
+      portTargets.set(rec.target, id);
+      return [
+        {
+          id,
+          name: rec.target.name,
+          module: moduleOf(rec.source),
+          description: rec.description,
+          root: `entity:${root.name}`,
+          methods: Object.entries(rec.methods)
+            .map(([name, description]) => ({ name, description }))
+            .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)),
+          source: loc(rec.source),
+        },
+      ];
+    })
+    .sort(byId);
+
+  const portIds = (rec: Registry['useCases'][number]): string[] => {
+    if (!rec.ports) return [];
+    const fail = (message: string): string[] => {
+      errors.push({
+        message: `usecase:${rec.name}: ${message}`,
+        source: loc(rec.source),
+      });
+      return [];
+    };
+    try {
+      const ids = new Set<string>();
+      for (const cls of rec.ports()) {
+        if (typeof cls !== 'function') {
+          fail('ports tem entrada que não é classe');
+        } else if (!registry.ports.some((p) => p.target === cls)) {
+          fail(`ports cita ${cls.name}, sem @AgentPort`);
+        } else {
+          const id = portTargets.get(cls);
+          if (id) ids.add(id);
+        }
+      }
+      return [...ids].sort();
+    } catch (error) {
+      return fail(
+        `ports lançou ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  };
+
   const useCases = registry.useCases
     .map((rec): IRUseCase => {
+      const usePorts = portIds(rec);
       const invs: IRInvariant[] = registry.invariants
         .filter((i) => i.entity === rec.target)
         .map((i) => ({
@@ -345,6 +424,7 @@ export function buildIR(
         ),
         uses: [...rec.uses].sort(),
         emits: rec.emits.map((e) => eventId(e, rec.source)).sort(),
+        ...(usePorts.length > 0 && { ports: usePorts }),
         ...(invs.length > 0 && { invariants: invs }),
         source: loc(rec.source),
       };
@@ -386,6 +466,7 @@ export function buildIR(
       entities,
       ...(vos.length > 0 && { valueObjects: vos }),
       events,
+      ...(ports.length > 0 && { ports }),
       useCases,
       operators,
     },

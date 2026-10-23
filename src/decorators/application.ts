@@ -11,6 +11,7 @@ export interface AgentUseCaseOptions {
   readonly output: ZodType;
   readonly uses: readonly string[];
   readonly emits?: readonly ClassRef[];
+  readonly ports?: () => readonly ClassRef[];
 }
 
 export function AgentUseCase(options: AgentUseCaseOptions): ClassDecorator {
@@ -26,6 +27,7 @@ export function AgentUseCase(options: AgentUseCaseOptions): ClassDecorator {
       output: options.output,
       uses: options.uses,
       emits: options.emits ?? [],
+      ...(options.ports && { ports: options.ports }),
       source,
     });
   };

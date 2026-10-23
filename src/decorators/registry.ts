@@ -49,6 +49,14 @@ export interface EventRecord {
   readonly source: SourceLoc;
 }
 
+export interface PortRecord {
+  readonly target: ClassRef;
+  readonly description: string;
+  readonly root: () => ClassRef;
+  readonly methods: Readonly<Record<string, string>>;
+  readonly source: SourceLoc;
+}
+
 export interface UseCaseRecord {
   readonly target: ClassRef;
   readonly name: string;
@@ -59,6 +67,7 @@ export interface UseCaseRecord {
   readonly output: ZodType;
   readonly uses: readonly string[];
   readonly emits: readonly ClassRef[];
+  readonly ports?: () => readonly ClassRef[];
   readonly source: SourceLoc;
 }
 
@@ -85,6 +94,7 @@ export class Registry {
   readonly invariants: InvariantRecord[] = [];
   readonly methods: MethodRecord[] = [];
   readonly events: EventRecord[] = [];
+  readonly ports: PortRecord[] = [];
   readonly useCases: UseCaseRecord[] = [];
   readonly operators: OperatorRecord[] = [];
 
@@ -94,6 +104,7 @@ export class Registry {
     this.invariants.length = 0;
     this.methods.length = 0;
     this.events.length = 0;
+    this.ports.length = 0;
     this.useCases.length = 0;
     this.operators.length = 0;
   }

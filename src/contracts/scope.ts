@@ -15,6 +15,7 @@ export function declarationsInModules(
     'invariants',
     'methods',
     'events',
+    'ports',
     'useCases',
     'operators',
   ] as const) {

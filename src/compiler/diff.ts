@@ -8,7 +8,8 @@ export type ElementKind =
   | 'method'
   | 'event'
   | 'usecase'
-  | 'operator';
+  | 'operator'
+  | 'port';
 export type ChangeKind = 'added' | 'modified' | 'removed';
 export type Classification = 'breaking' | 'behavioral' | 'docs';
 
@@ -91,6 +92,20 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
       },
     });
   }
+  for (const p of ir.ports ?? []) {
+    add({
+      id: p.id,
+      kind: 'port',
+      module: p.module,
+      content: {
+        name: p.name,
+        module: p.module,
+        description: p.description,
+        root: p.root,
+        methods: p.methods,
+      },
+    });
+  }
   for (const u of ir.useCases) {
     add({
       id: u.id,
@@ -106,6 +121,7 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
         outputSchema: u.outputSchema,
         uses: u.uses,
         emits: u.emits,
+        ...(u.ports?.length ? { ports: u.ports } : {}),
       },
     });
     for (const i of u.invariants ?? [])
@@ -267,6 +283,8 @@ function classifyModified(
   before: DomainElement,
   after: DomainElement,
 ): Classification {
+  // Mudar o port (até a descrição) muda o contrato que o use-case enxerga.
+  if (after.kind === 'port') return 'behavioral';
   const keys = new Set([
     ...Object.keys(before.content),
     ...Object.keys(after.content),

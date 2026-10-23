@@ -69,6 +69,15 @@ describe('lock', () => {
     );
   });
 
+  test('ports no lock: array aceito, outro tipo recusado', () => {
+    const withPorts = (v: unknown): string =>
+      JSON.stringify({ ...lock, ir: { ...lock.ir, ports: v } });
+    expect(() => parseLock(withPorts([]), 'l.json')).not.toThrow();
+    expect(() => parseLock(withPorts('x'), 'l.json')).toThrow(
+      'l.json: lock incompleto',
+    );
+  });
+
   test('readLock devolve null quando o arquivo não existe', async () => {
     expect(await readLock(join(dir, 'nao-existe.json'), 'x')).toBeNull();
     await writeFile(join(dir, 'l.json'), serializeLock(lock));

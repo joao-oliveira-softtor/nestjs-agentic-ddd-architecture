@@ -270,3 +270,88 @@ test('contains e references chegam ao packet da dona, do método e do use-case q
     expect(packet).toMatchSnapshot(`${id} com relações`);
   }
 });
+
+const portOf = (
+  description: string,
+  methods = [{ name: 'salvar', description: 'Grava.' }],
+) => ({
+  id: 'port:Repo',
+  name: 'Repo',
+  module: 'shop',
+  description,
+  root: 'entity:Product',
+  methods,
+  source: 'src/compiler/__fixtures__/shop.ts:9',
+});
+const withPort = (port: ReturnType<typeof portOf>): typeof ir => ({
+  ...ir,
+  ports: [port],
+  useCases: ir.useCases.map((u) =>
+    u.id === 'usecase:publish_product' ? { ...u, ports: ['port:Repo'] } : u,
+  ),
+});
+const statusOf = (x: typeof ir, id: string) =>
+  evaluateStatus({
+    ir: x,
+    implemented: new Map(),
+    proposals: [],
+    mode: 'dynamic',
+    evidence: { exitCode: 0, cases: [] },
+  }).items.find((i) => i.id === id)!;
+const packetOf = (x: typeof ir, id: string) => {
+  const item = statusOf(x, id);
+  return renderPacket(
+    item,
+    itemSpecification(x, item, []),
+    'agentic.config.ts',
+  );
+};
+
+test('use-case com port traz o port com seus métodos no pacote', () => {
+  const portIr = withPort(portOf('Persistência de produtos.'));
+  const packet = packetOf(portIr, 'usecase:publish_product');
+  expect(packet).toContain('port:Repo');
+  expect(packet).toContain('Grava.');
+  expect(packet).toMatchSnapshot('usecase com port');
+});
+
+test('specHash do use-case muda com a descrição do port e com a lista de métodos', () => {
+  const hash = statusOf(
+    withPort(portOf('Persistência.')),
+    'usecase:publish_product',
+  ).specHash;
+  expect(
+    statusOf(withPort(portOf('Outra.')), 'usecase:publish_product').specHash,
+  ).not.toBe(hash);
+  expect(
+    statusOf(
+      withPort(
+        portOf('Persistência.', [
+          { name: 'salvar', description: 'Grava.' },
+          { name: 'apagar', description: 'Apaga.' },
+        ]),
+      ),
+      'usecase:publish_product',
+    ).specHash,
+  ).not.toBe(hash);
+});
+
+test('use-case sem port mantém pacote e hash quando o projeto declara um port', () => {
+  const withOnlyPort = { ...ir, ports: [portOf('Persistência.')] };
+  expect(packetOf(withOnlyPort, 'usecase:publish_product')).toBe(
+    packetOf(ir, 'usecase:publish_product'),
+  );
+  expect(statusOf(withOnlyPort, 'usecase:publish_product').specHash).toBe(
+    statusOf(ir, 'usecase:publish_product').specHash,
+  );
+});
+
+test('operator que usa use-case com port muda o pacote e o specHash', () => {
+  const portIr = withPort(portOf('Persistência.'));
+  expect(statusOf(portIr, 'operator:catalog-operator').specHash).not.toBe(
+    statusOf(ir, 'operator:catalog-operator').specHash,
+  );
+  expect(packetOf(portIr, 'operator:catalog-operator')).not.toBe(
+    packetOf(ir, 'operator:catalog-operator'),
+  );
+});

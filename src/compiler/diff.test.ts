@@ -767,3 +767,77 @@ describe('relações entre entidades no semanticDiff', () => {
     ]);
   });
 });
+
+describe('port no semanticDiff', () => {
+  const port = (
+    description = 'Persistência de pedidos.',
+    methods = ['salvar'],
+  ) => ({
+    id: 'port:PedidoRepository',
+    name: 'PedidoRepository',
+    module: 'shop',
+    description,
+    root: 'entity:Product',
+    methods: methods.map((name) => ({ name, description: 'Grava.' })),
+    source: 'x.ts:1',
+  });
+  const withPort = (p = port()): any => {
+    const ir = clone();
+    ir.ports = [p];
+    return ir;
+  };
+
+  test('port novo: added behavioral', () => {
+    expect(semanticDiff(base, withPort())).toEqual([
+      {
+        id: 'port:PedidoRepository',
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('só a description do port muda → modified behavioral, não docs', () => {
+    expect(
+      semanticDiff(withPort(), withPort(port('Outra descrição.'))),
+    ).toEqual([
+      {
+        id: 'port:PedidoRepository',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('método do port muda → modified behavioral', () => {
+    expect(
+      semanticDiff(withPort(), withPort(port(undefined, ['salvar', 'buscar']))),
+    ).toEqual([
+      {
+        id: 'port:PedidoRepository',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('port removido: removed behavioral', () => {
+    expect(semanticDiff(withPort(), clone())).toEqual([
+      {
+        id: 'port:PedidoRepository',
+        kind: 'removed',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('use-case sem port: content sem chave ports, como hoje', () => {
+    expect(
+      elementsOf(base).get('usecase:create_product')!.content,
+    ).not.toHaveProperty('ports');
+  });
+});

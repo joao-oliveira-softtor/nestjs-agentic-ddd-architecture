@@ -7,6 +7,7 @@ const KEYS = [
   'invariants',
   'methods',
   'events',
+  'ports',
   'useCases',
   'operators',
 ] as const;
@@ -20,6 +21,7 @@ export function registrySizes(registry: Registry): RegistrySizes {
     invariants: registry.invariants.length,
     methods: registry.methods.length,
     events: registry.events.length,
+    ports: registry.ports.length,
     useCases: registry.useCases.length,
     operators: registry.operators.length,
   };
