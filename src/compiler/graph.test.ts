@@ -4,7 +4,7 @@ import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
 import { analyze } from './analyze';
 import { workItems } from './graph';
 import type { IR } from './ir';
-import { ValueObject, notImplemented } from '@agentic-ddd/core';
+import { ValueObject } from '@agentic-ddd/core';
 import {
   AgentValueObject,
   Invariant,
@@ -237,6 +237,7 @@ const defineVo = () => {
         return this.#check();
       }
     }
+    void Dinheiro;
   });
   return registry;
 };

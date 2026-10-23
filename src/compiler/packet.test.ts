@@ -7,7 +7,7 @@ import { itemSpecification, specHash } from './item-spec';
 import { renderPacket } from './packet';
 import { evaluateStatus } from './state';
 import { implementation } from './implementation';
-import { ValueObject, notImplemented } from '@agentic-ddd/core';
+import { ValueObject } from '@agentic-ddd/core';
 import {
   AgentValueObject,
   Invariant,
@@ -165,6 +165,7 @@ const defineVo = () => {
         return this.#check();
       }
     }
+    void Dinheiro;
   });
   return registry;
 };

@@ -103,6 +103,7 @@ test('value object com notImplemented() no construtor, em #privado ou em método
           return this.#check();
         }
       }
+      void Dinheiro;
     }),
   ).toBe(true);
   expect(
@@ -119,6 +120,7 @@ test('value object com notImplemented() no construtor, em #privado ou em método
           return this.#check();
         }
       }
+      void Dinheiro;
     }),
   ).toBe(false);
   expect(
@@ -136,6 +138,7 @@ test('value object com notImplemented() no construtor, em #privado ou em método
           return this.#check();
         }
       }
+      void Dinheiro;
     }),
   ).toBe(false);
   expect(
@@ -152,6 +155,7 @@ test('value object com notImplemented() no construtor, em #privado ou em método
           return this.#check();
         }
       }
+      void Dinheiro;
     }),
   ).toBe(false);
 });

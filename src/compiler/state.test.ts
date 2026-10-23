@@ -253,6 +253,7 @@ const voState = (skeleton: boolean, covered: boolean) => {
           return this.#check();
         }
       }
+      void Dinheiro;
     } else {
       @AgentValueObject({ description: 'Valor monetário.' })
       @Invariant({ id: 'nao-negativo', text: 'Dinheiro nunca é negativo.' })
@@ -265,6 +266,7 @@ const voState = (skeleton: boolean, covered: boolean) => {
           return this.#check();
         }
       }
+      void Dinheiro;
     }
   });
   const voIr = analyze(registry, voOptions).ir;

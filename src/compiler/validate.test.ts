@@ -665,6 +665,28 @@ describe('validate: @Invariant em use-case', () => {
       ).toBe(true);
     });
 
+    test('mesmo nome de VO em dois lugares gera ID duplicado', () => {
+      const errors = errorsOf(() => {
+        {
+          @AgentValueObject({ description: 'Dinheiro A.' })
+          class Dinheiro extends ValueObject<P> {}
+          void Dinheiro;
+        }
+        {
+          @AgentValueObject({ description: 'Dinheiro B.' })
+          class Dinheiro extends ValueObject<P> {}
+          void Dinheiro;
+        }
+      });
+      expect(
+        errors.some((e) =>
+          e.includes(
+            'ID duplicado valueobject:Dinheiro (também declarado em src/compiler/validate.test.ts:',
+          ),
+        ),
+      ).toBe(true);
+    });
+
     test('VO com @AgentUseCase e @Invariant na classe é ambíguo', () => {
       const errors = errorsOf(() => {
         @AgentValueObject({ description: 'VO.' })
