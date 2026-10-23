@@ -24,6 +24,7 @@ import {
   definePortConcreto,
   definePortDivergente,
   definePortEmpilhado,
+  definePortNomeLiteral,
   definePortOk,
   definePortSobrecarga,
   definePortsHomonimos,
@@ -1001,6 +1002,10 @@ describe('validate: métodos abstratos do port (árvore sintática)', () => {
       'port:Repo: methods declara métodos que a classe não tem abstratos: listar',
       'port:Repo: métodos abstratos sem declaração em methods: buscar',
     ]);
+  });
+
+  test('método abstrato de nome literal conta pelo nome sem aspas', () => {
+    expect(check(definePortNomeLiteral())).toEqual([]);
   });
 
   test('método sobrecarregado conta uma vez', () => {

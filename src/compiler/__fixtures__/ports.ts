@@ -88,6 +88,23 @@ export function definePortEmpilhado(): Registry {
   });
 }
 
+export function definePortNomeLiteral(): Registry {
+  return build(() => {
+    @AgentEntity({ description: 'Turma.' })
+    class Turma extends AggregateRoot<string> {}
+
+    @AgentPort({
+      description: 'Contagem por turma.',
+      root: () => Turma,
+      methods: { 'contar-por-turma': 'Conta alunos por turma.' },
+    })
+    abstract class Contagem {
+      abstract 'contar-por-turma'(): number;
+    }
+    void Contagem;
+  });
+}
+
 export function definePortsHomonimos(): Registry {
   const registry = createRegistry();
   withRegistry(registry, () => {

@@ -30,10 +30,8 @@ function abstractMethods(
     ts.ScriptTarget.Latest,
     true,
   );
-  let found: ts.ClassDeclaration | null = null;
-  const visit = (node: ts.Node): void => {
+  const visit = (node: ts.Node): ts.ClassDeclaration | undefined => {
     if (
-      found === null &&
       ts.isClassDeclaration(node) &&
       node.name?.text === name &&
       (ts.getDecorators(node) ?? []).some(
@@ -43,12 +41,11 @@ function abstractMethods(
           line,
       )
     )
-      found = node;
-    ts.forEachChild(node, visit);
+      return node;
+    return ts.forEachChild(node, visit);
   };
-  visit(sf);
-  const cls = found as ts.ClassDeclaration | null;
-  if (cls === null) return null;
+  const cls = visit(sf);
+  if (cls === undefined) return null;
   return {
     abstract: !!ts
       .getModifiers(cls)
@@ -62,7 +59,11 @@ function abstractMethods(
               .getModifiers(m)
               ?.some((x) => x.kind === ts.SyntaxKind.AbstractKeyword),
         )
-        .map((m) => m.name.getText(sf)),
+        .map((m) =>
+          ts.isIdentifier(m.name) || ts.isStringLiteral(m.name)
+            ? m.name.text
+            : m.name.getText(sf),
+        ),
     ),
   };
 }
