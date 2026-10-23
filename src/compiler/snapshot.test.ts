@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { checkSnapshot, SNAPSHOT_PATH, writeSnapshot } from './snapshot';
@@ -35,6 +42,7 @@ async function setup(sub = '') {
     lock: '.agentic/domain.lock.json',
     rulesDir: '.ai/rules',
     rules: [],
+    modules: [{ path: 'mod' }],
   });
 }
 
@@ -68,6 +76,7 @@ describe('snapshot do MCP', () => {
       lock: '.agentic/domain.lock.json',
       rulesDir: '.ai/rules',
       rules: [],
+      modules: [{ path: 'mod' }],
     });
     expect((await checkSnapshot(out)).ok).toBe(true);
     await writeFile(join(proj, 'mod/a.ts'), 'y\n');
@@ -83,6 +92,7 @@ describe('snapshot do MCP', () => {
       lock: '.agentic/domain.lock.json',
       rulesDir: '.ai/rules',
       rules: [],
+      modules: [{ path: 'mod' }],
     });
     expect((await checkSnapshot(dir)).ok).toBe(true);
   });
@@ -100,6 +110,15 @@ describe('snapshot do MCP', () => {
     [
       'lock muda',
       () => writeFile(join(dir, '.agentic/domain.lock.json'), `${LOCK}\n`),
+    ],
+    [
+      'rules editadas à mão no snapshot',
+      async () => {
+        const f = join(dir, SNAPSHOT_PATH);
+        const j = JSON.parse(await readFile(f, 'utf8'));
+        j.rules = [{ key: 'x', file: null, paths: [], body: 'x' }];
+        await writeFile(f, JSON.stringify(j));
+      },
     ],
     ['snapshot ausente', () => rm(join(dir, SNAPSHOT_PATH))],
     ['JSON inválido', () => writeFile(join(dir, SNAPSHOT_PATH), '{')],

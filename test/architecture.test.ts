@@ -112,6 +112,40 @@ describe('arquitetura', () => {
     ).toEqual([]);
   });
 
+  test('só src/mcp importa o SDK do MCP e só ele', () => {
+    const sdk = (s: string) => s.startsWith('@modelcontextprotocol/');
+    expect(
+      offenders(
+        filesIn('src', { includeTests: true }).filter(
+          (f) => !f.startsWith('src/mcp/'),
+        ),
+        (_f, s) => !sdk(s),
+      ),
+    ).toEqual([]);
+  });
+
+  test('src/mcp só importa zod, node:*, o SDK e o que o plano permite', () => {
+    const allowed = (f: string, s: string) =>
+      s === 'zod' ||
+      s.startsWith('node:') ||
+      s.startsWith('@modelcontextprotocol/') ||
+      resolvesInto(f, s, 'src/mcp') ||
+      /^\.\.\/compiler\/(lock|canonical|rules|snapshot|ir)$/.test(s) ||
+      s.startsWith('../contracts/');
+    expect(offenders(filesIn('src/mcp'), allowed)).toEqual([]);
+  });
+
+  test('src/cli não importa src/mcp de forma estática', () => {
+    const bad = filesIn('src/cli', { includeTests: true }).flatMap((file) =>
+      [...readFileSync(resolve(ROOT, file), 'utf8').matchAll(IMPORT)]
+        .map((m) => m[1])
+        .filter((s): s is string => s !== undefined)
+        .filter((s) => resolvesInto(file, s, 'src/mcp'))
+        .map((s) => `${file} → ${s}`),
+    );
+    expect(bad).toEqual([]);
+  });
+
   test('os diretórios governados pelas regras existem e têm arquivos', () => {
     const dirs = [
       'src/core',

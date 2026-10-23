@@ -224,6 +224,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
       config: toPosix(relative(config.outRoot, resolve(options.configPath))),
       lock: config.out.lock,
       rulesDir: config.rules.dir,
+      modules: ir.modules,
       rules: rules.map((r) =>
         r.file === null
           ? {

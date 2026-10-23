@@ -182,6 +182,21 @@ describe('compile (exemplo orders)', () => {
     ).toBe(true);
   });
 
+  test('mudança de domínio sem proposta remove o snapshot existente', async () => {
+    await bootstrapChanges(out);
+    expect((await checkSnapshot(out)).ok).toBe(true);
+    const lockPath = join(out, '.agentic/domain.lock.json');
+    const lock = JSON.parse(await readFile(lockPath, 'utf8'));
+    lock.ir.useCases.shift(); // o código passa a ter um use-case a mais que o lock
+    await writeFile(lockPath, JSON.stringify(lock));
+    const write = await compile({ configPath, outRoot: out, mode: 'write' });
+    expect(write.pending.length).toBeGreaterThan(0);
+    expect((await checkSnapshot(out)).ok).toBe(false);
+    expect(
+      await failure(access(join(out, '.agentic/mcp/snapshot.json'))),
+    ).toContain('ENOENT');
+  });
+
   test('proposta arquivada editada à mão quebra o write e o check', async () => {
     await bootstrapChanges(out);
     const path = join(out, 'changes/archive/0001-estado-inicial/proposal.md');
@@ -248,7 +263,6 @@ describe('compile (exemplo orders)', () => {
     // subprocesso: a fixture long-description nunca é importada no processo de teste
     const script = `
       import { compile } from '@agentic-ddd/compiler';
-import { checkSnapshot } from './snapshot';
       const first = await compile({
         configPath: ${JSON.stringify(longConfig)},
         outRoot: ${JSON.stringify(join(out, 'first'))},

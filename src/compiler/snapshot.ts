@@ -1,5 +1,5 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { sha256, stableStringify } from './canonical';
 import { moduleFiles } from './load';
 import { parseLock, type DomainLock } from './lock';
@@ -27,6 +27,7 @@ export async function inputsHash(
   outRoot: string,
   s: Locations,
   modules: readonly { path: string }[],
+  rules: readonly Rule[],
 ): Promise<string> {
   const root = join(outRoot, s.root);
   // shortcut: imports de fora das pastas dos módulos não entram no hash; incluir se virar problema real.
@@ -43,25 +44,26 @@ export async function inputsHash(
       return `${toPosix(relative(outRoot, f))}\0${sha256(text)}`;
     }),
   );
+  lines.push(`rules\0${sha256(stableStringify(rules))}`);
   return sha256(lines.sort().join('\n'));
 }
 
 export async function writeSnapshot(
   outRoot: string,
-  fields: Locations & { rules: Rule[] },
+  fields: Locations & {
+    rules: Rule[];
+    modules: readonly { path: string }[];
+  },
 ): Promise<void> {
-  const lock = parseLock(
-    await readFile(join(outRoot, fields.lock), 'utf8'),
-    fields.lock,
-  );
+  const { modules, ...saved } = fields;
   const snapshot: McpSnapshot = {
     snapshotVersion: 1,
-    ...fields,
-    inputsHash: await inputsHash(outRoot, fields, lock.ir.modules),
+    ...saved,
+    inputsHash: await inputsHash(outRoot, saved, modules, saved.rules),
   };
   const file = join(outRoot, SNAPSHOT_PATH);
-  await mkdir(join(file, '..'), { recursive: true });
-  await writeFile(join(file, '..', '.gitignore'), '*\n');
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(join(dirname(file), '.gitignore'), '*\n');
   await writeFile(file, stableStringify(snapshot));
 }
 
@@ -83,7 +85,9 @@ export async function checkSnapshot(
       await readFile(join(outRoot, s.lock), 'utf8'),
       s.lock,
     );
-    if ((await inputsHash(outRoot, s, lock.ir.modules)) !== s.inputsHash)
+    if (
+      (await inputsHash(outRoot, s, lock.ir.modules, s.rules)) !== s.inputsHash
+    )
       return { ok: false, reason: STALE };
     return { ok: true, lock, rules: s.rules };
   } catch {

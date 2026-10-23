@@ -7,4 +7,5 @@ export const USAGE = [
   '  agentic-ddd packet <item> [--static] [--config <arquivo>]',
   '  agentic-ddd verify --item <item> --spec-hash <hash> [--json] [--config <arquivo>]',
   '  agentic-ddd verify <NNNN> [--json] [--config <arquivo>]',
+  '  agentic-ddd mcp [--root <dir>]',
 ].join('\n');

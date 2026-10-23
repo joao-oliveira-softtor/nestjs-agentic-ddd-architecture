@@ -140,11 +140,6 @@ export function rulesForPath(rules: readonly Rule[], path: string) {
   const normalized = path.replaceAll('\\', '/').replace(/^(\.\/)+/, '');
   return {
     path: normalized,
-    rules: rulesFor(rules, [normalized]).map((r) => ({
-      key: r.key,
-      file: r.file,
-      paths: r.paths,
-      body: r.body,
-    })),
+    rules: rulesFor(rules, [normalized]),
   };
 }
