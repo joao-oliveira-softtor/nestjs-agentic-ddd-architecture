@@ -61,7 +61,13 @@ export interface GateInput {
   readonly knownIds: ReadonlySet<string>;
 }
 
-const RULE_PREFIXES = ['invariant:', 'method:', 'usecase:', 'operator:'];
+const RULE_PREFIXES = [
+  'invariant:',
+  'method:',
+  'usecase:',
+  'operator:',
+  'valueobject:',
+];
 const at = (testCase: TestCaseResult): string =>
   `${testCase.file}:${testCase.line}`;
 const failure = (testCase: TestCaseResult): Finding => ({

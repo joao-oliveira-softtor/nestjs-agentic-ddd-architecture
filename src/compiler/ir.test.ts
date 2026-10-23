@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import {
   DomainEvent,
+  ValueObject,
   notImplemented,
   type UseCase,
   type UseCaseContext,
@@ -10,6 +11,7 @@ import {
 import {
   AgentEvent,
   AgentUseCase,
+  AgentValueObject,
   Invariant,
   Registry,
   createRegistry,
@@ -184,6 +186,40 @@ describe('buildIR', () => {
     });
     const without = ir.useCases.find((u) => u.name === 'sem_regra')!;
     expect('invariants' in without).toBe(false);
+  });
+
+  test('value objects entram na IR ordenados, com invariantes; sem VO a chave não existe', () => {
+    const modules = [{ name: 'compiler', path: 'src/compiler' }];
+    const registry = createRegistry();
+    withRegistry(registry, () => {
+      @AgentValueObject({ description: 'Zeta.' })
+      class Zeta extends ValueObject<{ v: number }> {}
+      @AgentValueObject({ description: 'Dinheiro.' })
+      @Invariant({ id: 'zz', text: 'Z.' })
+      @Invariant({ id: 'nao-negativo', text: 'Não negativo.' })
+      class Dinheiro extends ValueObject<{ v: number }> {}
+      void Zeta;
+      void Dinheiro;
+    });
+    const { ir, errors } = buildIR(registry, { root: ROOT, modules });
+    expect(errors).toEqual([]);
+    expect(ir.valueObjects!.map((v) => v.id)).toEqual([
+      'valueobject:Dinheiro',
+      'valueobject:Zeta',
+    ]);
+    expect(ir.valueObjects![0]).toMatchObject({
+      name: 'Dinheiro',
+      module: 'compiler',
+      description: 'Dinheiro.',
+    });
+    expect(ir.valueObjects![0]!.invariants.map((i) => [i.id, i.on])).toEqual([
+      ['invariant:Dinheiro/nao-negativo', null],
+      ['invariant:Dinheiro/zz', null],
+    ]);
+    expect(ir.valueObjects![1]!.invariants).toEqual([]);
+    expect(
+      'valueObjects' in buildIR(createRegistry(), { root: ROOT, modules }).ir,
+    ).toBe(false);
   });
 
   test('inputSchema omite campos com default do required', () => {

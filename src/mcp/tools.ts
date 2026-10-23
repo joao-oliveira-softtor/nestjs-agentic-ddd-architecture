@@ -53,6 +53,10 @@ const FINDERS: Readonly<Record<string, Finder>> = {
       const useCaseInvariant = useCase.invariants?.find((i) => i.id === id);
       if (useCaseInvariant) return { ...useCaseInvariant, useCase: useCase.id };
     }
+    for (const vo of lock.ir.valueObjects ?? []) {
+      const voInvariant = vo.invariants.find((i) => i.id === id);
+      if (voInvariant) return { ...voInvariant, valueObject: vo.id };
+    }
     return undefined;
   },
   event: (lock, id) => {

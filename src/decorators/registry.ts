@@ -10,6 +10,12 @@ export interface EntityRecord {
   readonly source: SourceLoc;
 }
 
+export interface ValueObjectRecord {
+  readonly target: ClassRef;
+  readonly description: string;
+  readonly source: SourceLoc;
+}
+
 export interface InvariantRecord {
   readonly entity: ClassRef;
   readonly method: string | null;
@@ -73,6 +79,7 @@ export interface OperatorRecord {
 
 export class Registry {
   readonly entities: EntityRecord[] = [];
+  readonly valueObjects: ValueObjectRecord[] = [];
   readonly invariants: InvariantRecord[] = [];
   readonly methods: MethodRecord[] = [];
   readonly events: EventRecord[] = [];
@@ -81,6 +88,7 @@ export class Registry {
 
   reset(): void {
     this.entities.length = 0;
+    this.valueObjects.length = 0;
     this.invariants.length = 0;
     this.methods.length = 0;
     this.events.length = 0;

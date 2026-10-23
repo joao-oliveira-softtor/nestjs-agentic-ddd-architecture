@@ -1,3 +1,4 @@
+import { ValueObject } from '@agentic-ddd/core';
 import type { Registry } from '@agentic-ddd/decorators';
 import { limitsError } from '../contracts/limits';
 import {
@@ -103,6 +104,27 @@ export function validate(
     }
   }
 
+  const entityNames = new Set(ir.entities.map((e) => e.name));
+  for (const vo of ir.valueObjects ?? []) {
+    claim(vo.id, vo.source);
+    if (!PASCAL.test(vo.name))
+      err(`${vo.id}: o nome da classe deve ser PascalCase`, vo.source);
+    required(vo.description, `${vo.id}: description`, vo.source);
+    if (entityNames.has(vo.name))
+      err(
+        `${vo.id}: o nome coincide com o da entidade entity:${vo.name} (compartilhariam invariant:${vo.name}/ e a seção do histórico)`,
+        vo.source,
+      );
+    for (const invariant of vo.invariants) checkInvariant(invariant);
+  }
+  for (const rec of registry.valueObjects) {
+    if (!(rec.target.prototype instanceof ValueObject))
+      err(
+        `valueobject:${rec.target.name}: não estende ValueObject de @agentic-ddd/core (projeto e CLI com cópias diferentes do pacote?)`,
+        sourceOf(root, rec.source),
+      );
+  }
+
   for (const event of ir.events) {
     claim(event.id, event.source);
     if (!PASCAL.test(event.name))
@@ -191,22 +213,27 @@ export function validate(
     }
   }
   const useCaseTargets = new Set(registry.useCases.map((u) => u.target));
+  const voTargets = new Set(registry.valueObjects.map((v) => v.target));
   for (const invariant of registry.invariants) {
     const isEntity = entityTargets.has(invariant.entity);
     const isUseCase = useCaseTargets.has(invariant.entity);
-    if (isEntity && isUseCase) {
+    const isVo = voTargets.has(invariant.entity);
+    const owners = [isEntity, isUseCase, isVo].filter(Boolean).length;
+    if (owners > 1) {
       err(
-        `@Invariant ${invariant.id} em ${invariant.entity.name}: a classe tem @AgentEntity e @AgentUseCase, e o dono da invariante fica ambíguo`,
+        isVo
+          ? `@Invariant ${invariant.id} em ${invariant.entity.name}: a classe tem mais de um entre @AgentEntity, @AgentUseCase e @AgentValueObject, e o dono da invariante fica ambíguo`
+          : `@Invariant ${invariant.id} em ${invariant.entity.name}: a classe tem @AgentEntity e @AgentUseCase, e o dono da invariante fica ambíguo`,
         sourceOf(root, invariant.source),
       );
-    } else if (!isEntity && !isUseCase) {
+    } else if (owners === 0) {
       err(
-        `@Invariant ${invariant.id} em ${invariant.entity.name}, que não tem @AgentEntity nem @AgentUseCase`,
+        `@Invariant ${invariant.id} em ${invariant.entity.name}, que não tem @AgentEntity, @AgentUseCase nem @AgentValueObject`,
         sourceOf(root, invariant.source),
       );
     } else if (!isEntity && invariant.method !== null) {
       err(
-        `@Invariant ${invariant.id} em ${invariant.entity.name}.${invariant.method}: em use-case, @Invariant vai na classe`,
+        `@Invariant ${invariant.id} em ${invariant.entity.name}.${invariant.method}: em ${isVo ? 'value object' : 'use-case'}, @Invariant vai na classe`,
         sourceOf(root, invariant.source),
       );
     }

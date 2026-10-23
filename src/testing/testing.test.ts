@@ -14,6 +14,12 @@ describe('covers', () => {
     ).toBe('[covers: invariant:Order/x, method:Order.confirm] confirma');
   });
 
+  test('aceita ID de value object', () => {
+    expect(
+      covers(['valueobject:Dinheiro', 'invariant:Dinheiro/nao-negativo'], 'x'),
+    ).toBe('[covers: invariant:Dinheiro/nao-negativo, valueobject:Dinheiro] x');
+  });
+
   test('rejeita lista vazia e ID malformado', () => {
     expect(() => covers([], 'x')).toThrow('ao menos um ID');
     expect(() => covers(['Order.confirm'], 'x')).toThrow('ID inválido');

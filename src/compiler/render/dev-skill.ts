@@ -25,6 +25,7 @@ export function renderDevSkill(
     xs: readonly T[],
   ): T[] => xs.filter((x) => x.module === module.name);
   const entities = inModule(ir.entities);
+  const valueObjects = inModule(ir.valueObjects ?? []);
   const events = inModule(ir.events);
   const useCases = inModule(ir.useCases);
   const operators = inModule(ir.operators);
@@ -34,6 +35,9 @@ export function renderDevSkill(
     [
       entities.length > 0
         ? `entidades ${entities.map((e) => e.name).join(', ')}`
+        : null,
+      valueObjects.length > 0
+        ? `value objects ${valueObjects.map((v) => v.name).join(', ')}`
         : null,
       useCases.length > 0
         ? `use-cases ${useCases.map((u) => u.name).join(', ')}`
@@ -52,6 +56,7 @@ export function renderDevSkill(
     // Use count-based form
     const parts = [
       entities.length > 0 ? `${entities.length} entidades` : null,
+      valueObjects.length > 0 ? `${valueObjects.length} value objects` : null,
       useCases.length > 0 ? `${useCases.length} use-cases` : null,
       operators.length > 0 ? `${operators.length} operators` : null,
     ]
@@ -115,6 +120,28 @@ export function renderDevSkill(
           table(['Método', 'Descrição', 'Transição', 'Emite', 'Fonte'], rows),
           '',
         );
+      }
+    }
+  }
+
+  if (valueObjects.length > 0) {
+    lines.push('## Value objects', '');
+    for (const vo of valueObjects) {
+      lines.push(
+        `### ${vo.name} — ${code(vo.id)}`,
+        '',
+        vo.description,
+        '',
+        `Fonte: ${code(vo.source)}`,
+        '',
+      );
+      if (vo.invariants.length > 0) {
+        const rows = vo.invariants.map((i) => [
+          code(i.id),
+          i.text,
+          code(i.source),
+        ]);
+        lines.push(table(['Invariante', 'Regra', 'Fonte'], rows), '');
       }
     }
   }

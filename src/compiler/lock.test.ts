@@ -60,6 +60,15 @@ describe('lock', () => {
     );
   });
 
+  test('valueObjects no lock: array aceito, outro tipo recusado', () => {
+    const withVo = (v: unknown): string =>
+      JSON.stringify({ ...lock, ir: { ...lock.ir, valueObjects: v } });
+    expect(() => parseLock(withVo([]), 'l.json')).not.toThrow();
+    expect(() => parseLock(withVo('x'), 'l.json')).toThrow(
+      'l.json: lock incompleto',
+    );
+  });
+
   test('readLock devolve null quando o arquivo não existe', async () => {
     expect(await readLock(join(dir, 'nao-existe.json'), 'x')).toBeNull();
     await writeFile(join(dir, 'l.json'), serializeLock(lock));

@@ -39,6 +39,7 @@ export {
   type CompileError,
   type IR,
   type IREntity,
+  type IRValueObject,
   type IREvent,
   type IRInvariant,
   type IRMethod,

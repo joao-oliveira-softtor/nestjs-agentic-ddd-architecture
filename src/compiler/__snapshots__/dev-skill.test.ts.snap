@@ -222,3 +222,72 @@ Estados: \`draft\`, \`published\`
 | \`Product.publish\` | \`draft\` | \`published\` | \`ProductPublished\` |
 "
 `;
+
+exports[`value objects no módulo snapshot da skill com value objects 1`] = `
+"---
+name: vo-dev
+description: "Domínio vo: value objects Dinheiro, Quantidade. Use quando for implementar, alterar, testar ou revisar código em src/vo."
+metadata:
+  agentic-ddd.audience: dev
+  agentic-ddd.generated: "true"
+  agentic-ddd.ir-hash: "hash-fixo"
+---
+<!-- GERADO por agentic-ddd compile — não edite. Fonte: src/vo -->
+
+# Módulo \`vo\`
+
+Código em \`src/vo\`. Esta skill descreve o domínio declarado (requisitos, regras e contratos); ela não registra estado de implementação.
+
+## Value objects
+
+### Dinheiro — \`valueobject:Dinheiro\`
+
+Valor Dinheiro.
+
+Fonte: \`src/vo/Dinheiro.ts:1\`
+
+| Invariante | Regra | Fonte |
+|---|---|---|
+| \`invariant:Dinheiro/nao-negativo\` | Dinheiro não pode ser negativo. | \`src/vo/Dinheiro.ts:12\` |
+
+### Quantidade — \`valueobject:Quantidade\`
+
+Valor Quantidade.
+
+Fonte: \`src/vo/Quantidade.ts:1\`
+
+## Dependências entre itens
+
+| Item | Camada | Depende de |
+|---|---|---|
+| \`valueobject:Dinheiro\` | domain | — |
+| \`valueobject:Quantidade\` | domain | — |
+
+## Obrigações de teste
+
+Cada ID abaixo precisa de ao menos um teste nomeado com \`covers([...ids], título)\` de \`@agentic-ddd/testing\`.
+
+| Item | IDs a cobrir |
+|---|---|
+| \`valueobject:Dinheiro\` | \`invariant:Dinheiro/nao-negativo\`, \`valueobject:Dinheiro\` |
+| \`valueobject:Quantidade\` | \`valueobject:Quantidade\` |
+
+## Como estender
+
+| Artefato | Onde criar | Como declarar |
+|---|---|---|
+| Entidade | \`src/vo/domain/<nome>.ts\` | \`@AgentEntity({ description, states })\` + \`@Invariant({ id, text })\` na classe |
+| Método de entidade | na classe da entidade | \`@AgentMethod({ description, transition?, emits? })\`; regra garantida pelo método: \`@Invariant\` no método; auxiliares: \`#privado\` |
+| Evento | \`src/vo/domain/<agregado>.events.ts\` | \`@AgentEvent({ description, payload })\` estendendo \`DomainEvent\` |
+| Use-case | \`src/vo/application/<nome>.ts\` | \`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entidade>.<método>'], emits? })\` |
+| Operator | \`src/vo/operators/<nome>.operator.ts\` | \`@Operator({ name, description, instructions, useCases, requiresApproval? })\` |
+
+Corpo declarado e ainda não implementado usa \`notImplemented()\` de \`@agentic-ddd/core\`.
+
+## Referências
+
+- [Histórico de mudanças](references/history.md)
+- [Schemas de eventos e use-cases](references/schemas.json)
+- [Máquina de estados](references/state-machine.md)
+"
+`;

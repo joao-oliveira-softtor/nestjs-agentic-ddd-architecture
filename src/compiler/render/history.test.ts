@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { SHOP_MODULE, defineShop } from '../__fixtures__/shop';
 import { analyze } from '../analyze';
+import type { IRValueObject } from '../../contracts/ir';
 import type { LockChange } from '../lock';
 import { renderHistory } from './history';
 
@@ -102,5 +103,59 @@ describe('renderHistory', () => {
         'added `invariant:matricular_aluno/aluno-ativo` (behavioral)',
       ),
     );
+  });
+
+  const dinheiro: IRValueObject = {
+    id: 'valueobject:Dinheiro',
+    name: 'Dinheiro',
+    module: 'shop',
+    description: 'Quantia monetária.',
+    invariants: [
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        text: 'Valor não pode ser negativo.',
+        on: null,
+        source: 'src/shop/domain/dinheiro.ts',
+      },
+    ],
+    source: 'src/shop/domain/dinheiro.ts',
+  };
+  const withVo = { ...ir, valueObjects: [dinheiro] };
+
+  test('value object sem mudança ganha seção própria com "nenhuma mudança"', () => {
+    const text = renderHistory(withVo, module, changes, HISTORY);
+    expect(text).toContain('## Dinheiro\n\n_Nenhuma mudança registrada._');
+  });
+
+  test('mudança de value object e de sua invariante vai para a seção do VO', () => {
+    const voChange: LockChange[] = [
+      {
+        id: '0004',
+        title: 'Dinheiro não negativo',
+        path: 'changes/archive/0004-dinheiro-nao-negativo/proposal.md',
+        summary: 'Dinheiro nunca negativo.',
+        hash: 'h4',
+        items: [
+          {
+            id: 'valueobject:Dinheiro',
+            kind: 'added',
+            classification: 'behavioral',
+            module: 'shop',
+          },
+          {
+            id: 'invariant:Dinheiro/nao-negativo',
+            kind: 'added',
+            classification: 'behavioral',
+            module: 'shop',
+          },
+        ],
+      },
+    ];
+    const text = renderHistory(withVo, module, voChange, HISTORY);
+    expect(text).toContain(
+      '| [0004](../../../../changes/archive/0004-dinheiro-nao-negativo/proposal.md) | Dinheiro não negativo | added `valueobject:Dinheiro` (behavioral); added `invariant:Dinheiro/nao-negativo` (behavioral) | Dinheiro nunca negativo. |',
+    );
+    expect(text.indexOf('## Dinheiro')).toBeLessThan(text.indexOf('| [0004]'));
+    expect(text).not.toContain('## Eventos, use-cases e operators');
   });
 });

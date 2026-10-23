@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
 import { analyze } from './analyze';
 import { renderDevSkill } from './render/dev-skill';
-import type { IR } from './ir';
+import type { IR, IRValueObject } from './ir';
 
 const ROOT = resolve(import.meta.dir, '../..');
 const { ir } = analyze(defineShop(), { root: ROOT, modules: [SHOP_MODULE] });
@@ -126,5 +126,84 @@ describe('renderDevSkill', () => {
       .replace(/\\"/g, '"');
     expect(normalDesc).toContain('create_product');
     expect(normalDesc).toContain('publish_product');
+  });
+});
+
+describe('value objects no módulo', () => {
+  const vo = (
+    name: string,
+    invariants: IRValueObject['invariants'],
+  ): IRValueObject => ({
+    id: `valueobject:${name}`,
+    name,
+    module: 'vo',
+    description: `Valor ${name}.`,
+    invariants,
+    source: `src/vo/${name}.ts:1`,
+  });
+  const voModuleIR = (valueObjects: IRValueObject[]): IR => ({
+    irVersion: 1,
+    modules: [{ name: 'vo', path: 'src/vo' }],
+    entities: [],
+    events: [],
+    useCases: [],
+    operators: [],
+    valueObjects,
+  });
+
+  const voIR = voModuleIR([
+    vo('Dinheiro', [
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        text: 'Dinheiro não pode ser negativo.',
+        on: null,
+        source: 'src/vo/Dinheiro.ts:12',
+      },
+    ]),
+    vo('Quantidade', []),
+  ]);
+  const voSkill = renderDevSkill(voIR, voIR.modules[0]!, 'hash-fixo').get(
+    'SKILL.md',
+  )!;
+
+  test('resumo do frontmatter lista os value objects', () => {
+    expect(voSkill).toContain(
+      'description: "Domínio vo: value objects Dinheiro, Quantidade. Use quando',
+    );
+  });
+
+  test('descreve value object com invariante e sem tabela quando não tem', () => {
+    expect(voSkill).toContain('## Value objects');
+    expect(voSkill).toContain('### Dinheiro — `valueobject:Dinheiro`');
+    expect(voSkill).toContain('Fonte: `src/vo/Dinheiro.ts:1`');
+    expect(voSkill).toMatch(
+      /\| Invariante \| Regra \| Fonte \|\n\|---\|---\|---\|\n\| `invariant:Dinheiro\/nao-negativo` \| Dinheiro não pode ser negativo\. \| `src\/vo\/Dinheiro\.ts:12` \|/,
+    );
+    expect(voSkill).toContain('### Quantidade — `valueobject:Quantidade`');
+    expect(voSkill.split('| Invariante | Regra | Fonte |').length - 1).toBe(1);
+    expect(voSkill).not.toContain('Garantida por');
+  });
+
+  test('módulo só com value object não sai como sem elementos declarados', () => {
+    expect(voSkill).not.toContain('sem elementos declarados');
+  });
+
+  test('snapshot da skill com value objects', () => {
+    expect(voSkill).toMatchSnapshot();
+  });
+
+  test('forma por contagem informa N value objects quando os nomes não cabem', () => {
+    const many = voModuleIR(
+      Array.from({ length: 60 }, (_, i) =>
+        vo(`ObjetoDeValorComNomeLongo${i}`, []),
+      ),
+    );
+    expect(
+      renderDevSkill(many, many.modules[0]!, 'hash-fixo').get('SKILL.md'),
+    ).toContain('60 value objects.');
+  });
+
+  test('sem value objects, a skill não menciona value objects', () => {
+    expect(skill).not.toMatch(/value objects|Value objects/);
   });
 });
