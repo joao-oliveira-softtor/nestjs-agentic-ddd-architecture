@@ -570,6 +570,21 @@ describe('validate: @Invariant em use-case', () => {
     );
   });
 
+  test('@Invariant em classe com @AgentEntity e @AgentUseCase é ambígua', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'Coisa.' })
+      @AgentUseCase({ ...base, name: 'caso' })
+      @Invariant({ id: 'dupla', text: 'Regra.' })
+      class Dupla extends AggregateRoot<string> {}
+      void Dupla;
+    });
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(HERE);
+    expect(errors[0]).toContain(
+      '@Invariant dupla em Dupla: a classe tem @AgentEntity e @AgentUseCase, e o dono da invariante fica ambíguo',
+    );
+  });
+
   test('@Invariant em classe sem decorator cita entidade e use-case', () => {
     const errors = errorsOf(() => {
       @Invariant({ id: 'solta', text: 'Regra.' })

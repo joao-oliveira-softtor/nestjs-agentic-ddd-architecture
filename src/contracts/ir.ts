@@ -237,7 +237,7 @@ export function buildIR(
 
   const useCases = registry.useCases
     .map((rec): IRUseCase => {
-      const invs = registry.invariants
+      const invs: IRInvariant[] = registry.invariants
         .filter((i) => i.entity === rec.target)
         .map((i) => ({
           id: `invariant:${rec.name}/${i.id}`,

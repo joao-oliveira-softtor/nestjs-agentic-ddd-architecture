@@ -192,13 +192,19 @@ export function validate(
   }
   const useCaseTargets = new Set(registry.useCases.map((u) => u.target));
   for (const invariant of registry.invariants) {
-    if (entityTargets.has(invariant.entity)) continue;
-    if (!useCaseTargets.has(invariant.entity)) {
+    const isEntity = entityTargets.has(invariant.entity);
+    const isUseCase = useCaseTargets.has(invariant.entity);
+    if (isEntity && isUseCase) {
+      err(
+        `@Invariant ${invariant.id} em ${invariant.entity.name}: a classe tem @AgentEntity e @AgentUseCase, e o dono da invariante fica ambíguo`,
+        sourceOf(root, invariant.source),
+      );
+    } else if (!isEntity && !isUseCase) {
       err(
         `@Invariant ${invariant.id} em ${invariant.entity.name}, que não tem @AgentEntity nem @AgentUseCase`,
         sourceOf(root, invariant.source),
       );
-    } else if (invariant.method !== null) {
+    } else if (!isEntity && invariant.method !== null) {
       err(
         `@Invariant ${invariant.id} em ${invariant.entity.name}.${invariant.method}: em use-case, @Invariant vai na classe`,
         sourceOf(root, invariant.source),
