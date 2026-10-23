@@ -11,6 +11,7 @@ import {
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { compile } from '@agentic-ddd/compiler';
+import { checkSnapshot } from './snapshot';
 import { bootstrapChanges } from '../../test/helpers/bootstrap';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -102,6 +103,7 @@ describe('compile (exemplo orders)', () => {
     const write = await compile({ configPath, outRoot: out, mode: 'write' });
     expect(write.ok).toBe(true);
     expect(write.pending[0]).toContain('mudança(s) de domínio sem proposta');
+    expect((await checkSnapshot(out)).ok).toBe(false);
     const check = await compile({ configPath, outRoot: out, mode: 'check' });
     expect(check.ok).toBe(false);
     expect(check.pending[0]).toContain('--draft-change');
@@ -119,6 +121,7 @@ describe('compile (exemplo orders)', () => {
       'proposta 0001: a seção ## Motivo está vazia',
     ]);
     expect(draft.applied).toBeNull();
+    expect((await checkSnapshot(out)).ok).toBe(false);
     const raw = await readFile(join(out, draft.drafted!), 'utf8');
     expect(raw).toContain('origin: code-first');
     expect(raw).toContain('    - "usecase:cancel_order"');
@@ -157,6 +160,12 @@ describe('compile (exemplo orders)', () => {
     expect(check.pending).toEqual([]);
     expect(check.drift).toEqual([]);
     expect(check.ok).toBe(true);
+    const snap = await checkSnapshot(out);
+    expect(snap.ok).toBe(true);
+    if (snap.ok) {
+      expect(snap.rules.length).toBeGreaterThan(0);
+      expect(snap.rules.some((r) => r.body.includes('{{'))).toBe(false);
+    }
   });
 
   test('diff só de docs atualiza o lock sem proposta', async () => {
@@ -171,6 +180,21 @@ describe('compile (exemplo orders)', () => {
     expect(
       (await compile({ configPath, outRoot: out, mode: 'check' })).ok,
     ).toBe(true);
+  });
+
+  test('mudança de domínio sem proposta remove o snapshot existente', async () => {
+    await bootstrapChanges(out);
+    expect((await checkSnapshot(out)).ok).toBe(true);
+    const lockPath = join(out, '.agentic/domain.lock.json');
+    const lock = JSON.parse(await readFile(lockPath, 'utf8'));
+    lock.ir.useCases.shift(); // o código passa a ter um use-case a mais que o lock
+    await writeFile(lockPath, JSON.stringify(lock));
+    const write = await compile({ configPath, outRoot: out, mode: 'write' });
+    expect(write.pending.length).toBeGreaterThan(0);
+    expect((await checkSnapshot(out)).ok).toBe(false);
+    expect(
+      await failure(access(join(out, '.agentic/mcp/snapshot.json'))),
+    ).toContain('ENOENT');
   });
 
   test('proposta arquivada editada à mão quebra o write e o check', async () => {

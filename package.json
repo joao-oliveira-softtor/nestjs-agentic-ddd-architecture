@@ -34,6 +34,7 @@
     "typescript": "^6.0.2"
   },
   "devDependencies": {
+    "@modelcontextprotocol/server": "2.3.1",
     "@nestbun/platform": "^0.1.2",
     "@nestjs/cli": "^12.0.0",
     "@nestjs/mau": "^0.2.6",
@@ -78,6 +79,10 @@
     "./testing": {
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
     }
   },
   "main": "./dist/core/index.js",
@@ -93,6 +98,7 @@
     "dist/runtime",
     "dist/nestjs",
     "dist/testing",
+    "dist/mcp",
     "dist/cli",
     "bin/agentic-ddd.js",
     "README.md",
@@ -111,6 +117,12 @@
     "@nestjs/common": "^12.0.1",
     "@nestjs/core": "^12.0.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "@modelcontextprotocol/server": "2.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@modelcontextprotocol/server": {
+      "optional": true
+    }
   }
 }

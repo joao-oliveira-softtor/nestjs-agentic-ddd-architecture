@@ -4,6 +4,7 @@ import { verifyCommand } from './commands/verify';
 import { USAGE } from './usage';
 import { statusCommand, nextCommand } from './commands/state';
 import { packetCommand } from './commands/packet';
+import { mcpCommand } from './commands/mcp';
 
 export { USAGE };
 
@@ -16,6 +17,7 @@ const COMMANDS: Readonly<
   status: statusCommand,
   next: nextCommand,
   packet: packetCommand,
+  mcp: (args) => mcpCommand(args),
 };
 
 export async function main(argv: readonly string[]): Promise<number> {

@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { defaultRegistry, type Registry } from '@agentic-ddd/decorators';
 import { analyze } from './analyze';
 import { archiveProposal } from './changes/apply';
@@ -8,12 +8,14 @@ import { listProposals } from './changes/proposal';
 import { reconcile } from './changes/reconcile';
 import { loadConfig, type ResolvedConfig } from './config';
 import type { DiffItem } from './diff';
-import type { CompileError, IR } from './ir';
+import { toPosix, type CompileError, type IR } from './ir';
 import { lintRendered, type LintFinding } from './lint';
 import { importModules } from './load';
 import { readLock, serializeLock } from './lock';
-import { loadRules, RuleError, type Rule } from './rules';
+import { fillMarkers, loadRules, RuleError, type Rule } from './rules';
 import { renderAll, type Rendered } from './render/index';
+import { removeSnapshot, sourceLines, writeSnapshot } from './snapshot';
+import { stableStringify } from './canonical';
 import { registrySizes, scopeRegistry } from './scope';
 import { checkOutputs, writeOutputs, type Drift } from './write';
 
@@ -78,10 +80,31 @@ async function claudeWarnings(config: ResolvedConfig): Promise<string[]> {
     : [];
 }
 
+const snapshotPlace = (config: ResolvedConfig, configPath: string) => ({
+  root: toPosix(relative(config.outRoot, config.root)),
+  config: toPosix(relative(config.outRoot, resolve(configPath))),
+  rulesDir: config.rules.dir,
+});
+
 const byPath = (a: Drift, b: Drift): number =>
   a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
 
 export async function compile(options: CompileOptions): Promise<CompileResult> {
+  // Fontes lidas antes de importar: editar durante o compile deixa o snapshot
+  // do MCP desatualizado, nunca falsamente em dia. Falha aqui só impede o snapshot;
+  // o erro real aparece adiante (config, regras).
+  const sources =
+    options.mode === 'write'
+      ? await loadConfig(options.configPath, { outRoot: options.outRoot })
+          .then((early) =>
+            sourceLines(
+              early.outRoot,
+              snapshotPlace(early, options.configPath),
+              early.modules,
+            ),
+          )
+          .catch(() => null)
+      : null;
   const { config, ir, errors, registry } = await analyzeProject(options);
   const empty = {
     registry,
@@ -212,6 +235,35 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     await writeFile(lockAbs, lockText);
     written.push(config.out.lock);
   }
+  if (
+    commit &&
+    sources !== null &&
+    plan.nextLock !== null &&
+    stableStringify(plan.nextLock.ir) === stableStringify(ir)
+  )
+    await writeSnapshot(
+      config.outRoot,
+      {
+        ...snapshotPlace(config, options.configPath),
+        lock: config.out.lock,
+        modules: ir.modules,
+        rules: rules.map((r) =>
+          r.file === null
+            ? {
+                ...r,
+                body: fillMarkers(r.body, {
+                  changes: config.changesDir,
+                  devSkills: config.out.devSkills,
+                  runtimeSkills: config.out.runtimeSkills,
+                  layers: config.conventions?.layers,
+                }),
+              }
+            : r,
+        ),
+      },
+      sources,
+    );
+  else await removeSnapshot(config.outRoot);
   return {
     ...empty,
     ok: commit,

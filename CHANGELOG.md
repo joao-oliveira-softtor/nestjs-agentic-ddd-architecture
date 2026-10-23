@@ -2,6 +2,12 @@
 
 ## [Não lançado]
 
+Servidor MCP local (#68):
+
+- `agentic-ddd mcp` (stdio, somente leitura) expõe 4 tools sobre o domínio compilado; recusa responder se código, regras, config ou lock mudaram desde o último `compile` bem-sucedido. Subcaminho `./mcp` e peer opcional `@modelcontextprotocol/server@2.3.1`.
+- `compile` grava o snapshot `.agentic/mcp/snapshot.json`, ignorado pelo git.
+- `skills:install --mcp` (só com `--scope project`) grava a config do servidor para Claude, Cursor e Codex, sem sobrescrever arquivo existente com outro conteúdo.
+
 Regras do time (#66):
 
 - Arquivos `.ai/rules/*.md` (pasta em `rules.dir`) viram regras do projeto: sem `paths` entram em "Convenções" do bloco do AGENTS.md; com `paths` entram no índice "Regras por caminho" do bloco e na seção "Regras do time" das skills de dev que casam. As convenções fixas do bloco viram regras do núcleo (`core/...`): um arquivo com a mesma chave substitui uma, e `rules.exclude` remove. Sem `.ai/rules`, a saída do `compile` não muda.

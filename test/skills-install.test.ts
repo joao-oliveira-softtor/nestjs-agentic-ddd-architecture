@@ -10,7 +10,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dir, '..');
 const dirs: string[] = [];
@@ -211,3 +211,57 @@ test('compile preserva links e adaptadores instalados em raiz user', async () =>
   expect(compile().exitCode).toBe(0);
   expect(install(root, '--scope', 'user', '--check').code).toBe(0);
 }, 15_000);
+
+test('--mcp grava a config MCP de cada target com o CLI relativo à raiz e reinstalar não muda nada', async () => {
+  const root = await workspace();
+  const cli = relative(root, join(ROOT, 'src/cli/main.ts'))
+    .split('\\')
+    .join('/');
+  const files = {
+    '.mcp.json': `${JSON.stringify({ mcpServers: { 'agentic-ddd': { command: 'bun', args: [cli, 'mcp'] } } }, null, 2)}\n`,
+    '.cursor/mcp.json': `${JSON.stringify({ mcpServers: { 'agentic-ddd': { command: 'bun', args: [cli, 'mcp'] } } }, null, 2)}\n`,
+    '.codex/config.toml': `# Instalado por skills:install --mcp.\n[mcp_servers.agentic-ddd]\ncommand = "bun"\nargs = ${JSON.stringify([cli, 'mcp'])}\n`,
+  };
+  expect(install(root, '--target', 'all', '--mcp').code).toBe(0);
+  for (const [path, text] of Object.entries(files))
+    expect(await readFile(join(root, path), 'utf8')).toBe(text);
+  expect(install(root, '--target', 'all', '--mcp').code).toBe(0);
+  for (const [path, text] of Object.entries(files))
+    expect(await readFile(join(root, path), 'utf8')).toBe(text);
+  expect(install(root, '--target', 'all', '--mcp', '--check').code).toBe(0);
+});
+
+test('--mcp recusa .mcp.json existente com outro conteúdo sem sobrescrever', async () => {
+  const root = await workspace();
+  await writeFile(join(root, '.mcp.json'), '{"mcpServers":{}}\n');
+  const result = install(root, '--mcp');
+  expect(result.code).toBe(1);
+  expect(result.output).toContain('conflito');
+  expect(await readFile(join(root, '.mcp.json'), 'utf8')).toBe(
+    '{"mcpServers":{}}\n',
+  );
+  expect(await lstat(join(root, '.cursor')).catch(() => null)).toBeNull();
+});
+
+test('--check --mcp acusa configs MCP ausentes sem instalar', async () => {
+  const root = await workspace();
+  const result = install(root, '--mcp', '--check');
+  expect(result.code).toBe(1);
+  expect(result.output).toContain('.mcp.json');
+  expect(await lstat(join(root, '.mcp.json')).catch(() => null)).toBeNull();
+});
+
+test('--mcp só vale com --scope project', async () => {
+  const root = await workspace();
+  const result = install(root, '--scope', 'user', '--mcp');
+  expect(result.code).toBe(2);
+  expect(result.output).toContain('--mcp só vale com --scope project');
+  expect(await lstat(join(root, '.agents')).catch(() => null)).toBeNull();
+});
+
+test('sem --mcp não cria configs MCP', async () => {
+  const root = await workspace();
+  expect(install(root, '--target', 'all').code).toBe(0);
+  for (const path of ['.mcp.json', '.cursor/mcp.json', '.codex/config.toml'])
+    expect(await lstat(join(root, path)).catch(() => null)).toBeNull();
+});

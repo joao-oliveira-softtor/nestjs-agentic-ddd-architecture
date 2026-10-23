@@ -116,6 +116,7 @@ test('Order declarado: quatro ondas, packets, verify item RED→GREEN, gerados e
     ).toBe('passed');
     expect((await readdir(join(dir, '.agentic'))).sort()).toEqual([
       'domain.lock.json',
+      'mcp',
       'runtime',
     ]);
   } finally {

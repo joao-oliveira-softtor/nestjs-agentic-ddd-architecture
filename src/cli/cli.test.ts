@@ -10,6 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { MOTIVO_PLACEHOLDER } from '@agentic-ddd/compiler';
+import { checkSnapshot } from '../compiler/snapshot';
 import { bootstrapChanges } from '../../test/helpers/bootstrap';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -41,6 +42,7 @@ describe('agentic-ddd compile (CLI)', () => {
   test('escreve e depois --check sai com 0', async () => {
     await bootstrapChanges(out);
     expect(run('compile', '--out-root', out).code).toBe(0);
+    expect((await checkSnapshot(out)).ok).toBe(true);
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(0);
     expect(check.stdout).toContain('arquivos gerados estão em dia');
@@ -193,6 +195,7 @@ describe('agentic-ddd compile (CLI)', () => {
     expect(await exists('changes/0001-estado-inicial/proposal.md')).toBe(true);
     expect(await exists('changes/archive/0001-estado-inicial')).toBe(false);
     expect(await exists('.agentic/domain.lock.json')).toBe(false);
+    expect(await exists('.agentic/mcp/snapshot.json')).toBe(false);
     // os artefatos gerados continuam sendo escritos (decisão do c9b29b9)
     expect(await exists('.agentic/runtime/long-operator/SKILL.md')).toBe(true);
   });

@@ -44,6 +44,7 @@
     "src/runtime/**/*.ts",
     "src/nestjs/**/*.ts",
     "src/testing/**/*.ts",
-    "src/cli/**/*.ts"
+    "src/cli/**/*.ts",
+    "src/mcp/**/*.ts"
   ]
 }

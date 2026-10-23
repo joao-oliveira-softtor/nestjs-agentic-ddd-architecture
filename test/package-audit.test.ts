@@ -9,6 +9,9 @@ test('tarball audit accepts relative maps and rejects unrelated or sensitive fil
     auditFile('dist/nestjs/agentic.module.js', 'export class AgenticModule {}'),
   ).toEqual([]);
   expect(
+    auditFile('dist/mcp/index.js', 'export function startMcpServer() {}'),
+  ).toEqual([]);
+  expect(
     auditFile(
       'dist/core/entity.js.map',
       JSON.stringify({

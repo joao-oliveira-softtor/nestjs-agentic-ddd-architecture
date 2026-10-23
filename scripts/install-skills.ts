@@ -1,3 +1,4 @@
+import { match } from 'ts-pattern';
 import {
   lstat,
   mkdir,
@@ -17,6 +18,7 @@ export interface InstallOptions {
   scope: 'project' | 'user';
   target: Target | 'all';
   check?: boolean;
+  mcp?: boolean;
 }
 type Artifact =
   { path: string; content: string } | { path: string; link: string };
@@ -33,6 +35,24 @@ const ROLE_NAMES = {
   executor: 'executor',
   reviewer: 'revisor',
 } as const;
+// Cursor usa o mesmo formato do Claude: o cursor-agent não expande ${workspaceFolder} (validado na #68).
+const mcpJson = (cli: string) =>
+  JSON.stringify(
+    { mcpServers: { 'agentic-ddd': { command: 'bun', args: [cli, 'mcp'] } } },
+    null,
+    2,
+  ) + '\n';
+const MCP_CONFIG = {
+  claude: { path: '.mcp.json', content: mcpJson },
+  cursor: { path: '.cursor/mcp.json', content: mcpJson },
+  codex: {
+    path: '.codex/config.toml',
+    content: (cli: string) =>
+      '# Instalado por skills:install --mcp.\n[mcp_servers.agentic-ddd]\ncommand = "bun"\nargs = ' +
+      JSON.stringify([cli, 'mcp']) +
+      '\n',
+  },
+} satisfies Record<Target, { path: string; content: (cli: string) => string }>;
 
 function artifacts(options: InstallOptions): Artifact[] {
   const targets: Target[] =
@@ -78,6 +98,19 @@ function artifacts(options: InstallOptions): Artifact[] {
         content,
       });
     }
+  if (options.mcp) {
+    const cli = relative(
+      options.root,
+      resolve(import.meta.dir, '../src/cli/main.ts'),
+    )
+      .split('\\')
+      .join('/');
+    for (const target of targets)
+      result.push({
+        path: join(options.root, MCP_CONFIG[target].path),
+        content: MCP_CONFIG[target].content(cli),
+      });
+  }
   return result;
 }
 
@@ -155,36 +188,51 @@ export async function installSkills(
 }
 
 export function parseInstallArgs(args: string[]): InstallOptions {
-  let scope: InstallOptions['scope'] = 'project';
-  let target: InstallOptions['target'] = 'all';
+  let scope = 'project' as InstallOptions['scope'];
+  let target = 'all' as InstallOptions['target'];
   let root: string | undefined;
   let check = false;
+  let mcp = false;
   for (let i = 0; i < args.length; i++) {
-    const flag = args[i];
-    if (flag === '--check') {
-      check = true;
-      continue;
-    }
-    if (!['--scope', '--target', '--root'].includes(flag!))
-      throw new Error(`Opção inválida: ${flag}`);
-    const value = args[++i];
-    if (!value || value.startsWith('--'))
-      throw new Error(`${flag} exige valor`);
-    if (flag === '--scope') {
-      if (value !== 'project' && value !== 'user')
-        throw new Error('--scope exige project|user');
-      scope = value;
-    } else if (flag === '--target') {
-      if (!['all', 'cursor', 'codex', 'claude'].includes(value))
-        throw new Error('--target exige cursor|codex|claude|all');
-      target = value as InstallOptions['target'];
-    } else root = value;
+    match(args[i])
+      .with('--check', () => {
+        check = true;
+      })
+      .with('--mcp', () => {
+        mcp = true;
+      })
+      .with('--scope', '--target', '--root', (flag) => {
+        const value = args[++i];
+        if (!value || value.startsWith('--'))
+          throw new Error(`${flag} exige valor`);
+        match(flag)
+          .with('--scope', () => {
+            if (value !== 'project' && value !== 'user')
+              throw new Error('--scope exige project|user');
+            scope = value;
+          })
+          .with('--target', () => {
+            if (!['all', 'cursor', 'codex', 'claude'].includes(value))
+              throw new Error('--target exige cursor|codex|claude|all');
+            target = value as InstallOptions['target'];
+          })
+          .with('--root', () => {
+            root = value;
+          })
+          .exhaustive();
+      })
+      .otherwise((flag) => {
+        throw new Error(`Opção inválida: ${flag}`);
+      });
   }
+  if (mcp && scope === 'user')
+    throw new Error('--mcp só vale com --scope project');
   return {
     scope,
     target,
     root: resolve(root ?? (scope === 'user' ? homedir() : process.cwd())),
     check,
+    mcp,
   };
 }
 
