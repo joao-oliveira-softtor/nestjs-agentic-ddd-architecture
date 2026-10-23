@@ -3,6 +3,7 @@ import ts from 'typescript';
 import { AggregateRoot, ValueObject } from '@agentic-ddd/core';
 import type { Registry } from '@agentic-ddd/decorators';
 import { limitsError } from '../contracts/limits';
+import { findDecoratedClass } from './ast';
 import { aggregateRoots } from './graph';
 import {
   sourceOf,
@@ -30,22 +31,8 @@ function abstractMethods(
     ts.ScriptTarget.Latest,
     true,
   );
-  const visit = (node: ts.Node): ts.ClassDeclaration | undefined => {
-    if (
-      ts.isClassDeclaration(node) &&
-      node.name?.text === name &&
-      (ts.getDecorators(node) ?? []).some(
-        (d) =>
-          sf.getLineAndCharacterOfPosition(d.expression.getStart(sf)).line +
-            1 ===
-          line,
-      )
-    )
-      return node;
-    return ts.forEachChild(node, visit);
-  };
-  const cls = visit(sf);
-  if (cls === undefined) return null;
+  const cls = findDecoratedClass(sf, line, name);
+  if (cls === null) return null;
   return {
     abstract: !!ts
       .getModifiers(cls)

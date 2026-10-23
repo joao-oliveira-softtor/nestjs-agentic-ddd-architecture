@@ -17,7 +17,8 @@ export type GateId =
   | 'I2'
   | 'I3'
   | 'I4'
-  | 'I5';
+  | 'I5'
+  | 'T';
 export type GateStatus = 'passed' | 'failed' | 'pending';
 
 export interface Finding {
