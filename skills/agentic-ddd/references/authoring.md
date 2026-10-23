@@ -58,6 +58,18 @@ export class Dinheiro extends ValueObject<{ centavos: number; moeda: string }> {
 }
 ```
 
+## Gate T
+
+O gate T confere, em `entity:` e `valueobject:`, o que o campo guarda. T1: campo ou parâmetro de construtor cujo tipo nomeia a raiz de outro agregado (guarde o id, como `AlunoId`). T2: campo ou prop de VO que nomeia uma entidade. T3: campo de entidade que nomeia um VO fora do seu `contains`, ou uma entidade filha de outro agregado; filhas do mesmo agregado são permitidas.
+
+O T roda só no `verify --item` de item `entity:` ou `valueobject:` em projeto com elemento tático (VO, `contains`/`references`, port ou adapter). `status` e `verify <NNNN>` não o veem, e um use-case ou operator que edite o arquivo da entidade não é reconferido.
+
+Quem corrige: o executor só troca o tipo de um `#privado` que criou num VO. Campo declarado, parameter property, `contains`/`references` e props do VO são declaração, e o gerente ajusta: proposta e compile quando a IR muda, novo packet quando o specHash muda.
+
+Falsos negativos, que o T não enxerga: alias de tipo e import renomeado; tipo inferido sem anotação; props do VO em interface ou alias nomeado (`ValueObject<Props>`); tipos de função, `typeof`, `keyof`, acesso indexado (`Aluno['id']`) e argumentos de genérico do usuário (`Partial<Aluno>`); `Promise`, `WeakMap`, `WeakSet` e `WeakRef` não são abertos; campos herdados não são lidos; o tipo do id em `extends AggregateRoot<X>` não é conferido.
+
+Limite herdado: classe por expressão ou decorator por alias cai no fail-closed, que reprova com "classe não encontrada" em vez de passar.
+
 ## Regras do time
 
 As regras do time ficam em `.ai/rules/*.md` (pasta trocável por `rules.dir`); cada arquivo é uma regra e a chave é o caminho sem `.md`, como `testes` para `.ai/rules/testes.md`. Um frontmatter opcional com só `paths:` (globs relativos à raiz) limita a regra: sem ele, ela entra inteira em "Convenções" do AGENTS.md; com ele, entra no índice "Regras por caminho" e na seção "Regras do time" das skills de dev cujos arquivos casam. O corpo é lista com `- `, sem título `#`. Um arquivo com a mesma chave de uma regra do núcleo (`core/...`) substitui essa regra, e `rules.exclude` remove uma; os briefs de executor e revisor recebem as regras do time aplicáveis ao arquivo do item (as do núcleo não; uma substituição sua, inclusive de regra de coordenação como `core/coordination`, chega ao executor), até `rules.briefMaxTokens` (padrão 2000), e acima do limite o brief falha em vez de truncar. Gates (verify, specHash, fronteiras, `covers`) sempre vencem uma regra. Depois de editar, recompile: `compile --check` reprova regra alterada sem recompilação.

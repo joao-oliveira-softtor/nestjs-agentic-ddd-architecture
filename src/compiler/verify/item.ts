@@ -1,5 +1,6 @@
 import { collectStatus, stateContext } from '../project-state';
 import type { Finding, GateResult } from './gates';
+import { hasTacticalElements, tacticalGate } from './tactical';
 import { VERIFY_ENV } from './test-run';
 
 export interface ItemVerifyOptions {
@@ -92,6 +93,31 @@ export async function verifyItem(
       ),
     ),
   ];
+  const { ir, registry, config } = context.project;
+  const records = item.id.startsWith('entity:')
+    ? registry.entities
+    : item.id.startsWith('valueobject:')
+      ? registry.valueObjects
+      : null;
+  if (records && hasTacticalElements(ir)) {
+    const name = item.id.slice(item.id.indexOf(':') + 1);
+    const record = records.find((r) => r.target.name === name);
+    gates.push(
+      gate(
+        'T',
+        'Tático',
+        record
+          ? tacticalGate({ ir, record, root: config.root, owner: item.id })
+          : [
+              {
+                message: `T: classe ${name} não encontrada no registry`,
+                fix: 'confira o decorator na linha do source',
+                source: item.source,
+              },
+            ],
+      ),
+    );
+  }
   return {
     item: item.id,
     status: gates.every((g) => g.status === 'passed') ? 'done' : 'failed',
