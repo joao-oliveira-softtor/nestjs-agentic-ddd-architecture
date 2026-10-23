@@ -52,6 +52,8 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
         module: e.module,
         description: e.description,
         states: e.states,
+        ...(e.contains?.length ? { contains: e.contains } : {}),
+        ...(e.references?.length ? { references: e.references } : {}),
       },
     });
     for (const i of e.invariants)

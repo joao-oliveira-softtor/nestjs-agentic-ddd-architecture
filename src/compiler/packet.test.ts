@@ -189,3 +189,84 @@ test('pacote de value object traz declaração e obrigações', () => {
   expect(packet).toContain('invariant:Dinheiro/nao-negativo');
   expect(packet).toMatchSnapshot('valueobject:Dinheiro');
 });
+
+test('contains e references chegam ao packet da dona, do método e do use-case que o usa', () => {
+  const related: typeof ir = {
+    ...ir,
+    valueObjects: [
+      {
+        id: 'valueobject:Dinheiro',
+        name: 'Dinheiro',
+        module: 'shop',
+        description: 'Valor monetário.',
+        invariants: [],
+        source: 'src/compiler/__fixtures__/shop.ts:1',
+      },
+    ],
+    entities: [
+      ...ir.entities.map((e) =>
+        e.id === 'entity:Product'
+          ? {
+              ...e,
+              contains: ['valueobject:Dinheiro'],
+              references: ['entity:Cliente'],
+            }
+          : e,
+      ),
+      {
+        id: 'entity:Cliente',
+        name: 'Cliente',
+        module: 'shop',
+        description: 'Cliente que faz o pedido.',
+        states: [],
+        invariants: [],
+        methods: [],
+        source: 'src/compiler/__fixtures__/shop.ts:2',
+      },
+    ],
+  };
+  const relatedReport = evaluateStatus({
+    ir: related,
+    implemented: implementation(ir, registry),
+    proposals: [],
+    mode: 'dynamic',
+    evidence: { exitCode: 0, cases: [] },
+  });
+  const itemOf = (id: string) => relatedReport.items.find((i) => i.id === id)!;
+  const contractIds = (id: string) =>
+    (
+      itemSpecification(related, itemOf(id), []).contracts as { id: string }[]
+    ).map((c) => c.id);
+  expect(contractIds('entity:Product')).toEqual([
+    'entity:Cliente',
+    'event:ProductCreated',
+    'valueobject:Dinheiro',
+  ]);
+  expect(contractIds('method:Product.publish')).toEqual([
+    'entity:Cliente',
+    'event:ProductCreated',
+    'event:ProductPublished',
+    'valueobject:Dinheiro',
+  ]);
+  expect(contractIds('usecase:publish_product')).toEqual([
+    'entity:Cliente',
+    'event:ProductCreated',
+    'event:ProductPublished',
+    'method:Product.publish',
+    'valueobject:Dinheiro',
+  ]);
+  expect(contractIds('entity:Cliente')).toEqual([]);
+  for (const id of [
+    'entity:Product',
+    'method:Product.publish',
+    'usecase:publish_product',
+  ]) {
+    const item = itemOf(id);
+    const packet = renderPacket(
+      item,
+      itemSpecification(related, item, []),
+      'agentic.config.ts',
+    );
+    expect(packet).toMatchSnapshot(`${id} com relações`);
+  }
+});

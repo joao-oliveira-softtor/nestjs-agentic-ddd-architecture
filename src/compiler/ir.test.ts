@@ -8,7 +8,9 @@ import {
   type UseCase,
   type UseCaseContext,
 } from '@agentic-ddd/core';
+import { AggregateRoot } from '@agentic-ddd/core';
 import {
+  AgentEntity,
   AgentEvent,
   AgentUseCase,
   AgentValueObject,
@@ -302,5 +304,100 @@ describe('buildIR', () => {
     };
     const hash3 = irHash(modified as typeof ir);
     expect(hash3).not.toBe(hash1);
+  });
+});
+
+describe('buildIR: contains e references', () => {
+  const mods = {
+    root: ROOT,
+    modules: [{ name: 'compiler', path: 'src/compiler' }],
+  };
+  const build = (define: () => void) => {
+    const registry = createRegistry();
+    withRegistry(registry, define);
+    return buildIR(registry, mods);
+  };
+
+  test('resolve ids ordenados e sem repetição; sem relação não há chave', () => {
+    const { ir, errors } = build(() => {
+      @AgentValueObject({ description: 'Dinheiro.' })
+      class Dinheiro extends ValueObject<{ c: number }> {}
+      @AgentEntity({ description: 'Item.' })
+      class Item extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'Outra.' })
+      class Outra extends AggregateRoot<string> {}
+      @AgentEntity({
+        description: 'Pedido.',
+        contains: () => [Item, Dinheiro, Item],
+        references: () => [Outra],
+      })
+      class Pedido extends AggregateRoot<string> {}
+      void Dinheiro;
+      void Pedido;
+    });
+    expect(errors).toEqual([]);
+    const byName = (n: string) => ir.entities.find((e) => e.name === n)!;
+    expect(byName('Pedido').contains).toEqual([
+      'entity:Item',
+      'valueobject:Dinheiro',
+    ]);
+    expect(byName('Pedido').references).toEqual(['entity:Outra']);
+    expect('contains' in byName('Item')).toBe(false);
+    expect('references' in byName('Item')).toBe(false);
+  });
+
+  const only = (define: () => void) => {
+    const { ir, errors } = build(define);
+    return { ir, errors: errors.map((e) => e.message) };
+  };
+
+  test('função que lança vira erro do dono', () => {
+    const { errors, ir } = only(() => {
+      @AgentEntity({
+        description: 'A.',
+        contains: () => {
+          throw new Error('boom');
+        },
+      })
+      class A extends AggregateRoot<string> {}
+      void A;
+    });
+    expect(errors).toEqual(['entity:A: contains lançou boom']);
+    expect('contains' in ir.entities[0]!).toBe(false);
+  });
+
+  test('resultado que não é lista e entrada não-classe', () => {
+    const { errors, ir } = only(() => {
+      @AgentEntity({
+        description: 'A.',
+        contains: () => undefined as never,
+        references: () => [undefined as never],
+      })
+      class A extends AggregateRoot<string> {}
+      void A;
+    });
+    expect(errors.sort()).toEqual([
+      'entity:A: contains tem entrada que não é classe',
+      'entity:A: references tem entrada que não é classe',
+    ]);
+    expect('references' in ir.entities[0]!).toBe(false);
+  });
+
+  test('classe sem decorator nos dois campos', () => {
+    class Solta {}
+    const { errors, ir } = only(() => {
+      @AgentEntity({
+        description: 'A.',
+        contains: () => [Solta],
+        references: () => [Solta],
+      })
+      class A extends AggregateRoot<string> {}
+      void A;
+    });
+    expect(errors.sort()).toEqual([
+      'entity:A: contains cita Solta, sem @AgentEntity nem @AgentValueObject',
+      'entity:A: references cita Solta, sem @AgentEntity nem @AgentValueObject',
+    ]);
+    expect('contains' in ir.entities[0]!).toBe(false);
   });
 });

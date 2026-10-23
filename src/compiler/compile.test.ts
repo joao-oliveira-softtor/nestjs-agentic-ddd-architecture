@@ -19,6 +19,9 @@ const configPath = join(ROOT, 'agentic.config.ts');
 
 let out: string;
 
+// Avisos do orders antes da T6 (#83); o orders não tem relação, então nenhum aviso novo.
+const ORDERS_WARNINGS: string[] = [];
+
 async function failure(promise: Promise<unknown>): Promise<string> {
   try {
     await promise;
@@ -97,6 +100,11 @@ describe('compile (exemplo orders)', () => {
     expect(result.warnings).toContain(
       'CLAUDE.md existe mas não contém @AGENTS.md',
     );
+  });
+
+  test('orders sem relação: warnings não ganham aviso de AggregateRoot', async () => {
+    const result = await compile({ configPath, outRoot: out, mode: 'write' });
+    expect(result.warnings).toEqual(ORDERS_WARNINGS);
   });
 
   test('sem lock e sem proposta: write segue com pendência; check falha', async () => {

@@ -719,3 +719,457 @@ bun run agentic verify --item valueobject:Dinheiro --spec-hash c0634298f217a038e
 \`\`\`
 "
 `;
+
+
+exports[`contains e references chegam ao packet da dona, do método e do use-case que o usa: entity:Product com relações 1`] = `
+"# Identificação
+
+- ID: \`entity:Product\`
+- Camada: domain
+- Módulo: shop
+- source: \`src/compiler/__fixtures__/shop.ts:26\`
+- Estado: blocked(declared)
+- specHash: \`f5a6ff799f7bd305d9366bb5424e71d292c15cc709c2ffbf311eac5872994ce4\`
+- Dependências: \`valueobject:Dinheiro\`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+\`\`\`json
+{
+  "contracts": [
+    {
+      "description": "Cliente que faz o pedido.",
+      "id": "entity:Cliente",
+      "invariants": [],
+      "methods": [],
+      "module": "shop",
+      "name": "Cliente",
+      "states": []
+    },
+    {
+      "description": "Um produto foi criado como rascunho.",
+      "id": "event:ProductCreated",
+      "module": "shop",
+      "name": "ProductCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Valor monetário.",
+      "id": "valueobject:Dinheiro",
+      "invariants": [],
+      "module": "shop",
+      "name": "Dinheiro"
+    }
+  ],
+  "declaration": {
+    "contains": [
+      "valueobject:Dinheiro"
+    ],
+    "description": "Produto do catálogo da loja.",
+    "id": "entity:Product",
+    "invariants": [
+      {
+        "id": "invariant:Product/preco-positivo",
+        "on": null,
+        "text": "O preço de um produto é sempre maior que zero."
+      }
+    ],
+    "methods": [
+      {
+        "description": "Cria um produto em rascunho.",
+        "emits": [
+          "event:ProductCreated"
+        ],
+        "id": "method:Product.create",
+        "name": "create",
+        "static": true,
+        "transition": null
+      }
+    ],
+    "module": "shop",
+    "name": "Product",
+    "references": [
+      "entity:Cliente"
+    ],
+    "states": [
+      "draft",
+      "published"
+    ]
+  }
+}
+\`\`\`
+
+## Obrigações de teste
+
+- \`invariant:Product/preco-positivo\` — teste com \`covers\`.
+- \`method:Product.create\` — teste com \`covers\`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+\`\`\`bash
+bun run agentic verify --item entity:Product --spec-hash f5a6ff799f7bd305d9366bb5424e71d292c15cc709c2ffbf311eac5872994ce4 --config agentic.config.ts --json
+\`\`\`
+"
+`;
+
+exports[`contains e references chegam ao packet da dona, do método e do use-case que o usa: method:Product.publish com relações 1`] = `
+"# Identificação
+
+- ID: \`method:Product.publish\`
+- Camada: domain
+- Módulo: shop
+- source: \`src/compiler/__fixtures__/shop.ts:34\`
+- Estado: blocked(declared)
+- specHash: \`366f379192122898b888637eb37434cb2a232eea40587818886bfb4ff94cad31\`
+- Dependências: \`entity:Product\`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+\`\`\`json
+{
+  "contracts": [
+    {
+      "description": "Cliente que faz o pedido.",
+      "id": "entity:Cliente",
+      "invariants": [],
+      "methods": [],
+      "module": "shop",
+      "name": "Cliente",
+      "states": []
+    },
+    {
+      "description": "Um produto foi criado como rascunho.",
+      "id": "event:ProductCreated",
+      "module": "shop",
+      "name": "ProductCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Um produto foi publicado no catálogo.",
+      "id": "event:ProductPublished",
+      "module": "shop",
+      "name": "ProductPublished",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Valor monetário.",
+      "id": "valueobject:Dinheiro",
+      "invariants": [],
+      "module": "shop",
+      "name": "Dinheiro"
+    }
+  ],
+  "declaration": {
+    "description": "Publica o produto no catálogo.",
+    "emits": [
+      "event:ProductPublished"
+    ],
+    "entity": {
+      "contains": [
+        "valueobject:Dinheiro"
+      ],
+      "description": "Produto do catálogo da loja.",
+      "id": "entity:Product",
+      "invariants": [
+        {
+          "id": "invariant:Product/preco-positivo",
+          "on": null,
+          "text": "O preço de um produto é sempre maior que zero."
+        }
+      ],
+      "methods": [
+        {
+          "description": "Cria um produto em rascunho.",
+          "emits": [
+            "event:ProductCreated"
+          ],
+          "id": "method:Product.create",
+          "name": "create",
+          "static": true,
+          "transition": null
+        }
+      ],
+      "module": "shop",
+      "name": "Product",
+      "references": [
+        "entity:Cliente"
+      ],
+      "states": [
+        "draft",
+        "published"
+      ]
+    },
+    "id": "method:Product.publish",
+    "invariants": [
+      {
+        "id": "invariant:Product/publicacao-exige-estoque",
+        "on": "method:Product.publish",
+        "text": "Só é possível publicar um produto com estoque maior que zero."
+      }
+    ],
+    "name": "publish",
+    "static": false,
+    "transition": {
+      "from": [
+        "draft"
+      ],
+      "to": "published"
+    }
+  }
+}
+\`\`\`
+
+## Obrigações de teste
+
+- \`invariant:Product/publicacao-exige-estoque\` — teste com \`covers\`.
+- \`method:Product.publish\` — teste com \`covers\`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+\`\`\`bash
+bun run agentic verify --item method:Product.publish --spec-hash 366f379192122898b888637eb37434cb2a232eea40587818886bfb4ff94cad31 --config agentic.config.ts --json
+\`\`\`
+"
+`;
+
+exports[`contains e references chegam ao packet da dona, do método e do use-case que o usa: usecase:publish_product com relações 1`] = `
+"# Identificação
+
+- ID: \`usecase:publish_product\`
+- Camada: application
+- Módulo: shop
+- source: \`src/compiler/__fixtures__/shop.ts:69\`
+- Estado: blocked(declared)
+- specHash: \`9b2db32ad779aa544c0c6ee8e1371c3c2d3098c56130e9621e3ca9ed76e955da\`
+- Dependências: \`method:Product.publish\`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+\`\`\`json
+{
+  "contracts": [
+    {
+      "description": "Cliente que faz o pedido.",
+      "id": "entity:Cliente",
+      "invariants": [],
+      "methods": [],
+      "module": "shop",
+      "name": "Cliente",
+      "states": []
+    },
+    {
+      "description": "Um produto foi criado como rascunho.",
+      "id": "event:ProductCreated",
+      "module": "shop",
+      "name": "ProductCreated",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Um produto foi publicado no catálogo.",
+      "id": "event:ProductPublished",
+      "module": "shop",
+      "name": "ProductPublished",
+      "payloadSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "description": "Publica o produto no catálogo.",
+      "emits": [
+        "event:ProductPublished"
+      ],
+      "entity": {
+        "contains": [
+          "valueobject:Dinheiro"
+        ],
+        "description": "Produto do catálogo da loja.",
+        "id": "entity:Product",
+        "invariants": [
+          {
+            "id": "invariant:Product/preco-positivo",
+            "on": null,
+            "text": "O preço de um produto é sempre maior que zero."
+          }
+        ],
+        "methods": [
+          {
+            "description": "Cria um produto em rascunho.",
+            "emits": [
+              "event:ProductCreated"
+            ],
+            "id": "method:Product.create",
+            "name": "create",
+            "static": true,
+            "transition": null
+          }
+        ],
+        "module": "shop",
+        "name": "Product",
+        "references": [
+          "entity:Cliente"
+        ],
+        "states": [
+          "draft",
+          "published"
+        ]
+      },
+      "id": "method:Product.publish",
+      "invariants": [
+        {
+          "id": "invariant:Product/publicacao-exige-estoque",
+          "on": "method:Product.publish",
+          "text": "Só é possível publicar um produto com estoque maior que zero."
+        }
+      ],
+      "name": "publish",
+      "static": false,
+      "transition": {
+        "from": [
+          "draft"
+        ],
+        "to": "published"
+      }
+    },
+    {
+      "description": "Valor monetário.",
+      "id": "valueobject:Dinheiro",
+      "invariants": [],
+      "module": "shop",
+      "name": "Dinheiro"
+    }
+  ],
+  "declaration": {
+    "description": "Publica um produto em rascunho no catálogo.",
+    "emits": [
+      "event:ProductPublished"
+    ],
+    "id": "usecase:publish_product",
+    "inputSchema": {
+      "properties": {
+        "product_id": {
+          "description": "Id do produto a publicar",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id"
+      ],
+      "type": "object"
+    },
+    "module": "shop",
+    "name": "publish_product",
+    "outputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "product_id": {
+          "type": "string"
+        },
+        "status": {
+          "const": "published",
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "status"
+      ],
+      "type": "object"
+    },
+    "uses": [
+      "method:Product.publish"
+    ],
+    "whenNotToUse": "Para alterar preço ou estoque.",
+    "whenToUse": "Quando pedirem para disponibilizar um produto para venda."
+  }
+}
+\`\`\`
+
+## Obrigações de teste
+
+- \`usecase:publish_product\` — teste com \`covers\`.
+
+## Regras do executor
+
+- Altere só o corpo deste item e arquivos de teste.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+\`\`\`bash
+bun run agentic verify --item usecase:publish_product --spec-hash 9b2db32ad779aa544c0c6ee8e1371c3c2d3098c56130e9621e3ca9ed76e955da --config agentic.config.ts --json
+\`\`\`
+"
+`;

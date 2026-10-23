@@ -8,6 +8,8 @@ export interface EntityRecord {
   readonly description: string;
   readonly states: readonly string[];
   readonly source: SourceLoc;
+  readonly contains?: () => readonly ClassRef[];
+  readonly references?: () => readonly ClassRef[];
 }
 
 export interface ValueObjectRecord {
