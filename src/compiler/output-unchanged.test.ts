@@ -19,6 +19,7 @@ describe('saída sem elemento tático', () => {
       join(ROOT, '.agentic/domain.lock.json'),
       '.agentic/domain.lock.json',
     );
+    expect(lock).not.toBeNull();
     expect({
       files: Object.fromEntries(result.rendered!.files),
       agentsBlock: result.rendered!.agentsBlock,
