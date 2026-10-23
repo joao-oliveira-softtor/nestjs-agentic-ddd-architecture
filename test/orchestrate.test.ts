@@ -1189,6 +1189,11 @@ test('gates reais: valueobject: usa o gate de classe; usecase: e entity: seguem 
       expect(
         (await gates.verify({ ...facts, id }, snapshot)).report ?? '',
       ).not.toContain('Gate de fronteira');
+    const adapter = { ...facts, id: 'adapter:Order' };
+    await writeFile(file, original.replace('return 1;', 'return 2;\n    // x'));
+    const adapterDrift = await gates.verify(adapter, snapshot);
+    expect(adapterDrift.passed).toBe(false);
+    expect(adapterDrift.report).toContain('Gate de fronteira');
   } finally {
     await rm(root, { recursive: true, force: true });
   }

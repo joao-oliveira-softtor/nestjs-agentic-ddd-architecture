@@ -396,10 +396,8 @@ test('escopo de classe: decorators, heritage e assinatura pública reprovam', ()
     ['= 1;\n  #cache', '= 2;\n  #cache'],
   ];
   for (const [from, to] of cases) {
-    expect(VO).toContain(from.replace('\\n', '\n'));
-    expect(
-      scope(VO.replace(from.replace('\\n', '\n'), to.replace('\\n', '\n'))),
-    ).not.toEqual([]);
+    expect(VO).toContain(from);
+    expect(scope(VO.replace(from, to))).not.toEqual([]);
   }
 });
 

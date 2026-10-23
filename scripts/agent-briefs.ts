@@ -11,6 +11,7 @@ import {
   loadRules,
   type Rule,
 } from '@agentic-ddd/compiler';
+import { isClassScopeItem } from '../src/compiler/packet';
 
 export type BriefRole =
   'domain' | 'application' | 'infrastructure' | 'reviewer';
@@ -88,7 +89,7 @@ export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
     'Implemente UM adapter (classe que implementa um port) a partir do packet abaixo. O port e seus métodos são o contrato; não os edite.',
     '',
     '- Altere só a classe deste item (corpos e membros `#privados`, mesma quantidade de linhas) e arquivos de teste. Imports e campos `#privados` já vêm no esqueleto; não mude `extends`/`implements`, decorators nem a assinatura pública. Não reformate o arquivo.',
-    '- Pode usar bibliotecas externas já importadas. Não importe de application nem de operators. Sem efeito colateral no import.',
+    '- Pode usar bibliotecas externas já importadas. Sem efeito colateral no import.',
     "- Teste cada método do port com `covers(['port:<Port>.<método>'], título)` de `@agentic-ddd/testing` em testes `bun:test`.",
     '- Não rode `compile` nem altere o hash. Dependência pendente, divergência de hash ou necessidade de editar algo fora do contrato: devolva o item.',
     '- Regra do time nunca vence um gate (verify, specHash, gates de fronteira, obrigações `covers`): em conflito, siga o gate e devolva o item com o conflito descrito.',
@@ -218,7 +219,7 @@ export function renderBrief(input: BriefInput): string {
       `specHash divergente: esperado ${input.expectedSpecHash}, packet ${facts.specHash}`,
     );
   const role = roleForLayer(facts.layer);
-  const classItem = /^(valueobject|adapter):/.test(facts.id);
+  const classItem = isClassScopeItem(facts.id);
   return checkBudget(
     [
       classItem && role === 'domain'

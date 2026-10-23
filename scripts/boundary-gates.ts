@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { posix } from 'node:path';
-import { match } from 'ts-pattern';
+import { isMatching, match, P } from 'ts-pattern';
 import ts from 'typescript';
 import {
   DEFAULT_CONVENTIONS,
@@ -120,8 +120,12 @@ function classShape(text: string, className: string): ClassShape {
             squash(
               text.slice(
                 m.getStart(parsed),
-                'body' in m && m.body
-                  ? (m.body as ts.Node).getStart(parsed)
+                (ts.isMethodDeclaration(m) ||
+                  ts.isConstructorDeclaration(m) ||
+                  ts.isGetAccessor(m) ||
+                  ts.isSetAccessor(m)) &&
+                  m.body
+                  ? m.body.getStart(parsed)
                   : m.end,
               ),
             ),
@@ -327,7 +331,8 @@ export function main(argv: readonly string[]): number {
       const layer = option(args, '--layer');
       if (
         !layer ||
-        !['domain', 'application', 'operators', 'infrastructure'].includes(
+        !isMatching(
+          P.union('domain', 'application', 'operators', 'infrastructure'),
           layer,
         )
       )
@@ -338,11 +343,7 @@ export function main(argv: readonly string[]): number {
         else files.push(args[i]!);
       if (!files.length) return undefined;
       return files.flatMap((file) =>
-        importDirectionFindings(
-          file,
-          readFileSync(file, 'utf8'),
-          layer as GateLayer,
-        ),
+        importDirectionFindings(file, readFileSync(file, 'utf8'), layer),
       );
     })
     .with('body-only', () => {
