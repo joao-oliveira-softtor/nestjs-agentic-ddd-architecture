@@ -604,3 +604,40 @@ describe('semanticDiff', () => {
     });
   });
 });
+
+describe('invariante de use-case no semanticDiff', () => {
+  const invariant = {
+    id: 'invariant:publish_product/estoque',
+    text: 'Estoque suficiente.',
+    on: null,
+    source: 'x.ts:1',
+  };
+
+  test('invariante nova de use-case é added behavioral, sem marcar o use-case', () => {
+    const ir = clone();
+    useCase(ir, 'publish_product').invariants = [invariant];
+    expect(semanticDiff(base, ir)).toEqual([
+      {
+        id: invariant.id,
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('texto de invariante de use-case muda → modified behavioral, como na entidade', () => {
+    const before = clone();
+    useCase(before, 'publish_product').invariants = [invariant];
+    const after = structuredClone(before);
+    useCase(after, 'publish_product').invariants[0].text = 'Outro texto.';
+    expect(semanticDiff(before, after)).toEqual([
+      {
+        id: invariant.id,
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+});

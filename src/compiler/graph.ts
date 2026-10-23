@@ -62,7 +62,10 @@ export function workItems(ir: IR): WorkItem[] {
       dependsOn: [
         ...new Set(useCase.uses.map((m) => itemOfMethod(ir, m))),
       ].sort(),
-      obligations: [useCase.id],
+      obligations: [
+        useCase.id,
+        ...(useCase.invariants ?? []).map((i) => i.id),
+      ].sort(),
     });
   }
   for (const operator of ir.operators) {

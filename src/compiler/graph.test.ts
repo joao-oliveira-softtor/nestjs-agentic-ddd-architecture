@@ -166,3 +166,47 @@ describe('workItems', () => {
     }
   });
 });
+
+test('use-case é dono das suas invariantes, em ordem por id', () => {
+  const useCaseIR: IR = {
+    irVersion: 1,
+    modules: [{ name: 'm', path: 'src/m' }],
+    entities: [],
+    events: [],
+    useCases: [
+      {
+        id: 'usecase:matricular_aluno',
+        name: 'matricular_aluno',
+        module: 'm',
+        description: 'Matricula aluno',
+        whenToUse: 'sempre',
+        whenNotToUse: null,
+        inputSchema: {},
+        outputSchema: {},
+        uses: [],
+        emits: [],
+        invariants: [
+          {
+            id: 'invariant:matricular_aluno/vaga',
+            text: 'Há vaga',
+            on: null,
+            source: 'src/m:2',
+          },
+          {
+            id: 'invariant:matricular_aluno/aluno-ativo',
+            text: 'Aluno ativo',
+            on: null,
+            source: 'src/m:1',
+          },
+        ],
+        source: 'src/m:1',
+      },
+    ],
+    operators: [],
+  };
+  expect(workItems(useCaseIR)[0]!.obligations).toEqual([
+    'invariant:matricular_aluno/aluno-ativo',
+    'invariant:matricular_aluno/vaga',
+    'usecase:matricular_aluno',
+  ]);
+});

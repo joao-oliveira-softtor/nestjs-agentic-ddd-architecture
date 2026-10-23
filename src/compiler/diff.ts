@@ -100,6 +100,13 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
         emits: u.emits,
       },
     });
+    for (const i of u.invariants ?? [])
+      add({
+        id: i.id,
+        kind: 'invariant',
+        module: u.module,
+        content: { text: i.text, on: i.on },
+      });
   }
   for (const o of ir.operators) {
     add({

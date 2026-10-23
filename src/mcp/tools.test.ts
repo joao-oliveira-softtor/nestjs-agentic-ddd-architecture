@@ -31,6 +31,33 @@ describe('element', () => {
     });
   }
 
+  test('invariante de use-case é achada e devolve o use-case dono', () => {
+    const invariant = {
+      ...lock.ir.entities[0]!.invariants[0]!,
+      id: 'invariant:matricular_aluno/aluno-ativo',
+      on: null,
+    };
+    const useCaseLock = {
+      ...lock,
+      ir: {
+        ...lock.ir,
+        useCases: [
+          ...lock.ir.useCases,
+          {
+            ...lock.ir.useCases[0]!,
+            id: 'usecase:matricular_aluno',
+            name: 'matricular_aluno',
+            invariants: [invariant],
+          },
+        ],
+      },
+    };
+    expect(element(useCaseLock, invariant.id)).toEqual({
+      ok: true,
+      value: { ...invariant, useCase: 'usecase:matricular_aluno' },
+    });
+  });
+
   test('id desconhecido e prefixo desconhecido dão erro com a mensagem', () => {
     const suffix =
       '; use domain_overview para ver os ids (prefixos: entity, method, invariant, event, usecase, operator)';
