@@ -9,7 +9,8 @@ export type ElementKind =
   | 'event'
   | 'usecase'
   | 'operator'
-  | 'port';
+  | 'port'
+  | 'adapter';
 export type ChangeKind = 'added' | 'modified' | 'removed';
 export type Classification = 'breaking' | 'behavioral' | 'docs';
 
@@ -103,6 +104,19 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
         description: p.description,
         root: p.root,
         methods: p.methods,
+      },
+    });
+  }
+  for (const a of ir.adapters ?? []) {
+    add({
+      id: a.id,
+      kind: 'adapter',
+      module: a.module,
+      content: {
+        name: a.name,
+        module: a.module,
+        description: a.description,
+        implements: a.implements,
       },
     });
   }

@@ -11,14 +11,10 @@ export interface BodyRange {
   readonly start: number;
   readonly end: number;
 }
-export type GateLayer = 'domain' | 'application' | 'operators';
+export type GateLayer =
+  'domain' | 'application' | 'operators' | 'infrastructure';
 
-/** Intervalo do interior (entre as chaves) do corpo de `className.methodName`. */
-export function bodyRange(
-  text: string,
-  className: string,
-  methodName: string,
-): BodyRange {
+function parseSubmission(text: string): ts.SourceFile {
   const parsed = ts.createSourceFile(
     'submission.ts',
     text,
@@ -36,6 +32,16 @@ export function bodyRange(
     }).diagnostics ?? [];
   if (diagnostics.some((d) => d.category === ts.DiagnosticCategory.Error))
     throw Error('Submission syntax invalid');
+  return parsed;
+}
+
+/** Intervalo do interior (entre as chaves) do corpo de `className.methodName`. */
+export function bodyRange(
+  text: string,
+  className: string,
+  methodName: string,
+): BodyRange {
+  const parsed = parseSubmission(text);
   for (const statement of parsed.statements)
     if (
       ts.isClassDeclaration(statement) &&
@@ -81,6 +87,82 @@ export function bodyOnlyFindings(
       lines(after.slice(newBody.start, newBody.end))
     )
       findings.push(`Body line count changed: ${path}`);
+  } catch (error) {
+    findings.push(String(error));
+  }
+  return findings;
+}
+
+interface ClassShape {
+  readonly start: number;
+  readonly end: number;
+  readonly header: string;
+  readonly members: string[];
+}
+
+const squash = (text: string): string => text.replace(/\s+/g, ' ').trim();
+
+function classShape(text: string, className: string): ClassShape {
+  const parsed = parseSubmission(text);
+  for (const statement of parsed.statements)
+    if (
+      ts.isClassDeclaration(statement) &&
+      statement.name?.text === className
+    ) {
+      const start = statement.getStart(parsed);
+      return {
+        start,
+        end: statement.end,
+        header: squash(text.slice(start, statement.members.pos - 1)),
+        members: statement.members
+          .filter((m) => !(m.name && ts.isPrivateIdentifier(m.name)))
+          .map((m) =>
+            squash(
+              text.slice(
+                m.getStart(parsed),
+                'body' in m && m.body
+                  ? (m.body as ts.Node).getStart(parsed)
+                  : m.end,
+              ),
+            ),
+          ),
+      };
+    }
+  throw Error('Assigned class missing');
+}
+
+/**
+ * Escopo de classe (ADR-0006 D8): só corpos e membros `#privados` mudam. Barra bytes fora
+ * da classe, a contagem de linhas dela, decorators, `extends`/`implements` e a assinatura
+ * (inclusive inicializador de campo) dos membros não `#privados`, e acrescentar/remover
+ * membro não `#privado`.
+ */
+export function classScopeFindings(
+  before: string,
+  after: string,
+  className: string,
+  path: string,
+): string[] {
+  const findings: string[] = [];
+  try {
+    const old = classShape(before, className);
+    const next = classShape(after, className);
+    if (
+      before.slice(0, old.start) !== after.slice(0, next.start) ||
+      before.slice(old.end) !== after.slice(next.end)
+    )
+      findings.push(`Bytes outside assigned class changed: ${path}`);
+    if (
+      lines(before.slice(old.start, old.end)) !==
+      lines(after.slice(next.start, next.end))
+    )
+      findings.push(`Class line count changed: ${path}`);
+    if (old.header !== next.header)
+      findings.push(`Class decorators or heritage changed: ${path}`);
+    if (old.members.length !== next.members.length)
+      findings.push(`Public member set changed: ${path}`);
+    else if (old.members.some((m, i) => m !== next.members[i]))
+      findings.push(`Public member signature changed: ${path}`);
   } catch (error) {
     findings.push(String(error));
   }
@@ -160,7 +242,7 @@ export function outerFolders(
 /** Diretório da camada: o último ancestral com o nome da camada; senão, o do próprio arquivo. */
 function layerRoot(
   path: string,
-  layer: GateLayer,
+  layer: 'domain' | 'application',
   conventions: ResolvedConventions,
 ): string {
   const parts = posix.dirname(path).split('/');
@@ -177,7 +259,7 @@ function layerRoot(
  * Limitações conhecidas: especificadores não relativos (aliases de `paths` do tsconfig,
  * auto-referência de pacote) não são resolvidos, só `@nestjs/*` e o runtime do framework
  * são barrados; `import()`/`require()` com argumento não literal são acusados porque não
- * podem ser verificados. O gate de corpo (`bodyOnlyFindings`) só localiza `Classe.método`.
+ * podem ser verificados. Os gates de corpo e de escopo de classe (`bodyOnlyFindings`, `classScopeFindings`) só localizam a classe (ou `Classe.método`) por nome.
  */
 export function importDirectionFindings(
   path: string,
@@ -185,40 +267,48 @@ export function importDirectionFindings(
   layer: GateLayer,
   conventions: ResolvedConventions = DEFAULT_CONVENTIONS,
 ): string[] {
-  if (layer === 'operators') return [];
-  const findings: string[] = [];
-  const { specifiers, unresolved } = scanImports(text);
-  if (unresolved)
-    findings.push(
-      `Forbidden import in ${path}: import()/require() com argumento não literal não é verificável (${unresolved})`,
-    );
-  const root = layerRoot(path, layer, conventions);
-  const outers = outerFolders(conventions, layer);
-  for (const specifier of specifiers) {
-    if (specifier.startsWith('@nestjs/') || FRAMEWORK_RUNTIME.has(specifier)) {
-      findings.push(
-        `Forbidden import in ${path}: ${specifier} (${layer} não importa Nest nem o runtime)`,
-      );
-      continue;
-    }
-    if (!specifier.startsWith('.')) continue;
-    const relative = posix.relative(
-      root,
-      posix.join(posix.dirname(path), specifier),
-    );
-    const outer = relative.split('/').find((segment) => segment !== '..');
-    if (outer && outers.includes(outer))
-      findings.push(
-        `Forbidden import in ${path}: ${specifier} (${layer} não importa ${outer})`,
-      );
-  }
-  return findings;
+  return match(layer)
+    .with('operators', 'infrastructure', () => [])
+    .with('domain', 'application', (layer) => {
+      const findings: string[] = [];
+      const { specifiers, unresolved } = scanImports(text);
+      if (unresolved)
+        findings.push(
+          `Forbidden import in ${path}: import()/require() com argumento não literal não é verificável (${unresolved})`,
+        );
+      const root = layerRoot(path, layer, conventions);
+      const outers = outerFolders(conventions, layer);
+      for (const specifier of specifiers) {
+        if (
+          specifier.startsWith('@nestjs/') ||
+          FRAMEWORK_RUNTIME.has(specifier)
+        ) {
+          findings.push(
+            `Forbidden import in ${path}: ${specifier} (${layer} não importa Nest nem o runtime)`,
+          );
+          continue;
+        }
+        if (!specifier.startsWith('.')) continue;
+        const relative = posix.relative(
+          root,
+          posix.join(posix.dirname(path), specifier),
+        );
+        const outer = relative.split('/').find((segment) => segment !== '..');
+        if (outer && outers.includes(outer))
+          findings.push(
+            `Forbidden import in ${path}: ${specifier} (${layer} não importa ${outer})`,
+          );
+      }
+      return findings;
+    })
+    .exhaustive();
 }
 
 const USAGE = [
   'uso:',
-  '  bun scripts/boundary-gates.ts imports --layer <domain|application|operators> <arquivo...>',
+  '  bun scripts/boundary-gates.ts imports --layer <domain|application|operators|infrastructure> <arquivo...>',
   '  bun scripts/boundary-gates.ts body-only --before <arquivo> --after <arquivo> --class <C> --method <m>',
+  '  bun scripts/boundary-gates.ts class-scope --before <arquivo> --after <arquivo> --class <C>',
 ].join('\n');
 
 function option(args: readonly string[], name: string): string | undefined {
@@ -228,49 +318,64 @@ function option(args: readonly string[], name: string): string | undefined {
 
 export function main(argv: readonly string[]): number {
   const [command, ...args] = argv;
-  const findings: string[] = [];
-  if (command === 'imports') {
-    const layer = option(args, '--layer') as GateLayer | undefined;
-    if (!layer || !['domain', 'application', 'operators'].includes(layer)) {
-      console.error(USAGE);
-      return 2;
-    }
-    const files: string[] = [];
-    for (let i = 0; i < args.length; i++)
-      if (args[i] === '--layer') i++;
-      else files.push(args[i]!);
-    if (!files.length) {
-      console.error(USAGE);
-      return 2;
-    }
-    for (const file of files)
-      findings.push(
-        ...importDirectionFindings(file, readFileSync(file, 'utf8'), layer),
+  const usage = (): number => {
+    console.error(USAGE);
+    return 2;
+  };
+  const result = match(command)
+    .with('imports', () => {
+      const layer = option(args, '--layer');
+      if (
+        !layer ||
+        !['domain', 'application', 'operators', 'infrastructure'].includes(
+          layer,
+        )
+      )
+        return undefined;
+      const files: string[] = [];
+      for (let i = 0; i < args.length; i++)
+        if (args[i] === '--layer') i++;
+        else files.push(args[i]!);
+      if (!files.length) return undefined;
+      return files.flatMap((file) =>
+        importDirectionFindings(
+          file,
+          readFileSync(file, 'utf8'),
+          layer as GateLayer,
+        ),
       );
-  } else if (command === 'body-only') {
-    const [before, after, className, method] = [
-      '--before',
-      '--after',
-      '--class',
-      '--method',
-    ].map((name) => option(args, name));
-    if (!before || !after || !className || !method) {
-      console.error(USAGE);
-      return 2;
-    }
-    findings.push(
-      ...bodyOnlyFindings(
+    })
+    .with('body-only', () => {
+      const [before, after, className, method] = [
+        '--before',
+        '--after',
+        '--class',
+        '--method',
+      ].map((name) => option(args, name));
+      if (!before || !after || !className || !method) return undefined;
+      return bodyOnlyFindings(
         readFileSync(before, 'utf8'),
         readFileSync(after, 'utf8'),
         className,
         method,
         after,
-      ),
-    );
-  } else {
-    console.error(USAGE);
-    return 2;
-  }
+      );
+    })
+    .with('class-scope', () => {
+      const [before, after, className] = ['--before', '--after', '--class'].map(
+        (name) => option(args, name),
+      );
+      if (!before || !after || !className) return undefined;
+      return classScopeFindings(
+        readFileSync(before, 'utf8'),
+        readFileSync(after, 'utf8'),
+        className,
+        after,
+      );
+    })
+    .otherwise(() => undefined);
+  if (!result) return usage();
+  const findings = result;
   for (const finding of findings) console.error(finding);
   return findings.length ? 1 : 0;
 }

@@ -105,12 +105,17 @@ export function evaluateStatus(input: {
   };
 }
 
-/** Use-cases cujo `ports` inclui o port. */
+/** Use-cases cujo `ports` inclui o port e adapters que o implementam. */
 export function usersOfPort(ir: IR, portId: string): string[] {
-  return ir.useCases.filter((u) => u.ports?.includes(portId)).map((u) => u.id);
+  return [
+    ...ir.useCases.filter((u) => u.ports?.includes(portId)).map((u) => u.id),
+    ...(ir.adapters ?? [])
+      .filter((a) => a.implements === portId)
+      .map((a) => a.id),
+  ];
 }
 
-/** Donos de um id do delta: o item dono ou, para um port, os use-cases que o usam. */
+/** Donos de um id do delta: o item dono ou, para um port, os use-cases e adapters que o usam. */
 export function changeOwners(ir: IR, id: string): string[] {
   const owner = ownerOf(ir, id);
   if (owner) return [owner];

@@ -302,6 +302,37 @@ describe('reconcile', () => {
       expect(messages(reconcile(input(null, [open])))).toEqual([]);
     });
 
+    test('covers de port:X.método de um adapter da IR é aceito', () => {
+      const withAdapter: IR = {
+        ...structuredClone(ir),
+        ports: [
+          {
+            id: 'port:Repo',
+            name: 'Repo',
+            module: 'shop',
+            description: 'Persistência.',
+            root: 'entity:Product',
+            methods: [{ name: 'salvar', description: 'Grava.' }],
+            source: 'x.ts:1',
+          },
+        ],
+        adapters: [
+          {
+            id: 'adapter:MemoryRepo',
+            name: 'MemoryRepo',
+            module: 'shop',
+            description: 'Em memória.',
+            implements: 'port:Repo',
+            source: 'x.ts:2',
+          },
+        ],
+      };
+      const open = proposal({ motivo: 'Base.', covers: ['port:Repo.salvar'] });
+      expect(
+        messages(reconcile({ ...input(null, [open]), ir: withAdapter })),
+      ).toEqual([]);
+    });
+
     test('proposta arquivada não é validada contra a IR atual', () => {
       const archived = proposal({
         motivo: 'Base.',

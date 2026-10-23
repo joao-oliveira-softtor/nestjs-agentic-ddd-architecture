@@ -841,3 +841,62 @@ describe('port no semanticDiff', () => {
     ).not.toHaveProperty('ports');
   });
 });
+
+describe('adapter no semanticDiff', () => {
+  const adapter = (
+    description = 'Grava em memória.',
+    implementsId = 'port:PedidoRepository',
+  ) => ({
+    id: 'adapter:PedidoRepositoryMemoria',
+    name: 'PedidoRepositoryMemoria',
+    module: 'shop',
+    description,
+    implements: implementsId,
+    source: 'x.ts:1',
+  });
+  const withAdapter = (a = adapter()): any => {
+    const ir = clone();
+    ir.adapters = [a];
+    return ir;
+  };
+
+  test('adapter novo: added behavioral', () => {
+    expect(semanticDiff(base, withAdapter())).toEqual([
+      {
+        id: 'adapter:PedidoRepositoryMemoria',
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('só a description do adapter muda → modified docs', () => {
+    expect(
+      semanticDiff(withAdapter(), withAdapter(adapter('Outra descrição.'))),
+    ).toEqual([
+      {
+        id: 'adapter:PedidoRepositoryMemoria',
+        kind: 'modified',
+        classification: 'docs',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('implements do adapter muda → modified behavioral', () => {
+    expect(
+      semanticDiff(
+        withAdapter(),
+        withAdapter(adapter(undefined, 'port:Outro')),
+      ),
+    ).toEqual([
+      {
+        id: 'adapter:PedidoRepositoryMemoria',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+});

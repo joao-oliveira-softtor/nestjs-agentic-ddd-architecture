@@ -708,7 +708,7 @@ Declaração, regras de construção e contratos referenciados:
 
 ## Regras do executor
 
-- Altere só o corpo deste item e arquivos de teste.
+- Altere só corpos e membros #privados da classe deste item (mesma quantidade de linhas) e arquivos de teste. Não mude extends/implements nem a assinatura pública.
 - Não altere decorators, declarações, propostas nem arquivos gerados.
 - Não implemente outros itens. Preserve os contratos e IDs de invariantes.
 
@@ -719,7 +719,6 @@ bun run agentic verify --item valueobject:Dinheiro --spec-hash c0634298f217a038e
 \`\`\`
 "
 `;
-
 
 exports[`contains e references chegam ao packet da dona, do método e do use-case que o usa: entity:Product com relações 1`] = `
 "# Identificação
@@ -1357,6 +1356,95 @@ Declaração, regras de construção e contratos referenciados:
 
 \`\`\`bash
 bun run agentic verify --item usecase:publish_product --spec-hash b657bdec6bbc40ad9877332f23ca7aeb299686182133a0b4321224b0361cb894 --config agentic.config.ts --json
+\`\`\`
+"
+`;
+
+exports[`pacote de adapter traz o escopo de classe; método mantém o de corpo: adapter 1`] = `
+"# Identificação
+
+- ID: \`adapter:MemoryRepo\`
+- Camada: infrastructure
+- Módulo: shop
+- source: \`x.ts:2\`
+- Estado: blocked(declared)
+- specHash: \`f1854fe65801e87987eeb1a97c638cf7527b06d9da843b28174ecd9ba04d5a61\`
+- Dependências: \`entity:Product\`
+
+## Especificação
+
+Declaração, regras de construção e contratos referenciados:
+
+\`\`\`json
+{
+  "contracts": [
+    {
+      "description": "Produto do catálogo da loja.",
+      "id": "entity:Product",
+      "invariants": [
+        {
+          "id": "invariant:Product/preco-positivo",
+          "on": null,
+          "text": "O preço de um produto é sempre maior que zero."
+        }
+      ],
+      "methods": [
+        {
+          "description": "Cria um produto em rascunho.",
+          "emits": [
+            "event:ProductCreated"
+          ],
+          "id": "method:Product.create",
+          "name": "create",
+          "static": true,
+          "transition": null
+        }
+      ],
+      "module": "shop",
+      "name": "Product",
+      "states": [
+        "draft",
+        "published"
+      ]
+    },
+    {
+      "description": "Persistência.",
+      "id": "port:Repo",
+      "methods": [
+        {
+          "description": "Grava.",
+          "name": "salvar"
+        }
+      ],
+      "module": "shop",
+      "name": "Repo",
+      "root": "entity:Product"
+    }
+  ],
+  "declaration": {
+    "description": "Em memória.",
+    "id": "adapter:MemoryRepo",
+    "implements": "port:Repo",
+    "module": "shop",
+    "name": "MemoryRepo"
+  }
+}
+\`\`\`
+
+## Obrigações de teste
+
+- \`port:Repo.salvar\` — teste com \`covers\`.
+
+## Regras do executor
+
+- Altere só corpos e membros #privados da classe deste item (mesma quantidade de linhas) e arquivos de teste. Não mude extends/implements nem a assinatura pública.
+- Não altere decorators, declarações, propostas nem arquivos gerados.
+- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+
+## Comando de verificação
+
+\`\`\`bash
+bun run agentic verify --item adapter:MemoryRepo --spec-hash f1854fe65801e87987eeb1a97c638cf7527b06d9da843b28174ecd9ba04d5a61 --config agentic.config.ts --json
 \`\`\`
 "
 `;

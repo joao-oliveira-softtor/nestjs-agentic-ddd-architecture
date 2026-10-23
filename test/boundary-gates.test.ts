@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import {
   bodyOnlyFindings,
   bodyRange,
+  classScopeFindings,
   importDirectionFindings,
   importSpecifiers,
   main,
@@ -193,6 +194,25 @@ test('CLI: imports e body-only devolvem 0, 1 ou 2', async () => {
       expect(main(['imports', '--layer', 'domain'])).toBe(2);
       expect(main(['imports', '--layer', 'nada', imports])).toBe(2);
       expect(main(['outro'])).toBe(2);
+      expect(main(['imports', '--layer', 'infrastructure', imports])).toBe(0);
+      expect(main(['class-scope', '--before', before, '--after', before])).toBe(
+        2,
+      );
+      for (const [after, code] of [
+        [bad, 1],
+        [good, 0],
+      ] as const)
+        expect(
+          main([
+            'class-scope',
+            '--before',
+            before,
+            '--after',
+            after,
+            '--class',
+            'Thing',
+          ]),
+        ).toBe(code);
     } finally {
       console.error = quiet;
     }
@@ -325,4 +345,77 @@ test('conventions: infraestrutura configurada é barrada no domínio', () => {
       conventions,
     ),
   ).toHaveLength(1);
+});
+
+const VO = `import { x } from './x';
+@Decorated()
+export class Money extends Base implements Eq {
+  @Field() readonly amount: number = 1;
+  #cache = 0;
+  constructor(amount: number) {
+    super();
+    this.#cache = amount;
+  }
+  static of(amount: number): Money {
+    return notImplemented();
+  }
+  get label(): string {
+    return 'a';
+  }
+  #helper(): number {
+    return 1;
+  }
+}
+`;
+const scope = (after: string) => classScopeFindings(VO, after, 'Money', 'a.ts');
+
+test('escopo de classe: corpos e membros #privados mudam com as mesmas linhas', () => {
+  const after = VO.replace('super();', 'super(); // x')
+    .replace('this.#cache = amount;', 'this.#cache = amount + 1;')
+    .replace('return notImplemented();', 'return new Money(amount);')
+    .replace("return 'a';", "return 'b';")
+    .replace('#cache = 0;', '#cache: number = 5;')
+    .replace('#helper(): number {', '#helper(n = 1): string {');
+  expect(scope(after)).toEqual([]);
+});
+
+test('escopo de classe: decorators, heritage e assinatura pública reprovam', () => {
+  const cases: [string, string][] = [
+    ['@Decorated()', '@Other()'],
+    ['@Field()', '@Other()'],
+    ['extends Base', 'extends Other'],
+    ['implements Eq', 'implements Eq, Ord'],
+    ['constructor(amount: number)', 'constructor(amount: string)'],
+    ['static of(amount: number)', 'static of(value: number)'],
+    [
+      'static of(amount: number): Money',
+      'static of(amount: number): Money | null',
+    ],
+    ['get label(): string', 'get title(): string'],
+    ['readonly amount: number', 'readonly amount: string'],
+    ['= 1;\n  #cache', '= 2;\n  #cache'],
+  ];
+  for (const [from, to] of cases) {
+    expect(VO).toContain(from.replace('\\n', '\n'));
+    expect(
+      scope(VO.replace(from.replace('\\n', '\n'), to.replace('\\n', '\n'))),
+    ).not.toEqual([]);
+  }
+});
+
+test('escopo de classe: acrescentar membro público, linhas e bytes fora reprovam', () => {
+  expect(scope(VO.replace('  #helper', '  extra = 1;\n  #helper'))).toEqual([
+    'Class line count changed: a.ts',
+    'Public member set changed: a.ts',
+  ]);
+  expect(scope(VO.replace('  #cache = 0;\n', ''))).toEqual([
+    'Class line count changed: a.ts',
+  ]);
+  expect(scope(VO.replace('./x', './y'))).toEqual([
+    'Bytes outside assigned class changed: a.ts',
+  ]);
+  expect(scope(VO.replace('Money', 'Gone'))).toEqual([
+    'Error: Assigned class missing',
+  ]);
+  expect(scope('class {')).toEqual(['Error: Submission syntax invalid']);
 });

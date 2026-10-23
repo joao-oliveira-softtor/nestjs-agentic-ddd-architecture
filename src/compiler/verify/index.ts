@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { listProposals } from '../changes/proposal';
 import { compile } from '../compile';
+import { workItems } from '../graph';
 import { EMPTY_IR, elementsOf, semanticDiff } from '../diff';
 import type { CompileError } from '../ir';
 import { readLock } from '../lock';
@@ -72,6 +73,7 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
   ];
   const knownIds = new Set([
     ...elementsOf(check.ir).keys(),
+    ...workItems(check.ir).flatMap((i) => i.obligations),
     ...proposals.flatMap((p) =>
       p.acceptance.map((c) => `criterion:${p.id}/${c.id}`),
     ),

@@ -296,6 +296,43 @@ export function validate(
       );
   }
 
+  const adapterOf = new Map<string, string>();
+  for (const adapter of ir.adapters ?? []) {
+    claim(adapter.id, adapter.source);
+    if (!PASCAL.test(adapter.name))
+      err(
+        `${adapter.id}: o nome da classe deve ser PascalCase`,
+        adapter.source,
+      );
+    required(adapter.description, `${adapter.id}: description`, adapter.source);
+    const other = adapterOf.get(adapter.implements);
+    if (other !== undefined)
+      err(
+        `${adapter.id}: o port ${adapter.implements} já tem o adapter ${other}`,
+        adapter.source,
+      );
+    else adapterOf.set(adapter.implements, adapter.id);
+    if (
+      ir.ports?.find((p) => p.id === adapter.implements)?.methods.length === 0
+    )
+      err(
+        `${adapter.id}: ${adapter.implements} não declara métodos; adapter ficaria sem obrigações`,
+        adapter.source,
+      );
+    const rec = registry.adapters.find(
+      (r) =>
+        `adapter:${r.target.name}` === adapter.id &&
+        sourceOf(root, r.source) === adapter.source,
+    );
+    // buildIR já resolveu implements sem erro; aqui só confere a herança.
+    const port = rec?.implements();
+    if (typeof port === 'function' && !(rec!.target.prototype instanceof port))
+      err(
+        `${adapter.id}: não estende ${adapter.implements} (a classe precisa de extends ${port.name} e a mesma cópia do pacote que declarou o port)`,
+        adapter.source,
+      );
+  }
+
   for (const useCase of ir.useCases) {
     claim(useCase.id, useCase.source);
     if (!SNAKE.test(useCase.name))

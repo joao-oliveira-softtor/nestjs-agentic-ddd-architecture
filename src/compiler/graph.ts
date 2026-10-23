@@ -1,7 +1,7 @@
 import { byId } from './canonical';
 import type { IR } from './ir';
 
-export type Layer = 'domain' | 'application' | 'operators';
+export type Layer = 'domain' | 'application' | 'operators' | 'infrastructure';
 
 export interface WorkItem {
   readonly id: string;
@@ -70,6 +70,18 @@ export function workItems(ir: IR): WorkItem[] {
       dependsOn: [],
       obligations: [vo.id, ...vo.invariants.map((i) => i.id)].sort(),
     });
+  for (const adapter of ir.adapters ?? []) {
+    const port = ir.ports?.find((p) => p.id === adapter.implements);
+    if (port)
+      items.push({
+        id: adapter.id,
+        layer: 'infrastructure',
+        module: adapter.module,
+        source: adapter.source,
+        dependsOn: [port.root],
+        obligations: port.methods.map((m) => `${port.id}.${m.name}`).sort(),
+      });
+  }
   for (const useCase of ir.useCases) {
     items.push({
       id: useCase.id,

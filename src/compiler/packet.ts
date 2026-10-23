@@ -64,7 +64,9 @@ export function renderPacket(
     '',
     '## Regras do executor',
     '',
-    '- Altere só o corpo deste item e arquivos de teste.',
+    /^(valueobject|adapter):/.test(item.id)
+      ? '- Altere só corpos e membros #privados da classe deste item (mesma quantidade de linhas) e arquivos de teste. Não mude extends/implements nem a assinatura pública.'
+      : '- Altere só o corpo deste item e arquivos de teste.',
     '- Não altere decorators, declarações, propostas nem arquivos gerados.',
     '- Não implemente outros itens. Preserve os contratos e IDs de invariantes.',
     '',

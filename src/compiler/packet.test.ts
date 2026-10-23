@@ -355,3 +355,25 @@ test('operator que usa use-case com port muda o pacote e o specHash', () => {
     packetOf(ir, 'operator:catalog-operator'),
   );
 });
+
+test('pacote de adapter traz o escopo de classe; método mantém o de corpo', () => {
+  const adapterIr = {
+    ...withPort(portOf('Persistência.')),
+    adapters: [
+      {
+        id: 'adapter:MemoryRepo',
+        name: 'MemoryRepo',
+        module: 'shop',
+        description: 'Em memória.',
+        implements: 'port:Repo',
+        source: 'x.ts:2',
+      },
+    ],
+  } as typeof ir;
+  const packet = packetOf(adapterIr, 'adapter:MemoryRepo');
+  expect(packet).toContain('da classe deste item');
+  expect(packet).toMatchSnapshot('adapter');
+  expect(packetOf(adapterIr, 'method:Product.publish')).toContain(
+    'Altere só o corpo deste item',
+  );
+});

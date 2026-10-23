@@ -73,6 +73,15 @@ export interface IRPort {
   readonly source: string;
 }
 
+export interface IRAdapter {
+  readonly id: string;
+  readonly name: string;
+  readonly module: string;
+  readonly description: string;
+  readonly implements: string;
+  readonly source: string;
+}
+
 export interface IRUseCase {
   readonly id: string;
   readonly name: string;
@@ -109,6 +118,7 @@ export interface IR {
   readonly valueObjects?: IRValueObject[];
   readonly events: IREvent[];
   readonly ports?: IRPort[];
+  readonly adapters?: IRAdapter[];
   readonly useCases: IRUseCase[];
   readonly operators: IROperator[];
 }
@@ -362,6 +372,39 @@ export function buildIR(
     })
     .sort(byId);
 
+  const adapters = registry.adapters
+    .flatMap((rec): IRAdapter[] => {
+      const id = `adapter:${rec.target.name}`;
+      const fail = (message: string): IRAdapter[] => {
+        errors.push({ message: `${id}: ${message}`, source: loc(rec.source) });
+        return [];
+      };
+      let port: unknown;
+      try {
+        port = rec.implements();
+      } catch (error) {
+        return fail(
+          `implements lançou ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      if (typeof port !== 'function')
+        return fail('implements não devolveu uma classe');
+      const portId = portTargets.get(port as ClassRef);
+      if (portId === undefined)
+        return fail(`implements cita ${port.name}, sem @AgentPort`);
+      return [
+        {
+          id,
+          name: rec.target.name,
+          module: moduleOf(rec.source),
+          description: rec.description,
+          implements: portId,
+          source: loc(rec.source),
+        },
+      ];
+    })
+    .sort(byId);
+
   const portIds = (rec: Registry['useCases'][number]): string[] => {
     if (!rec.ports) return [];
     const fail = (message: string): string[] => {
@@ -467,6 +510,7 @@ export function buildIR(
       ...(vos.length > 0 && { valueObjects: vos }),
       events,
       ...(ports.length > 0 && { ports }),
+      ...(adapters.length > 0 && { adapters }),
       useCases,
       operators,
     },

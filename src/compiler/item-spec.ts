@@ -94,6 +94,7 @@ export function itemSpecification(
   const entity = ir.entities.find((e) => e.id === item.id);
   const useCase = ir.useCases.find((u) => u.id === item.id);
   const operator = ir.operators.find((o) => o.id === item.id);
+  const adapter = ir.adapters?.find((a) => a.id === item.id);
   const valueObject = ir.valueObjects?.find((v) => v.id === item.id);
   const addMethod = (id: string) => {
     const m = method(id);
@@ -116,6 +117,12 @@ export function itemSpecification(
     entity.methods.filter((m) => m.static).forEach(addEvents);
   } else if (valueObject) {
     declaration = valueObject;
+  } else if (adapter) {
+    declaration = adapter;
+    const port = ir.ports?.find((p) => p.id === adapter.implements);
+    const root = ir.entities.find((e) => e.id === port?.root);
+    if (port) contracts.push(port);
+    if (root) contracts.push(construction(root));
   } else if (useCase) {
     declaration = useCase;
     addUseCase(useCase);

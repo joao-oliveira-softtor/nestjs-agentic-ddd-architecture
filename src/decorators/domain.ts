@@ -123,3 +123,20 @@ export function AgentPort(options: AgentPortOptions): ClassDecorator {
     });
   };
 }
+
+export interface AgentAdapterOptions {
+  readonly description: string;
+  readonly implements: () => ClassRef;
+}
+
+export function AgentAdapter(options: AgentAdapterOptions): ClassDecorator {
+  const source = captureSource();
+  return (target) => {
+    activeRegistry().adapters.push({
+      target,
+      description: options.description,
+      implements: options.implements,
+      source,
+    });
+  };
+}

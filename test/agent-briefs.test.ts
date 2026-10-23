@@ -75,7 +75,8 @@ test('o papel vem da camada do item', () => {
   expect(
     roleForLayer(parsePacket(packet('operator:order-operator')).layer),
   ).toBe('application');
-  expect(() => roleForLayer('infrastructure')).toThrow('sem papel');
+  expect(roleForLayer('infrastructure')).toBe('infrastructure');
+  expect(() => roleForLayer('presentation')).toThrow('sem papel');
   expect(renderBrief({ packet: packet('usecase:create_order') })).toContain(
     '# Papel: executor de aplicação',
   );
@@ -189,7 +190,7 @@ test('os exemplos de resposta dos papéis são JSON válido com as chaves do con
     expect(match).not.toBeNull();
     return JSON.parse(match![1]!);
   };
-  for (const role of ['domain', 'application'] as const)
+  for (const role of ['domain', 'application', 'infrastructure'] as const)
     expect(Object.keys(example(ROLE_CORES[role]))).toEqual([
       'item',
       'specHash',
@@ -354,4 +355,26 @@ test('CLI: --packet-file sem agentic.config.ts funciona; --config explícito ine
   } finally {
     process.chdir(cwd);
   }
+});
+
+test('brief de item de classe troca o escopo de corpo; method: fica igual', () => {
+  const method = renderBrief({ packet: packet('method:Order.cancel') });
+  expect(method).toContain('Altere só o interior do corpo indicado');
+  const vo = packet('entity:Order')
+    .replaceAll('entity:Order', 'valueobject:Dinheiro')
+    .replace(/--item 'valueobject:Dinheiro'/, '--item valueobject:Dinheiro');
+  const brief = renderBrief({ packet: vo });
+  expect(brief).toContain('Altere só a classe indicada');
+  expect(brief).not.toContain('interior do corpo');
+  expect(brief).toContain('somente a classe de `valueobject:Dinheiro`');
+});
+
+test('brief de adapter usa o papel de infraestrutura com escopo de classe', () => {
+  const text = packet('entity:Order')
+    .replaceAll('entity:Order', 'adapter:Repo')
+    .replace('Camada: domain', 'Camada: infrastructure');
+  const brief = renderBrief({ packet: text });
+  expect(brief.startsWith(ROLE_CORES.infrastructure)).toBe(true);
+  expect(brief).toContain('somente a classe de `adapter:Repo`');
+  expect(brief).toContain("covers(['port:<Port>.<método>']");
 });

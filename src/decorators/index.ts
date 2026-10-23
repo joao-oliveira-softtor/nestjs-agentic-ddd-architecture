@@ -6,12 +6,14 @@ export {
   type OperatorOptions,
 } from './application';
 export {
+  AgentAdapter,
   AgentEntity,
   AgentEvent,
   AgentMethod,
   AgentPort,
   AgentValueObject,
   Invariant,
+  type AgentAdapterOptions,
   type AgentEntityOptions,
   type AgentEventOptions,
   type AgentMethodOptions,
@@ -21,6 +23,7 @@ export {
 } from './domain';
 export {
   Registry,
+  type AdapterRecord,
   activeRegistry,
   createRegistry,
   defaultRegistry,

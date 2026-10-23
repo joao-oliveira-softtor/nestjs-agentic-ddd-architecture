@@ -108,7 +108,8 @@ test('camada define o nível inicial; o plano pode sobrescrevê-lo', () => {
   expect(startTier('application')).toBe('sonnet');
   expect(startTier('operators')).toBe('sonnet');
   expect(startTier('domain', { tiers: { domain: 'sonnet' } })).toBe('sonnet');
-  expect(() => startTier('infrastructure')).toThrow('sem nível de modelo');
+  expect(startTier('infrastructure')).toBe('sonnet');
+  expect(() => startTier('presentation')).toThrow('sem nível de modelo');
 });
 
 test('sucesso: ondas em ordem, Haiku no domínio e Sonnet na aplicação, um registro por tentativa', async () => {
@@ -1165,4 +1166,30 @@ test('planRun com revisor reprova a soma das regras antes de qualquer invocaçã
   expect(String(await plan(true).catch((e: unknown) => e))).toMatch(
     /regras do time excedem o orçamento/,
   );
+});
+
+test('gates reais: valueobject: usa o gate de classe; usecase: e entity: seguem aprovados', async () => {
+  const { createCliGates } = await import('../scripts/orchestrate-ports');
+  const { writeFile } = await import('node:fs/promises');
+  const { root, original, facts, file } = await gitRepo();
+  try {
+    const gates = createCliGates({ root, config: 'agentic.config.ts' });
+    const vo = { ...facts, id: 'valueobject:Order' };
+    const snapshot = await gates.snapshot(vo);
+    await writeFile(file, original.replace('return 1;', 'return 2;'));
+    expect((await gates.verify(vo, snapshot)).report ?? '').not.toContain(
+      'Gate de',
+    );
+    await writeFile(file, original.replace('return 1;', 'return 2;\n    // x'));
+    const drift = await gates.verify(vo, snapshot);
+    expect(drift.passed).toBe(false);
+    expect(drift.report).toContain('Gate de fronteira');
+    await gates.restore(vo, snapshot);
+    for (const id of ['usecase:Order', 'entity:Order'])
+      expect(
+        (await gates.verify({ ...facts, id }, snapshot)).report ?? '',
+      ).not.toContain('Gate de fronteira');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });

@@ -29,6 +29,10 @@ export function implementation(
     const rec = registry.valueObjects.find((r) => r.target.name === vo.name);
     result.set(vo.id, implemented(rec?.target));
   }
+  for (const adapter of ir.adapters ?? []) {
+    const rec = registry.adapters.find((r) => r.target.name === adapter.name);
+    result.set(adapter.id, implemented(rec?.target));
+  }
   for (const useCase of registry.useCases)
     result.set(
       `usecase:${useCase.name}`,
