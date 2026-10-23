@@ -800,6 +800,37 @@ describe('validate: contains e references', () => {
     expect(errors.some((e) => e.includes('ciclo de contains'))).toBe(true);
   });
 
+  test('ciclo que não passa pela entidade de partida aponta para quem o fecha', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'A.', contains: () => [B] })
+      class A extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'B.', contains: () => [C] })
+      class B extends AggregateRoot<string> {}
+      @AgentEntity({ description: 'C.', contains: () => [B] })
+      class C extends AggregateRoot<string> {}
+      void A;
+      void B;
+      void C;
+    });
+    const cycle = errors.filter((e) => e.includes('ciclo de contains'));
+    expect(cycle).toHaveLength(1);
+    expect(cycle[0]).toMatch(
+      /^src\/compiler\/validate\.test\.ts:\d+ entity:C: ciclo de contains/,
+    );
+  });
+
+  test('entidade que contém a si mesma é ciclo', () => {
+    const errors = errorsOf(() => {
+      @AgentEntity({ description: 'A.', contains: () => [A] })
+      class A extends AggregateRoot<string> {}
+      void A;
+    });
+    expect(errors.filter((e) => e.includes('ciclo de contains'))).toHaveLength(
+      1,
+    );
+    expect(errors[0]).toContain('entity:A: ciclo de contains');
+  });
+
   test('contains entre módulos é erro', () => {
     const registry = createRegistry();
     withRegistry(registry, () => {

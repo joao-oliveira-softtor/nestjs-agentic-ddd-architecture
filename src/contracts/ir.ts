@@ -208,7 +208,7 @@ export function buildIR(
     try {
       const list = thunk();
       if (!Array.isArray(list)) {
-        fail(`${field} tem entrada que não é classe`);
+        fail(`${field} não devolveu uma lista`);
         return [];
       }
       const ids = new Set<string>();
@@ -227,7 +227,9 @@ export function buildIR(
       }
       return [...ids].sort();
     } catch (error) {
-      fail(`${field} lançou ${(error as Error).message}`);
+      fail(
+        `${field} lançou ${error instanceof Error ? error.message : String(error)}`,
+      );
       return [];
     }
   };

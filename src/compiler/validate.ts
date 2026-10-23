@@ -136,20 +136,20 @@ export function validate(
   }
   // ciclo: DFS pelas arestas de contains entre entidades (sem ele, as ondas recursam)
   const state = new Map<string, 'open' | 'done'>();
-  const visit = (id: string): boolean => {
-    if (state.get(id) === 'done') return false;
-    if (state.get(id) === 'open') return true;
+  // Erro na entidade cuja aresta cai num nó ainda 'open' (ela fecha o ciclo, e está dentro dele).
+  const visit = (id: string): void => {
     state.set(id, 'open');
     const entity = ir.entities.find((e) => e.id === id);
-    const cyclic = (entity?.contains ?? []).some(
-      (c) => c.startsWith('entity:') && visit(c),
-    );
+    for (const c of entity?.contains ?? []) {
+      if (!c.startsWith('entity:')) continue;
+      if (state.get(c) === 'open')
+        err(`${id}: ciclo de contains entre entidades`, entity?.source ?? null);
+      else if (!state.has(c)) visit(c);
+    }
     state.set(id, 'done');
-    return cyclic;
   };
   for (const entity of ir.entities) {
-    if (visit(entity.id))
-      err(`${entity.id}: ciclo de contains entre entidades`, entity.source);
+    if (!state.has(entity.id)) visit(entity.id);
   }
 
   const entityNames = new Set(ir.entities.map((e) => e.name));

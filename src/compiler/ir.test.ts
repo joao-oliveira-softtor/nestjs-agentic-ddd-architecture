@@ -377,10 +377,25 @@ describe('buildIR: contains e references', () => {
       void A;
     });
     expect(errors.sort()).toEqual([
-      'entity:A: contains tem entrada que não é classe',
+      'entity:A: contains não devolveu uma lista',
       'entity:A: references tem entrada que não é classe',
     ]);
+    expect('contains' in ir.entities[0]!).toBe(false);
     expect('references' in ir.entities[0]!).toBe(false);
+  });
+
+  test('função que lança valor não-Error usa o texto dele', () => {
+    const { errors } = only(() => {
+      @AgentEntity({
+        description: 'A.',
+        contains: () => {
+          throw 'texto';
+        },
+      })
+      class A extends AggregateRoot<string> {}
+      void A;
+    });
+    expect(errors).toEqual(['entity:A: contains lançou texto']);
   });
 
   test('classe sem decorator nos dois campos', () => {
