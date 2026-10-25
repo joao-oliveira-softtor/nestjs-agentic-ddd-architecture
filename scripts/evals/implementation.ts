@@ -14,7 +14,7 @@ import type {
   Proposal,
 } from '@agentic-ddd/compiler';
 import { approxTokens, parseProposal } from '@agentic-ddd/compiler';
-import { match } from 'ts-pattern';
+import { isMatching, match, P } from 'ts-pattern';
 import { renderReviewerBrief } from '../agent-briefs';
 import { decideAttempt } from '../orchestrate';
 import { parseReviewerReport } from '../reviewer-report';
@@ -32,7 +32,10 @@ import type {
   RunOptions,
 } from './contracts';
 import { emptyUsage, unavailable } from './contracts';
-import { buildImplementationPrompt } from './implementation-prompt';
+import {
+  buildImplementationPrompt,
+  type PromptMode,
+} from './implementation-prompt';
 import { createAttemptWorkspace, disposeWorkspace } from './isolation';
 import { auditSubmission, treeHash, readTree } from './audit';
 import {
@@ -200,28 +203,54 @@ export async function withoutAgentFiles<T>(
 ): Promise<T> {
   const stash = await mkdtemp(join(dirname(root), 'hidden-'));
   const moved: string[] = [];
+  // Devolve o que saiu; lança só se a restauração falhar (e o stash fica para recuperação).
+  const restore = async () => {
+    const errors: unknown[] = [];
+    for (const name of moved)
+      try {
+        // O adapter pode ter recriado o nome no workspace; o original volta por cima.
+        await rm(join(root, name), { recursive: true, force: true });
+        await rename(join(stash, name), join(root, name));
+      } catch (error) {
+        errors.push(error);
+      }
+    if (errors.length === 0) await rm(stash, { recursive: true, force: true });
+    else
+      throw new AggregateError(errors, 'falha ao restaurar arquivos de agente');
+  };
+  let result: T;
   try {
     for (const name of BARE_HIDDEN)
       try {
         await rename(join(root, name), join(stash, name));
         moved.push(name);
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        if (!isMatching({ code: 'ENOENT' }, error)) throw error;
       }
-    return await run();
-  } finally {
-    for (const name of moved) await rename(join(stash, name), join(root, name));
-    await rm(stash, { recursive: true, force: true });
+    result = await run();
+  } catch (error) {
+    // O erro da execução continua o principal; falha de restauração não o esconde.
+    await restore().catch(() => {});
+    throw error;
   }
+  await restore();
+  return result;
 }
 
 /** `default`: tasks; `framework`: F no matriculas; `transport`: C0 (`bare`) no matriculas. */
 export type RetryPolicy = 'default' | 'framework' | 'transport';
 export const retryPolicy = (
   seeded: boolean,
-  promptMode: string | undefined,
+  promptMode: PromptMode | undefined,
 ): RetryPolicy =>
-  !seeded ? 'default' : promptMode === 'bare' ? 'transport' : 'framework';
+  match([seeded, promptMode] as const)
+    .with([false, P._], () => 'default' as const)
+    .with([true, 'bare'], () => 'transport' as const)
+    .with(
+      [true, P.union('legacy', 'brief', undefined)],
+      () => 'framework' as const,
+    )
+    .exhaustive();
 const ORACLE_FINDING = 'Private behavior oracle failed';
 /** O oráculo privado nunca vai para a correção. */
 export const frameworkFindings = (attempt: ItemAttempt): string[] => [
@@ -565,331 +594,350 @@ export async function evaluateImplementation(
       ...options,
       outDir: join(options.outDir, 'implementation', configuration.id),
     };
-    while (true) {
-      if (options.signal.aborted || options.control?.stopReason()) break;
-      let itemBaseline = baseline;
-      let eligible: string | undefined;
-      let status: ProjectStatus;
-      if (seeded) {
-        eligible = queue.shift();
-        if (!eligible) break;
-        itemBaseline = await seedBaseline(
-          source,
-          initial,
-          collaboratorsOf[eligible] ?? [],
-        );
-        status = JSON.parse(
-          (
-            await query(
-              source,
-              itemBaseline,
-              ['status', '--json'],
-              `query-${queryIndex++}/status`,
-              runOptions,
-            )
-          ).result.stdout,
-        ) as ProjectStatus;
-      } else {
-        status = JSON.parse(
-          (
-            await query(
-              source,
-              baseline,
-              ['status', '--json'],
-              `query-${queryIndex}/status`,
-              runOptions,
-            )
-          ).result.stdout,
-        ) as ProjectStatus;
-        const next = JSON.parse(
-          (
-            await query(
-              source,
-              baseline,
-              ['next', '--change', '0001', '--json'],
-              `query-${queryIndex++}/next`,
-              runOptions,
-            )
-          ).result.stdout,
-        ) as NextReport;
-        // A terminal failure can remain in wave 1. Remove it from scheduling, but
-        // never release its dependents; independent items are selected by dynamic deps.
-        eligible = next.waves
-          .flat()
-          .find(
-            (id) =>
-              !terminal.has(id) &&
-              !done.has(id) &&
-              status.items
-                .find((i) => i.id === id)
-                ?.dependsOn.every(
-                  (dep) =>
-                    done.has(dep) &&
-                    status.items.find((i) => i.id === dep)?.state === 'done',
-                ),
-          );
-      }
-      if (!eligible) break;
-      const item = result.items.find((i) => i.item === eligible)!;
-      const assignment = tutorial.items.find((i) => i.id === eligible)!;
-      if (
-        status.items.find((i) => i.id === eligible)?.specHash !== item.specHash
-      )
-        throw Error('Original specHash changed before dispatch');
-      const packet = (
-        await query(
-          source,
-          itemBaseline,
-          ['packet', eligible],
-          `packet-${eligible.replaceAll(/[:.]/g, '-')}`,
-          runOptions,
-        )
-      ).result.stdout;
-      if (!packet.includes(item.specHash))
-        throw Error('Packet omitted original specHash');
-      const handoff: ItemHandoff = {
-        item: eligible,
-        packet,
-        specHash: item.specHash!,
-        configPath: join(itemBaseline, 'agentic.config.ts'),
-        testFile: assignment.test,
-        criteria: assignment.criteria.map((id) => {
-          const criterion = proposal.acceptance.find((c) => c.id === id);
-          if (!criterion || criterion.manual)
-            throw Error(`Criterion unavailable: ${id}`);
-          return {
-            id: criterion.id,
-            given: criterion.given ?? undefined,
-            when: criterion.when ?? undefined,
-            // eslint-disable-next-line unicorn/no-thenable
-            then: criterion.then,
-          };
-        }),
-      };
-      const layer = status.items.find((i) => i.id === eligible)!.layer;
-      let tier = routing ? startStep(routing, layer) : 0;
-      let tierAttempts = 0;
-      for (let number = 1; ; number++) {
+    let seededParent: string | undefined;
+    const dropSeeded = async () => {
+      if (seededParent)
+        await rm(seededParent, { recursive: true, force: true });
+      seededParent = undefined;
+    };
+    try {
+      while (true) {
+        await dropSeeded();
         if (options.signal.aborted || options.control?.stopReason()) break;
-        if (reservedForReview()) {
-          itemsBudgetReserved = true;
-          break;
+        let itemBaseline = baseline;
+        let eligible: string | undefined;
+        let status: ProjectStatus;
+        if (seeded) {
+          eligible = queue.shift();
+          if (!eligible) break;
+          itemBaseline = await seedBaseline(
+            source,
+            initial,
+            collaboratorsOf[eligible] ??
+              (() => {
+                throw new Error(
+                  `colaboradores ausentes para o item ${eligible}`,
+                );
+              })(),
+          );
+          seededParent = dirname(itemBaseline);
+          status = JSON.parse(
+            (
+              await query(
+                source,
+                itemBaseline,
+                ['status', '--json'],
+                `query-${queryIndex++}/status`,
+                runOptions,
+              )
+            ).result.stdout,
+          ) as ProjectStatus;
+        } else {
+          status = JSON.parse(
+            (
+              await query(
+                source,
+                baseline,
+                ['status', '--json'],
+                `query-${queryIndex}/status`,
+                runOptions,
+              )
+            ).result.stdout,
+          ) as ProjectStatus;
+          const next = JSON.parse(
+            (
+              await query(
+                source,
+                baseline,
+                ['next', '--change', '0001', '--json'],
+                `query-${queryIndex++}/next`,
+                runOptions,
+              )
+            ).result.stdout,
+          ) as NextReport;
+          // A terminal failure can remain in wave 1. Remove it from scheduling, but
+          // never release its dependents; independent items are selected by dynamic deps.
+          eligible = next.waves
+            .flat()
+            .find(
+              (id) =>
+                !terminal.has(id) &&
+                !done.has(id) &&
+                status.items
+                  .find((i) => i.id === id)
+                  ?.dependsOn.every(
+                    (dep) =>
+                      done.has(dep) &&
+                      status.items.find((i) => i.id === dep)?.state === 'done',
+                  ),
+            );
         }
-        if (options.control && !options.control.reserveInvocation()) break;
-        const step = routing?.ladder[tier];
-        const workspace = await createAttemptWorkspace(
-          source,
-          itemBaseline,
-          'implementation',
-        );
-        const evidenceDir = join(
-          runOptions.outDir,
-          assignment.test.split('/').at(-1)!.replace('.test.ts', ''),
-          `attempt-${number}`,
-        );
-        await mkdir(evidenceDir, { recursive: true });
-        const previous = item.attempts.at(-1);
-        const prompt = buildImplementationPrompt({
-          mode: configuration.promptMode ?? 'legacy',
+        if (!eligible) break;
+        const item = result.items.find((i) => i.item === eligible)!;
+        const assignment = tutorial.items.find((i) => i.id === eligible)!;
+        if (
+          status.items.find((i) => i.id === eligible)?.specHash !==
+          item.specHash
+        )
+          throw Error('Original specHash changed before dispatch');
+        const packet = (
+          await query(
+            source,
+            itemBaseline,
+            ['packet', eligible],
+            `packet-${eligible.replaceAll(/[:.]/g, '-')}`,
+            runOptions,
+          )
+        ).result.stdout;
+        if (!packet.includes(item.specHash))
+          throw Error('Packet omitted original specHash');
+        const handoff: ItemHandoff = {
           item: eligible,
           packet,
-          root: workspace.root,
-          configPath: workspace.configPath,
           specHash: item.specHash!,
-          file: assignment.file,
-          className: assignment.className,
-          method: assignment.method,
-          test: assignment.test,
-          criteria: handoff.criteria,
-          correction: correctionFor(policy, previous),
-        });
-        await writeFile(join(evidenceDir, 'prompt.txt'), prompt);
-        await writeFile(
-          join(evidenceDir, 'handoff.json'),
-          JSON.stringify(handoff, null, 2) + '\n',
-        );
-        const attempt: ItemAttempt = {
-          number,
-          handoff,
-          baselineHash: await treeHash(itemBaseline),
-          execution: syntheticFailure('not_dispatched'),
-          reply: null,
-          audit: null,
-          verification: null,
-          accepted: false,
-          reason: null,
-          ...(step
-            ? {
-                tier,
-                model: step.model,
-                ...(step.reasoningEffort
-                  ? { reasoningEffort: step.reasoningEffort }
-                  : {}),
-              }
-            : {}),
-        };
-        item.attempts.push(attempt);
-        const agentStarted = performance.now();
-        try {
-          const run = () =>
-            adapter.run(
-              {
-                id: eligible,
-                mode: 'implementation',
-                ...(step
-                  ? {
-                      model: step.model,
-                      ...(step.reasoningEffort
-                        ? { reasoningEffort: step.reasoningEffort }
-                        : {}),
-                    }
-                  : {}),
-                cwd: workspace.root,
-                prompt,
-                timeoutMs: Math.min(
-                  manifest.budget.implementationTimeoutMs,
-                  options.control?.remainingMs() ?? Infinity,
-                ),
-                evidenceDir,
-              },
-              { signal: options.control?.signal ?? options.signal },
-            );
-          // C0: sem skill nem regras no workspace durante o turno, devolvidas antes da auditoria.
-          attempt.execution = await (bare
-            ? withoutAgentFiles(workspace.root, run)
-            : run());
-          attempt.audit = await auditSubmission(
-            itemBaseline,
-            workspace.root,
-            eligible,
-          );
-          await writeFile(
-            join(evidenceDir, 'submission.json'),
-            attempt.audit.patch,
-          );
-          if (attempt.execution.transport !== 'finished') {
-            attempt.reason =
-              attempt.execution.diagnostic ?? attempt.execution.transport;
-            infra = attempt.execution.transport === 'infra_error';
-          } else {
-            try {
-              attempt.reply = parseImplementationReply(
-                attempt.execution.finalText ?? '',
-              );
-            } catch {
-              attempt.reason = 'invalid_implementation_reply';
-            }
-            if (!attempt.audit.ok)
-              attempt.reason = 'submission_boundary_violation';
-            // Matriculas mede sempre (oráculo e T), salvo árvore insegura (não montável).
-            const measure = seeded
-              ? !attempt.audit.findings.some((f) =>
-                  f.startsWith('Unsafe submission tree'),
-                )
-              : attempt.reply?.status === 'done' && attempt.audit.ok;
-            if (measure) {
-              attempt.verification = await verifySubmission(
-                source,
-                workspace,
-                handoff,
-                {
-                  signal: options.signal,
-                  control: options.control,
-                  outDir: join(evidenceDir, 'verification'),
-                  benchmark: manifest.benchmark,
-                },
-              );
-              attempt.accepted =
-                attempt.verification.ok &&
-                attempt.audit.ok &&
-                attempt.reply?.status === 'done';
-              if (
-                attempt.verification.commands.some(
-                  (c) => c.result.transport === 'infra_error',
-                )
-              ) {
-                infra = true;
-                attempt.reason = 'verifier_infrastructure_failed';
-              }
-              if (!attempt.accepted)
-                attempt.reason ??= 'independent_verification_failed';
-            } else if (!attempt.reason)
-              attempt.reason = `declared_${attempt.reply?.status ?? 'malformed'}`;
-            if (bare ? oracleGreen(attempt.verification) : attempt.accepted) {
-              if (assignment.file && !seeded)
-                await cp(
-                  join(workspace.root, assignment.file),
-                  join(baseline, assignment.file),
-                );
-              if (!seeded) {
-                await mkdir(join(baseline, 'app/test'), { recursive: true });
-                await cp(
-                  join(workspace.root, assignment.test),
-                  join(baseline, assignment.test),
-                );
-              }
-              item.state = 'accepted';
-              item.reason = null;
-              done.add(eligible);
-            }
-          }
-        } catch (error) {
-          if (attempt.execution.diagnostic === 'not_dispatched') {
-            attempt.execution = syntheticFailure(String(error));
-            attempt.execution.durationMs = performance.now() - agentStarted;
-          }
-          attempt.reason = String(error);
-          infra = true;
-        } finally {
-          await writeFile(
-            join(evidenceDir, 'attempt.json'),
-            JSON.stringify(attempt, null, 2) + '\n',
-          );
-          await disposeWorkspace(workspace);
-        }
-        if (
-          infra ||
-          attempt.execution.transport === 'cancelled' ||
-          item.state === 'accepted' ||
-          !wantsRetry(policy, attempt)
-        )
-          break;
-        // Mesma escada do driver; aqui `blocked` conta como tentativa falha em todos os braços.
-        tierAttempts++;
-        const stop = match(
-          decideAttempt({
-            accepted: false,
-            executorBlocked: false,
-            tierAttempts,
-            retries: manifest.budget.maxCorrectionsPerItem,
-            lastTier: tier >= ladderLength - 1,
+          configPath: join(itemBaseline, 'agentic.config.ts'),
+          testFile: assignment.test,
+          criteria: assignment.criteria.map((id) => {
+            const criterion = proposal.acceptance.find((c) => c.id === id);
+            if (!criterion || criterion.manual)
+              throw Error(`Criterion unavailable: ${id}`);
+            return {
+              id: criterion.id,
+              given: criterion.given ?? undefined,
+              when: criterion.when ?? undefined,
+              // eslint-disable-next-line unicorn/no-thenable
+              then: criterion.then,
+            };
           }),
-        )
-          .with('retry', () => false)
-          .with('escalate', () => {
-            tier++;
-            tierAttempts = 0;
-            return false;
-          })
-          .with('accepted', 'needs-human', () => true)
-          .exhaustive();
-        if (stop) break;
+        };
+        const layer = status.items.find((i) => i.id === eligible)!.layer;
+        let tier = routing ? startStep(routing, layer) : 0;
+        let tierAttempts = 0;
+        for (let number = 1; ; number++) {
+          if (options.signal.aborted || options.control?.stopReason()) break;
+          if (reservedForReview()) {
+            itemsBudgetReserved = true;
+            break;
+          }
+          if (options.control && !options.control.reserveInvocation()) break;
+          const step = routing?.ladder[tier];
+          const workspace = await createAttemptWorkspace(
+            source,
+            itemBaseline,
+            'implementation',
+          );
+          const evidenceDir = join(
+            runOptions.outDir,
+            assignment.test.split('/').at(-1)!.replace('.test.ts', ''),
+            `attempt-${number}`,
+          );
+          await mkdir(evidenceDir, { recursive: true });
+          const previous = item.attempts.at(-1);
+          const prompt = buildImplementationPrompt({
+            mode: configuration.promptMode ?? 'legacy',
+            item: eligible,
+            packet,
+            root: workspace.root,
+            configPath: workspace.configPath,
+            specHash: item.specHash!,
+            file: assignment.file,
+            className: assignment.className,
+            method: assignment.method,
+            test: assignment.test,
+            criteria: handoff.criteria,
+            correction: correctionFor(policy, previous),
+          });
+          await writeFile(join(evidenceDir, 'prompt.txt'), prompt);
+          await writeFile(
+            join(evidenceDir, 'handoff.json'),
+            JSON.stringify(handoff, null, 2) + '\n',
+          );
+          const attempt: ItemAttempt = {
+            number,
+            handoff,
+            baselineHash: await treeHash(itemBaseline),
+            execution: syntheticFailure('not_dispatched'),
+            reply: null,
+            audit: null,
+            verification: null,
+            accepted: false,
+            reason: null,
+            ...(step
+              ? {
+                  tier,
+                  model: step.model,
+                  ...(step.reasoningEffort
+                    ? { reasoningEffort: step.reasoningEffort }
+                    : {}),
+                }
+              : {}),
+          };
+          item.attempts.push(attempt);
+          const agentStarted = performance.now();
+          try {
+            const run = () =>
+              adapter.run(
+                {
+                  id: eligible,
+                  mode: 'implementation',
+                  ...(step
+                    ? {
+                        model: step.model,
+                        ...(step.reasoningEffort
+                          ? { reasoningEffort: step.reasoningEffort }
+                          : {}),
+                      }
+                    : {}),
+                  cwd: workspace.root,
+                  prompt,
+                  timeoutMs: Math.min(
+                    manifest.budget.implementationTimeoutMs,
+                    options.control?.remainingMs() ?? Infinity,
+                  ),
+                  evidenceDir,
+                },
+                { signal: options.control?.signal ?? options.signal },
+              );
+            // C0: sem skill nem regras no workspace durante o turno, devolvidas antes da auditoria.
+            attempt.execution = await (bare
+              ? withoutAgentFiles(workspace.root, run)
+              : run());
+            attempt.audit = await auditSubmission(
+              itemBaseline,
+              workspace.root,
+              eligible,
+            );
+            await writeFile(
+              join(evidenceDir, 'submission.json'),
+              attempt.audit.patch,
+            );
+            if (attempt.execution.transport !== 'finished') {
+              attempt.reason =
+                attempt.execution.diagnostic ?? attempt.execution.transport;
+              infra = attempt.execution.transport === 'infra_error';
+            } else {
+              try {
+                attempt.reply = parseImplementationReply(
+                  attempt.execution.finalText ?? '',
+                );
+              } catch {
+                attempt.reason = 'invalid_implementation_reply';
+              }
+              if (!attempt.audit.ok)
+                attempt.reason = 'submission_boundary_violation';
+              // Matriculas mede sempre (oráculo e T), salvo árvore insegura (não montável).
+              const measure = seeded
+                ? !attempt.audit.findings.some((f) =>
+                    f.startsWith('Unsafe submission tree'),
+                  )
+                : attempt.reply?.status === 'done' && attempt.audit.ok;
+              if (measure) {
+                attempt.verification = await verifySubmission(
+                  source,
+                  workspace,
+                  handoff,
+                  {
+                    signal: options.signal,
+                    control: options.control,
+                    outDir: join(evidenceDir, 'verification'),
+                    benchmark: manifest.benchmark,
+                  },
+                );
+                attempt.accepted =
+                  attempt.verification.ok &&
+                  attempt.audit.ok &&
+                  attempt.reply?.status === 'done';
+                if (
+                  attempt.verification.commands.some(
+                    (c) => c.result.transport === 'infra_error',
+                  )
+                ) {
+                  infra = true;
+                  attempt.reason = 'verifier_infrastructure_failed';
+                }
+                if (!attempt.accepted)
+                  attempt.reason ??= 'independent_verification_failed';
+              } else if (!attempt.reason)
+                attempt.reason = `declared_${attempt.reply?.status ?? 'malformed'}`;
+              if (bare ? oracleGreen(attempt.verification) : attempt.accepted) {
+                if (assignment.file && !seeded)
+                  await cp(
+                    join(workspace.root, assignment.file),
+                    join(baseline, assignment.file),
+                  );
+                if (!seeded) {
+                  await mkdir(join(baseline, 'app/test'), { recursive: true });
+                  await cp(
+                    join(workspace.root, assignment.test),
+                    join(baseline, assignment.test),
+                  );
+                }
+                item.state = 'accepted';
+                item.reason = null;
+                done.add(eligible);
+              }
+            }
+          } catch (error) {
+            if (attempt.execution.diagnostic === 'not_dispatched') {
+              attempt.execution = syntheticFailure(String(error));
+              attempt.execution.durationMs = performance.now() - agentStarted;
+            }
+            attempt.reason = String(error);
+            infra = true;
+          } finally {
+            await writeFile(
+              join(evidenceDir, 'attempt.json'),
+              JSON.stringify(attempt, null, 2) + '\n',
+            );
+            await disposeWorkspace(workspace);
+          }
+          if (
+            infra ||
+            attempt.execution.transport === 'cancelled' ||
+            item.state === 'accepted' ||
+            !wantsRetry(policy, attempt)
+          )
+            break;
+          // Mesma escada do driver; aqui `blocked` conta como tentativa falha em todos os braços.
+          tierAttempts++;
+          const stop = match(
+            decideAttempt({
+              accepted: false,
+              executorBlocked: false,
+              tierAttempts,
+              retries: manifest.budget.maxCorrectionsPerItem,
+              lastTier: tier >= ladderLength - 1,
+            }),
+          )
+            .with('retry', () => false)
+            .with('escalate', () => {
+              tier++;
+              tierAttempts = 0;
+              return false;
+            })
+            .with('accepted', 'needs-human', () => true)
+            .exhaustive();
+          if (stop) break;
+        }
+        // Item que nem chegou a tentar por causa da vaga da revisão não é falha terminal.
+        if (!itemsBudgetReserved || item.attempts.length)
+          terminal.add(eligible);
+        if (item.state !== 'accepted') {
+          item.state = infra
+            ? 'infra_error'
+            : item.attempts.length
+              ? 'failed'
+              : 'not_run';
+          item.reason = itemsBudgetReserved
+            ? 'items_budget_reserved_for_review'
+            : (item.attempts.at(-1)?.reason ??
+              options.control?.stopReason() ??
+              'cancelled');
+        }
+        if (infra || itemsBudgetReserved) break;
       }
-      // Item que nem chegou a tentar por causa da vaga da revisão não é falha terminal.
-      if (!itemsBudgetReserved || item.attempts.length) terminal.add(eligible);
-      if (item.state !== 'accepted') {
-        item.state = infra
-          ? 'infra_error'
-          : item.attempts.length
-            ? 'failed'
-            : 'not_run';
-        item.reason = itemsBudgetReserved
-          ? 'items_budget_reserved_for_review'
-          : (item.attempts.at(-1)?.reason ??
-            options.control?.stopReason() ??
-            'cancelled');
-      }
-      if (infra || itemsBudgetReserved) break;
+    } finally {
+      await dropSeeded();
     }
     for (const item of result.items)
       if (item.state === 'not_run') {

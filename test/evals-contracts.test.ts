@@ -208,7 +208,13 @@ describe('manifesto matriculas / bare / infrastructure', () => {
         ladder: [{ model: 'a' }],
       },
     });
-    expect(manifestSchema.safeParse(withConfig(routing())).success).toBe(true);
+    const tasks = (extra: object) => ({
+      ...withConfig(extra),
+      benchmark: 'tasks',
+    });
+    expect(manifestSchema.safeParse(tasks(routing())).success).toBe(true);
+    // matriculas com routing exige a camada infrastructure.
+    expect(manifestSchema.safeParse(withConfig(routing())).success).toBe(false);
     expect(manifestSchema.safeParse(withConfig(routing('a'))).success).toBe(
       true,
     );

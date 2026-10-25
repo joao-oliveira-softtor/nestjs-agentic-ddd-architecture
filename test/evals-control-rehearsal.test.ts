@@ -218,7 +218,9 @@ test('C0: roda os 7 itens, mede o oráculo e T1, repete sem findings e esconde o
   expect(items(report).map((i) => i.item)).toEqual(ITEMS);
   expect(items(report).every((i) => i.attempts.length >= 1)).toBe(true);
   expect(metrics.items.map((i) => i.item)).toEqual(ITEMS);
-  for (const m of metrics.items) expect(m.measured).toBe(1);
+  // A 1ª tentativa de TurmaId termina em timeout: sem verificação, conta como reprovada (não medida).
+  for (const m of metrics.items)
+    expect(m.measured).toBe(m.item === 'valueobject:TurmaId' ? 0 : 1);
   const byItem = (id: string) => metrics.items.find((i) => i.item === id)!;
   expect(byItem('entity:Matricula').tacticalViolations).toBeGreaterThan(0);
   expect(byItem('entity:Matricula').oracleAccepted.first).toBe(0);

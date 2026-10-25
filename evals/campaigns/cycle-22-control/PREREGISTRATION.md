@@ -52,12 +52,16 @@ dois braços (`controlMetrics` em `scripts/evals/aggregate.ts`).
 
 - **Primária**: `oracleAccepted` na **primeira** tentativa (oráculo privado verde), por item.
 - **Secundária**: `oracleAccepted` na **última** tentativa.
-- **`tacticalViolations`**: achados T1/T2 do gate tático. Só o C0 consegue acrescentar campos
+- **`tacticalViolations`**: achados T1/T2 do gate tático, medidos na **primeira** tentativa (a
+  mesma da primária). Só o C0 consegue acrescentar campos
   (no F a auditoria e o sandbox impedem), portanto é **descritiva**, nunca comparada.
 - **`trapDefects`**: casos `trap:*` do oráculo que falharam, por armadilha A a D (A aluno
   inteiro, B regra entre agregados, C VO com invariante, D consulta própria). Se o oráculo
   tiver `collectionError` (a submissão quebrou o import), **todos** os casos `trap:*` do item
-  contam como defeito.
+  contam como defeito. Também é valor da **primeira** tentativa.
+- Turno que termina em timeout ou cancelamento conta como oráculo reprovado (não é medido).
+- As taxas de aceite `initial`/`final` do `report.md` são a métrica antiga do framework e **não**
+  são métricas do C0; só `controlMetrics` compara os braços.
 - Resposta `blocked`, `failed` ou malformada também é medida; só árvore insegura (`Unsafe
 submission tree`) fica sem medição.
 

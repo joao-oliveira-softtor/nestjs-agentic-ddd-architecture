@@ -767,6 +767,14 @@ test('C0: esconde os arquivos de skill/regras no turno e devolve depois, também
     expect(failure).toBe('timeout');
     expect((await readdir(root)).sort()).toEqual(before);
     expect(await readdir(dir)).toEqual(['ws']);
+    // O adapter recria `.claude/`: o original volta por cima e o stash some.
+    await withoutAgentFiles(root, async () => {
+      await mkdir(join(root, '.claude'));
+      await writeFile(join(root, '.claude/novo'), 'novo');
+    });
+    expect(await readFile(join(root, '.claude/x'), 'utf8')).toBe('.claude');
+    expect(await readdir(join(root, '.claude'))).toEqual(['x']);
+    expect(await readdir(dir)).toEqual(['ws']);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

@@ -978,10 +978,10 @@ test('matriculas: oracleAccepted, T1/T2 e defeitos por armadilha só existem par
     tacticalViolations: 1,
     trapDefects: { A: 1, B: 0, C: 0, D: 0 },
   });
-  // Última tentativa verde; a primeira (coleta quebrada) é a primária e reprova.
+  // Violações e defeitos vêm da primeira tentativa (coleta quebrada); só `last` olha a última (verde).
   expect(by('usecase:matricular_aluno')).toMatchObject({
     oracleAccepted: { first: 0, last: 1 },
-    trapDefects: { B: 0 },
+    trapDefects: { B: trapB.length },
   });
   const broken = controlMetrics([
     run('matriculas', [

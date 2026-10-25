@@ -605,7 +605,8 @@ export function controlMetrics(executed: Executed[]) {
     let tacticalViolations = 0,
       measured = 0;
     for (const attempts of runs) {
-      const v = attempts.at(-1)?.verification;
+      // Primeira tentativa, a mesma do `oracleAccepted.first`.
+      const v = attempts[0]?.verification;
       if (!v) continue;
       measured++;
       tacticalViolations += (v.itemReport?.gates ?? [])

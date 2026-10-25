@@ -196,6 +196,14 @@ export const manifestSchema = z
         );
       }),
     'routing: distinct ladder models covering byLayer, model equal to the first ladder step, effort only per step',
+  )
+  .refine(
+    (m) =>
+      m.benchmark !== 'matriculas' ||
+      m.configurations.every(
+        (c) => !c.routing || c.routing.byLayer.infrastructure !== undefined,
+      ),
+    'matriculas: routing.byLayer.infrastructure is required',
   );
 export type RunManifest = z.infer<typeof manifestSchema>;
 export type EvalConfiguration = RunManifest['configurations'][number];
