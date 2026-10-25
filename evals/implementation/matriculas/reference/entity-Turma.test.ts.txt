@@ -1,0 +1,15 @@
+import { expect, test } from 'bun:test';
+import { Turma } from '__WORKSPACE__/app/domain/turma';
+import { TurmaId } from '__WORKSPACE__/app/domain/turma-id';
+test('base:Turma cria com as vagas informadas', () => {
+  const turma = Turma.criar(TurmaId.criar('t-9'), 3);
+  expect(turma.vagas).toBe(3);
+  expect(turma.turmaId.equals(TurmaId.criar('t-9'))).toBe(true);
+});
+test('base:Turma rejeita menos de uma vaga com TURMA_VAGAS_INVALIDAS', () => {
+  for (const vagas of [0, -2]) {
+    let error: unknown;
+    try { Turma.criar(TurmaId.criar('t-9'), vagas); } catch (caught) { error = caught; }
+    expect(error).toMatchObject({ code: 'TURMA_VAGAS_INVALIDAS' });
+  }
+});

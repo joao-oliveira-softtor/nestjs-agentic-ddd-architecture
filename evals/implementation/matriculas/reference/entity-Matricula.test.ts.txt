@@ -1,0 +1,22 @@
+import { expect, test } from 'bun:test';
+import { Aluno } from '__WORKSPACE__/app/domain/aluno';
+import { AlunoId } from '__WORKSPACE__/app/domain/aluno-id';
+import { Matricula } from '__WORKSPACE__/app/domain/matricula';
+import { Turma } from '__WORKSPACE__/app/domain/turma';
+import { TurmaId } from '__WORKSPACE__/app/domain/turma-id';
+const make = () => {
+  const aluno = Aluno.criar(AlunoId.criar('a-7'), 'Caio', 'ativo');
+  const turma = Turma.criar(TurmaId.criar('t-7'), 4);
+  return { aluno, turma, matricula: Matricula.criar(aluno, turma) };
+};
+test('base:Matricula expõe alunoId e turmaId', () => {
+  const { aluno, turma, matricula } = make();
+  expect(matricula.alunoId.equals(aluno.alunoId)).toBe(true);
+  expect(matricula.turmaId.equals(turma.turmaId)).toBe(true);
+});
+test('trap:A Matricula guarda só os ids, nunca as entidades inteiras', () => {
+  const { matricula } = make();
+  const values = Object.values(matricula);
+  expect(values.some((v) => v instanceof Aluno || v instanceof Turma)).toBe(false);
+  expect('aluno' in matricula || 'turma' in matricula).toBe(false);
+});

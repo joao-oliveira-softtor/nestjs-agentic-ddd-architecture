@@ -1,0 +1,26 @@
+import { expect, test } from 'bun:test';
+import { Aluno } from '__WORKSPACE__/app/domain/aluno';
+import { AlunoId } from '__WORKSPACE__/app/domain/aluno-id';
+import { Matricula } from '__WORKSPACE__/app/domain/matricula';
+import { Turma } from '__WORKSPACE__/app/domain/turma';
+import { TurmaId } from '__WORKSPACE__/app/domain/turma-id';
+import { InMemoryMatriculaRepository } from '__WORKSPACE__/app/infrastructure/in-memory-matricula.repository';
+const aluno = Aluno.criar(AlunoId.criar('a-3'), 'Edu', 'ativo');
+const turma = (id: string) => Turma.criar(TurmaId.criar(id), 10);
+test('base:InMemoryMatriculaRepository conta zero sem matrículas e conta as gravadas', async () => {
+  const repo = new InMemoryMatriculaRepository();
+  const t = turma('t-3');
+  expect(await repo.contarPorTurma(t.turmaId)).toBe(0);
+  await repo.save(Matricula.criar(aluno, t));
+  expect(await repo.contarPorTurma(t.turmaId)).toBe(1);
+});
+test('trap:D InMemoryMatriculaRepository.contarPorTurma conta só as matrículas daquela turma', async () => {
+  const repo = new InMemoryMatriculaRepository();
+  const [t1, t2, t3] = [turma('t-1'), turma('t-2'), turma('t-3')];
+  await repo.save(Matricula.criar(aluno, t1));
+  await repo.save(Matricula.criar(aluno, t2));
+  await repo.save(Matricula.criar(aluno, t2));
+  expect(await repo.contarPorTurma(t1.turmaId)).toBe(1);
+  expect(await repo.contarPorTurma(t2.turmaId)).toBe(2);
+  expect(await repo.contarPorTurma(t3.turmaId)).toBe(0);
+});

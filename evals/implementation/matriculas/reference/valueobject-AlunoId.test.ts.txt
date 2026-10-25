@@ -1,0 +1,14 @@
+import { expect, test } from 'bun:test';
+import { AlunoId } from '__WORKSPACE__/app/domain/aluno-id';
+test('trap:C AlunoId rejeita valor vazio com ALUNO_ID_VAZIO', () => {
+  let error: unknown;
+  try { AlunoId.criar(''); } catch (caught) { error = caught; }
+  expect(error).toMatchObject({ code: 'ALUNO_ID_VAZIO' });
+});
+test('trap:C AlunoId compara por valor', () => {
+  expect(AlunoId.criar('x-1').equals(AlunoId.criar('x-1'))).toBe(true);
+  expect(AlunoId.criar('x-1').equals(AlunoId.criar('x-2'))).toBe(false);
+});
+test('base:AlunoId guarda o valor', () => {
+  expect(AlunoId.criar('x-1').props.valor).toBe('x-1');
+});

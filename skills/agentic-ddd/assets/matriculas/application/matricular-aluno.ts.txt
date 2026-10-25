@@ -5,6 +5,8 @@ import { Matricula } from '../domain/matricula';
 import { AlunoRepository } from '../domain/aluno.repository';
 import { TurmaRepository } from '../domain/turma.repository';
 import { MatriculaRepository } from '../domain/matricula.repository';
+import { AlunoId } from '../domain/aluno-id';
+import { TurmaId } from '../domain/turma-id';
 
 export const matricularAlunoInput = z.object({ aluno_id: z.string().min(1), turma_id: z.string().min(1) });
 export const matricularAlunoOutput = z.object({ matricula_id: z.string() });
