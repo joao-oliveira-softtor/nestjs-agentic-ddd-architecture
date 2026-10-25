@@ -9,6 +9,7 @@ Este repositório é o framework `@agentic-ddd` (em `src/`) e o app de exemplo `
 - Design: `docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md`; decisões: `docs/adr/ADR-0001.md`; planos: `docs/superpowers/plans/`.
 - `examples/**` importa o framework só via `@agentic-ddd/*`; `src/core` só importa `zod`.
 - Testes com `bun:test`; snapshots em `__snapshots__/` são revisados como código.
+- Teste novo em `test/` fora de `evals-*` entra em `verify.test` do `agentic.config.ts` (o `evals-verification-scope` confere); teste que roda `verify --item` aninhado vai como `test/evals-*`.
 
 ## Skill autoral e agentes
 
@@ -16,6 +17,7 @@ Este repositório é o framework `@agentic-ddd` (em `src/`) e o app de exemplo `
 - Instale com `bun run skills:install` (projeto/todos), `--scope user` (global explícito), `--target cursor|codex|claude|all`, `--root <raiz>`, `--check` e `--mcp` (opt-in: grava a config do servidor MCP local de cada agente). Links dependem da permanência deste checkout.
 - `.agents/skills/agentic-ddd` e `.claude/skills/agentic-ddd` são links autorais instalados, preservados por compile. Adaptadores em `.cursor/agents`, `.codex/agents` e `.claude/agents` são instalados pelo script; altere a fonte ou o instalador, respeitando conflitos ao reinstalar.
 - Tutorial isolado: `bun run skills:example --root <destino-inexistente>`; percurso em `skills/agentic-ddd/references/tutorial.md`. Não evolua orders para validar essa skill.
+- `references/executor-domain.md` e `references/reviewer.md` viram `ROLE_CORES` nos briefs de todo projeto: editar muda o brief (e o snapshot de `agent-briefs`); linhas são presas por `classScopeCore` e pelo `review-benchmark`.
 
 <!-- agentic-ddd:begin -->
 <!-- GERADO por agentic-ddd compile — não edite este bloco; o texto fora dele é seu. -->
