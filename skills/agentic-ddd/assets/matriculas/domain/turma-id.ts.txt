@@ -1,0 +1,25 @@
+import { DomainError, ValueObject, notImplemented } from '@agentic-ddd/core';
+import { AgentValueObject, Invariant } from '@agentic-ddd/decorators';
+
+@AgentValueObject({ description: 'Identificador de turma.' })
+@Invariant({ id: 'turma-id-nao-vazio', text: 'O id da turma não pode ser vazio; valor vazio falha com TURMA_ID_VAZIO e dois ids com o mesmo valor são iguais.' })
+export class TurmaId extends ValueObject<{ valor: string }> {
+  static criar(valor: string): TurmaId {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+}

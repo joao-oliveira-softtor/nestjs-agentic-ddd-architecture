@@ -1,0 +1,8 @@
+import { AgentPort } from '@agentic-ddd/decorators';
+import type { TurmaId } from './turma-id';
+import { Turma } from './turma';
+
+@AgentPort({ description: 'Consulta de turmas.', root: () => Turma, methods: { findById: 'Busca a turma pelo id; ausente devolve null.' } })
+export abstract class TurmaRepository {
+  abstract findById(id: TurmaId): Promise<Turma | null>;
+}

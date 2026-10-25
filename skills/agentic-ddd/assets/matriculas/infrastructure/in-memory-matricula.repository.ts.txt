@@ -1,0 +1,46 @@
+import { notImplemented } from '@agentic-ddd/core';
+import { AgentAdapter } from '@agentic-ddd/decorators';
+import { MatriculaRepository } from '../domain/matricula.repository';
+import type { Matricula } from '../domain/matricula';
+import type { TurmaId } from '../domain/turma-id';
+
+@AgentAdapter({ description: 'Repositório de matrículas em memória; contarPorTurma conta só as matrículas da turma informada.', implements: () => MatriculaRepository })
+export class InMemoryMatriculaRepository extends MatriculaRepository {
+  readonly #matriculas: Matricula[] = [];
+  async save(matricula: Matricula): Promise<void> {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+  async contarPorTurma(turmaId: TurmaId): Promise<number> {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+}

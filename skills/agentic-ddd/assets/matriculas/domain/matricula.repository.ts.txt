@@ -1,0 +1,9 @@
+import { AgentPort } from '@agentic-ddd/decorators';
+import type { TurmaId } from './turma-id';
+import { Matricula } from './matricula';
+
+@AgentPort({ description: 'Persistência de matrículas.', root: () => Matricula, methods: { save: 'Grava a matrícula.', contarPorTurma: 'Conta somente as matrículas da turma informada.' } })
+export abstract class MatriculaRepository {
+  abstract save(matricula: Matricula): Promise<void>;
+  abstract contarPorTurma(turmaId: TurmaId): Promise<number>;
+}

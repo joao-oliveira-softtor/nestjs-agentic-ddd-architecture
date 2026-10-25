@@ -1,0 +1,33 @@
+import { AggregateRoot, notImplemented } from '@agentic-ddd/core';
+import { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';
+import { Aluno } from './aluno';
+import { AlunoId } from './aluno-id';
+import { Turma } from './turma';
+import { TurmaId } from './turma-id';
+
+@AgentEntity({ description: 'Matrícula de um aluno em uma turma.', states: ['ativa'], contains: () => [AlunoId, TurmaId], references: () => [Aluno, Turma] })
+@Invariant({ id: 'guarda-ids', text: 'A matrícula guarda só os ids do aluno e da turma (alunoId e turmaId), nunca as entidades inteiras.' })
+export class Matricula extends AggregateRoot<string> {
+  alunoId!: AlunoId;
+  turmaId!: TurmaId;
+
+  @AgentMethod({ description: 'Cria a matrícula a partir do aluno e da turma, guardando apenas os ids deles.' })
+  static criar(aluno: Aluno, turma: Turma): Matricula {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+}

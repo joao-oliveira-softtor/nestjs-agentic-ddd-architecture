@@ -1,0 +1,25 @@
+import { DomainError, ValueObject, notImplemented } from '@agentic-ddd/core';
+import { AgentValueObject, Invariant } from '@agentic-ddd/decorators';
+
+@AgentValueObject({ description: 'Identificador de aluno.' })
+@Invariant({ id: 'aluno-id-nao-vazio', text: 'O id do aluno não pode ser vazio; valor vazio falha com ALUNO_ID_VAZIO e dois ids com o mesmo valor são iguais.' })
+export class AlunoId extends ValueObject<{ valor: string }> {
+  static criar(valor: string): AlunoId {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+}

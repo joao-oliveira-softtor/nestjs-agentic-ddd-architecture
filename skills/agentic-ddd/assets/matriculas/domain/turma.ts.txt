@@ -1,0 +1,29 @@
+import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';
+import { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';
+import { TurmaId } from './turma-id';
+
+@AgentEntity({ description: 'Turma com número fixo de vagas.', contains: () => [TurmaId] })
+@Invariant({ id: 'vagas-positivas', text: 'Toda turma precisa de pelo menos uma vaga; vagas menores que 1 falham com TURMA_VAGAS_INVALIDAS.' })
+export class Turma extends AggregateRoot<string> {
+  private constructor(id: string, readonly turmaId: TurmaId, readonly vagas: number) { super(id); }
+
+  @AgentMethod({ description: 'Cria uma turma com o número de vagas informado.' })
+  static criar(id: TurmaId, vagas: number): Turma {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+}

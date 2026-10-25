@@ -1,12 +1,20 @@
 import { lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import { match, P } from 'ts-pattern';
 import { installSkills } from './install-skills';
 import { shellQuote } from '../src/compiler/packet';
 
 const FRAMEWORK = resolve(import.meta.dir, '..');
-const ASSETS = join(FRAMEWORK, 'skills/agentic-ddd/assets/tasks');
+export type Tutorial = 'tasks' | 'matriculas';
 
-export async function createSkillsExample(destination: string): Promise<void> {
+const AGENTS_TEXT = (tutorial: Tutorial) =>
+  `# Tutorial ${tutorial}\n\nUse a skill autoral agentic-ddd instalada e a skill gerada ${tutorial}-dev após compile. Executor altera somente corpo atribuído e testes; preserve imports, contratos, propostas e gerados.\n`;
+
+export async function createSkillsExample(
+  destination: string,
+  tutorial: Tutorial = 'tasks',
+): Promise<void> {
+  const ASSETS = join(FRAMEWORK, 'skills/agentic-ddd/assets', tutorial);
   const root = resolve(destination);
   const existing = await lstat(root).catch((error: NodeJS.ErrnoException) => {
     if (error.code === 'ENOENT') return null;
@@ -26,7 +34,7 @@ export async function createSkillsExample(destination: string): Promise<void> {
     await writeFile(join(root, path), content, { flag: 'wx' });
   };
   await put(
-    'changes/0001-tasks/proposal.md',
+    `changes/0001-${tutorial}/proposal.md`,
     await readFile(join(ASSETS, 'proposal.md'), 'utf8'),
   );
   for await (const file of new Bun.Glob('**/*.ts.txt').scan({
@@ -43,7 +51,7 @@ export async function createSkillsExample(destination: string): Promise<void> {
     'package.json',
     JSON.stringify(
       {
-        name: 'agentic-ddd-tasks-tutorial',
+        name: `agentic-ddd-${tutorial}-tutorial`,
         private: true,
         type: 'module',
         scripts: {
@@ -84,17 +92,14 @@ export async function createSkillsExample(destination: string): Promise<void> {
   );
   await put(
     'agentic.config.ts',
-    `import { defineConfig } from '@agentic-ddd/compiler';\nexport default defineConfig({ modules: [{ name: 'tasks', path: 'app' }], verify: { test: ['bun', 'test'], commands: { typecheck: ['bun', ${JSON.stringify(tsc)}, '--noEmit', '--project', 'tsconfig.json'] } } });\n`,
+    `import { defineConfig } from '@agentic-ddd/compiler';\nexport default defineConfig({ modules: [{ name: '${tutorial}', path: 'app' }], verify: { test: ['bun', 'test'], commands: { typecheck: ['bun', ${JSON.stringify(tsc)}, '--noEmit', '--project', 'tsconfig.json'] } } });\n`,
   );
   await symlink(
     join(FRAMEWORK, 'node_modules'),
     join(root, 'node_modules'),
     'dir',
   );
-  await put(
-    'AGENTS.md',
-    '# Tutorial tasks\n\nUse a skill autoral agentic-ddd instalada e a skill gerada tasks-dev após compile. Executor altera somente corpo atribuído e testes; preserve imports, contratos, propostas e gerados.\n',
-  );
+  await put('AGENTS.md', AGENTS_TEXT(tutorial));
   await put(
     '.ai/rules/testes.md',
     "---\npaths: ['app/**']\n---\n- Títulos de teste em português, descrevendo o comportamento observado.\n",
@@ -104,20 +109,27 @@ export async function createSkillsExample(destination: string): Promise<void> {
 }
 
 if (import.meta.main) {
-  const args = process.argv.slice(2);
-  if (
-    args.length !== 2 ||
-    args[0] !== '--root' ||
-    !args[1] ||
-    args[1].startsWith('--')
-  ) {
-    console.error('Uso: bun run skills:example --root <destino-inexistente>');
+  const notFlag = P.string.regex(/^[^-].*/);
+  const parsed = match(process.argv.slice(2))
+    .with(['--root', notFlag], ([, root]) => ({
+      root,
+      tutorial: 'tasks' as Tutorial,
+    }))
+    .with(
+      ['--root', notFlag, '--tutorial', P.union('tasks', 'matriculas')],
+      ([, root, , tutorial]) => ({ root, tutorial }),
+    )
+    .otherwise(() => null);
+  if (!parsed) {
+    console.error(
+      'Uso: bun run skills:example --root <destino-inexistente> [--tutorial tasks|matriculas]',
+    );
     process.exit(2);
   }
   try {
-    await createSkillsExample(args[1]);
+    await createSkillsExample(parsed.root, parsed.tutorial);
     console.log(
-      `Workspace criado: ${resolve(args[1])}\nPróximo: bun run agentic compile`,
+      `Workspace criado: ${resolve(parsed.root)}\nPróximo: bun run agentic compile`,
     );
   } catch (error) {
     console.error(String(error));

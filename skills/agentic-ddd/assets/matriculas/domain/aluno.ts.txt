@@ -1,0 +1,29 @@
+import { AggregateRoot, DomainError, notImplemented } from '@agentic-ddd/core';
+import { AgentEntity, AgentMethod, Invariant } from '@agentic-ddd/decorators';
+import { AlunoId } from './aluno-id';
+
+@AgentEntity({ description: 'Aluno da escola, ativo ou inativo.', states: ['ativo', 'inativo'], contains: () => [AlunoId] })
+@Invariant({ id: 'nome-obrigatorio', text: 'Todo aluno precisa de nome não vazio; nome vazio falha com ALUNO_NOME_OBRIGATORIO.' })
+export class Aluno extends AggregateRoot<string> {
+  private constructor(id: string, readonly alunoId: AlunoId, readonly nome: string, readonly status: 'ativo' | 'inativo') { super(id); }
+
+  @AgentMethod({ description: 'Cria um aluno com o status informado e remove espaços nas extremidades do nome.' })
+  static criar(id: AlunoId, nome: string, status: 'ativo' | 'inativo'): Aluno {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+}
