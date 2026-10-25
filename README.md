@@ -1,6 +1,6 @@
 # @agentic-ddd
 
-Release atual: [v0.4.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.4.0). [Demonstração reproduzível](docs/releases/0.4.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
+Release atual: [v0.5.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.5.0). [Demonstração reproduzível](docs/releases/0.5.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
 
 Uso em aplicações externas: [distribuição por tarball, exports públicos e compatibilidade](docs/distribution.md). O nome do pacote é provisório; publicação npm permanece bloqueada.
 
@@ -15,7 +15,7 @@ O código decorado é a única fonte de verdade: descrição, regra e implementa
 ## Como funciona
 
 ```
-@AgentEntity / @Invariant / @AgentMethod / @AgentEvent / @AgentUseCase / @Operator
+@AgentEntity / @AgentValueObject / @AgentPort / @AgentAdapter / @Invariant / @AgentMethod / @AgentEvent / @AgentUseCase / @Operator
         │  (decorators registram metadados + arquivo:linha)
         ▼
    registry ──▶ IR canônica ──▶ validação ──▶ renderers ──▶ .agents/skills/  .agentic/runtime/  AGENTS.md
@@ -165,7 +165,7 @@ bun run agentic verify 0001                      # inclui G7: itens tocados prec
 
 Os estados são `declared`, `implemented` (faltam testes), `covered` (falha/skip ou análise estática) e `done`; dependências pendentes sobrepõem `blocked`, preservando o estado base. `--change` seleciona itens ADDED/MODIFIED e suas dependências ainda pendentes. Critérios automáticos de propostas abertas também viram obrigações quando cobrem regras do item.
 
-O pacote protege item, regras, contratos referenciados e critérios aplicáveis com SHA-256. Alterar corpo ou localização preserva o hash; alterar uma declaração relevante o invalida. O executor altera apenas o corpo do item e testes. A verificação individual exige dependências concluídas, corpo implementado, hash preservado, cobertura passando e typecheck. Falhas de testes sem relação com o item não o reprovam; coleta JUnit ausente impede certificar conclusão.
+O pacote protege item, regras, contratos referenciados e critérios aplicáveis com SHA-256. Alterar corpo ou localização preserva o hash; alterar uma declaração relevante o invalida. O executor altera apenas o corpo do item e testes. A verificação individual exige dependências concluídas, corpo implementado, hash preservado, cobertura passando e typecheck (gates I1 a I5 de `verify --item`). Em projeto com elemento tático (value object, relação entre agregados, port ou adapter), os itens `entity:` e `valueobject:` também passam pelo gate T (T1 a T3): T1 proíbe campo que referencie outro agregado que não seja por id; T2 proíbe value object que referencie entidade; T3 proíbe campo que use value object ou entidade filha fora do `contains` do dono. O T lê a árvore sintática do código, não o TypeChecker, e não roda em `status` nem em `verify NNNN`. Falhas de testes sem relação com o item não o reprovam; coleta JUnit ausente impede certificar conclusão.
 
 Projetos ainda sem testes podem consultar `status`, `next` e `packet` para iniciar a implementação. A ausência de testes não certifica `done`; erros de importação ou coleta JUnit incompleta continuam impedindo consultas dinâmicas e verificação.
 
@@ -182,15 +182,16 @@ bun run skills:install --root /caminho/do/projeto --target codex
 bun run skills:install --scope user --target all     # global explícito
 bun run skills:install --check                      # verifica sem escrever
 bun run skills:example --root ./scratch/agentic-tasks     # destino inexistente
+bun run skills:example --root ./scratch/agentic-matriculas --tutorial matriculas  # tutorial com elementos táticos
 ```
 
 O instalador cria links para a mesma fonte e agentes nativos `agentic-ddd-manager`/`agentic-ddd-executor`/`agentic-ddd-reviewer`, com modelo herdado. Verifica conflitos antes de escrever, preserva instalações idênticas e não altera configurações/permissões globais. A instalação global depende da permanência do checkout. Veja [instalação](skills/agentic-ddd/references/installation.md) e [tutorial completo](skills/agentic-ddd/references/tutorial.md).
 
-O gerente prepara proposta/contratos e despacha um item por vez; o executor altera só corpo atribuído e testes, verificando com o hash original do packet. O gerente revisa o diff, repete a verificação e encerra com `verify NNNN`. O tutorial tasks começa sem testes e com corpos pendentes, usando aliases para este checkout e typecheck real. [Spec do Plano 5](docs/superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [validação com smokes reais](docs/superpowers/validation/2026-10-08-plan5.md).
+O gerente prepara proposta/contratos e despacha um item por vez; o executor altera só corpo atribuído e testes, verificando com o hash original do packet. O gerente revisa o diff, repete a verificação e encerra com `verify NNNN`. O tutorial tasks começa sem testes e com corpos pendentes, usando aliases para este checkout e typecheck real. O tutorial `matriculas` (v0.5.0) tem sete itens com value objects, relação entre agregados, port e adapter, e quatro armadilhas com testes privados. [Spec do Plano 5](docs/superpowers/specs/2026-10-08-v0-05-agent-skills-design.md) e [validação com smokes reais](docs/superpowers/validation/2026-10-08-plan5.md).
 
 ## Avaliações de agentes
 
-O runner em `scripts/evals` avalia as cinco perguntas das skills orders e os cinco itens do tutorial tasks. Compara `exact`/`tool_call` deterministicamente, congela o hash original dos packets e exige auditoria das edições, verify, cobertura do executor e testes de comportamento privados. O tutorial é criado em cópias privadas; o checkout de origem deve estar limpo.
+O runner em `scripts/evals` avalia as cinco perguntas das skills orders e os cinco itens do tutorial tasks. O braço de controle do ciclo 22 (C0, sem framework, contra F, com o framework completo, no tutorial `matriculas`) está pré-registrado em `evals/campaigns/cycle-22-control/`; ainda não foi executado, porque a execução com inferência real depende de orçamento autorizado à parte. Compara `exact`/`tool_call` deterministicamente, congela o hash original dos packets e exige auditoria das edições, verify, cobertura do executor e testes de comportamento privados. O tutorial é criado em cópias privadas; o checkout de origem deve estar limpo.
 
 Requisitos: Linux/WSL, Bun, Git, `setsid`, `tar` e bubblewrap com namespaces disponíveis. Fonte, dependências e contexto ficam somente leitura no sandbox; o executor escreve no corpo/teste atribuídos. O verificador não recebe credenciais nem rede. O diretório de saída precisa ser externo à origem e inexistente, inclusive quando há links simbólicos nos ancestrais.
 
@@ -242,7 +243,8 @@ Exits: `0` para avaliação concluída, inclusive erros do agente; `1` para infr
 - **v0.1.0**: primeira release da base acima.
 - **v0.3.0**: skill e tutorial isolado, runner com Codex/Cursor, dataset ampliado, regressões contra falso done e campanhas com agregação offline.
 - **v0.4.0**: biblioteca ESM modular com exports públicos, CLI instalável e tarball validado em consumidor externo.
-- **Foco atual**: validar o workflow de agentes de desenvolvimento por camada e modelo (épico #26, [ADR-0003](docs/adr/ADR-0003.md)). O adapter real de LlmPort (#7) e a demonstração CLI com aprovação (#8) estão **em pausa** ([ADR-0004](docs/adr/ADR-0004.md)).
+- **v0.5.0**: modelo tático do domínio (value objects, relações entre agregados, ports, adapters e gates T1 a T3), regras do time, servidor MCP local e tutorial `matriculas` com braço de controle pré-registrado.
+- **Foco atual**: medir se o modelo tático e o framework melhoram o aceite dos agentes, com o ciclo 22 (C0 contra F, pré-registrado e ainda sem execução real; [ADR-0006](docs/adr/ADR-0006.md), D10). O épico #26 está encerrado ([ADR-0003](docs/adr/ADR-0003.md)). O adapter real de LlmPort (#7) e a demonstração CLI com aprovação (#8) estão **em pausa** ([ADR-0004](docs/adr/ADR-0004.md)).
 - **Backlog**: `reactsTo`, contratos gerados, canal HTTP, propostas paralelas e distribuição npm. Veja [issues, dependências e critérios de aceite](docs/ROADMAP.md).
 
 Design: [`docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md`](docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md) · Decisões: [`docs/adr/ADR-0001.md`](docs/adr/ADR-0001.md)

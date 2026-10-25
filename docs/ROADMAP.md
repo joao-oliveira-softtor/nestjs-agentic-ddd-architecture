@@ -40,6 +40,25 @@ O ciclo preserva o dataset original e a referência real anterior. Manifestos de
 
 [Release](releases/0.4.0.md), [PR #21](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/pull/21) e [#13](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/13): exports públicos, CLI instalável, biblioteca/declarações/maps e smoke do tarball real em consumidor externo. Tarball disponível no GitHub; publicação no registro npm segue bloqueada até definir nome e permissões. Planos 7–8 permanecem próximos trabalhos.
 
+## v0.5.0 — Modelo tático, regras do time e MCP local
+
+[Release](releases/0.5.0.md) e [changelog](../CHANGELOG.md). Entrega o modelo tático da [ADR-0006](adr/ADR-0006.md), no épico [#90](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/90):
+
+| Issue                                                                                     | Entrega                                                             |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| [#81](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/81) | Saída inalterada para quem não usa elemento tático                  |
+| [#82](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/82) | `@AgentValueObject` como item de domínio                            |
+| [#83](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/83) | `contains` e `references` entre agregados, com raiz derivada        |
+| [#84](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/84) | `@Invariant` em use-case                                            |
+| [#85](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/85) | `@AgentPort` em classe abstrata                                     |
+| [#86](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/86) | `@AgentAdapter`, camada `infrastructure` e gate de escopo de classe |
+| [#87](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/87) | Gates T1 a T3 no `verify --item`                                    |
+| [#88](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/88) | Braço de controle do ciclo 22 e tutorial `matriculas`               |
+
+Também saem nesta versão: regras do time (#66), layout configurável (#67) e servidor MCP local (#68), com a pesquisa #65 e o [ADR-0005](adr/ADR-0005.md); o runtime dos operators recusa evento fora de `emits` (#63, mudança de compatibilidade); e a frente de orquestração do épico #26, que está encerrada.
+
+A #69 (servidor MCP remoto) e o épico #70 não entram nesta versão e seguem abertos. O ciclo 22 está pré-registrado e ainda não foi executado.
+
 ## Frente encerrada — Orquestração de agentes por camada e modelo
 
 Épico [#26](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/26) (sub-issues #27–#39). Objetivo: reduzir tokens e custo com briefs determinísticos por tarefa e distribuição do trabalho por camada entre Haiku, Sonnet e Opus. [Spec](superpowers/specs/2026-10-12-orquestracao-agentes-por-modelo.md), [ADR-0003](adr/ADR-0003.md), [plano](superpowers/plans/2026-10-13-orquestracao-agentes-por-modelo.md) e [pesquisa](research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md). **Entregue:** `packet --static`, gerador de briefs, executor de domínio isolado, gates de fronteira, papel de revisor, adapter Claude no harness, driver de orquestração com escalação, benchmark de revisão e a medição de custo de sessão (`evals:session-cost`). **Resultado:** o piloto cycle-21 ([#36](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/36), [resultado](superpowers/validation/2026-10-22-cycle-21/RESULTADO.md)) classificou S: Sonnet medium sozinho aceitou tanto quanto o roteamento, com custo um pouco menor. O padrão é o modelo `inherit` com brief e gates; o roteamento fica como experimento; #33 e #38 não serão feitas.
@@ -60,7 +79,7 @@ A linha de base do critério de sucesso é o A0 do piloto cycle-21 (Sonnet mediu
 
 ## Ordem das próximas frentes
 
-1. Épico #70, começando pela pesquisa #65, que destrava #66–#68 em paralelo.
+1. Épico #70: falta só a #69 (servidor MCP remoto), que depende de #65 e #68, já entregues na v0.5.0.
 2. Em paralelo, a frente de runtime: decidir o provider no [ADR-0004](adr/ADR-0004.md), depois #7 (com os requisitos F8 do runtime) e #8. A parte offline da #8 (CLI, aprovação e `FakeLlm`) não depende da #7.
 3. A superfície HTTP da #11 e da #69 é decidida uma vez, no mesmo ADR, por causa do gate que proíbe `@Controller`.
 

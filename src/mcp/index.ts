@@ -26,7 +26,7 @@ export function startMcpServer({ root }: { root: string }): {
     };
   const annotations = { readOnlyHint: true, openWorldHint: false };
   return serveStdio(() => {
-    const server = new McpServer({ name: 'agentic-ddd', version: '0.4.0' });
+    const server = new McpServer({ name: 'agentic-ddd', version: '0.5.0' });
     server.registerTool(
       'domain_overview',
       {
