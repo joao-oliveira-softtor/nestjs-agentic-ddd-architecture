@@ -27,7 +27,7 @@ import {
 } from '../isolation';
 import { runProcess } from '../process';
 import { readPrivateFile } from '../private-files';
-import { TASK_ITEMS } from '../audit';
+import { findItem } from '../tutorials';
 
 export function object(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -299,7 +299,7 @@ export function createNativeAdapter(
           });
         } else secrets.push(key!);
         options.onSecrets?.(secrets);
-        const assignment = TASK_ITEMS.find((i) => i.id === request.id);
+        const assignment = findItem(request.id);
         const protectedPaths = await protectedWorkspacePaths(
           workspace,
           assignment

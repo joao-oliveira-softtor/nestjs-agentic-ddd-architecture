@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "cycle-22-control",
+  "repetitionsPerConfiguration": 2,
+  "runs": [
+    {
+      "id": "c0-r1",
+      "configuration": "c0-bare",
+      "repetition": 1,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/c0-r1.json",
+        "sha256": "10b9939f8257ca01113d621a0deb538bfd1bd088ee5a7a1427e6bb0727ab8905"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "f-r1",
+      "configuration": "f-brief",
+      "repetition": 1,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/f-r1.json",
+        "sha256": "9ebb65dc2ac5446ab9f921a83383c7998eac8965e205ba0acb5f5d3a32ddf76a"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "c0-r2",
+      "configuration": "c0-bare",
+      "repetition": 2,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/c0-r2.json",
+        "sha256": "10b9939f8257ca01113d621a0deb538bfd1bd088ee5a7a1427e6bb0727ab8905"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    },
+    {
+      "id": "f-r2",
+      "configuration": "f-brief",
+      "repetition": 2,
+      "plannedCases": 0,
+      "manifest": {
+        "path": "manifests/f-r2.json",
+        "sha256": "9ebb65dc2ac5446ab9f921a83383c7998eac8965e205ba0acb5f5d3a32ddf76a"
+      },
+      "result": {
+        "status": "not_run",
+        "reason": "not_executed_yet"
+      }
+    }
+  ]
+}

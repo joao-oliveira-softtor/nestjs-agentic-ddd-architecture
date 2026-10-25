@@ -6,6 +6,7 @@ import {
   reasoningEffortSchema,
   relativePathSchema,
 } from './contracts';
+import { TUTORIALS } from './tutorials';
 const strings = z.array(z.string());
 const number = z.number().finite().nonnegative();
 const integer = number.int();
@@ -116,6 +117,7 @@ const gate = z.strictObject({
     'I3',
     'I4',
     'I5',
+    'T',
   ]),
   name: z.string(),
   status: z.enum(['passed', 'failed', 'pending']),
@@ -200,7 +202,13 @@ const item = z.strictObject({
 const benchmark = z.strictObject({
   configuration: z.string(),
   baselineHash: hash.nullable(),
-  items: z.array(item).length(5),
+  // O agregado confere os ids; aqui só o tamanho de algum tutorial.
+  items: z
+    .array(item)
+    .refine(
+      (a) => Object.values(TUTORIALS).some((t) => t.items.length === a.length),
+      'items must match the size of a tutorial',
+    ),
   finalVerification: z
     .strictObject({ report: changeReportSchema.nullable(), command })
     .nullable(),

@@ -1,8 +1,10 @@
 import { lstat, opendir, readlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { AuditReport } from './contracts';
-import { bodyOnlyFindings } from '../boundary-gates';
+import { bodyOnlyFindings, classScopeFindings } from '../boundary-gates';
+import { isClassScopeItem } from '../../src/compiler/packet';
 import { sha256 } from './isolation';
+import { findItem } from './tutorials';
 import { readPrivateBytes } from './private-files';
 
 export const AUDIT_FILE_LIMIT_BYTES = 256 * 1024;
@@ -10,48 +12,7 @@ export const AUDIT_TREE_LIMIT_BYTES = 4 * 1024 * 1024;
 export const AUDIT_ENTRY_LIMIT = 1024;
 export const AUDIT_PATCH_LIMIT_BYTES = 8 * 1024 * 1024;
 
-export const TASK_ITEMS = [
-  {
-    id: 'entity:Task',
-    file: 'app/domain/task.ts',
-    className: 'Task',
-    method: 'create',
-    test: 'app/test/entity-Task.test.ts',
-    criteria: ['titulo-invalido', 'criacao'],
-  },
-  {
-    id: 'method:Task.complete',
-    file: 'app/domain/task.ts',
-    className: 'Task',
-    method: 'complete',
-    test: 'app/test/method-Task-complete.test.ts',
-    criteria: ['conclusao'],
-  },
-  {
-    id: 'usecase:create_task',
-    file: 'app/application/create-task.ts',
-    className: 'CreateTask',
-    method: 'execute',
-    test: 'app/test/usecase-create_task.test.ts',
-    criteria: ['persistencia-criacao'],
-  },
-  {
-    id: 'usecase:complete_task',
-    file: 'app/application/complete-task.ts',
-    className: 'CompleteTask',
-    method: 'execute',
-    test: 'app/test/usecase-complete_task.test.ts',
-    criteria: ['persistencia-conclusao'],
-  },
-  {
-    id: 'operator:task-operator',
-    file: null,
-    className: null,
-    method: null,
-    test: 'app/test/operator-task-operator.test.ts',
-    criteria: ['tools'],
-  },
-] as const;
+export { TASK_ITEMS } from './tutorials';
 export interface TreeEntry {
   kind: 'file' | 'link' | 'directory';
   mode: number;
@@ -128,12 +89,25 @@ export async function treeHash(root: string): Promise<string> {
     ),
   );
 }
+/** Escopo de classe (VO/adapter) ou só o corpo do método. */
+export function scopeFindings(
+  item: string,
+  before: string,
+  after: string,
+  className: string,
+  method: string,
+  path: string,
+): string[] {
+  return isClassScopeItem(item)
+    ? classScopeFindings(before, after, className, path)
+    : bodyOnlyFindings(before, after, className, method, path);
+}
 export async function auditSubmission(
   baselineRoot: string,
   submissionRoot: string,
   item: string,
 ): Promise<AuditReport> {
-  const assignment = TASK_ITEMS.find((i) => i.id === item);
+  const assignment = findItem(item);
   if (!assignment) throw Error(`Unknown assignment: ${item}`);
   const baseline = await readTree(baselineRoot);
   let submission: Map<string, TreeEntry>;
@@ -195,7 +169,8 @@ export async function auditSubmission(
       continue;
     }
     findings.push(
-      ...bodyOnlyFindings(
+      ...scopeFindings(
+        item,
         before.content,
         after.content,
         assignment.className!,

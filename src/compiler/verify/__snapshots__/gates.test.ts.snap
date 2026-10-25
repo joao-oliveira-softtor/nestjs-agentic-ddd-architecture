@@ -1,0 +1,143 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`evaluateGates relatório done tem forma estável (snapshot) 1`] = `
+"{
+  "change": "0002",
+  "title": "Cancelamento exige motivo",
+  "status": "done",
+  "gates": [
+    {
+      "id": "G1",
+      "name": "Delta",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G2",
+      "name": "Docs",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G3",
+      "name": "Critérios",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G4",
+      "name": "Regras",
+      "status": "passed",
+      "findings": [],
+      "warnings": [
+        {
+          "message": "revisar: [covers: usecase:cancel_order] teste 20 cobre usecase:cancel_order, que foi modificado",
+          "fix": null,
+          "source": "examples/orders/test/order.test.ts:20"
+        }
+      ]
+    },
+    {
+      "id": "G5",
+      "name": "Qualidade",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G6",
+      "name": "Manual",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G7",
+      "name": "Work items",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    }
+  ]
+}"
+`;
+
+exports[`evaluateGates relatório failed tem forma estável (snapshot) 1`] = `
+"{
+  "change": "0002",
+  "title": "Cancelamento exige motivo",
+  "status": "failed",
+  "gates": [
+    {
+      "id": "G1",
+      "name": "Delta",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G2",
+      "name": "Docs",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G3",
+      "name": "Critérios",
+      "status": "failed",
+      "findings": [
+        {
+          "message": "critério criterion:0002/rejeita-sem-motivo sem teste",
+          "fix": "crie um teste com covers(['criterion:0002/rejeita-sem-motivo'], \\"falha com CANCELLATION_REASON_REQUIRED\\")",
+          "source": "changes/archive/0002-cancelamento-exige-motivo/proposal.md"
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "id": "G4",
+      "name": "Regras",
+      "status": "passed",
+      "findings": [],
+      "warnings": [
+        {
+          "message": "revisar: [covers: usecase:cancel_order] teste 1 cobre usecase:cancel_order, que foi modificado",
+          "fix": null,
+          "source": "examples/orders/test/order.test.ts:1"
+        }
+      ]
+    },
+    {
+      "id": "G5",
+      "name": "Qualidade",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    },
+    {
+      "id": "G6",
+      "name": "Manual",
+      "status": "pending",
+      "findings": [
+        {
+          "message": "critério manual pendente: criterion:0002/revisao-de-copy — mensagem revisada",
+          "fix": "peça a validação de uma pessoa",
+          "source": "changes/archive/0002-cancelamento-exige-motivo/proposal.md"
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "id": "G7",
+      "name": "Work items",
+      "status": "passed",
+      "findings": [],
+      "warnings": []
+    }
+  ]
+}"
+`;

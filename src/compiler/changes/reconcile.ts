@@ -1,5 +1,6 @@
 import { sha256 } from '../canonical';
 import { EMPTY_IR, elementsOf, semanticDiff, type DiffItem } from '../diff';
+import { workItems } from '../graph';
 import type { CompileError, IR } from '../ir';
 import type { DomainLock, LockChange } from '../lock';
 import { markApplied, summarize, type Proposal } from './proposal';
@@ -110,7 +111,10 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
 
   // covers só é conferido na proposta aberta: o archive é imutável e o parse
   // não recebe a IR. Proposal-first cobre IDs que ainda não existem no código.
-  const known = new Set(elementsOf(input.ir).keys());
+  const known = new Set([
+    ...elementsOf(input.ir).keys(),
+    ...workItems(input.ir).flatMap((i) => i.obligations),
+  ]);
   for (const proposal of open) {
     const reachable = new Set([...known, ...proposal.delta.added]);
     for (const criterion of proposal.acceptance) {

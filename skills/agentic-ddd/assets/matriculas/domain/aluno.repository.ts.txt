@@ -1,0 +1,8 @@
+import { AgentPort } from '@agentic-ddd/decorators';
+import type { AlunoId } from './aluno-id';
+import { Aluno } from './aluno';
+
+@AgentPort({ description: 'Consulta de alunos.', root: () => Aluno, methods: { findById: 'Busca o aluno pelo id; ausente devolve null.' } })
+export abstract class AlunoRepository {
+  abstract findById(id: AlunoId): Promise<Aluno | null>;
+}

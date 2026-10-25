@@ -5,6 +5,8 @@ import { captureSource } from './source';
 export interface AgentEntityOptions {
   readonly description: string;
   readonly states?: readonly string[];
+  readonly contains?: () => readonly ClassRef[];
+  readonly references?: () => readonly ClassRef[];
 }
 
 export function AgentEntity(options: AgentEntityOptions): ClassDecorator {
@@ -14,6 +16,25 @@ export function AgentEntity(options: AgentEntityOptions): ClassDecorator {
       target,
       description: options.description,
       states: options.states ?? [],
+      source,
+      ...(options.contains && { contains: options.contains }),
+      ...(options.references && { references: options.references }),
+    });
+  };
+}
+
+export interface AgentValueObjectOptions {
+  readonly description: string;
+}
+
+export function AgentValueObject(
+  options: AgentValueObjectOptions,
+): ClassDecorator {
+  const source = captureSource();
+  return (target) => {
+    activeRegistry().valueObjects.push({
+      target,
+      description: options.description,
       source,
     });
   };
@@ -79,6 +100,42 @@ export function AgentEvent(options: AgentEventOptions): ClassDecorator {
       target,
       description: options.description,
       payload: options.payload,
+      source,
+    });
+  };
+}
+
+export interface AgentPortOptions {
+  readonly description: string;
+  readonly root: () => ClassRef;
+  readonly methods: Readonly<Record<string, string>>;
+}
+
+export function AgentPort(options: AgentPortOptions): ClassDecorator {
+  const source = captureSource();
+  return (target) => {
+    activeRegistry().ports.push({
+      target,
+      description: options.description,
+      root: options.root,
+      methods: options.methods,
+      source,
+    });
+  };
+}
+
+export interface AgentAdapterOptions {
+  readonly description: string;
+  readonly implements: () => ClassRef;
+}
+
+export function AgentAdapter(options: AgentAdapterOptions): ClassDecorator {
+  const source = captureSource();
+  return (target) => {
+    activeRegistry().adapters.push({
+      target,
+      description: options.description,
+      implements: options.implements,
       source,
     });
   };

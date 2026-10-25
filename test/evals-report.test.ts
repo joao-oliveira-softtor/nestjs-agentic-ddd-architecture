@@ -7,6 +7,7 @@ import {
   renderMarkdown,
   writeReport,
 } from '../scripts/evals/report';
+import { reportSchema } from '../scripts/evals/report-schema';
 import { evalManifest } from './helpers/evals';
 export function reportFixture(cases: CaseResult[]): EvalReport {
   return {
@@ -285,4 +286,22 @@ test('Markdown mostra o modo de prompt efetivo de cada configuração', () => {
   expect(lines.find((l) => l.startsWith('| haiku-brief |'))).toContain(
     'prompt: brief',
   );
+});
+
+test('benchmark.items aceita só o tamanho de um tutorial (5 ou 7)', async () => {
+  const items = reportSchema.shape.benchmarks.element.shape.items;
+  const reference = (await Bun.file(
+    join(
+      import.meta.dir,
+      '../docs/superpowers/validation/2026-10-09-plan6/reference/report.json',
+    ),
+  ).json()) as EvalReport;
+  const valid = reference.benchmarks[0]!.items[0]!;
+  const sized = (n: number) => items.safeParse(Array(n).fill(valid)).error;
+  const messages = (n: number) =>
+    sized(n)?.issues.filter((i) => i.path.length === 0) ?? [];
+  expect(messages(4)).toHaveLength(1);
+  expect(messages(6)).toHaveLength(1);
+  expect(sized(5)).toBeUndefined();
+  expect(sized(7)).toBeUndefined();
 });

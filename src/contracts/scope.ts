@@ -11,9 +11,12 @@ export function declarationsInModules(
   const scoped = new Registry();
   for (const key of [
     'entities',
+    'valueObjects',
     'invariants',
     'methods',
     'events',
+    'ports',
+    'adapters',
     'useCases',
     'operators',
   ] as const) {

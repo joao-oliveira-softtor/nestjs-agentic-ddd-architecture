@@ -1,5 +1,5 @@
 const ELEMENT_ID =
-  /^(entity|invariant|method|event|usecase|operator|criterion):\S+$/;
+  /^(entity|invariant|method|event|usecase|operator|criterion|valueobject|port):\S+$/;
 const COVERS_PREFIX = /^\[covers: ([^\]]+)\]/;
 
 export function covers(ids: readonly string[], title: string): string {

@@ -5,6 +5,12 @@ import { covers, createTestContext, parseCovers } from '@agentic-ddd/testing';
 class Ping extends DomainEvent<object> {}
 
 describe('covers', () => {
+  test('aceita ID de port com método', () => {
+    expect(covers(['port:PedidoRepository.salvar'], 'grava')).toBe(
+      '[covers: port:PedidoRepository.salvar] grava',
+    );
+  });
+
   test('ordena, remove duplicatas e prefixa o título', () => {
     expect(
       covers(
@@ -12,6 +18,12 @@ describe('covers', () => {
         'confirma',
       ),
     ).toBe('[covers: invariant:Order/x, method:Order.confirm] confirma');
+  });
+
+  test('aceita ID de value object', () => {
+    expect(
+      covers(['valueobject:Dinheiro', 'invariant:Dinheiro/nao-negativo'], 'x'),
+    ).toBe('[covers: invariant:Dinheiro/nao-negativo, valueobject:Dinheiro] x');
   });
 
   test('rejeita lista vazia e ID malformado', () => {

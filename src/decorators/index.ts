@@ -6,17 +6,24 @@ export {
   type OperatorOptions,
 } from './application';
 export {
+  AgentAdapter,
   AgentEntity,
   AgentEvent,
   AgentMethod,
+  AgentPort,
+  AgentValueObject,
   Invariant,
+  type AgentAdapterOptions,
   type AgentEntityOptions,
   type AgentEventOptions,
   type AgentMethodOptions,
+  type AgentPortOptions,
+  type AgentValueObjectOptions,
   type InvariantOptions,
 } from './domain';
 export {
   Registry,
+  type AdapterRecord,
   activeRegistry,
   createRegistry,
   defaultRegistry,
@@ -28,7 +35,9 @@ export {
   type MethodRecord,
   type OperatorLimits,
   type OperatorRecord,
+  type PortRecord,
   type TransitionSpec,
   type UseCaseRecord,
+  type ValueObjectRecord,
 } from './registry';
 export { captureSource, parseFrame, type SourceLoc } from './source';

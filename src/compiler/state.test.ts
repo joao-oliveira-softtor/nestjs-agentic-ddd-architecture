@@ -2,10 +2,26 @@ import { expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { defineShop, SHOP_MODULE } from './__fixtures__/shop';
 import { analyze } from './analyze';
-import { evaluateStatus, selectChange, waves } from './state';
+import {
+  evaluateStatus,
+  ownerOf,
+  selectChange,
+  usersOfPort,
+  waves,
+} from './state';
+import { itemSpecification, specHash } from './item-spec';
+import type { IR, IRUseCase } from './ir';
 import type { TestCaseResult } from './verify/test-run';
 import { parseProposal } from './changes/proposal';
 import { workItems } from './graph';
+import { implementation } from './implementation';
+import { ValueObject, notImplemented } from '@agentic-ddd/core';
+import {
+  AgentValueObject,
+  Invariant,
+  createRegistry,
+  withRegistry,
+} from '@agentic-ddd/decorators';
 
 const ir = analyze(defineShop(), {
   root: resolve(import.meta.dir, '../..'),
@@ -149,4 +165,232 @@ test('G7 resolve fábrica e invariantes em um único proprietário, ignora event
     message: 'entity:Product está declared',
     fix: 'bun run agentic packet entity:Product',
   });
+});
+
+const aluno: IRUseCase = {
+  id: 'usecase:matricular_aluno',
+  name: 'matricular_aluno',
+  module: 'shop',
+  description: 'Matricula aluno',
+  whenToUse: 'sempre',
+  whenNotToUse: null,
+  inputSchema: {},
+  outputSchema: {},
+  uses: [],
+  emits: [],
+  invariants: [
+    {
+      id: 'invariant:matricular_aluno/aluno-ativo',
+      text: 'Aluno ativo',
+      on: null,
+      source: 'src/m:1',
+    },
+  ],
+  source: 'src/m:1',
+};
+
+test('invariante de use-case tem o use-case como dono e exige covers próprio', () => {
+  const withAluno: IR = { ...ir, useCases: [...ir.useCases, aluno] };
+  expect(ownerOf(withAluno, 'invariant:matricular_aluno/aluno-ativo')).toBe(
+    'usecase:matricular_aluno',
+  );
+  const impl = new Map(workItems(withAluno).map((i) => [i.id, true]));
+  const cases: TestCaseResult[] = workItems(withAluno).flatMap((i) =>
+    i.obligations.map((id) => ({
+      name: id,
+      covers: [id],
+      file: 'test.ts',
+      line: 1,
+      status: 'passed' as const,
+    })),
+  );
+  const statusOf = (list: TestCaseResult[]) =>
+    evaluateStatus({
+      ir: withAluno,
+      implemented: impl,
+      proposals: [],
+      evidence: { cases: list, exitCode: 0 },
+      mode: 'dynamic',
+    }).items.find((i) => i.id === 'usecase:matricular_aluno')!;
+  expect(
+    statusOf(
+      cases.filter(
+        (t) => !t.covers.includes('invariant:matricular_aluno/aluno-ativo'),
+      ),
+    ).missingObligations,
+  ).toEqual(['invariant:matricular_aluno/aluno-ativo']);
+  expect(statusOf(cases).missingObligations).toEqual([]);
+});
+
+test('operator que usa o use-case muda o specHash quando o use-case ganha invariante', () => {
+  const operator = workItems(ir).find(
+    (i) => i.id === 'operator:catalog-operator',
+  )!;
+  const before = specHash(itemSpecification(ir, operator, []));
+  const changed: IR = {
+    ...ir,
+    useCases: ir.useCases.map((u) =>
+      u.id === 'usecase:publish_product'
+        ? { ...u, invariants: [aluno.invariants![0]!] }
+        : u,
+    ),
+  };
+  expect(specHash(itemSpecification(changed, operator, []))).not.toBe(before);
+});
+
+const VO_MODULE = { name: 'vo', path: 'src/compiler' } as const;
+const voOptions = {
+  root: resolve(import.meta.dir, '../..'),
+  modules: [VO_MODULE],
+};
+const voState = (skeleton: boolean, covered: boolean) => {
+  const registry = createRegistry();
+  withRegistry(registry, () => {
+    if (skeleton) {
+      @AgentValueObject({ description: 'Valor monetário.' })
+      @Invariant({ id: 'nao-negativo', text: 'Dinheiro nunca é negativo.' })
+      class Dinheiro extends ValueObject<{ v: number }> {
+        private constructor(p: { v: number }) {
+          super(p);
+          notImplemented();
+        }
+        #check() {}
+        soma() {
+          return this.#check();
+        }
+      }
+      void Dinheiro;
+    } else {
+      @AgentValueObject({ description: 'Valor monetário.' })
+      @Invariant({ id: 'nao-negativo', text: 'Dinheiro nunca é negativo.' })
+      class Dinheiro extends ValueObject<{ v: number }> {
+        private constructor(p: { v: number }) {
+          super(p);
+        }
+        #check() {}
+        soma() {
+          return this.#check();
+        }
+      }
+      void Dinheiro;
+    }
+  });
+  const voIr = analyze(registry, voOptions).ir;
+  const cases: TestCaseResult[] = covered
+    ? [
+        {
+          name: '[covers: valueobject:Dinheiro, invariant:Dinheiro/nao-negativo] soma',
+          covers: ['valueobject:Dinheiro', 'invariant:Dinheiro/nao-negativo'],
+          file: 'test.ts',
+          line: 1,
+          status: 'passed',
+        },
+      ]
+    : [];
+  return evaluateStatus({
+    ir: voIr,
+    implemented: implementation(voIr, registry),
+    proposals: [],
+    evidence: { cases, exitCode: 0 },
+    mode: 'dynamic',
+  }).items[0]!;
+};
+
+test('value object: esqueleto é declared, implementado sem teste é implemented, com teste fica done', () => {
+  expect(voState(true, true).baseState).toBe('declared');
+  expect(voState(false, false).baseState).toBe('implemented');
+  expect(voState(false, true).state).toBe('done');
+});
+
+const portOf = (description: string) => ({
+  id: 'port:Repo',
+  name: 'Repo',
+  module: 'shop',
+  description,
+  root: 'entity:Product',
+  methods: [{ name: 'salvar', description: 'Grava.' }],
+  source: 'src/compiler/__fixtures__/shop.ts:9',
+});
+const portIr: IR = {
+  ...ir,
+  ports: [portOf('Persistência.')],
+  useCases: ir.useCases.map((u) =>
+    u.id === 'usecase:publish_product' ? { ...u, ports: ['port:Repo'] } : u,
+  ),
+};
+const portChange = {
+  ...proposal,
+  delta: { added: [], modified: ['port:Repo'], removed: [] },
+};
+
+test('delta só de port seleciona o use-case que o usa', () => {
+  const report = evaluateStatus({
+    ir: portIr,
+    implemented: new Map(),
+    proposals: [],
+    evidence: { cases: [], exitCode: 0 },
+    mode: 'dynamic',
+  });
+  expect(
+    selectChange(report, portIr, portChange).items.map((i) => i.id),
+  ).toContain('usecase:publish_product');
+});
+
+test('G7 com delta só de port reprova o use-case que o usa quando está em esqueleto', async () => {
+  const { workItemFindings } = await import('./verify/work-items');
+  const declared = evaluateStatus({
+    ir: portIr,
+    implemented: new Map(),
+    proposals: [],
+    evidence: { cases: [], exitCode: 0 },
+    mode: 'dynamic',
+  });
+  expect(workItemFindings(portIr, declared, portChange)).toMatchObject([
+    {
+      message: 'usecase:publish_product está blocked(declared)',
+      fix: 'bun run agentic packet usecase:publish_product',
+    },
+  ]);
+});
+
+const adapterIr: IR = {
+  ...portIr,
+  adapters: [
+    {
+      id: 'adapter:MemoryRepo',
+      name: 'MemoryRepo',
+      module: 'shop',
+      description: 'Em memória.',
+      implements: 'port:Repo',
+      source: 'x.ts:2',
+    },
+  ],
+};
+
+test('usersOfPort devolve use-cases e adapters do port', () => {
+  expect(usersOfPort(adapterIr, 'port:Repo')).toEqual([
+    'usecase:publish_product',
+    'adapter:MemoryRepo',
+  ]);
+});
+
+test('item de adapter: spec com port e raiz nos contratos; G7 de port reprova adapter em esqueleto', async () => {
+  const { workItemFindings } = await import('./verify/work-items');
+  const item = workItems(adapterIr).find((i) => i.id === 'adapter:MemoryRepo')!;
+  const spec = itemSpecification(adapterIr, item, []);
+  expect(spec.declaration).toMatchObject({ id: 'adapter:MemoryRepo' });
+  expect((spec.contracts as { id: string }[]).map((c) => c.id)).toEqual([
+    'entity:Product',
+    'port:Repo',
+  ]);
+  const declared = evaluateStatus({
+    ir: adapterIr,
+    implemented: new Map(),
+    proposals: [],
+    evidence: { cases: [], exitCode: 0 },
+    mode: 'dynamic',
+  });
+  expect(
+    workItemFindings(adapterIr, declared, portChange).map((f) => f.message),
+  ).toContain('adapter:MemoryRepo está blocked(declared)');
 });

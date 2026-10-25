@@ -40,6 +40,17 @@ export interface IREntity {
   readonly states: string[];
   readonly invariants: IRInvariant[];
   readonly methods: IRMethod[];
+  readonly contains?: string[];
+  readonly references?: string[];
+  readonly source: string;
+}
+
+export interface IRValueObject {
+  readonly id: string;
+  readonly name: string;
+  readonly module: string;
+  readonly description: string;
+  readonly invariants: IRInvariant[];
   readonly source: string;
 }
 
@@ -49,6 +60,25 @@ export interface IREvent {
   readonly module: string;
   readonly description: string;
   readonly payloadSchema: JsonSchema;
+  readonly source: string;
+}
+
+export interface IRPort {
+  readonly id: string;
+  readonly name: string;
+  readonly module: string;
+  readonly description: string;
+  readonly root: string;
+  readonly methods: { readonly name: string; readonly description: string }[];
+  readonly source: string;
+}
+
+export interface IRAdapter {
+  readonly id: string;
+  readonly name: string;
+  readonly module: string;
+  readonly description: string;
+  readonly implements: string;
   readonly source: string;
 }
 
@@ -63,6 +93,8 @@ export interface IRUseCase {
   readonly outputSchema: JsonSchema;
   readonly uses: string[];
   readonly emits: string[];
+  readonly ports?: string[];
+  readonly invariants?: IRInvariant[];
   readonly source: string;
 }
 
@@ -83,7 +115,10 @@ export interface IR {
   readonly irVersion: 1;
   readonly modules: IRModule[];
   readonly entities: IREntity[];
+  readonly valueObjects?: IRValueObject[];
   readonly events: IREvent[];
+  readonly ports?: IRPort[];
+  readonly adapters?: IRAdapter[];
   readonly useCases: IRUseCase[];
   readonly operators: IROperator[];
 }
@@ -181,9 +216,51 @@ export function buildIR(
     }
   };
 
+  // Chama o thunk e converte em ids dentro do try; o que não resolve fica fora da lista.
+  const relation = (
+    rec: Registry['entities'][number],
+    field: 'contains' | 'references',
+  ): string[] => {
+    const thunk = rec[field];
+    if (!thunk) return [];
+    const owner = `entity:${rec.target.name}`;
+    const fail = (message: string): void => {
+      errors.push({ message: `${owner}: ${message}`, source: loc(rec.source) });
+    };
+    try {
+      const list = thunk();
+      if (!Array.isArray(list)) {
+        fail(`${field} não devolveu uma lista`);
+        return [];
+      }
+      const ids = new Set<string>();
+      for (const cls of list as unknown[]) {
+        if (typeof cls !== 'function') {
+          fail(`${field} tem entrada que não é classe`);
+        } else if (registry.entities.some((e) => e.target === cls)) {
+          ids.add(`entity:${cls.name}`);
+        } else if (registry.valueObjects.some((v) => v.target === cls)) {
+          ids.add(`valueobject:${cls.name}`);
+        } else {
+          fail(
+            `${field} cita ${cls.name}, sem @AgentEntity nem @AgentValueObject`,
+          );
+        }
+      }
+      return [...ids].sort();
+    } catch (error) {
+      fail(
+        `${field} lançou ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return [];
+    }
+  };
+
   const entities = registry.entities
     .map((rec): IREntity => {
       const name = rec.target.name;
+      const contains = relation(rec, 'contains');
+      const references = relation(rec, 'references');
       return {
         id: `entity:${name}`,
         name,
@@ -213,6 +290,30 @@ export function buildIR(
             source: loc(m.source),
           }))
           .sort(byId),
+        ...(contains.length > 0 && { contains }),
+        ...(references.length > 0 && { references }),
+        source: loc(rec.source),
+      };
+    })
+    .sort(byId);
+
+  const vos = registry.valueObjects
+    .map((rec): IRValueObject => {
+      const name = rec.target.name;
+      return {
+        id: `valueobject:${name}`,
+        name,
+        module: moduleOf(rec.source),
+        description: rec.description,
+        invariants: registry.invariants
+          .filter((i) => i.entity === rec.target)
+          .map((i): IRInvariant => ({
+            id: `invariant:${name}/${i.id}`,
+            text: i.text,
+            on: null,
+            source: loc(i.source),
+          }))
+          .sort(byId),
         source: loc(rec.source),
       };
     })
@@ -234,30 +335,143 @@ export function buildIR(
     }))
     .sort(byId);
 
+  const portTargets = new Map<ClassRef, string>();
+  const ports = registry.ports
+    .flatMap((rec): IRPort[] => {
+      const id = `port:${rec.target.name}`;
+      const fail = (message: string): IRPort[] => {
+        errors.push({ message: `${id}: ${message}`, source: loc(rec.source) });
+        return [];
+      };
+      let root: unknown;
+      try {
+        root = rec.root();
+      } catch (error) {
+        return fail(
+          `root lançou ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      if (typeof root !== 'function')
+        return fail('root não devolveu uma classe');
+      if (!registry.entities.some((e) => e.target === root))
+        return fail(`root cita ${root.name}, sem @AgentEntity`);
+      portTargets.set(rec.target, id);
+      return [
+        {
+          id,
+          name: rec.target.name,
+          module: moduleOf(rec.source),
+          description: rec.description,
+          root: `entity:${root.name}`,
+          methods: Object.entries(rec.methods)
+            .map(([name, description]) => ({ name, description }))
+            .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)),
+          source: loc(rec.source),
+        },
+      ];
+    })
+    .sort(byId);
+
+  const adapters = registry.adapters
+    .flatMap((rec): IRAdapter[] => {
+      const id = `adapter:${rec.target.name}`;
+      const fail = (message: string): IRAdapter[] => {
+        errors.push({ message: `${id}: ${message}`, source: loc(rec.source) });
+        return [];
+      };
+      let port: unknown;
+      try {
+        port = rec.implements();
+      } catch (error) {
+        return fail(
+          `implements lançou ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      if (typeof port !== 'function')
+        return fail('implements não devolveu uma classe');
+      const portId = portTargets.get(port as ClassRef);
+      if (portId === undefined)
+        return fail(`implements cita ${port.name}, sem @AgentPort`);
+      return [
+        {
+          id,
+          name: rec.target.name,
+          module: moduleOf(rec.source),
+          description: rec.description,
+          implements: portId,
+          source: loc(rec.source),
+        },
+      ];
+    })
+    .sort(byId);
+
+  const portIds = (rec: Registry['useCases'][number]): string[] => {
+    if (!rec.ports) return [];
+    const fail = (message: string): string[] => {
+      errors.push({
+        message: `usecase:${rec.name}: ${message}`,
+        source: loc(rec.source),
+      });
+      return [];
+    };
+    try {
+      const ids = new Set<string>();
+      for (const cls of rec.ports()) {
+        if (typeof cls !== 'function') {
+          fail('ports tem entrada que não é classe');
+        } else if (!registry.ports.some((p) => p.target === cls)) {
+          fail(`ports cita ${cls.name}, sem @AgentPort`);
+        } else {
+          const id = portTargets.get(cls);
+          if (id) ids.add(id);
+        }
+      }
+      return [...ids].sort();
+    } catch (error) {
+      return fail(
+        `ports lançou ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  };
+
   const useCases = registry.useCases
-    .map((rec): IRUseCase => ({
-      id: `usecase:${rec.name}`,
-      name: rec.name,
-      module: moduleOf(rec.source),
-      description: rec.description,
-      whenToUse: rec.whenToUse,
-      whenNotToUse: rec.whenNotToUse,
-      inputSchema: schema(
-        rec.input,
-        rec.source,
-        `usecase:${rec.name} input`,
-        'input',
-      ),
-      outputSchema: schema(
-        rec.output,
-        rec.source,
-        `usecase:${rec.name} output`,
-        'output',
-      ),
-      uses: [...rec.uses].sort(),
-      emits: rec.emits.map((e) => eventId(e, rec.source)).sort(),
-      source: loc(rec.source),
-    }))
+    .map((rec): IRUseCase => {
+      const usePorts = portIds(rec);
+      const invs: IRInvariant[] = registry.invariants
+        .filter((i) => i.entity === rec.target)
+        .map((i) => ({
+          id: `invariant:${rec.name}/${i.id}`,
+          text: i.text,
+          on: null,
+          source: loc(i.source),
+        }))
+        .sort(byId);
+      return {
+        id: `usecase:${rec.name}`,
+        name: rec.name,
+        module: moduleOf(rec.source),
+        description: rec.description,
+        whenToUse: rec.whenToUse,
+        whenNotToUse: rec.whenNotToUse,
+        inputSchema: schema(
+          rec.input,
+          rec.source,
+          `usecase:${rec.name} input`,
+          'input',
+        ),
+        outputSchema: schema(
+          rec.output,
+          rec.source,
+          `usecase:${rec.name} output`,
+          'output',
+        ),
+        uses: [...rec.uses].sort(),
+        emits: rec.emits.map((e) => eventId(e, rec.source)).sort(),
+        ...(usePorts.length > 0 && { ports: usePorts }),
+        ...(invs.length > 0 && { invariants: invs }),
+        source: loc(rec.source),
+      };
+    })
     .sort(byId);
 
   const operators = registry.operators
@@ -285,6 +499,7 @@ export function buildIR(
     })
     .sort(byId);
 
+  // ADR-0006 D2: chave nova em elemento já existente (e no topo da IR) entra como ...(xs.length > 0 && { xs }); nunca xs: undefined nem xs: [].
   return {
     ir: {
       irVersion: 1,
@@ -292,7 +507,10 @@ export function buildIR(
         .map((m) => ({ name: m.name, path: m.path }))
         .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)),
       entities,
+      ...(vos.length > 0 && { valueObjects: vos }),
       events,
+      ...(ports.length > 0 && { ports }),
+      ...(adapters.length > 0 && { adapters }),
       useCases,
       operators,
     },

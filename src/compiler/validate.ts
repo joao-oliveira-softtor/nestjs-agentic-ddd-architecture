@@ -1,11 +1,59 @@
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
+import { AggregateRoot, ValueObject } from '@agentic-ddd/core';
 import type { Registry } from '@agentic-ddd/decorators';
 import { limitsError } from '../contracts/limits';
-import { sourceOf, type CompileError, type IR, type IRMethod } from './ir';
+import { findDecoratedClass } from './ast';
+import { aggregateRoots } from './graph';
+import {
+  sourceOf,
+  type CompileError,
+  type IR,
+  type IRInvariant,
+  type IRMethod,
+} from './ir';
 
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SNAKE = /^[a-z][a-z0-9_]{0,63}$/;
 const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
 const STATIC_BUILTINS = new Set(['length', 'name', 'prototype']);
+
+// Métodos abstratos da classe do @AgentPort, lidos da árvore sintática (o abstract não existe em runtime).
+// Acha a ClassDeclaration pelo decorator que começa na linha do source; null se não achar.
+function abstractMethods(
+  file: string,
+  line: number,
+  name: string,
+): { abstract: boolean; methods: Set<string> } | null {
+  const sf = ts.createSourceFile(
+    file,
+    readFileSync(file, 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const cls = findDecoratedClass(sf, line, name);
+  if (cls === null) return null;
+  return {
+    abstract: !!ts
+      .getModifiers(cls)
+      ?.some((m) => m.kind === ts.SyntaxKind.AbstractKeyword),
+    methods: new Set(
+      cls.members
+        .filter(
+          (m): m is ts.MethodDeclaration =>
+            ts.isMethodDeclaration(m) &&
+            !!ts
+              .getModifiers(m)
+              ?.some((x) => x.kind === ts.SyntaxKind.AbstractKeyword),
+        )
+        .map((m) =>
+          ts.isIdentifier(m.name) || ts.isStringLiteral(m.name)
+            ? m.name.text
+            : m.name.getText(sf),
+        ),
+    ),
+  };
+}
 
 export function validate(
   ir: IR,
@@ -29,6 +77,17 @@ export function validate(
     else seen.set(id, source);
   };
 
+  const checkInvariant = (invariant: IRInvariant): void => {
+    claim(invariant.id, invariant.source);
+    const local = invariant.id.slice(invariant.id.indexOf('/') + 1);
+    if (!KEBAB.test(local))
+      err(
+        `${invariant.id}: o id da invariante deve ser kebab-case (ex.: total-nao-negativo)`,
+        invariant.source,
+      );
+    required(invariant.text, `${invariant.id}: text`, invariant.source);
+  };
+
   const methodsById = new Map<string, IRMethod>(
     ir.entities.flatMap((e) => e.methods.map((m) => [m.id, m] as const)),
   );
@@ -48,14 +107,7 @@ export function validate(
       );
     }
     for (const invariant of entity.invariants) {
-      claim(invariant.id, invariant.source);
-      const local = invariant.id.slice(invariant.id.indexOf('/') + 1);
-      if (!KEBAB.test(local))
-        err(
-          `${invariant.id}: o id da invariante deve ser kebab-case (ex.: total-nao-negativo)`,
-          invariant.source,
-        );
-      required(invariant.text, `${invariant.id}: text`, invariant.source);
+      checkInvariant(invariant);
       if (invariant.on !== null && !methodsById.has(invariant.on)) {
         err(
           `${invariant.id} está num método sem @AgentMethod (${invariant.on})`,
@@ -93,11 +145,179 @@ export function validate(
     }
   }
 
+  const owners = new Map<string, string[]>();
+  const moduleById = new Map(ir.entities.map((e) => [e.id, e.module]));
+  for (const entity of ir.entities) {
+    for (const id of entity.references ?? []) {
+      if (id.startsWith('valueobject:'))
+        err(
+          `${entity.id}: references só aponta para entidade, não para ${id}`,
+          entity.source,
+        );
+    }
+    for (const id of entity.contains ?? []) {
+      if (!id.startsWith('entity:')) continue;
+      owners.set(id, [...(owners.get(id) ?? []), entity.id]);
+      const other = moduleById.get(id);
+      if (other !== undefined && other !== entity.module)
+        err(
+          `${entity.id}: contains cita ${id}, de outro módulo (${other})`,
+          entity.source,
+        );
+    }
+  }
+  for (const [child, list] of owners) {
+    if (list.length < 2) continue;
+    const source = ir.entities.find((e) => e.id === list[0])!.source;
+    err(
+      `${child} está no contains de mais de um dono (${list.join(', ')})`,
+      source,
+    );
+  }
+  // ciclo: DFS pelas arestas de contains entre entidades (sem ele, as ondas recursam)
+  const state = new Map<string, 'open' | 'done'>();
+  // Erro na entidade cuja aresta cai num nó ainda 'open' (ela fecha o ciclo, e está dentro dele).
+  const visit = (id: string): void => {
+    state.set(id, 'open');
+    const entity = ir.entities.find((e) => e.id === id);
+    for (const c of entity?.contains ?? []) {
+      if (!c.startsWith('entity:')) continue;
+      if (state.get(c) === 'open')
+        err(`${id}: ciclo de contains entre entidades`, entity?.source ?? null);
+      else if (!state.has(c)) visit(c);
+    }
+    state.set(id, 'done');
+  };
+  for (const entity of ir.entities) {
+    if (!state.has(entity.id)) visit(entity.id);
+  }
+
+  const entityNames = new Set(ir.entities.map((e) => e.name));
+  for (const vo of ir.valueObjects ?? []) {
+    claim(vo.id, vo.source);
+    if (!PASCAL.test(vo.name))
+      err(`${vo.id}: o nome da classe deve ser PascalCase`, vo.source);
+    required(vo.description, `${vo.id}: description`, vo.source);
+    if (entityNames.has(vo.name))
+      err(
+        `${vo.id}: o nome coincide com o da entidade entity:${vo.name} (compartilhariam invariant:${vo.name}/ e a seção do histórico)`,
+        vo.source,
+      );
+    for (const invariant of vo.invariants) checkInvariant(invariant);
+  }
+  for (const rec of registry.valueObjects) {
+    if (!(rec.target.prototype instanceof ValueObject))
+      err(
+        `valueobject:${rec.target.name}: não estende ValueObject de @agentic-ddd/core (projeto e CLI com cópias diferentes do pacote?)`,
+        sourceOf(root, rec.source),
+      );
+  }
+
   for (const event of ir.events) {
     claim(event.id, event.source);
     if (!PASCAL.test(event.name))
       err(`${event.id}: o nome da classe deve ser PascalCase`, event.source);
     required(event.description, `${event.id}: description`, event.source);
+  }
+
+  const roots = aggregateRoots(ir);
+  for (const port of ir.ports ?? []) {
+    claim(port.id, port.source);
+    if (!PASCAL.test(port.name))
+      err(`${port.id}: o nome da classe deve ser PascalCase`, port.source);
+    required(port.description, `${port.id}: description`, port.source);
+    for (const method of port.methods)
+      required(
+        method.description,
+        `${port.id}.${method.name}: description`,
+        port.source,
+      );
+    if (!roots.has(port.root))
+      err(
+        `${port.id}: root cita ${port.root}, que não é raiz de agregado`,
+        port.source,
+      );
+  }
+  for (const rec of registry.ports) {
+    const id = `port:${rec.target.name}`;
+    if (
+      !ir.ports?.some(
+        (p) => p.id === id && p.source === sourceOf(root, rec.source),
+      )
+    )
+      continue;
+    const source = sourceOf(root, rec.source);
+    let ast: ReturnType<typeof abstractMethods>;
+    try {
+      ast = abstractMethods(rec.source.file, rec.source.line, rec.target.name);
+    } catch (error) {
+      err(
+        `${id}: não foi possível ler o arquivo de origem (${error instanceof Error ? error.message : String(error)})`,
+        source,
+      );
+      continue;
+    }
+    if (ast === null) {
+      err(
+        `${id}: classe não encontrada no arquivo de origem para conferir os métodos abstratos`,
+        source,
+      );
+      continue;
+    }
+    if (!ast.abstract) {
+      err(`${id}: a classe precisa ser abstract`, source);
+      continue;
+    }
+    const declared = new Set(Object.keys(rec.methods));
+    const missing = [...ast.methods].filter((m) => !declared.has(m)).sort();
+    const extra = [...declared].filter((m) => !ast.methods.has(m)).sort();
+    if (missing.length > 0)
+      err(
+        `${id}: métodos abstratos sem declaração em methods: ${missing.join(', ')}`,
+        source,
+      );
+    if (extra.length > 0)
+      err(
+        `${id}: methods declara métodos que a classe não tem abstratos: ${extra.join(', ')}`,
+        source,
+      );
+  }
+
+  const adapterOf = new Map<string, string>();
+  for (const adapter of ir.adapters ?? []) {
+    claim(adapter.id, adapter.source);
+    if (!PASCAL.test(adapter.name))
+      err(
+        `${adapter.id}: o nome da classe deve ser PascalCase`,
+        adapter.source,
+      );
+    required(adapter.description, `${adapter.id}: description`, adapter.source);
+    const other = adapterOf.get(adapter.implements);
+    if (other !== undefined)
+      err(
+        `${adapter.id}: o port ${adapter.implements} já tem o adapter ${other}`,
+        adapter.source,
+      );
+    else adapterOf.set(adapter.implements, adapter.id);
+    if (
+      ir.ports?.find((p) => p.id === adapter.implements)?.methods.length === 0
+    )
+      err(
+        `${adapter.id}: ${adapter.implements} não declara métodos; adapter ficaria sem obrigações`,
+        adapter.source,
+      );
+    const rec = registry.adapters.find(
+      (r) =>
+        `adapter:${r.target.name}` === adapter.id &&
+        sourceOf(root, r.source) === adapter.source,
+    );
+    // buildIR já resolveu implements sem erro; aqui só confere a herança.
+    const port = rec?.implements();
+    if (typeof port === 'function' && !(rec!.target.prototype instanceof port))
+      err(
+        `${adapter.id}: não estende ${adapter.implements} (a classe precisa de extends ${port.name} e a mesma cópia do pacote que declarou o port)`,
+        adapter.source,
+      );
   }
 
   for (const useCase of ir.useCases) {
@@ -109,6 +329,7 @@ export function validate(
       );
     required(useCase.description, `${useCase.id}: description`, useCase.source);
     required(useCase.whenToUse, `${useCase.id}: whenToUse`, useCase.source);
+    for (const invariant of useCase.invariants ?? []) checkInvariant(invariant);
     const reachable = new Set<string>();
     const declared = new Set(useCase.emits);
     for (const use of useCase.uses) {
@@ -179,10 +400,28 @@ export function validate(
       );
     }
   }
+  const useCaseTargets = new Set(registry.useCases.map((u) => u.target));
+  const voTargets = new Set(registry.valueObjects.map((v) => v.target));
   for (const invariant of registry.invariants) {
-    if (!entityTargets.has(invariant.entity)) {
+    const isEntity = entityTargets.has(invariant.entity);
+    const isUseCase = useCaseTargets.has(invariant.entity);
+    const isVo = voTargets.has(invariant.entity);
+    const owners = [isEntity, isUseCase, isVo].filter(Boolean).length;
+    if (owners > 1) {
       err(
-        `@Invariant ${invariant.id} em ${invariant.entity.name}, que não tem @AgentEntity`,
+        isVo
+          ? `@Invariant ${invariant.id} em ${invariant.entity.name}: a classe tem mais de um entre @AgentEntity, @AgentUseCase e @AgentValueObject, e o dono da invariante fica ambíguo`
+          : `@Invariant ${invariant.id} em ${invariant.entity.name}: a classe tem @AgentEntity e @AgentUseCase, e o dono da invariante fica ambíguo`,
+        sourceOf(root, invariant.source),
+      );
+    } else if (owners === 0) {
+      err(
+        `@Invariant ${invariant.id} em ${invariant.entity.name}, que não tem @AgentEntity, @AgentUseCase nem @AgentValueObject`,
+        sourceOf(root, invariant.source),
+      );
+    } else if (!isEntity && invariant.method !== null) {
+      err(
+        `@Invariant ${invariant.id} em ${invariant.entity.name}.${invariant.method}: em ${isVo ? 'value object' : 'use-case'}, @Invariant vai na classe`,
         sourceOf(root, invariant.source),
       );
     }
@@ -219,4 +458,24 @@ export function validate(
   }
 
   return errors;
+}
+
+// Avisos (não erros) de AggregateRoot: raiz sem a classe base e filha que a estende (ADR-0006 D4).
+export function relationWarnings(ir: IR, registry: Registry): string[] {
+  if (!ir.entities.some((e) => e.contains || e.references)) return [];
+  const roots = aggregateRoots(ir);
+  const classOf = new Map(
+    registry.entities.map((r) => [`entity:${r.target.name}`, r.target]),
+  );
+  const warnings: string[] = [];
+  for (const entity of ir.entities) {
+    const target = classOf.get(entity.id);
+    if (!target) continue;
+    const isAggregate = target.prototype instanceof AggregateRoot;
+    if (roots.has(entity.id) && !isAggregate)
+      warnings.push(`${entity.id}: raiz de agregado não estende AggregateRoot`);
+    if (!roots.has(entity.id) && isAggregate)
+      warnings.push(`${entity.id}: entidade contida estende AggregateRoot`);
+  }
+  return warnings;
 }

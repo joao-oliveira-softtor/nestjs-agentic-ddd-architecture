@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "sourceRef": "ebcfd9bd22f1ed35f61f9c6f515ffc3e374a2d67",
+  "skillDatasets": [],
+  "benchmark": "matriculas",
+  "configurations": [
+    {
+      "id": "f-brief",
+      "adapter": "claude-cli",
+      "authentication": "oauth-token",
+      "promptMode": "brief",
+      "model": "claude-sonnet-5-5",
+      "parameters": {
+        "reasoningEffort": "medium"
+      }
+    }
+  ],
+  "budget": {
+    "maxInvocations": 14,
+    "skillTimeoutMs": 120000,
+    "implementationTimeoutMs": 600000,
+    "totalTimeoutMs": 12000000,
+    "maxCorrectionsPerItem": 1,
+    "repetitions": 1,
+    "concurrency": 1
+  }
+}

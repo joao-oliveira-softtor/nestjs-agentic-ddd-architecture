@@ -14,6 +14,7 @@ import { judge } from './judge';
 import { sha256, within } from './isolation';
 import { reportSchema } from './report-schema';
 import { finalVerificationState } from './final-verification';
+import { TUTORIALS } from './tutorials';
 
 export interface Rate {
   numerator: number;
@@ -188,8 +189,14 @@ export function computeMetrics(report: EvalReport) {
   }
   const benchmarks = report.benchmarks.map((b) => ({
     configuration: b.configuration,
-    initial: rate(b.items.filter((i) => i.attempts[0]?.accepted).length, 5),
-    final: rate(b.items.filter((i) => i.state === 'accepted').length, 5),
+    initial: rate(
+      b.items.filter((i) => i.attempts[0]?.accepted).length,
+      TUTORIALS[report.manifest.benchmark].items.length,
+    ),
+    final: rate(
+      b.items.filter((i) => i.state === 'accepted').length,
+      TUTORIALS[report.manifest.benchmark].items.length,
+    ),
     corrections: b.items.reduce(
       (n, i) => n + Math.max(0, i.attempts.length - 1),
       0,

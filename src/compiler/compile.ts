@@ -17,6 +17,7 @@ import { renderAll, type Rendered } from './render/index';
 import { removeSnapshot, sourceLines, writeSnapshot } from './snapshot';
 import { stableStringify } from './canonical';
 import { registrySizes, scopeRegistry } from './scope';
+import { relationWarnings } from './validate';
 import { checkOutputs, writeOutputs, type Drift } from './write';
 
 export interface CompileOptions {
@@ -187,6 +188,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     .map((f) => ({ message: `lint: ${f.message}`, source: f.path }));
   const warnings = [
     ...(await claudeWarnings(config)),
+    ...relationWarnings(ir, registry),
     ...lint
       .filter((f) => f.severity === 'warning')
       .map((f) => `${f.path}: ${f.message}`),

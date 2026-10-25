@@ -3,6 +3,7 @@ import {
   lstat,
   mkdtemp,
   readFile,
+  readlink,
   realpath,
   rm,
   symlink,
@@ -34,14 +35,20 @@ function run(root: string, ...args: string[]) {
     stderr: p.stderr.toString(),
   };
 }
-async function create(symlinkedAncestor = false) {
+async function create(symlinkedAncestor = false, tutorial?: string) {
   const base = await mkdtemp(join(tmpdir(), 'agentic-tutorial-'));
   dirs.push(base);
   const alias = join(base, 'alias');
   if (symlinkedAncestor) await symlink(base, alias, 'dir');
   const root = join(symlinkedAncestor ? alias : base, 'tasks');
   const p = Bun.spawnSync(
-    ['bun', join(ROOT, 'scripts/create-skills-example.ts'), '--root', root],
+    [
+      'bun',
+      join(ROOT, 'scripts/create-skills-example.ts'),
+      '--root',
+      root,
+      ...(tutorial ? ['--tutorial', tutorial] : []),
+    ],
     { stdout: 'pipe', stderr: 'pipe' },
   );
   expect({ code: p.exitCode, error: p.stderr.toString() }).toEqual({
@@ -234,3 +241,73 @@ test('tutorial tasks: sem testes → ondas → hash/gerados estáveis → verify
   ]);
   expect(check.exitCode).toBe(0);
 }, 120_000);
+
+const MATRICULAS_ITEMS = [
+  'adapter:InMemoryMatriculaRepository',
+  'entity:Aluno',
+  'entity:Matricula',
+  'entity:Turma',
+  'usecase:matricular_aluno',
+  'valueobject:AlunoId',
+  'valueobject:TurmaId',
+];
+
+test('tutorial matriculas: compila, lista os 7 itens declared com obrigações e o esqueleto não acusa T', async () => {
+  const root = await create(false, 'matriculas');
+  expect(run(root, 'compile')).toMatchObject({ code: 0 });
+  expect(run(root, 'compile', '--check')).toMatchObject({ code: 0 });
+  const status = JSON.parse(run(root, 'status', '--json').stdout) as {
+    items: { id: string; baseState: string; obligations?: unknown[] }[];
+  };
+  expect(status.items.map((i) => i.id).sort()).toEqual(MATRICULAS_ITEMS);
+  for (const item of status.items) {
+    expect({ id: item.id, state: item.baseState }).toEqual({
+      id: item.id,
+      state: 'declared',
+    });
+    expect(item.obligations?.length).toBeGreaterThan(0);
+  }
+  // verify precisa de ao menos um teste para coletar o JUnit; o tutorial nasce sem testes.
+  await writeFile(
+    join(root, 'app/probe.test.ts'),
+    "import { expect, test } from 'bun:test';\ntest('probe', () => expect(1).toBe(1));\n",
+  );
+  for (const id of MATRICULAS_ITEMS.filter((i) =>
+    /^(entity|valueobject):/.test(i),
+  )) {
+    const hash = /specHash: `([a-f0-9]{64})`/.exec(
+      run(root, 'packet', id).stdout,
+    )![1]!;
+    const report = JSON.parse(
+      run(root, 'verify', '--item', id, '--spec-hash', hash, '--json').stdout,
+    ) as { gates: { id: string; status: string }[] };
+    expect(report.gates.find((g) => g.id === 'T')?.status).toBe('passed');
+  }
+}, 120_000);
+
+test('tutorial tasks sem opção: hash da árvore gerada estável e portável', async () => {
+  const root = await create();
+  const files: string[] = [];
+  for await (const file of new Bun.Glob('**/*').scan({
+    cwd: root,
+    onlyFiles: false,
+    dot: true,
+  }))
+    if (!file.startsWith('node_modules')) files.push(file);
+  const hash = new Bun.CryptoHasher('sha256');
+  for (const file of files.sort()) {
+    const full = join(root, file);
+    const info = await lstat(full);
+    hash.update(`${file}\0`);
+    if (info.isSymbolicLink())
+      hash.update(
+        `link:${(await readlink(full)).replaceAll(ROOT, '<FRAMEWORK>')}`,
+      );
+    else if (info.isFile())
+      hash.update(
+        (await readFile(full, 'utf8')).replaceAll(ROOT, '<FRAMEWORK>'),
+      );
+    hash.update('\0');
+  }
+  expect(hash.digest('hex')).toMatchSnapshot();
+});

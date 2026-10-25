@@ -604,3 +604,299 @@ describe('semanticDiff', () => {
     });
   });
 });
+
+describe('invariante de use-case no semanticDiff', () => {
+  const invariant = {
+    id: 'invariant:publish_product/estoque',
+    text: 'Estoque suficiente.',
+    on: null,
+    source: 'x.ts:1',
+  };
+
+  test('invariante nova de use-case é added behavioral, sem marcar o use-case', () => {
+    const ir = clone();
+    useCase(ir, 'publish_product').invariants = [invariant];
+    expect(semanticDiff(base, ir)).toEqual([
+      {
+        id: invariant.id,
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('texto de invariante de use-case muda → modified behavioral, como na entidade', () => {
+    const before = clone();
+    useCase(before, 'publish_product').invariants = [invariant];
+    const after = structuredClone(before);
+    useCase(after, 'publish_product').invariants[0].text = 'Outro texto.';
+    expect(semanticDiff(before, after)).toEqual([
+      {
+        id: invariant.id,
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+});
+
+describe('value object no semanticDiff', () => {
+  const valueObject = (
+    text = 'Valor não negativo.',
+    description = 'Dinheiro.',
+  ) => ({
+    id: 'valueobject:Dinheiro',
+    name: 'Dinheiro',
+    module: 'shop',
+    description,
+    invariants: [
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        text,
+        on: null,
+        source: 'x.ts:1',
+      },
+    ],
+    source: 'x.ts:1',
+  });
+
+  test('value object novo: added behavioral, com a invariante dele', () => {
+    const ir = clone();
+    ir.valueObjects = [valueObject()];
+    expect(semanticDiff(base, ir)).toEqual([
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+      {
+        id: 'valueobject:Dinheiro',
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('texto de invariante do VO muda → modified behavioral, sem marcar o VO', () => {
+    const before = clone();
+    before.valueObjects = [valueObject()];
+    const after = structuredClone(before);
+    after.valueObjects[0].invariants[0].text = 'Outro texto.';
+    expect(semanticDiff(before, after)).toEqual([
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('só a descrição do VO muda → docs, como na entidade', () => {
+    const before = clone();
+    before.valueObjects = [valueObject()];
+    const after = structuredClone(before);
+    after.valueObjects[0].description = 'Outra descrição.';
+    expect(semanticDiff(before, after)).toEqual([
+      {
+        id: 'valueobject:Dinheiro',
+        kind: 'modified',
+        classification: 'docs',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('value object removido: removed behavioral, com a invariante dele', () => {
+    const before = clone();
+    before.valueObjects = [valueObject()];
+    expect(semanticDiff(before, clone())).toEqual([
+      {
+        id: 'invariant:Dinheiro/nao-negativo',
+        kind: 'removed',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+      {
+        id: 'valueobject:Dinheiro',
+        kind: 'removed',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+});
+
+describe('relações entre entidades no semanticDiff', () => {
+  test('entidade sem relação: content igual ao de hoje, sem chaves de relação', () => {
+    expect(elementsOf(base).get('entity:Product')!.content).toStrictEqual({
+      name: 'Product',
+      module: 'shop',
+      description: 'Produto do catálogo da loja.',
+      states: ['draft', 'published'],
+    });
+  });
+
+  test('contains adicionado numa entidade → modified behavioral', () => {
+    const ir = clone();
+    ir.entities[0].contains = ['valueobject:Dinheiro'];
+    expect(semanticDiff(base, ir)).toEqual([
+      {
+        id: 'entity:Product',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('references removido de uma entidade → modified behavioral', () => {
+    const before = clone();
+    before.entities[0].references = ['entity:Customer'];
+    expect(semanticDiff(before, clone())).toEqual([
+      {
+        id: 'entity:Product',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+});
+
+describe('port no semanticDiff', () => {
+  const port = (
+    description = 'Persistência de pedidos.',
+    methods = ['salvar'],
+  ) => ({
+    id: 'port:PedidoRepository',
+    name: 'PedidoRepository',
+    module: 'shop',
+    description,
+    root: 'entity:Product',
+    methods: methods.map((name) => ({ name, description: 'Grava.' })),
+    source: 'x.ts:1',
+  });
+  const withPort = (p = port()): any => {
+    const ir = clone();
+    ir.ports = [p];
+    return ir;
+  };
+
+  test('port novo: added behavioral', () => {
+    expect(semanticDiff(base, withPort())).toEqual([
+      {
+        id: 'port:PedidoRepository',
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('só a description do port muda → modified behavioral, não docs', () => {
+    expect(
+      semanticDiff(withPort(), withPort(port('Outra descrição.'))),
+    ).toEqual([
+      {
+        id: 'port:PedidoRepository',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('método do port muda → modified behavioral', () => {
+    expect(
+      semanticDiff(withPort(), withPort(port(undefined, ['salvar', 'buscar']))),
+    ).toEqual([
+      {
+        id: 'port:PedidoRepository',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('port removido: removed behavioral', () => {
+    expect(semanticDiff(withPort(), clone())).toEqual([
+      {
+        id: 'port:PedidoRepository',
+        kind: 'removed',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('use-case sem port: content sem chave ports, como hoje', () => {
+    expect(
+      elementsOf(base).get('usecase:create_product')!.content,
+    ).not.toHaveProperty('ports');
+  });
+});
+
+describe('adapter no semanticDiff', () => {
+  const adapter = (
+    description = 'Grava em memória.',
+    implementsId = 'port:PedidoRepository',
+  ) => ({
+    id: 'adapter:PedidoRepositoryMemoria',
+    name: 'PedidoRepositoryMemoria',
+    module: 'shop',
+    description,
+    implements: implementsId,
+    source: 'x.ts:1',
+  });
+  const withAdapter = (a = adapter()): any => {
+    const ir = clone();
+    ir.adapters = [a];
+    return ir;
+  };
+
+  test('adapter novo: added behavioral', () => {
+    expect(semanticDiff(base, withAdapter())).toEqual([
+      {
+        id: 'adapter:PedidoRepositoryMemoria',
+        kind: 'added',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('só a description do adapter muda → modified docs', () => {
+    expect(
+      semanticDiff(withAdapter(), withAdapter(adapter('Outra descrição.'))),
+    ).toEqual([
+      {
+        id: 'adapter:PedidoRepositoryMemoria',
+        kind: 'modified',
+        classification: 'docs',
+        module: 'shop',
+      },
+    ]);
+  });
+
+  test('implements do adapter muda → modified behavioral', () => {
+    expect(
+      semanticDiff(
+        withAdapter(),
+        withAdapter(adapter(undefined, 'port:Outro')),
+      ),
+    ).toEqual([
+      {
+        id: 'adapter:PedidoRepositoryMemoria',
+        kind: 'modified',
+        classification: 'behavioral',
+        module: 'shop',
+      },
+    ]);
+  });
+});

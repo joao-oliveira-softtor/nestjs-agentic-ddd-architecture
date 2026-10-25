@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
-import { parseLock } from '../compiler/lock';
+import { type DomainLock, parseLock } from '../compiler/lock';
 import type { Rule } from '../compiler/rules';
 import { changes, element, overview, rulesForPath } from './tools';
 
@@ -30,6 +30,68 @@ describe('element', () => {
       expect(element(lock, id)).toMatchSnapshot();
     });
   }
+
+  test('invariante de use-case é achada e devolve o use-case dono', () => {
+    const invariant = {
+      ...lock.ir.entities[0]!.invariants[0]!,
+      id: 'invariant:matricular_aluno/aluno-ativo',
+      on: null,
+    };
+    const useCaseLock = {
+      ...lock,
+      ir: {
+        ...lock.ir,
+        useCases: [
+          ...lock.ir.useCases,
+          {
+            ...lock.ir.useCases[0]!,
+            id: 'usecase:matricular_aluno',
+            name: 'matricular_aluno',
+            invariants: [invariant],
+          },
+        ],
+      },
+    };
+    expect(element(useCaseLock, invariant.id)).toEqual({
+      ok: true,
+      value: { ...invariant, useCase: 'usecase:matricular_aluno' },
+    });
+  });
+
+  test('invariante de value object é achada e devolve o VO dono', () => {
+    const invariant = {
+      id: 'invariant:Dinheiro/nao-negativo',
+      text: 'Valor não pode ser negativo.',
+      on: null,
+      source: 'src/shop/domain/dinheiro.ts',
+    };
+    const voLock: DomainLock = {
+      lockVersion: 1,
+      changes: [],
+      ir: {
+        irVersion: 1,
+        modules: [],
+        entities: [],
+        valueObjects: [
+          {
+            id: 'valueobject:Dinheiro',
+            name: 'Dinheiro',
+            module: 'shop',
+            description: 'Quantia monetária.',
+            invariants: [invariant],
+            source: 'src/shop/domain/dinheiro.ts',
+          },
+        ],
+        events: [],
+        useCases: [],
+        operators: [],
+      },
+    };
+    expect(element(voLock, invariant.id)).toEqual({
+      ok: true,
+      value: { ...invariant, valueObject: 'valueobject:Dinheiro' },
+    });
+  });
 
   test('id desconhecido e prefixo desconhecido dão erro com a mensagem', () => {
     const suffix =

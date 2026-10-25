@@ -1,0 +1,16 @@
+import { expect, test } from 'bun:test';
+import { Aluno } from '__WORKSPACE__/app/domain/aluno';
+import { AlunoId } from '__WORKSPACE__/app/domain/aluno-id';
+test('base:Aluno cria com nome sem espaços nas extremidades e o status informado', () => {
+  const aluno = Aluno.criar(AlunoId.criar('a-9'), '  Bia  ', 'inativo');
+  expect([aluno.nome, aluno.status]).toEqual(['Bia', 'inativo']);
+  expect(aluno.alunoId.equals(AlunoId.criar('a-9'))).toBe(true);
+  expect(Aluno.criar(AlunoId.criar('a-9'), 'Bia', 'ativo').status).toBe('ativo');
+});
+test('base:Aluno rejeita nome vazio com ALUNO_NOME_OBRIGATORIO', () => {
+  for (const nome of ['', '   ']) {
+    let error: unknown;
+    try { Aluno.criar(AlunoId.criar('a-9'), nome, 'ativo'); } catch (caught) { error = caught; }
+    expect(error).toMatchObject({ code: 'ALUNO_NOME_OBRIGATORIO' });
+  }
+});

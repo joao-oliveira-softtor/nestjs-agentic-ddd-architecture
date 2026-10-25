@@ -2,7 +2,15 @@ import { sha256, stableStringify } from './canonical';
 import type { IR, JsonSchema } from './ir';
 
 export type ElementKind =
-  'entity' | 'invariant' | 'method' | 'event' | 'usecase' | 'operator';
+  | 'entity'
+  | 'valueobject'
+  | 'invariant'
+  | 'method'
+  | 'event'
+  | 'usecase'
+  | 'operator'
+  | 'port'
+  | 'adapter';
 export type ChangeKind = 'added' | 'modified' | 'removed';
 export type Classification = 'breaking' | 'behavioral' | 'docs';
 
@@ -46,6 +54,8 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
         module: e.module,
         description: e.description,
         states: e.states,
+        ...(e.contains?.length ? { contains: e.contains } : {}),
+        ...(e.references?.length ? { references: e.references } : {}),
       },
     });
     for (const i of e.invariants)
@@ -83,6 +93,33 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
       },
     });
   }
+  for (const p of ir.ports ?? []) {
+    add({
+      id: p.id,
+      kind: 'port',
+      module: p.module,
+      content: {
+        name: p.name,
+        module: p.module,
+        description: p.description,
+        root: p.root,
+        methods: p.methods,
+      },
+    });
+  }
+  for (const a of ir.adapters ?? []) {
+    add({
+      id: a.id,
+      kind: 'adapter',
+      module: a.module,
+      content: {
+        name: a.name,
+        module: a.module,
+        description: a.description,
+        implements: a.implements,
+      },
+    });
+  }
   for (const u of ir.useCases) {
     add({
       id: u.id,
@@ -98,8 +135,16 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
         outputSchema: u.outputSchema,
         uses: u.uses,
         emits: u.emits,
+        ...(u.ports?.length ? { ports: u.ports } : {}),
       },
     });
+    for (const i of u.invariants ?? [])
+      add({
+        id: i.id,
+        kind: 'invariant',
+        module: u.module,
+        content: { text: i.text, on: i.on },
+      });
   }
   for (const o of ir.operators) {
     add({
@@ -117,6 +162,25 @@ export function elementsOf(ir: IR): Map<string, DomainElement> {
         model: o.model,
       },
     });
+  }
+  for (const vo of ir.valueObjects ?? []) {
+    add({
+      id: vo.id,
+      kind: 'valueobject',
+      module: vo.module,
+      content: {
+        name: vo.name,
+        module: vo.module,
+        description: vo.description,
+      },
+    });
+    for (const i of vo.invariants)
+      add({
+        id: i.id,
+        kind: 'invariant',
+        module: vo.module,
+        content: { text: i.text, on: i.on },
+      });
   }
   return elements;
 }
@@ -233,6 +297,8 @@ function classifyModified(
   before: DomainElement,
   after: DomainElement,
 ): Classification {
+  // Mudar o port (até a descrição) muda o contrato que o use-case enxerga.
+  if (after.kind === 'port') return 'behavioral';
   const keys = new Set([
     ...Object.keys(before.content),
     ...Object.keys(after.content),

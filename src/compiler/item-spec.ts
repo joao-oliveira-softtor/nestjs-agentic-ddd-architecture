@@ -68,6 +68,15 @@ export function itemSpecification(
       (i) => i.on === null || e.methods.some((m) => m.static && m.id === i.on),
     ),
   });
+  // Contidos e referenciados entram com a forma que o item usa: entidade em construção, VO inteiro.
+  const declarationOf = (id: string): unknown => {
+    const entity = ir.entities.find((e) => e.id === id);
+    return entity
+      ? construction(entity)
+      : ir.valueObjects?.find((v) => v.id === id);
+  };
+  const relations = (owner: IREntity): unknown[] =>
+    [...(owner.contains ?? []), ...(owner.references ?? [])].map(declarationOf);
   const method = (id: string) => {
     const entity = ir.entities.find((e) => e.methods.some((m) => m.id === id))!;
     const m = entity.methods.find((m) => m.id === id)!;
@@ -85,19 +94,35 @@ export function itemSpecification(
   const entity = ir.entities.find((e) => e.id === item.id);
   const useCase = ir.useCases.find((u) => u.id === item.id);
   const operator = ir.operators.find((o) => o.id === item.id);
+  const adapter = ir.adapters?.find((a) => a.id === item.id);
+  const valueObject = ir.valueObjects?.find((v) => v.id === item.id);
   const addMethod = (id: string) => {
     const m = method(id);
     addEvents(m);
     m.entity.methods.forEach(addEvents);
-    contracts.push(m);
+    contracts.push(m, ...relations(m.entity));
   };
   const addUseCase = (u: IRUseCase) => {
     addEvents(u);
     u.uses.forEach(addMethod);
+    contracts.push(
+      ...(u.ports ?? []).flatMap(
+        (id) => ir.ports?.find((p) => p.id === id) ?? [],
+      ),
+    );
   };
   if (entity) {
     declaration = construction(entity);
+    contracts.push(...relations(entity));
     entity.methods.filter((m) => m.static).forEach(addEvents);
+  } else if (valueObject) {
+    declaration = valueObject;
+  } else if (adapter) {
+    declaration = adapter;
+    const port = ir.ports?.find((p) => p.id === adapter.implements);
+    const root = ir.entities.find((e) => e.id === port?.root);
+    if (port) contracts.push(port);
+    if (root) contracts.push(construction(root));
   } else if (useCase) {
     declaration = useCase;
     addUseCase(useCase);
@@ -113,6 +138,7 @@ export function itemSpecification(
     declaration = m;
     addEvents(m);
     m.entity.methods.forEach(addEvents);
+    contracts.push(...relations(m.entity));
   }
   contracts.push(...ir.events.filter((e) => eventIds.has(e.id)));
   const criteria = applicableCriteria(item, proposals);

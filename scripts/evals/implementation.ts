@@ -7,14 +7,14 @@ import {
   rm,
   writeFile,
 } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import type {
   ProjectStatus,
   NextReport,
   Proposal,
 } from '@agentic-ddd/compiler';
 import { approxTokens, parseProposal } from '@agentic-ddd/compiler';
-import { match } from 'ts-pattern';
+import { isMatching, match, P } from 'ts-pattern';
 import { renderReviewerBrief } from '../agent-briefs';
 import { decideAttempt } from '../orchestrate';
 import { parseReviewerReport } from '../reviewer-report';
@@ -32,12 +32,23 @@ import type {
   RunOptions,
 } from './contracts';
 import { emptyUsage, unavailable } from './contracts';
-import { buildImplementationPrompt } from './implementation-prompt';
+import {
+  buildImplementationPrompt,
+  type PromptMode,
+} from './implementation-prompt';
 import { createAttemptWorkspace, disposeWorkspace } from './isolation';
-import { TASK_ITEMS, auditSubmission, treeHash, readTree } from './audit';
+import { auditSubmission, treeHash, readTree } from './audit';
+import {
+  TUTORIALS,
+  findItem,
+  collaborators,
+  type Benchmark,
+  type IrView,
+} from './tutorials';
+import { completeItem } from './solutions/matriculas';
 import { cliArgv, requireFinished, workspaceCommand } from './commands';
 import { parseImplementationReply } from './judge';
-import { verifySubmission } from './reference';
+import { oracleGreen, verifySubmission } from './reference';
 
 async function query(
   source: PreparedSource,
@@ -61,10 +72,16 @@ async function query(
     await disposeWorkspace(workspace);
   }
 }
-export async function prepareTasksBaseline(
+export const prepareTasksBaseline = (
+  source: PreparedSource,
+  options: RunOptions,
+) => prepareBaseline('tasks', source, options);
+export async function prepareBaseline(
+  benchmark: Benchmark,
   source: PreparedSource,
   options: RunOptions,
 ): Promise<string> {
+  const tutorial = TUTORIALS[benchmark];
   const empty = await mkdtemp(join(source.root, 'empty-'));
   const workspace = {
     root: empty,
@@ -73,7 +90,7 @@ export async function prepareTasksBaseline(
     baseline: empty,
     mode: 'implementation' as const,
   };
-  const destination = join(workspace.root, 'tasks');
+  const destination = join(workspace.root, benchmark);
   try {
     const command = await workspaceCommand(
       workspace,
@@ -83,13 +100,14 @@ export async function prepareTasksBaseline(
         join(source.frameworkRoot, 'scripts/create-skills-example.ts'),
         '--root',
         destination,
+        ...(benchmark === 'tasks' ? [] : ['--tutorial', benchmark]),
       ],
       options,
       join(options.outDir, 'preparation/create-tutorial'),
     );
     requireFinished(command);
-    const baseline = await mkdtemp(join(source.root, 'tasks-parent-'));
-    const root = join(baseline, 'tasks');
+    const baseline = await mkdtemp(join(source.root, `${benchmark}-parent-`));
+    const root = join(baseline, benchmark);
     await rename(destination, root);
     const compileWorkspace = await createAttemptWorkspace(
       source,
@@ -130,13 +148,15 @@ export async function prepareTasksBaseline(
       ).result.stdout,
     ) as ProjectStatus;
     if (
-      status.items.length !== 5 ||
-      TASK_ITEMS.some((item) => !status.items.some((i) => i.id === item.id)) ||
+      status.items.length !== tutorial.items.length ||
+      tutorial.items.some(
+        (item) => !status.items.some((i) => i.id === item.id),
+      ) ||
       status.items.some((i) => i.baseState === 'done')
     )
       throw Error('Unexpected tutorial baseline');
     const proposal = await readFile(
-      join(root, 'changes/archive/0001-tasks/proposal.md'),
+      join(root, `changes/archive/${tutorial.changeSlug}/proposal.md`),
       'utf8',
     );
     if (!proposal.includes('status: applied'))
@@ -162,6 +182,131 @@ export async function prepareTasksBaseline(
  */
 export const REVIEW_MAX_TOKENS = 50_000;
 
+/** Arquivos de skill e regras que o C0 (`bare`) não pode ter no workspace. */
+export const BARE_HIDDEN = [
+  '.agents',
+  '.claude',
+  '.cursor',
+  '.codex',
+  '.agentic',
+  '.ai',
+  'AGENTS.md',
+  'CLAUDE.md',
+] as const;
+/**
+ * Tira `BARE_HIDDEN` do workspace (fora do sandbox, antes de o adapter montá-lo) enquanto
+ * `run` executa e devolve tudo num `finally`, também quando `run` lança.
+ */
+export async function withoutAgentFiles<T>(
+  root: string,
+  run: () => Promise<T>,
+): Promise<T> {
+  const stash = await mkdtemp(join(dirname(root), 'hidden-'));
+  const moved: string[] = [];
+  // Devolve o que saiu; lança só se a restauração falhar (e o stash fica para recuperação).
+  const restore = async () => {
+    const errors: unknown[] = [];
+    for (const name of moved)
+      try {
+        // O adapter pode ter recriado o nome no workspace; o original volta por cima.
+        await rm(join(root, name), { recursive: true, force: true });
+        await rename(join(stash, name), join(root, name));
+      } catch (error) {
+        errors.push(error);
+      }
+    if (errors.length === 0) await rm(stash, { recursive: true, force: true });
+    else
+      throw new AggregateError(errors, 'falha ao restaurar arquivos de agente');
+  };
+  let result: T;
+  try {
+    for (const name of BARE_HIDDEN)
+      try {
+        await rename(join(root, name), join(stash, name));
+        moved.push(name);
+      } catch (error) {
+        if (!isMatching({ code: 'ENOENT' }, error)) throw error;
+      }
+    result = await run();
+  } catch (error) {
+    // O erro da execução continua o principal; falha de restauração não o esconde.
+    await restore().catch(() => {});
+    throw error;
+  }
+  await restore();
+  return result;
+}
+
+/** `default`: tasks; `framework`: F no matriculas; `transport`: C0 (`bare`) no matriculas. */
+export type RetryPolicy = 'default' | 'framework' | 'transport';
+export const retryPolicy = (
+  seeded: boolean,
+  promptMode: PromptMode | undefined,
+): RetryPolicy =>
+  match([seeded, promptMode] as const)
+    .with([false, P._], () => 'default' as const)
+    .with([true, 'bare'], () => 'transport' as const)
+    .with(
+      [true, P.union('legacy', 'brief', undefined)],
+      () => 'framework' as const,
+    )
+    .exhaustive();
+const ORACLE_FINDING = 'Private behavior oracle failed';
+/** O oráculo privado nunca vai para a correção. */
+export const frameworkFindings = (attempt: ItemAttempt): string[] => [
+  ...(attempt.audit?.findings ?? []),
+  ...(attempt.verification?.findings ?? []).filter(
+    (f) => !f.startsWith(ORACLE_FINDING),
+  ),
+];
+export const BARE_RETRY =
+  'a submissão anterior não terminou; refaça a partir do baseline';
+/** Texto de correção (começa com `\n`) para a tentativa seguinte. */
+export function correctionFor(
+  policy: RetryPolicy,
+  previous: ItemAttempt | undefined,
+): string {
+  if (!previous) return '';
+  return match(policy)
+    .with('transport', () => `\n${BARE_RETRY}`)
+    .with('framework', () => {
+      const findings = frameworkFindings(previous);
+      return `\nCorrection: aplique uma nova submissão a partir deste baseline; nenhuma edição anterior foi reaplicada. Patch anterior: ${previous.audit?.patch ?? 'unavailable'}. Findings: ${JSON.stringify(findings.length ? findings : [previous.reason])}`;
+    })
+    .with(
+      'default',
+      () =>
+        `\nCorrection: aplique uma nova submissão a partir deste baseline; nenhuma edição anterior foi reaplicada. Patch anterior: ${previous.audit?.patch ?? 'unavailable'}. Findings: ${JSON.stringify(previous.audit?.findings.length ? previous.audit.findings : (previous.verification?.findings ?? [previous.reason]))}`,
+    )
+    .exhaustive();
+}
+/** Há o que corrigir? No C0 só a execução que não terminou; no F só falha dos gates do framework. */
+export const wantsRetry = (policy: RetryPolicy, attempt: ItemAttempt) =>
+  match(policy)
+    .with('default', () => !attempt.accepted)
+    .with('transport', () => attempt.execution.transport !== 'finished')
+    .with(
+      'framework',
+      () =>
+        !attempt.accepted &&
+        (frameworkFindings(attempt).length > 0 ||
+          attempt.reply?.status !== 'done'),
+    )
+    .exhaustive();
+
+/** Esqueleto + soluções de referência (corpo e teste) dos colaboradores do item. */
+export async function seedBaseline(
+  source: PreparedSource,
+  initial: string,
+  collaboratorIds: readonly string[],
+): Promise<string> {
+  const parent = await mkdtemp(join(source.root, 'seeded-'));
+  const root = join(parent, basename(initial));
+  await cp(initial, root, { recursive: true, verbatimSymlinks: true });
+  for (const id of collaboratorIds) await completeItem(root, id);
+  return root;
+}
+
 /** Degrau inicial do item: o da camada dele em `routing.byLayer`. */
 function startStep(routing: Routing, layer: string): number {
   const model = match(layer)
@@ -169,11 +314,13 @@ function startStep(routing: Routing, layer: string): number {
       'domain',
       'application',
       'operators',
+      'infrastructure',
       (known) => routing.byLayer[known],
     )
     .otherwise(() => {
       throw Error(`routing sem modelo para a camada ${layer}`);
     });
+  if (!model) throw Error(`routing sem modelo para a camada ${layer}`);
   return routing.ladder.findIndex((step) => step.model === model);
 }
 
@@ -237,7 +384,7 @@ async function reviewAcceptedItems(input: {
   const paths = [
     ...new Set(
       accepted.flatMap((i) => {
-        const task = TASK_ITEMS.find((t) => t.id === i.item)!;
+        const task = findItem(i.item)!;
         return [...(task.file ? [task.file] : []), task.test];
       }),
     ),
@@ -358,7 +505,9 @@ export async function evaluateImplementation(
     manifest.configurations.some((c) => c.adapter !== 'scripted')
   )
     throw Error('Real adapters require --real');
-  const initial = await prepareTasksBaseline(source, options);
+  const tutorial = TUTORIALS[manifest.benchmark];
+  const seeded = tutorial.seedDependencies;
+  const initial = await prepareBaseline(manifest.benchmark, source, options);
   const initialStatus = JSON.parse(
     (
       await query(
@@ -372,17 +521,39 @@ export async function evaluateImplementation(
   ) as ProjectStatus;
   const proposalResult = parseProposal(
     await readFile(
-      join(initial, 'changes/archive/0001-tasks/proposal.md'),
+      join(initial, `changes/archive/${tutorial.changeSlug}/proposal.md`),
       'utf8',
     ),
-    '0001-tasks',
-    'changes/archive/0001-tasks/proposal.md',
+    tutorial.changeSlug,
+    `changes/archive/${tutorial.changeSlug}/proposal.md`,
     true,
   );
   if (proposalResult.errors.length || !proposalResult.proposal)
     throw Error('Archived criteria unavailable');
   const proposal: Proposal = proposalResult.proposal;
   const baselineHash = await treeHash(initial);
+  // Com dependências semeadas: ordem das ondas e colaboradores de cada item, uma vez só.
+  let order: string[] = [];
+  let collaboratorsOf: Record<string, string[]> = {};
+  if (seeded) {
+    const queryJson = async (args: string[], name: string) =>
+      JSON.parse(
+        (await query(source, initial, args, `implementation/${name}`, options))
+          .result.stdout,
+      );
+    const ir = (await queryJson(['ir'], 'initial-ir')) as IrView;
+    const next = (await queryJson(
+      ['next', '--change', '0001', '--json'],
+      'initial-next',
+    )) as NextReport;
+    order = next.waves.flat();
+    const dependsOn = Object.fromEntries(
+      initialStatus.items.map((i) => [i.id, i.dependsOn]),
+    );
+    collaboratorsOf = Object.fromEntries(
+      order.map((id) => [id, collaborators(id, dependsOn, ir)]),
+    );
+  }
   const results: BenchmarkResult[] = [];
   for (const configuration of manifest.configurations) {
     const adapter = adapters.get(configuration.id);
@@ -393,7 +564,7 @@ export async function evaluateImplementation(
     const result: BenchmarkResult = {
       configuration: configuration.id,
       baselineHash,
-      items: TASK_ITEMS.map((item) => ({
+      items: tutorial.items.map((item) => ({
         item: item.id,
         specHash: initialStatus.items.find((i) => i.id === item.id)!.specHash,
         state: 'not_run',
@@ -404,6 +575,9 @@ export async function evaluateImplementation(
     };
     results.push(result);
     options.onBenchmark?.(result);
+    const policy = retryPolicy(seeded, configuration.promptMode);
+    const bare = configuration.promptMode === 'bare';
+    const queue = [...order];
     const done = new Set<string>();
     const terminal = new Set<string>();
     let queryIndex = 0;
@@ -420,290 +594,350 @@ export async function evaluateImplementation(
       ...options,
       outDir: join(options.outDir, 'implementation', configuration.id),
     };
-    while (true) {
-      if (options.signal.aborted || options.control?.stopReason()) break;
-      const status = JSON.parse(
-        (
-          await query(
-            source,
-            baseline,
-            ['status', '--json'],
-            `query-${queryIndex}/status`,
-            runOptions,
-          )
-        ).result.stdout,
-      ) as ProjectStatus;
-      const next = JSON.parse(
-        (
-          await query(
-            source,
-            baseline,
-            ['next', '--change', '0001', '--json'],
-            `query-${queryIndex++}/next`,
-            runOptions,
-          )
-        ).result.stdout,
-      ) as NextReport;
-      // A terminal failure can remain in wave 1. Remove it from scheduling, but
-      // never release its dependents; independent items are selected by dynamic deps.
-      const eligible = next.waves
-        .flat()
-        .find(
-          (id) =>
-            !terminal.has(id) &&
-            !done.has(id) &&
-            status.items
-              .find((i) => i.id === id)
-              ?.dependsOn.every(
-                (dep) =>
-                  done.has(dep) &&
-                  status.items.find((i) => i.id === dep)?.state === 'done',
-              ),
-        );
-      if (!eligible) break;
-      const item = result.items.find((i) => i.item === eligible)!;
-      const assignment = TASK_ITEMS.find((i) => i.id === eligible)!;
-      if (
-        status.items.find((i) => i.id === eligible)?.specHash !== item.specHash
-      )
-        throw Error('Original specHash changed before dispatch');
-      const packet = (
-        await query(
-          source,
-          baseline,
-          ['packet', eligible],
-          `packet-${eligible.replaceAll(/[:.]/g, '-')}`,
-          runOptions,
-        )
-      ).result.stdout;
-      if (!packet.includes(item.specHash))
-        throw Error('Packet omitted original specHash');
-      const handoff: ItemHandoff = {
-        item: eligible,
-        packet,
-        specHash: item.specHash!,
-        configPath: join(baseline, 'agentic.config.ts'),
-        testFile: assignment.test,
-        criteria: assignment.criteria.map((id) => {
-          const criterion = proposal.acceptance.find((c) => c.id === id);
-          if (!criterion || criterion.manual)
-            throw Error(`Criterion unavailable: ${id}`);
-          return {
-            id: criterion.id,
-            given: criterion.given ?? undefined,
-            when: criterion.when ?? undefined,
-            // eslint-disable-next-line unicorn/no-thenable
-            then: criterion.then,
-          };
-        }),
-      };
-      const layer = status.items.find((i) => i.id === eligible)!.layer;
-      let tier = routing ? startStep(routing, layer) : 0;
-      let tierAttempts = 0;
-      for (let number = 1; ; number++) {
+    let seededParent: string | undefined;
+    const dropSeeded = async () => {
+      if (seededParent)
+        await rm(seededParent, { recursive: true, force: true });
+      seededParent = undefined;
+    };
+    try {
+      while (true) {
+        await dropSeeded();
         if (options.signal.aborted || options.control?.stopReason()) break;
-        if (reservedForReview()) {
-          itemsBudgetReserved = true;
-          break;
-        }
-        if (options.control && !options.control.reserveInvocation()) break;
-        const step = routing?.ladder[tier];
-        const workspace = await createAttemptWorkspace(
-          source,
-          baseline,
-          'implementation',
-        );
-        const evidenceDir = join(
-          runOptions.outDir,
-          assignment.test.split('/').at(-1)!.replace('.test.ts', ''),
-          `attempt-${number}`,
-        );
-        await mkdir(evidenceDir, { recursive: true });
-        const previous = item.attempts.at(-1);
-        const prompt = buildImplementationPrompt({
-          mode: configuration.promptMode ?? 'legacy',
-          packet,
-          root: workspace.root,
-          configPath: workspace.configPath,
-          specHash: item.specHash!,
-          file: assignment.file,
-          className: assignment.className,
-          method: assignment.method,
-          test: assignment.test,
-          criteria: handoff.criteria,
-          correction: previous
-            ? `\nCorrection: aplique uma nova submissão a partir deste baseline; nenhuma edição anterior foi reaplicada. Patch anterior: ${previous.audit?.patch ?? 'unavailable'}. Findings: ${JSON.stringify(previous.audit?.findings.length ? previous.audit.findings : (previous.verification?.findings ?? [previous.reason]))}`
-            : '',
-        });
-        await writeFile(join(evidenceDir, 'prompt.txt'), prompt);
-        await writeFile(
-          join(evidenceDir, 'handoff.json'),
-          JSON.stringify(handoff, null, 2) + '\n',
-        );
-        const attempt: ItemAttempt = {
-          number,
-          handoff,
-          baselineHash: await treeHash(baseline),
-          execution: syntheticFailure('not_dispatched'),
-          reply: null,
-          audit: null,
-          verification: null,
-          accepted: false,
-          reason: null,
-          ...(step
-            ? {
-                tier,
-                model: step.model,
-                ...(step.reasoningEffort
-                  ? { reasoningEffort: step.reasoningEffort }
-                  : {}),
-              }
-            : {}),
-        };
-        item.attempts.push(attempt);
-        const agentStarted = performance.now();
-        try {
-          attempt.execution = await adapter.run(
-            {
-              id: eligible,
-              mode: 'implementation',
-              ...(step
-                ? {
-                    model: step.model,
-                    ...(step.reasoningEffort
-                      ? { reasoningEffort: step.reasoningEffort }
-                      : {}),
-                  }
-                : {}),
-              cwd: workspace.root,
-              prompt,
-              timeoutMs: Math.min(
-                manifest.budget.implementationTimeoutMs,
-                options.control?.remainingMs() ?? Infinity,
-              ),
-              evidenceDir,
-            },
-            { signal: options.control?.signal ?? options.signal },
-          );
-          attempt.audit = await auditSubmission(
-            baseline,
-            workspace.root,
-            eligible,
-          );
-          await writeFile(
-            join(evidenceDir, 'submission.json'),
-            attempt.audit.patch,
-          );
-          if (attempt.execution.transport !== 'finished') {
-            attempt.reason =
-              attempt.execution.diagnostic ?? attempt.execution.transport;
-            infra = attempt.execution.transport === 'infra_error';
-          } else {
-            try {
-              attempt.reply = parseImplementationReply(
-                attempt.execution.finalText ?? '',
-              );
-            } catch {
-              attempt.reason = 'invalid_implementation_reply';
-            }
-            if (!attempt.audit.ok)
-              attempt.reason = 'submission_boundary_violation';
-            if (attempt.reply?.status === 'done' && attempt.audit.ok) {
-              attempt.verification = await verifySubmission(
-                source,
-                workspace,
-                handoff,
-                {
-                  signal: options.signal,
-                  control: options.control,
-                  outDir: join(evidenceDir, 'verification'),
-                },
-              );
-              attempt.accepted = attempt.verification.ok;
-              if (
-                attempt.verification.commands.some(
-                  (c) => c.result.transport === 'infra_error',
-                )
-              ) {
-                infra = true;
-                attempt.reason = 'verifier_infrastructure_failed';
-              }
-              if (!attempt.accepted)
-                attempt.reason ??= 'independent_verification_failed';
-            } else if (!attempt.reason)
-              attempt.reason = `declared_${attempt.reply?.status ?? 'malformed'}`;
-            if (attempt.accepted) {
-              if (assignment.file)
-                await cp(
-                  join(workspace.root, assignment.file),
-                  join(baseline, assignment.file),
+        let itemBaseline = baseline;
+        let eligible: string | undefined;
+        let status: ProjectStatus;
+        if (seeded) {
+          eligible = queue.shift();
+          if (!eligible) break;
+          itemBaseline = await seedBaseline(
+            source,
+            initial,
+            collaboratorsOf[eligible] ??
+              (() => {
+                throw new Error(
+                  `colaboradores ausentes para o item ${eligible}`,
                 );
-              await mkdir(join(baseline, 'app/test'), { recursive: true });
-              await cp(
-                join(workspace.root, assignment.test),
-                join(baseline, assignment.test),
-              );
-              item.state = 'accepted';
-              item.reason = null;
-              done.add(eligible);
-            }
-          }
-        } catch (error) {
-          if (attempt.execution.diagnostic === 'not_dispatched') {
-            attempt.execution = syntheticFailure(String(error));
-            attempt.execution.durationMs = performance.now() - agentStarted;
-          }
-          attempt.reason = String(error);
-          infra = true;
-        } finally {
-          await writeFile(
-            join(evidenceDir, 'attempt.json'),
-            JSON.stringify(attempt, null, 2) + '\n',
+              })(),
           );
-          await disposeWorkspace(workspace);
+          seededParent = dirname(itemBaseline);
+          status = JSON.parse(
+            (
+              await query(
+                source,
+                itemBaseline,
+                ['status', '--json'],
+                `query-${queryIndex++}/status`,
+                runOptions,
+              )
+            ).result.stdout,
+          ) as ProjectStatus;
+        } else {
+          status = JSON.parse(
+            (
+              await query(
+                source,
+                baseline,
+                ['status', '--json'],
+                `query-${queryIndex}/status`,
+                runOptions,
+              )
+            ).result.stdout,
+          ) as ProjectStatus;
+          const next = JSON.parse(
+            (
+              await query(
+                source,
+                baseline,
+                ['next', '--change', '0001', '--json'],
+                `query-${queryIndex++}/next`,
+                runOptions,
+              )
+            ).result.stdout,
+          ) as NextReport;
+          // A terminal failure can remain in wave 1. Remove it from scheduling, but
+          // never release its dependents; independent items are selected by dynamic deps.
+          eligible = next.waves
+            .flat()
+            .find(
+              (id) =>
+                !terminal.has(id) &&
+                !done.has(id) &&
+                status.items
+                  .find((i) => i.id === id)
+                  ?.dependsOn.every(
+                    (dep) =>
+                      done.has(dep) &&
+                      status.items.find((i) => i.id === dep)?.state === 'done',
+                  ),
+            );
         }
+        if (!eligible) break;
+        const item = result.items.find((i) => i.item === eligible)!;
+        const assignment = tutorial.items.find((i) => i.id === eligible)!;
         if (
-          attempt.accepted ||
-          infra ||
-          attempt.execution.transport === 'cancelled'
+          status.items.find((i) => i.id === eligible)?.specHash !==
+          item.specHash
         )
-          break;
-        // Mesma escada do driver; aqui `blocked` conta como tentativa falha em todos os braços.
-        tierAttempts++;
-        const stop = match(
-          decideAttempt({
-            accepted: false,
-            executorBlocked: false,
-            tierAttempts,
-            retries: manifest.budget.maxCorrectionsPerItem,
-            lastTier: tier >= ladderLength - 1,
+          throw Error('Original specHash changed before dispatch');
+        const packet = (
+          await query(
+            source,
+            itemBaseline,
+            ['packet', eligible],
+            `packet-${eligible.replaceAll(/[:.]/g, '-')}`,
+            runOptions,
+          )
+        ).result.stdout;
+        if (!packet.includes(item.specHash))
+          throw Error('Packet omitted original specHash');
+        const handoff: ItemHandoff = {
+          item: eligible,
+          packet,
+          specHash: item.specHash!,
+          configPath: join(itemBaseline, 'agentic.config.ts'),
+          testFile: assignment.test,
+          criteria: assignment.criteria.map((id) => {
+            const criterion = proposal.acceptance.find((c) => c.id === id);
+            if (!criterion || criterion.manual)
+              throw Error(`Criterion unavailable: ${id}`);
+            return {
+              id: criterion.id,
+              given: criterion.given ?? undefined,
+              when: criterion.when ?? undefined,
+              // eslint-disable-next-line unicorn/no-thenable
+              then: criterion.then,
+            };
           }),
-        )
-          .with('retry', () => false)
-          .with('escalate', () => {
-            tier++;
-            tierAttempts = 0;
-            return false;
-          })
-          .with('accepted', 'needs-human', () => true)
-          .exhaustive();
-        if (stop) break;
+        };
+        const layer = status.items.find((i) => i.id === eligible)!.layer;
+        let tier = routing ? startStep(routing, layer) : 0;
+        let tierAttempts = 0;
+        for (let number = 1; ; number++) {
+          if (options.signal.aborted || options.control?.stopReason()) break;
+          if (reservedForReview()) {
+            itemsBudgetReserved = true;
+            break;
+          }
+          if (options.control && !options.control.reserveInvocation()) break;
+          const step = routing?.ladder[tier];
+          const workspace = await createAttemptWorkspace(
+            source,
+            itemBaseline,
+            'implementation',
+          );
+          const evidenceDir = join(
+            runOptions.outDir,
+            assignment.test.split('/').at(-1)!.replace('.test.ts', ''),
+            `attempt-${number}`,
+          );
+          await mkdir(evidenceDir, { recursive: true });
+          const previous = item.attempts.at(-1);
+          const prompt = buildImplementationPrompt({
+            mode: configuration.promptMode ?? 'legacy',
+            item: eligible,
+            packet,
+            root: workspace.root,
+            configPath: workspace.configPath,
+            specHash: item.specHash!,
+            file: assignment.file,
+            className: assignment.className,
+            method: assignment.method,
+            test: assignment.test,
+            criteria: handoff.criteria,
+            correction: correctionFor(policy, previous),
+          });
+          await writeFile(join(evidenceDir, 'prompt.txt'), prompt);
+          await writeFile(
+            join(evidenceDir, 'handoff.json'),
+            JSON.stringify(handoff, null, 2) + '\n',
+          );
+          const attempt: ItemAttempt = {
+            number,
+            handoff,
+            baselineHash: await treeHash(itemBaseline),
+            execution: syntheticFailure('not_dispatched'),
+            reply: null,
+            audit: null,
+            verification: null,
+            accepted: false,
+            reason: null,
+            ...(step
+              ? {
+                  tier,
+                  model: step.model,
+                  ...(step.reasoningEffort
+                    ? { reasoningEffort: step.reasoningEffort }
+                    : {}),
+                }
+              : {}),
+          };
+          item.attempts.push(attempt);
+          const agentStarted = performance.now();
+          try {
+            const run = () =>
+              adapter.run(
+                {
+                  id: eligible,
+                  mode: 'implementation',
+                  ...(step
+                    ? {
+                        model: step.model,
+                        ...(step.reasoningEffort
+                          ? { reasoningEffort: step.reasoningEffort }
+                          : {}),
+                      }
+                    : {}),
+                  cwd: workspace.root,
+                  prompt,
+                  timeoutMs: Math.min(
+                    manifest.budget.implementationTimeoutMs,
+                    options.control?.remainingMs() ?? Infinity,
+                  ),
+                  evidenceDir,
+                },
+                { signal: options.control?.signal ?? options.signal },
+              );
+            // C0: sem skill nem regras no workspace durante o turno, devolvidas antes da auditoria.
+            attempt.execution = await (bare
+              ? withoutAgentFiles(workspace.root, run)
+              : run());
+            attempt.audit = await auditSubmission(
+              itemBaseline,
+              workspace.root,
+              eligible,
+            );
+            await writeFile(
+              join(evidenceDir, 'submission.json'),
+              attempt.audit.patch,
+            );
+            if (attempt.execution.transport !== 'finished') {
+              attempt.reason =
+                attempt.execution.diagnostic ?? attempt.execution.transport;
+              infra = attempt.execution.transport === 'infra_error';
+            } else {
+              try {
+                attempt.reply = parseImplementationReply(
+                  attempt.execution.finalText ?? '',
+                );
+              } catch {
+                attempt.reason = 'invalid_implementation_reply';
+              }
+              if (!attempt.audit.ok)
+                attempt.reason = 'submission_boundary_violation';
+              // Matriculas mede sempre (oráculo e T), salvo árvore insegura (não montável).
+              const measure = seeded
+                ? !attempt.audit.findings.some((f) =>
+                    f.startsWith('Unsafe submission tree'),
+                  )
+                : attempt.reply?.status === 'done' && attempt.audit.ok;
+              if (measure) {
+                attempt.verification = await verifySubmission(
+                  source,
+                  workspace,
+                  handoff,
+                  {
+                    signal: options.signal,
+                    control: options.control,
+                    outDir: join(evidenceDir, 'verification'),
+                    benchmark: manifest.benchmark,
+                  },
+                );
+                attempt.accepted =
+                  attempt.verification.ok &&
+                  attempt.audit.ok &&
+                  attempt.reply?.status === 'done';
+                if (
+                  attempt.verification.commands.some(
+                    (c) => c.result.transport === 'infra_error',
+                  )
+                ) {
+                  infra = true;
+                  attempt.reason = 'verifier_infrastructure_failed';
+                }
+                if (!attempt.accepted)
+                  attempt.reason ??= 'independent_verification_failed';
+              } else if (!attempt.reason)
+                attempt.reason = `declared_${attempt.reply?.status ?? 'malformed'}`;
+              if (bare ? oracleGreen(attempt.verification) : attempt.accepted) {
+                if (assignment.file && !seeded)
+                  await cp(
+                    join(workspace.root, assignment.file),
+                    join(baseline, assignment.file),
+                  );
+                if (!seeded) {
+                  await mkdir(join(baseline, 'app/test'), { recursive: true });
+                  await cp(
+                    join(workspace.root, assignment.test),
+                    join(baseline, assignment.test),
+                  );
+                }
+                item.state = 'accepted';
+                item.reason = null;
+                done.add(eligible);
+              }
+            }
+          } catch (error) {
+            if (attempt.execution.diagnostic === 'not_dispatched') {
+              attempt.execution = syntheticFailure(String(error));
+              attempt.execution.durationMs = performance.now() - agentStarted;
+            }
+            attempt.reason = String(error);
+            infra = true;
+          } finally {
+            await writeFile(
+              join(evidenceDir, 'attempt.json'),
+              JSON.stringify(attempt, null, 2) + '\n',
+            );
+            await disposeWorkspace(workspace);
+          }
+          if (
+            infra ||
+            attempt.execution.transport === 'cancelled' ||
+            item.state === 'accepted' ||
+            !wantsRetry(policy, attempt)
+          )
+            break;
+          // Mesma escada do driver; aqui `blocked` conta como tentativa falha em todos os braços.
+          tierAttempts++;
+          const stop = match(
+            decideAttempt({
+              accepted: false,
+              executorBlocked: false,
+              tierAttempts,
+              retries: manifest.budget.maxCorrectionsPerItem,
+              lastTier: tier >= ladderLength - 1,
+            }),
+          )
+            .with('retry', () => false)
+            .with('escalate', () => {
+              tier++;
+              tierAttempts = 0;
+              return false;
+            })
+            .with('accepted', 'needs-human', () => true)
+            .exhaustive();
+          if (stop) break;
+        }
+        // Item que nem chegou a tentar por causa da vaga da revisão não é falha terminal.
+        if (!itemsBudgetReserved || item.attempts.length)
+          terminal.add(eligible);
+        if (item.state !== 'accepted') {
+          item.state = infra
+            ? 'infra_error'
+            : item.attempts.length
+              ? 'failed'
+              : 'not_run';
+          item.reason = itemsBudgetReserved
+            ? 'items_budget_reserved_for_review'
+            : (item.attempts.at(-1)?.reason ??
+              options.control?.stopReason() ??
+              'cancelled');
+        }
+        if (infra || itemsBudgetReserved) break;
       }
-      // Item que nem chegou a tentar por causa da vaga da revisão não é falha terminal.
-      if (!itemsBudgetReserved || item.attempts.length) terminal.add(eligible);
-      if (item.state !== 'accepted') {
-        item.state = infra
-          ? 'infra_error'
-          : item.attempts.length
-            ? 'failed'
-            : 'not_run';
-        item.reason = itemsBudgetReserved
-          ? 'items_budget_reserved_for_review'
-          : (item.attempts.at(-1)?.reason ??
-            options.control?.stopReason() ??
-            'cancelled');
-      }
-      if (infra || itemsBudgetReserved) break;
+    } finally {
+      await dropSeeded();
     }
     for (const item of result.items)
       if (item.state === 'not_run') {
@@ -712,6 +946,7 @@ export async function evaluateImplementation(
         )!.dependsOn;
         if (
           !infra &&
+          !seeded &&
           !options.signal.aborted &&
           !options.control?.stopReason() &&
           // Com a vaga da revisão reservada, dependência que só não rodou não é falha.
@@ -730,7 +965,13 @@ export async function evaluateImplementation(
                 ? 'items_budget_reserved_for_review'
                 : 'cancelled'));
       }
-    if (!infra && !options.signal.aborted && !options.control?.stopReason()) {
+    // Matriculas semeia dependências e não promove: não há mudança inteira para verificar.
+    if (
+      !infra &&
+      !seeded &&
+      !options.signal.aborted &&
+      !options.control?.stopReason()
+    ) {
       const workspace = await createAttemptWorkspace(
         source,
         baseline,

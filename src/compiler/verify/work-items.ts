@@ -1,6 +1,6 @@
 import type { Proposal } from '../changes/proposal';
 import type { IR } from '../ir';
-import { ownerOf, type ProjectStatus } from '../state';
+import { changeOwners, type ProjectStatus } from '../state';
 import type { Finding } from './gates';
 
 export function workItemFindings(
@@ -9,9 +9,9 @@ export function workItemFindings(
   proposal: Proposal,
 ): Finding[] {
   const touched = new Set(
-    [...proposal.delta.added, ...proposal.delta.modified]
-      .map((id) => ownerOf(ir, id))
-      .filter((id) => id !== null),
+    [...proposal.delta.added, ...proposal.delta.modified].flatMap((id) =>
+      changeOwners(ir, id),
+    ),
   );
   return report.items
     .filter((i) => touched.has(i.id) && i.state !== 'done')

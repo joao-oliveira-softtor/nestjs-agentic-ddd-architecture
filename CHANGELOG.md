@@ -2,6 +2,21 @@
 
 ## [Não lançado]
 
+## [0.5.0] — 2026-10-25
+
+Adiciona o modelo tático do domínio (value objects, relações entre agregados, ports e adapters) com gates de verificação, regras do time e servidor MCP local.
+
+Modelo tático do domínio (ADR-0006, #81–#88):
+
+- Saída inalterada para quem não usa a feature (#81): snapshots de `examples/orders` e da fixture `shop` travam árvore gerada, IR e relatórios do `verify`; chave vazia não entra na IR.
+- `@AgentValueObject({ description })` em classe que estende `ValueObject` (#82): vira item de domínio `valueobject:<Nome>`, com as invariantes cobertas por `covers`.
+- `contains` e `references` em `@AgentEntity` (#83): o dono declara a composição (o contido entra antes do dono no grafo) e a referência a outro agregado por id, sem aresta. A raiz é derivada: a entidade que nenhum `contains` cita.
+- `@Invariant` em `@AgentUseCase` (#84): regras que atravessam agregados, como "aluno ativo", com id `invariant:<usecase>/<id>` e obrigação de teste. O finder `invariant` do MCP também procura em use-cases.
+- `@AgentPort({ description, root, methods })` em classe abstrata (#85): interface de repositório, com a raiz do agregado e os métodos na IR. `@AgentUseCase({ ports })` leva o port ao packet. Mudar o port exige proposta.
+- `@AgentAdapter({ description, implements })` e camada `infrastructure` (#86): implementação de port (`adapter:<Nome>`), com uma obrigação por método do port. Um adapter por port. Gate de escopo de classe para value objects e adapters: o executor altera corpos e campos `#privados`, não decorators, `extends`/`implements` nem a assinatura pública.
+- Gates T1 a T3 no `verify --item` (#87): T1 proíbe referência a outro agregado que não seja por id; T2 proíbe value object que referencie entidade; T3 proíbe campo que use value object ou entidade filha fora do `contains` do dono. Só existem em projeto com elemento tático; `status` e `verify NNNN` não os rodam.
+- Braço de controle e tutorial `matriculas` (#88, ADR-0006 D10): sete itens com quatro armadilhas e comparação pareada entre o framework completo (F) e um braço sem framework (C0). Tutorial em `bun run skills:example --root <dir> --tutorial matriculas`. O pré-registro do ciclo 22 está em `evals/campaigns/cycle-22-control/`, sem execução real.
+
 Servidor MCP local (#68):
 
 - `agentic-ddd mcp` (stdio, somente leitura) expõe 4 tools sobre o domínio compilado; recusa responder se código, regras, config ou lock mudaram desde o último `compile` bem-sucedido. Subcaminho `./mcp` e peer opcional `@modelcontextprotocol/server@2.3.1`.
@@ -33,6 +48,8 @@ Orquestração de agentes por camada e modelo (épico #26). Tudo offline: nenhum
 - `bun run evals:session-cost <id-da-sessão | caminho .jsonl>` lê o transcript local de uma sessão do Claude Code e dos seus subagentes e imprime tokens por categoria e custo por grupo e por modelo; o custo é derivado de `evals/pricing.json` (equivalente de API, não cobrança) e é limite inferior (`≥`: chamadas auxiliares do CLI não entram no transcript e a saída de subagente é provisória), sem chamar a API.
 - Piloto cycle-21 da campanha de comparação (#36, resultado em `docs/superpowers/validation/2026-10-22-cycle-21/`): classificação S. Sonnet medium sozinho aceitou tanto quanto o roteamento por camada com custo um pouco menor, então o padrão continua o modelo `inherit` com brief e gates; o roteamento fica como experimento e os perfis de modelo no instalador (#33) não serão feitos.
 - Decisões em [ADR-0003](docs/adr/ADR-0003.md); pesquisa, spec e plano em `docs/research/` e `docs/superpowers/`.
+
+Veja [docs/releases/0.5.0.md](docs/releases/0.5.0.md).
 
 ## [0.4.0] — 2026-10-10
 
@@ -95,3 +112,4 @@ Veja [demonstração e validação](docs/releases/0.1.0.md) e [roadmap](docs/ROA
 [0.3.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.3.0
 
 [0.4.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.4.0
+[0.5.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.5.0

@@ -105,6 +105,23 @@ export function evaluateStatus(input: {
   };
 }
 
+/** Use-cases cujo `ports` inclui o port e adapters que o implementam. */
+export function usersOfPort(ir: IR, portId: string): string[] {
+  return [
+    ...ir.useCases.filter((u) => u.ports?.includes(portId)).map((u) => u.id),
+    ...(ir.adapters ?? [])
+      .filter((a) => a.implements === portId)
+      .map((a) => a.id),
+  ];
+}
+
+/** Donos de um id do delta: o item dono ou, para um port, os use-cases e adapters que o usam. */
+export function changeOwners(ir: IR, id: string): string[] {
+  const owner = ownerOf(ir, id);
+  if (owner) return [owner];
+  return id.startsWith('port:') ? usersOfPort(ir, id) : [];
+}
+
 export function selectChange(
   report: ProjectStatus,
   ir: IR,
@@ -119,8 +136,7 @@ export function selectChange(
       if (byId.get(dep)!.state !== 'done') add(dep);
   };
   for (const id of [...proposal.delta.added, ...proposal.delta.modified]) {
-    const owner = ownerOf(ir, id);
-    if (owner) add(owner);
+    for (const owner of changeOwners(ir, id)) add(owner);
   }
   return {
     ...report,

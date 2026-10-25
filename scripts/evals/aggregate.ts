@@ -18,7 +18,8 @@ import { sha256 } from './isolation';
 import { readPrivateBytes } from './private-files';
 import { parseImplementationReply, verdictOf } from './judge';
 import { finalVerificationState } from './final-verification';
-import { TASK_ITEMS } from './audit';
+import { TUTORIALS } from './tutorials';
+import { oracleGreen } from './reference';
 import {
   deriveCost,
   loadPricing,
@@ -221,7 +222,8 @@ function validateRows(report: EvalReport, slot: Slot) {
         .map((i) => i.item)
         .sort()
         .join() !==
-      TASK_ITEMS.map((i) => i.id)
+      TUTORIALS[report.manifest.benchmark].items
+        .map((i) => i.id)
         .sort()
         .join()
     )
@@ -246,11 +248,12 @@ const green = (t: Verification['executorTests']) =>
   t.cases.length > 0 &&
   t.cases.every((c) => c.status === 'passed');
 /** `verify-item` do item com os gates I1–I5 aprovados. */
-const itemGatesGreen = (attempt: ItemAttempt, v: Verification) =>
+export const itemGatesGreen = (attempt: ItemAttempt, v: Verification) =>
   v.itemReport?.item === attempt.handoff.item &&
   v.itemReport.status === 'done' &&
   v.itemReport.gates
     .map((g) => g.id)
+    .filter((id) => id !== 'T')
     .sort()
     .join() === 'I1,I2,I3,I4,I5' &&
   v.itemReport.gates.every((g) => g.status === 'passed');
@@ -585,7 +588,64 @@ function costSummary(
         : null,
   };
 }
-function summarize(executed: Executed[], planned: Slot[], pricing: Pricing) {
+const TRAPS = ['A', 'B', 'C', 'D'] as const;
+/** Só `matriculas`: por item, oráculo privado, violações T1/T2 e defeitos por armadilha. */
+export function controlMetrics(executed: Executed[]) {
+  const items = TUTORIALS.matriculas.items.map((task) => {
+    const runs = executed.flatMap(({ slot, report }) =>
+      report.manifest.benchmark === 'matriculas'
+        ? [
+            report.benchmarks
+              .find((b) => b.configuration === slot.configuration)!
+              .items.find((i) => i.item === task.id)?.attempts ?? [],
+          ]
+        : [],
+    );
+    const trapDefects = { A: 0, B: 0, C: 0, D: 0 };
+    let tacticalViolations = 0,
+      measured = 0;
+    for (const attempts of runs) {
+      // Primeira tentativa, a mesma do `oracleAccepted.first`.
+      const v = attempts[0]?.verification;
+      if (!v) continue;
+      measured++;
+      tacticalViolations += (v.itemReport?.gates ?? [])
+        .flatMap((g) => g.findings)
+        .filter((f) => /^T[12]:/.test(f.message)).length;
+      const failed = v.referenceTests?.collectionError
+        ? TUTORIALS.matriculas.oracleCases[task.id]!
+        : (v.referenceTests?.cases ?? [])
+            .filter((c) => c.status !== 'passed')
+            .map((c) => c.name);
+      for (const name of failed) {
+        const trap = /^trap:([A-D]) /.exec(name)?.[1] as
+          (typeof TRAPS)[number] | undefined;
+        if (trap) trapDefects[trap]++;
+      }
+    }
+    return {
+      item: task.id,
+      runs: runs.length,
+      measured,
+      oracleAccepted: {
+        first: runs.filter((a) => oracleGreen(a[0]?.verification ?? null))
+          .length,
+        last: runs.filter((a) => oracleGreen(a.at(-1)?.verification ?? null))
+          .length,
+      },
+      tacticalViolations,
+      trapDefects,
+    };
+  });
+  return { items };
+}
+function summarize(
+  executed: Executed[],
+  planned: Slot[],
+  pricing: Pricing,
+  itemCounts: ReadonlyMap<string, number>,
+) {
+  const plannedItems = planned.reduce((n, r) => n + itemCounts.get(r.id)!, 0);
   let correctCases = 0,
     evaluableCases = 0,
     initialItems = 0,
@@ -668,7 +728,7 @@ function summarize(executed: Executed[], planned: Slot[], pricing: Pricing) {
     if (finalVerificationState(b.finalVerification) === 'infra_error')
       infrastructureFailures++;
     if (
-      final === 5 &&
+      final === TUTORIALS[report.manifest.benchmark].items.length &&
       finalVerificationState(b.finalVerification) === 'verified' &&
       b.finalVerification?.report?.status === 'done' &&
       report.provenance.originAfter.status === 'available' &&
@@ -684,7 +744,7 @@ function summarize(executed: Executed[], planned: Slot[], pricing: Pricing) {
     plannedCases,
     evaluableCases,
     correctCases,
-    plannedItems: 5 * planned.length,
+    plannedItems,
     initialItems,
     finalItems,
     certifiedRuns,
@@ -697,8 +757,8 @@ function summarize(executed: Executed[], planned: Slot[], pricing: Pricing) {
     notRunCases,
     accuracy: rate(correctCases, evaluableCases),
     coverage: rate(evaluableCases, plannedCases),
-    initial: rate(initialItems, 5 * planned.length),
-    final: rate(finalItems, 5 * planned.length),
+    initial: rate(initialItems, plannedItems),
+    final: rate(finalItems, plannedItems),
     certification: rate(certifiedRuns, planned.length),
     usage: usage.length
       ? sumUsage(usage, executed.length === planned.length && notRunCases === 0)
@@ -729,6 +789,9 @@ function summarize(executed: Executed[], planned: Slot[], pricing: Pricing) {
       ),
     },
     runMetrics: runs,
+    ...(executed.some((r) => r.report.manifest.benchmark === 'matriculas')
+      ? { matriculas: controlMetrics(executed) }
+      : {}),
   };
 }
 function grouping({ slot, report }: Executed) {
@@ -800,6 +863,7 @@ export async function aggregateCampaign(path: string) {
   const pricing = await loadPricing();
   const root = dirname(resolve(path));
   const executed: Executed[] = [];
+  const itemCounts = new Map<string, number>();
   const reportIds = new Set<string>();
   for (const slot of index.runs) {
     const manifest = manifestSchema.parse(
@@ -807,6 +871,7 @@ export async function aggregateCampaign(path: string) {
     );
     if (!manifest.configurations.some((c) => c.id === slot.configuration))
       throw Error('Configuration absent from planned manifest');
+    itemCounts.set(slot.id, TUTORIALS[manifest.benchmark].items.length);
     if (slot.result.status === 'not_run') continue;
     const report = inputReportSchema.parse(
       JSON.parse((await checkedFile(root, slot.result.report)).toString()),
@@ -845,6 +910,7 @@ export async function aggregateCampaign(path: string) {
           executed.filter((r) => r.slot.configuration === configuration),
           index.runs.filter((r) => r.configuration === configuration),
           pricing,
+          itemCounts,
         ),
         notRun: index.runs
           .filter(
@@ -867,6 +933,7 @@ export async function aggregateCampaign(path: string) {
           g.runs,
           g.runs.map((r) => r.slot),
           pricing,
+          itemCounts,
         ),
         runs: g.runs.map((r) => ({
           id: r.slot.id,

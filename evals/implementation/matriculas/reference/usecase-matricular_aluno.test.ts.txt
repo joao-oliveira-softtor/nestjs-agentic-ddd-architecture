@@ -1,0 +1,60 @@
+import { expect, spyOn, test } from 'bun:test';
+import { createTestContext } from '@agentic-ddd/testing';
+import { MatricularAluno } from '__WORKSPACE__/app/application/matricular-aluno';
+import { Aluno } from '__WORKSPACE__/app/domain/aluno';
+import { AlunoId } from '__WORKSPACE__/app/domain/aluno-id';
+import type { Matricula } from '__WORKSPACE__/app/domain/matricula';
+import { Turma } from '__WORKSPACE__/app/domain/turma';
+import { TurmaId } from '__WORKSPACE__/app/domain/turma-id';
+// Fakes for every repository; counts are keyed by the class id the use-case asks for.
+const setup = (status: 'ativo' | 'inativo', ocupadas: Record<string, number>) => {
+  const aluno = Aluno.criar(AlunoId.criar('a-5'), 'Duda', status);
+  const turma = Turma.criar(TurmaId.criar('t-5'), 2);
+  const matriculas = {
+    save: async (_m: Matricula) => {},
+    contarPorTurma: async (id: TurmaId) => ocupadas[id.props.valor] ?? 0,
+  };
+  const save = spyOn(matriculas, 'save');
+  const uc = new MatricularAluno(
+    matriculas,
+    { findById: async (id) => (id.props.valor === 'a-5' ? aluno : null) },
+    { findById: async (id) => (id.props.valor === 't-5' ? turma : null) },
+  );
+  return { uc, save, turma };
+};
+const input = { aluno_id: 'a-5', turma_id: 't-5' };
+test('base:matricular_aluno salva uma única matrícula com os ids e devolve o id dela', async () => {
+  const { uc, save } = setup('ativo', { 't-5': 1, 'outra': 9 });
+  const out = await uc.execute(input, createTestContext());
+  expect(save).toHaveBeenCalledTimes(1);
+  const saved = save.mock.calls[0]![0];
+  expect(saved.alunoId.props.valor).toBe('a-5');
+  expect(saved.turmaId.props.valor).toBe('t-5');
+  expect(out.matricula_id).toBe(saved.id);
+});
+test('base:matricular_aluno falha com ALUNO_NAO_ENCONTRADO e TURMA_NAO_ENCONTRADA', async () => {
+  const { uc, save } = setup('ativo', {});
+  await expect(uc.execute({ ...input, aluno_id: 'x' }, createTestContext())).rejects.toMatchObject({ code: 'ALUNO_NAO_ENCONTRADO' });
+  await expect(uc.execute({ ...input, turma_id: 'x' }, createTestContext())).rejects.toMatchObject({ code: 'TURMA_NAO_ENCONTRADA' });
+  expect(save).not.toHaveBeenCalled();
+});
+test('trap:B matricular_aluno recusa aluno inativo com ALUNO_INATIVO e não salva', async () => {
+  const { uc, save } = setup('inativo', {});
+  await expect(uc.execute(input, createTestContext())).rejects.toMatchObject({ code: 'ALUNO_INATIVO' });
+  expect(save).not.toHaveBeenCalled();
+});
+test('trap:B matricular_aluno recusa turma cheia (contarPorTurma >= vagas) com TURMA_CHEIA', async () => {
+  for (const ocupadas of [2, 3]) {
+    const { uc, save } = setup('ativo', { 't-5': ocupadas });
+    await expect(uc.execute(input, createTestContext())).rejects.toMatchObject({ code: 'TURMA_CHEIA' });
+    expect(save).not.toHaveBeenCalled();
+  }
+});
+test('trap:B matricular_aluno aceita a última vaga e não altera a Turma', async () => {
+  const { uc, save, turma } = setup('ativo', { 't-5': 1 });
+  const before = { ...turma };
+  await uc.execute(input, createTestContext());
+  expect(save).toHaveBeenCalledTimes(1);
+  expect({ ...turma }).toEqual(before);
+  expect(turma.vagas).toBe(2);
+});

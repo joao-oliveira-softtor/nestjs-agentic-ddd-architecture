@@ -89,6 +89,7 @@ export const routingSchema = z.strictObject({
     domain: modelSchema,
     application: modelSchema,
     operators: modelSchema,
+    infrastructure: modelSchema.optional(),
   }),
   ladder: z.array(stepSchema).min(1),
   reviewer: stepSchema.optional(),
@@ -111,7 +112,7 @@ export const manifestSchema = z
         contextRoots: z.strictObject({ dev: contexts, runtime: contexts }),
       }),
     ),
-    benchmark: z.literal('tasks'),
+    benchmark: z.enum(['tasks', 'matriculas']),
     configurations: z
       .array(
         z.strictObject({
@@ -131,7 +132,7 @@ export const manifestSchema = z
             reasoningEffort: reasoningEffortSchema.optional(),
           }),
           /** Ausente = `legacy`, para não mudar manifestos e relatórios já gerados. */
-          promptMode: z.enum(['legacy', 'brief']).optional(),
+          promptMode: z.enum(['legacy', 'brief', 'bare']).optional(),
           routing: routingSchema.optional(),
         }),
       )
@@ -187,14 +188,22 @@ export const manifestSchema = z
         const models = c.routing.ladder.map((step) => step.model);
         return (
           new Set(models).size === models.length &&
-          Object.values(c.routing.byLayer).every((model) =>
-            models.includes(model),
+          Object.values(c.routing.byLayer).every(
+            (model) => model === undefined || models.includes(model),
           ) &&
           c.model === models[0] &&
           c.parameters.reasoningEffort === undefined
         );
       }),
     'routing: distinct ladder models covering byLayer, model equal to the first ladder step, effort only per step',
+  )
+  .refine(
+    (m) =>
+      m.benchmark !== 'matriculas' ||
+      m.configurations.every(
+        (c) => !c.routing || c.routing.byLayer.infrastructure !== undefined,
+      ),
+    'matriculas: routing.byLayer.infrastructure is required',
   );
 export type RunManifest = z.infer<typeof manifestSchema>;
 export type EvalConfiguration = RunManifest['configurations'][number];

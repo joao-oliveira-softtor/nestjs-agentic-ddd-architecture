@@ -182,3 +182,55 @@ describe('deterministic evaluation contracts', () => {
     ).toThrow();
   });
 });
+
+describe('manifesto matriculas / bare / infrastructure', () => {
+  const withConfig = (extra: object) => ({
+    ...manifestFixture,
+    benchmark: 'matriculas',
+    configurations: [
+      { ...manifestFixture.configurations[0]!, promptMode: 'bare', ...extra },
+    ],
+  });
+  test('aceita matriculas e bare', () => {
+    expect(manifestSchema.safeParse(withConfig({})).success).toBe(true);
+  });
+  test('byLayer.infrastructure é opcional', () => {
+    const routing = (infrastructure?: string) => ({
+      adapter: 'scripted',
+      model: 'a',
+      routing: {
+        byLayer: {
+          domain: 'a',
+          application: 'a',
+          operators: 'a',
+          infrastructure,
+        },
+        ladder: [{ model: 'a' }],
+      },
+    });
+    const tasks = (extra: object) => ({
+      ...withConfig(extra),
+      benchmark: 'tasks',
+    });
+    expect(manifestSchema.safeParse(tasks(routing())).success).toBe(true);
+    // matriculas com routing exige a camada infrastructure.
+    expect(manifestSchema.safeParse(withConfig(routing())).success).toBe(false);
+    expect(manifestSchema.safeParse(withConfig(routing('a'))).success).toBe(
+      true,
+    );
+    expect(manifestSchema.safeParse(withConfig(routing('x'))).success).toBe(
+      false,
+    );
+  });
+  test('manifestos do cycle-21 continuam válidos', async () => {
+    const dir = resolve(
+      import.meta.dir,
+      '../evals/campaigns/cycle-21-pilot/manifests',
+    );
+    for (const name of new Bun.Glob('*.json').scanSync(dir))
+      expect(
+        manifestSchema.safeParse(await Bun.file(join(dir, name)).json())
+          .success,
+      ).toBe(true);
+  });
+});

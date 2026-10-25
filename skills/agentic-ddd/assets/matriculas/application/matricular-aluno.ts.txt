@@ -1,0 +1,39 @@
+import { z } from 'zod';
+import { DomainError, notImplemented, type UseCase, type UseCaseContext } from '@agentic-ddd/core';
+import { AgentUseCase, Invariant } from '@agentic-ddd/decorators';
+import { Matricula } from '../domain/matricula';
+import { AlunoRepository } from '../domain/aluno.repository';
+import { TurmaRepository } from '../domain/turma.repository';
+import { MatriculaRepository } from '../domain/matricula.repository';
+import { AlunoId } from '../domain/aluno-id';
+import { TurmaId } from '../domain/turma-id';
+
+export const matricularAlunoInput = z.object({ aluno_id: z.string().min(1), turma_id: z.string().min(1) });
+export const matricularAlunoOutput = z.object({ matricula_id: z.string() });
+export type MatricularAlunoInput = z.infer<typeof matricularAlunoInput>;
+export type MatricularAlunoOutput = z.infer<typeof matricularAlunoOutput>;
+
+@AgentUseCase({ name: 'matricular_aluno', description: 'Carrega aluno e turma, confere as regras, cria e salva uma única matrícula; aluno ou turma ausente falha com ALUNO_NAO_ENCONTRADO ou TURMA_NAO_ENCONTRADA. A Turma não é alterada.', whenToUse: 'Quando um aluno deve entrar em uma turma.', whenNotToUse: 'Para cancelar matrícula ou alterar turma.', input: matricularAlunoInput, output: matricularAlunoOutput, uses: ['method:Matricula.criar'], ports: () => [MatriculaRepository, AlunoRepository, TurmaRepository] })
+@Invariant({ id: 'aluno-ativo', text: 'Só aluno ativo se matricula; aluno inativo falha com ALUNO_INATIVO.' })
+@Invariant({ id: 'turma-com-vaga', text: 'A turma precisa ter vaga: matrículas da turma (contarPorTurma) menores que as vagas; turma cheia falha com TURMA_CHEIA. A conferência não é transacional, então duas matrículas simultâneas podem ultrapassar as vagas (corrida conhecida, fora do escopo do tutorial).' })
+export class MatricularAluno implements UseCase<MatricularAlunoInput, MatricularAlunoOutput> {
+  constructor(private readonly matriculas: MatriculaRepository, private readonly alunos: AlunoRepository, private readonly turmas: TurmaRepository) {}
+  async execute(input: MatricularAlunoInput, ctx: UseCaseContext): Promise<MatricularAlunoOutput> {
+    return notImplemented();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+}

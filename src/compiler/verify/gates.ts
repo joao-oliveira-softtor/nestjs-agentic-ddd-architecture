@@ -17,7 +17,8 @@ export type GateId =
   | 'I2'
   | 'I3'
   | 'I4'
-  | 'I5';
+  | 'I5'
+  | 'T';
 export type GateStatus = 'passed' | 'failed' | 'pending';
 
 export interface Finding {
@@ -61,7 +62,13 @@ export interface GateInput {
   readonly knownIds: ReadonlySet<string>;
 }
 
-const RULE_PREFIXES = ['invariant:', 'method:', 'usecase:', 'operator:'];
+const RULE_PREFIXES = [
+  'invariant:',
+  'method:',
+  'usecase:',
+  'operator:',
+  'valueobject:',
+];
 const at = (testCase: TestCaseResult): string =>
   `${testCase.file}:${testCase.line}`;
 const failure = (testCase: TestCaseResult): Finding => ({

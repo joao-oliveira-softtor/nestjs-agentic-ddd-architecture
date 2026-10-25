@@ -1,10 +1,16 @@
 import { describe, expect, test } from 'bun:test';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { parseJUnit } from '@agentic-ddd/compiler';
 import { TASK_ITEMS } from '../scripts/evals/audit';
 import type { ProcessResult } from '../scripts/evals/contracts';
-import { ORACLE_CASES, testRunOf } from '../scripts/evals/reference';
+import { TUTORIALS, collaborators } from '../scripts/evals/tutorials';
+import {
+  ORACLE_CASES,
+  gateCountValid,
+  testRunOf,
+} from '../scripts/evals/reference';
 
 const ROOT = resolve(import.meta.dir, '..');
 
@@ -105,4 +111,87 @@ test('ORACLE_CASES bate com os JUnits do oráculo publicados na campanha 20', as
   }
   expect([...seen].sort()).toEqual(TASK_ITEMS.map((i) => i.id).sort());
   expect(Object.keys(ORACLE_CASES).sort()).toEqual([...seen].sort());
+});
+
+describe('gateCountValid', () => {
+  const gates = (...ids: string[]) => ids.map((id) => ({ id }));
+  test('5 gates, ou 6 com T', () => {
+    expect(gateCountValid(gates('I1', 'I2', 'I3', 'I4', 'I5'))).toBe(true);
+    expect(gateCountValid(gates('I1', 'I2', 'I3', 'I4', 'I5', 'T'))).toBe(true);
+    expect(gateCountValid(gates('I1', 'I2', 'I3', 'I4', 'I5', 'G1'))).toBe(
+      false,
+    );
+  });
+});
+
+describe('matriculas', () => {
+  const { items, oracleCases, referenceDir } = TUTORIALS.matriculas;
+  test('oracleCases lista os casos de cada oráculo privado', async () => {
+    const files = await readdir(join(ROOT, referenceDir));
+    expect(files.length).toBe(items.length);
+    for (const item of items) {
+      const source = await readFile(
+        join(ROOT, referenceDir, basename(item.test) + '.txt'),
+        'utf8',
+      );
+      const names = [...source.matchAll(/^test\('(.+?)',/gm)].map((m) => m[1]!);
+      expect(names.sort()).toEqual([...oracleCases[item.id]!].sort());
+    }
+  });
+  test('colaboradores: dependsOn, references e raízes dos ports, em fecho', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'collab-'));
+    try {
+      const root = join(dir, 'm');
+      expect(
+        Bun.spawnSync(
+          [
+            process.execPath,
+            'scripts/create-skills-example.ts',
+            '--root',
+            root,
+            '--tutorial',
+            'matriculas',
+          ],
+          { cwd: ROOT },
+        ).exitCode,
+      ).toBe(0);
+      const json = (arg: string) =>
+        JSON.parse(
+          Bun.spawnSync([process.execPath, 'run', 'agentic', arg, '--json'], {
+            cwd: root,
+          }).stdout.toString(),
+        );
+      const status = json('status') as {
+        items: { id: string; dependsOn: string[] }[];
+      };
+      expect(status.items.map((i) => i.id).sort()).toEqual(
+        items.map((i) => i.id).sort(),
+      );
+      const ir = JSON.parse(
+        Bun.spawnSync([process.execPath, 'run', 'agentic', 'ir'], {
+          cwd: root,
+        }).stdout.toString(),
+      );
+      const dependsOn = Object.fromEntries(
+        status.items.map((i) => [i.id, i.dependsOn]),
+      );
+      const closure = (id: string) => collaborators(id, dependsOn, ir);
+      const domain = [
+        'entity:Aluno',
+        'entity:Turma',
+        'valueobject:AlunoId',
+        'valueobject:TurmaId',
+      ];
+      expect(closure('valueobject:AlunoId')).toEqual([]);
+      expect(closure('valueobject:TurmaId')).toEqual([]);
+      expect(closure('entity:Aluno')).toEqual(['valueobject:AlunoId']);
+      expect(closure('entity:Turma')).toEqual(['valueobject:TurmaId']);
+      expect(closure('entity:Matricula')).toEqual(domain);
+      const all = [...domain, 'entity:Matricula'].sort();
+      expect(closure('usecase:matricular_aluno')).toEqual(all);
+      expect(closure('adapter:InMemoryMatriculaRepository')).toEqual(all);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }, 60000);
 });

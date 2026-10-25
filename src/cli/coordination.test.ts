@@ -108,10 +108,16 @@ test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relac
     expect(packet.code).toBe(0);
     const hash = /specHash: `([a-f0-9]{64})`/.exec(packet.stdout)![1]!;
     const passingTests = await readFile(join(dir, 'app.test.ts'), 'utf8');
-    expect(
-      run('verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json')
-        .code,
-    ).toBe(0);
+    const ok = run(
+      'verify',
+      '--item',
+      'entity:Thing',
+      '--spec-hash',
+      hash,
+      '--json',
+    );
+    expect(ok.code).toBe(0);
+    expect(ok.stdout).toMatchSnapshot();
     const wrong = run(
       'verify',
       '--item',
@@ -121,6 +127,7 @@ test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relac
       '--json',
     );
     expect(wrong.code).toBe(1);
+    expect(wrong.stdout).toMatchSnapshot();
     expect(
       JSON.parse(wrong.stdout).gates.find((g: { id: string }) => g.id === 'I3')
         .status,

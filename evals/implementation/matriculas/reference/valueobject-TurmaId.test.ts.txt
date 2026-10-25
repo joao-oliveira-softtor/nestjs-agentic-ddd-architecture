@@ -1,0 +1,14 @@
+import { expect, test } from 'bun:test';
+import { TurmaId } from '__WORKSPACE__/app/domain/turma-id';
+test('trap:C TurmaId rejeita valor vazio com TURMA_ID_VAZIO', () => {
+  let error: unknown;
+  try { TurmaId.criar(''); } catch (caught) { error = caught; }
+  expect(error).toMatchObject({ code: 'TURMA_ID_VAZIO' });
+});
+test('trap:C TurmaId compara por valor', () => {
+  expect(TurmaId.criar('x-1').equals(TurmaId.criar('x-1'))).toBe(true);
+  expect(TurmaId.criar('x-1').equals(TurmaId.criar('x-2'))).toBe(false);
+});
+test('base:TurmaId guarda o valor', () => {
+  expect(TurmaId.criar('x-1').props.valor).toBe('x-1');
+});

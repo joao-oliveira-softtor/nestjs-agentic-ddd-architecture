@@ -12,7 +12,7 @@ import {
   sha256,
   protectedWorkspacePaths,
 } from '../isolation';
-import { TASK_ITEMS } from '../audit';
+import { findItem } from '../tutorials';
 
 export interface ScriptedAction {
   finalText?: string;
@@ -69,10 +69,9 @@ export function createScriptedAdapter(
           framework: request.mode === 'implementation',
           extraReadOnly: await protectedWorkspacePaths(
             workspace,
-            TASK_ITEMS.filter((i) => i.id === request.id).flatMap((i) => [
-              i.test,
-              ...(i.file ? [i.file] : []),
-            ]),
+            [findItem(request.id)].flatMap((i) =>
+              i ? [i.test, ...(i.file ? [i.file] : [])] : [],
+            ),
           ),
         },
       );

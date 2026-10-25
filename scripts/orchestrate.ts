@@ -35,6 +35,7 @@ export const TIER_BY_LAYER: Readonly<Record<string, Tier>> = {
   domain: 'haiku',
   application: 'sonnet',
   operators: 'sonnet',
+  infrastructure: 'sonnet',
 };
 
 export interface PlanItem {

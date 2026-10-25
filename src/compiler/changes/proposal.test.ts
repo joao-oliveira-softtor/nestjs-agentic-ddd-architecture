@@ -135,6 +135,36 @@ describe('parseProposal', () => {
     ]);
   });
 
+  test('delta aceita ID de value object', () => {
+    const raw = VALID.replace(
+      '    - "invariant:Order/cancelamento-exige-motivo"',
+      '    - "valueobject:Dinheiro"',
+    );
+    const { proposal, errors } = parse(raw);
+    expect(errors).toEqual([]);
+    expect(proposal!.delta.added).toEqual(['valueobject:Dinheiro']);
+  });
+
+  test('delta aceita ID de port', () => {
+    const raw = VALID.replace(
+      '    - "invariant:Order/cancelamento-exige-motivo"',
+      '    - "port:PedidoRepository"',
+    );
+    const { proposal, errors } = parse(raw);
+    expect(errors).toEqual([]);
+    expect(proposal!.delta.added).toEqual(['port:PedidoRepository']);
+  });
+
+  test('delta aceita ID de adapter', () => {
+    const raw = VALID.replace(
+      '    - "invariant:Order/cancelamento-exige-motivo"',
+      '    - "adapter:PedidoRepositoryMemoria"',
+    );
+    const { proposal, errors } = parse(raw);
+    expect(errors).toEqual([]);
+    expect(proposal!.delta.added).toEqual(['adapter:PedidoRepositoryMemoria']);
+  });
+
   test('delta com chave desconhecida é rejeitado', () => {
     const raw = VALID.replace('  removed: []', '  removed: []\n  renamed: []');
     expect(messages(raw)).toEqual([

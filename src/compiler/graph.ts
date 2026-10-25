@@ -1,7 +1,7 @@
 import { byId } from './canonical';
 import type { IR } from './ir';
 
-export type Layer = 'domain' | 'application' | 'operators';
+export type Layer = 'domain' | 'application' | 'operators' | 'infrastructure';
 
 export interface WorkItem {
   readonly id: string;
@@ -20,6 +20,14 @@ export function itemOfMethod(ir: IR, methodId: string): string {
   return methodId;
 }
 
+// Raiz de agregado: entidade que nenhum `contains` cita.
+export function aggregateRoots(ir: IR): Set<string> {
+  const contained = new Set(ir.entities.flatMap((e) => e.contains ?? []));
+  return new Set(
+    ir.entities.map((e) => e.id).filter((id) => !contained.has(id)),
+  );
+}
+
 export function workItems(ir: IR): WorkItem[] {
   const items: WorkItem[] = [];
   for (const entity of ir.entities) {
@@ -34,7 +42,7 @@ export function workItems(ir: IR): WorkItem[] {
       layer: 'domain',
       module: entity.module,
       source: entity.source,
-      dependsOn: [],
+      dependsOn: [...(entity.contains ?? [])].sort(),
       obligations: [...ownedByEntity, ...statics].sort(),
     });
     for (const method of entity.methods.filter((m) => !m.static)) {
@@ -53,6 +61,27 @@ export function workItems(ir: IR): WorkItem[] {
       });
     }
   }
+  for (const vo of ir.valueObjects ?? [])
+    items.push({
+      id: vo.id,
+      layer: 'domain',
+      module: vo.module,
+      source: vo.source,
+      dependsOn: [],
+      obligations: [vo.id, ...vo.invariants.map((i) => i.id)].sort(),
+    });
+  for (const adapter of ir.adapters ?? []) {
+    const port = ir.ports?.find((p) => p.id === adapter.implements);
+    if (port)
+      items.push({
+        id: adapter.id,
+        layer: 'infrastructure',
+        module: adapter.module,
+        source: adapter.source,
+        dependsOn: [port.root],
+        obligations: port.methods.map((m) => `${port.id}.${m.name}`).sort(),
+      });
+  }
   for (const useCase of ir.useCases) {
     items.push({
       id: useCase.id,
@@ -62,7 +91,10 @@ export function workItems(ir: IR): WorkItem[] {
       dependsOn: [
         ...new Set(useCase.uses.map((m) => itemOfMethod(ir, m))),
       ].sort(),
-      obligations: [useCase.id],
+      obligations: [
+        useCase.id,
+        ...(useCase.invariants ?? []).map((i) => i.id),
+      ].sort(),
     });
   }
   for (const operator of ir.operators) {

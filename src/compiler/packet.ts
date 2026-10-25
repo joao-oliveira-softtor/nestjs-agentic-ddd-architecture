@@ -9,6 +9,9 @@ export interface PacketOptions {
   /** Lê declarações de teste sem executá-los; nunca certifica `done`. */
   readonly static?: boolean;
 }
+export const isClassScopeItem = (id: string): boolean =>
+  /^(valueobject|adapter):/.test(id);
+
 export const shellQuote = (value: string): string =>
   /^[a-zA-Z0-9_./:-]+$/.test(value)
     ? value
@@ -64,7 +67,9 @@ export function renderPacket(
     '',
     '## Regras do executor',
     '',
-    '- Altere só o corpo deste item e arquivos de teste.',
+    isClassScopeItem(item.id)
+      ? '- Altere só corpos e membros #privados da classe deste item (mesma quantidade de linhas) e arquivos de teste. Não mude extends/implements nem a assinatura pública.'
+      : '- Altere só o corpo deste item e arquivos de teste.',
     '- Não altere decorators, declarações, propostas nem arquivos gerados.',
     '- Não implemente outros itens. Preserve os contratos e IDs de invariantes.',
     '',

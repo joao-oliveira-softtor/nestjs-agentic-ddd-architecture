@@ -206,6 +206,34 @@ describe('evaluateGates', () => {
     ]);
   });
 
+  test('G4: value object novo no delta exige covers; covers de VO existente não sai como desconhecido', () => {
+    const delta = {
+      added: ['valueobject:Dinheiro'],
+      modified: [],
+      removed: [],
+    };
+    const proposal = { ...automaticOnly, delta };
+    const g4 = evaluateGates(input({ proposal })).gates.find(
+      (g) => g.id === 'G4',
+    )!;
+    expect(g4.findings.map((f) => f.message)).toEqual([
+      'valueobject:Dinheiro não tem teste com covers',
+    ]);
+
+    const cases = [
+      ...goodTests,
+      testCase(['valueobject:Dinheiro'], 'passed', 9),
+    ];
+    const ok = evaluateGates(
+      input({
+        proposal,
+        tests: { exitCode: 0, cases },
+        knownIds: new Set([...knownIds, 'valueobject:Dinheiro']),
+      }),
+    ).gates.find((g) => g.id === 'G4')!;
+    expect(ok.status).toBe('passed');
+  });
+
   test('G1: proposta arquivada editada ou com mudança de domínio depois dela', () => {
     const edited = evaluateGates(
       input({ lock: lock('outro conteúdo') }),
@@ -293,6 +321,28 @@ describe('evaluateGates', () => {
       'a.test.ts:9',
       'b.test.ts:1',
     ]);
+  });
+
+  test('relatório done tem forma estável (snapshot)', () => {
+    const report = evaluateGates(
+      input({ proposal: automaticOnly, lock: lock(automaticOnly.raw) }),
+    );
+    expect(JSON.stringify(report, null, 2)).toMatchSnapshot();
+  });
+
+  test('relatório failed tem forma estável (snapshot)', () => {
+    const report = evaluateGates(
+      input({
+        tests: {
+          exitCode: 0,
+          cases: [
+            testCase(['usecase:cancel_order']),
+            testCase(['invariant:Order/cancelamento-exige-motivo']),
+          ],
+        },
+      }),
+    );
+    expect(JSON.stringify(report, null, 2)).toMatchSnapshot();
   });
 });
 
