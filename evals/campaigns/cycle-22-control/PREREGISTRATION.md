@@ -10,7 +10,7 @@ confere este texto contra os manifestos.
 
 Todos com `benchmark: matriculas`, `maxCorrectionsPerItem: 1`, `skillDatasets: []`,
 `authentication: oauth-token`, duas repetições (r1 e r2) e `sourceRef`
-`1beb36316370b2377a6b4038f3a9d5038e002469` (último commit de implementação do PR da #88).
+`ebcfd9bd22f1ed35f61f9c6f515ffc3e374a2d67` (último commit de implementação do PR da #88).
 
 | Braço | Configuração | `promptMode` | Modelo              | Esforço  |
 | ----- | ------------ | ------------ | ------------------- | -------- |
