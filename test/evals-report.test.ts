@@ -288,13 +288,20 @@ test('Markdown mostra o modo de prompt efetivo de cada configuração', () => {
   );
 });
 
-test('benchmark.items aceita só o tamanho de um tutorial (5 ou 7)', () => {
+test('benchmark.items aceita só o tamanho de um tutorial (5 ou 7)', async () => {
   const items = reportSchema.shape.benchmarks.element.shape.items;
-  const sized = (n: number) => items.safeParse(Array(n).fill({})).error;
+  const reference = (await Bun.file(
+    join(
+      import.meta.dir,
+      '../docs/superpowers/validation/2026-10-09-plan6/reference/report.json',
+    ),
+  ).json()) as EvalReport;
+  const valid = reference.benchmarks[0]!.items[0]!;
+  const sized = (n: number) => items.safeParse(Array(n).fill(valid)).error;
   const messages = (n: number) =>
     sized(n)?.issues.filter((i) => i.path.length === 0) ?? [];
   expect(messages(4)).toHaveLength(1);
   expect(messages(6)).toHaveLength(1);
-  expect(messages(5)).toHaveLength(0);
-  expect(messages(7)).toHaveLength(0);
+  expect(sized(5)).toBeUndefined();
+  expect(sized(7)).toBeUndefined();
 });
