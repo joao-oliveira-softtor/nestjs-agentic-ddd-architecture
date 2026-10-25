@@ -11,7 +11,7 @@ import type {
 } from './contracts';
 import { available, manifestSchema, unavailable } from './contracts';
 import { buildSkillContext, evaluateSkills } from './skills';
-import { evaluateImplementation, prepareTasksBaseline } from './implementation';
+import { evaluateImplementation, prepareBaseline } from './implementation';
 import {
   disposeSource,
   fingerprintOrigin,
@@ -19,7 +19,7 @@ import {
   reserveOutput,
   sha256,
 } from './isolation';
-import { TASK_ITEMS } from './audit';
+import { TUTORIALS } from './tutorials';
 import { loadDataset } from './dataset';
 import { createScriptedAdapter } from './adapters/scripted';
 import { createCodexAdapter } from './adapters/codex';
@@ -167,7 +167,7 @@ export async function runEvaluation(
       benchmarks: manifest.configurations.map((c) => ({
         configuration: c.id,
         baselineHash: null,
-        items: TASK_ITEMS.map((item) => ({
+        items: TUTORIALS[manifest.benchmark].items.map((item) => ({
           item: item.id,
           specHash: null,
           state: 'not_run',
@@ -233,7 +233,7 @@ export async function runEvaluation(
       },
     };
     if (!control.stopReason()) {
-      await prepareTasksBaseline(source, {
+      await prepareBaseline(manifest.benchmark, source, {
         ...runOptions,
         outDir: join(outDir, 'startup'),
       });

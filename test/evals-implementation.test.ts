@@ -1,12 +1,28 @@
 import { afterAll, beforeAll, expect, test as bunTest } from 'bun:test';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { auditSubmission, scopeFindings } from '../scripts/evals/audit';
 import {
+  BARE_HIDDEN,
+  BARE_RETRY,
+  correctionFor,
   evaluateImplementation,
   prepareTasksBaseline,
+  retryPolicy,
+  seedBaseline,
+  wantsRetry,
+  withoutAgentFiles,
 } from '../scripts/evals/implementation';
+import type { ItemAttempt, PreparedSource } from '../scripts/evals/contracts';
 import { createScriptedAdapter } from '../scripts/evals/adapters/scripted';
 import { completeItem } from './helpers/tasks-solution';
 import { evalManifest, frozenSource } from './helpers/evals';
@@ -657,15 +673,135 @@ const VO = `export class Money {
 const voAudit = (after: string) =>
   scopeFindings('valueobject:Money', VO, after, 'Money', 'x', 'a.ts');
 
-bunTest(
-  'auditoria de escopo de classe aceita mudança em membro #privado de VO',
-  () => {
-    expect(voAudit(VO.replace('return 1;', 'return 2;'))).toEqual([]);
-  },
-);
+test('auditoria de escopo de classe aceita mudança em membro #privado de VO', () => {
+  expect(voAudit(VO.replace('return 1;', 'return 2;'))).toEqual([]);
+});
 
-bunTest('auditoria de escopo de classe reprova mudança de extends', () => {
+test('auditoria de escopo de classe reprova mudança de extends', () => {
   expect(
     voAudit(VO.replace('class Money', 'class Money extends Base')),
   ).not.toEqual([]);
 });
+
+const attemptWith = (partial: object) =>
+  ({
+    execution: { transport: 'finished' },
+    reply: { status: 'done', summary: 's' },
+    accepted: false,
+    reason: 'independent_verification_failed',
+    ...partial,
+  }) as unknown as ItemAttempt;
+const ORACLE_FINDING =
+  'Private behavior oracle failed for criteria c: trap:B aceita turma cheia';
+
+test('matriculas: C0 só repete quando a execução não terminou, sem findings', () => {
+  const policy = retryPolicy(true, 'bare');
+  expect(policy).toBe('transport');
+  const unfinished = attemptWith({ execution: { transport: 'timeout' } });
+  expect(wantsRetry(policy, unfinished)).toBe(true);
+  expect(correctionFor(policy, unfinished)).toBe(`\n${BARE_RETRY}`);
+  expect(BARE_RETRY).toBe(
+    'a submissão anterior não terminou; refaça a partir do baseline',
+  );
+  const failedOracle = attemptWith({
+    verification: { findings: [ORACLE_FINDING] },
+  });
+  expect(wantsRetry(policy, failedOracle)).toBe(false);
+  expect(correctionFor(policy, undefined)).toBe('');
+});
+
+test('matriculas: F repete só pelos gates do framework e tira o oráculo da correção', () => {
+  const policy = retryPolicy(true, 'brief');
+  expect(policy).toBe('framework');
+  const onlyOracle = attemptWith({
+    audit: { ok: true, findings: [], patch: '[]' },
+    verification: { findings: [ORACLE_FINDING] },
+  });
+  expect(wantsRetry(policy, onlyOracle)).toBe(false);
+  const gates = attemptWith({
+    audit: { ok: false, findings: ['Forbidden file change: x'], patch: '[]' },
+    verification: {
+      findings: [ORACLE_FINDING, 'Missing executor coverage: criterion:0001/a'],
+    },
+  });
+  expect(wantsRetry(policy, gates)).toBe(true);
+  const text = correctionFor(policy, gates);
+  expect(text).toContain('Forbidden file change: x');
+  expect(text).toContain('Missing executor coverage: criterion:0001/a');
+  expect(text).not.toContain('Private behavior oracle');
+  expect(text).not.toContain('trap:');
+});
+
+test('tasks mantém a política e o texto de correção de sempre', () => {
+  const policy = retryPolicy(false, 'bare');
+  expect(policy).toBe('default');
+  const failed = attemptWith({
+    audit: { ok: true, findings: [], patch: '[]' },
+    verification: { findings: [ORACLE_FINDING] },
+  });
+  expect(wantsRetry(policy, failed)).toBe(true);
+  expect(correctionFor(policy, failed)).toContain(ORACLE_FINDING);
+});
+
+test('C0: esconde os arquivos de skill/regras no turno e devolve depois, também se lançar', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'bare-hide-'));
+  try {
+    const root = join(dir, 'ws');
+    await mkdir(root);
+    for (const name of BARE_HIDDEN)
+      if (name.includes('.md')) await writeFile(join(root, name), name);
+      else {
+        await mkdir(join(root, name));
+        await writeFile(join(root, name, 'x'), name);
+      }
+    await mkdir(join(root, 'app'));
+    const before = (await readdir(root)).sort();
+    const during = await withoutAgentFiles(root, () => readdir(root));
+    expect(during).toEqual(['app']);
+    expect((await readdir(root)).sort()).toEqual(before);
+    expect(await readFile(join(root, '.ai/x'), 'utf8')).toBe('.ai');
+    const failure = await withoutAgentFiles(root, async () => {
+      expect(await readdir(root)).toEqual(['app']);
+      throw new Error('timeout');
+    }).catch((error: Error) => error.message);
+    expect(failure).toBe('timeout');
+    expect((await readdir(root)).sort()).toEqual(before);
+    expect(await readdir(dir)).toEqual(['ws']);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('matriculas: baseline semeado traz só as soluções dos colaboradores', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'seeded-'));
+  try {
+    const initial = join(dir, 'matriculas');
+    const made = Bun.spawnSync([
+      process.execPath,
+      'scripts/create-skills-example.ts',
+      '--root',
+      initial,
+      '--tutorial',
+      'matriculas',
+    ]);
+    expect(made.exitCode).toBe(0);
+    const root = await seedBaseline({ root: dir } as PreparedSource, initial, [
+      'entity:Aluno',
+      'valueobject:AlunoId',
+    ]);
+    const read = (file: string) => readFile(join(root, file), 'utf8');
+    for (const file of ['app/domain/aluno.ts', 'app/domain/aluno-id.ts'])
+      expect(await read(file)).not.toContain('notImplemented()');
+    for (const file of ['app/domain/turma.ts', 'app/domain/matricula.ts'])
+      expect(await read(file)).toContain('notImplemented()');
+    expect((await readdir(join(root, 'app/test'))).sort()).toEqual([
+      'entity-Aluno.test.ts',
+      'valueobject-AlunoId.test.ts',
+    ]);
+    expect(await read('app/domain/aluno.ts')).not.toBe(
+      await readFile(join(initial, 'app/domain/aluno.ts'), 'utf8'),
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}, 60000);

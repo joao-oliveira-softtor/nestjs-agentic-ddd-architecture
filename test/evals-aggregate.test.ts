@@ -1,3 +1,4 @@
+import { TUTORIALS } from '../scripts/evals/tutorials';
 import { afterEach, expect, test as bunTest } from 'bun:test';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -5,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { stableStringify } from '@agentic-ddd/compiler';
 import {
   aggregateCampaign,
+  controlMetrics,
   itemGatesGreen,
   main,
   nearestRank,
@@ -913,4 +915,83 @@ test('itemGatesGreen aceita I1..I5 com ou sem T e recusa gate extra desconhecido
   expect(itemGatesGreen(attempt, v(five))).toBe(true);
   expect(itemGatesGreen(attempt, v([...five, 'T']))).toBe(true);
   expect(itemGatesGreen(attempt, v([...five, 'G1']))).toBe(false);
+});
+
+test('matriculas: oracleAccepted, T1/T2 e defeitos por armadilha só existem para esse benchmark', async () => {
+  const verification = (
+    cases: [string, string][],
+    collectionError?: string,
+  ) => ({
+    referenceTests: {
+      exitCode: collectionError ? 1 : 0,
+      cases: cases.map(([name, status]) => ({ name, status, covers: [] })),
+      ...(collectionError ? { collectionError } : {}),
+    },
+    itemReport: {
+      gates: [
+        {
+          id: 'T',
+          findings: [
+            { message: 'T1: campo aluno guarda a raiz Aluno' },
+            { message: 'T3: outra' },
+          ],
+        },
+      ],
+    },
+  });
+  const run = (benchmark: string, items: object[]) =>
+    ({
+      slot: { configuration: 'c0' },
+      report: {
+        manifest: { benchmark },
+        benchmarks: [{ configuration: 'c0', items }],
+      },
+    }) as never;
+  const item = (id: string, attempts: object[]) => ({ item: id, attempts });
+  const usecase = TUTORIALS.matriculas.oracleCases['usecase:matricular_aluno']!;
+  const trapB = usecase.filter((n) => n.startsWith('trap:B'));
+  const metrics = controlMetrics([
+    run('matriculas', [
+      item('entity:Matricula', [
+        {
+          verification: verification([
+            ['trap:A x', 'failed'],
+            ['base:y', 'passed'],
+          ]),
+        },
+      ]),
+      item('usecase:matricular_aluno', [
+        { verification: verification([], 'quebrou o import') },
+        { verification: verification(usecase.map((n) => [n, 'passed'])) },
+      ]),
+    ]),
+    run('tasks', []),
+  ]);
+  const by = (id: string) => metrics.items.find((i) => i.item === id)!;
+  expect(metrics.items.map((i) => i.item)).toEqual(
+    TUTORIALS.matriculas.items.map((i) => i.id),
+  );
+  expect(by('entity:Matricula')).toMatchObject({
+    runs: 1,
+    measured: 1,
+    oracleAccepted: { first: 0, last: 0 },
+    tacticalViolations: 1,
+    trapDefects: { A: 1, B: 0, C: 0, D: 0 },
+  });
+  // Última tentativa verde; a primeira (coleta quebrada) é a primária e reprova.
+  expect(by('usecase:matricular_aluno')).toMatchObject({
+    oracleAccepted: { first: 0, last: 1 },
+    trapDefects: { B: 0 },
+  });
+  const broken = controlMetrics([
+    run('matriculas', [
+      item('usecase:matricular_aluno', [
+        { verification: verification([], 'quebrou o import') },
+      ]),
+    ]),
+  ]);
+  expect(
+    broken.items.find((i) => i.item === 'usecase:matricular_aluno')!.trapDefects
+      .B,
+  ).toBe(trapB.length);
 });

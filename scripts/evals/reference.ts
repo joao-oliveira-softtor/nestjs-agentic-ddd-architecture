@@ -20,27 +20,12 @@ import type {
 } from './contracts';
 import { createAttemptWorkspace, disposeWorkspace } from './isolation';
 import { workspaceCommand, cliArgv } from './commands';
-import { TASK_ITEMS, readTree } from './audit';
+import { readTree } from './audit';
+import { TUTORIALS, type Benchmark } from './tutorials';
 import { readPrivateFile } from './private-files';
 import { OUTPUT_LIMIT_BYTES } from './process';
 
-/** Private oracle test names per item, as a multiset: each template loops over two ids. */
-export const ORACLE_CASES: Readonly<Record<string, readonly string[]>> = {
-  'entity:Task': [
-    'cria tarefa normalizada e registra evento',
-    'cria tarefa normalizada e registra evento',
-    'rejeita título vazio ou só espaços',
-    'rejeita título vazio ou só espaços',
-  ],
-  'method:Task.complete': Array(2).fill('conclui, emite e rejeita repetição'),
-  'usecase:create_task': Array(2).fill('persiste, publica e rejeita duplicado'),
-  'usecase:complete_task': Array(2).fill(
-    'conclui, persiste, publica e rejeita id ausente',
-  ),
-  'operator:task-operator': Array(2).fill(
-    'operator executa tools reais e publica eventos',
-  ),
-};
+export { ORACLE_CASES } from './tutorials';
 // Bun prints this summary last; a run left early has none of its own.
 const SUMMARY = /(?:^|\n)Ran (\d+) tests? across \d+ files?\./g;
 const multiset = (names: readonly string[]) => [...names].sort().join('\n');
@@ -83,6 +68,13 @@ async function clearOutfile(path: string): Promise<boolean> {
   await rm(path, { force: true, recursive: true });
   return existed;
 }
+/** Oráculo privado verde: coletado por inteiro e sem caso reprovado. */
+export const oracleGreen = (v: VerificationEvidence | null) =>
+  !!v?.referenceTests &&
+  !v.referenceTests.collectionError &&
+  v.referenceTests.exitCode === 0 &&
+  v.referenceTests.cases.length > 0 &&
+  v.referenceTests.cases.every((c) => c.status === 'passed');
 const PLANTED = { collectionError: 'JUnit output existed before the run' };
 /** 5 gates, ou 6 quando o sexto é o T (matriculas). */
 export const gateCountValid = (gates: readonly { id: string }[]) =>
@@ -96,8 +88,10 @@ export async function verifySubmission(
     signal: AbortSignal;
     outDir?: string;
     control?: RunOptions['control'];
+    benchmark?: Benchmark;
   },
 ): Promise<VerificationEvidence> {
+  const tutorial = TUTORIALS[options.benchmark ?? 'tasks'];
   const workspace = await createAttemptWorkspace(
     source,
     submitted.root,
@@ -215,11 +209,12 @@ export async function verifySubmission(
           `Missing executor coverage: criterion:0001/${criterion.id}`,
         );
     // Hidden oracle is added only after the executor suite; it carries no covers declarations.
-    const assignment = TASK_ITEMS.find((i) => i.id === handoff.item)!;
+    const assignment = tutorial.items.find((i) => i.id === handoff.item)!;
     const template = await readFile(
       resolve(
         import.meta.dir,
-        '../../evals/implementation/tasks/reference',
+        '../../',
+        tutorial.referenceDir,
         assignment.test.split('/').at(-1)! + '.txt',
       ),
       'utf8',
@@ -254,7 +249,11 @@ export async function verifySubmission(
     ).catch(() => '');
     await writeFile(join(evidenceDir, 'reference-junit.xml'), oracleXml);
     evidence.referenceTests = {
-      ...testRunOf(oracle.result, oracleXml, ORACLE_CASES[handoff.item] ?? []),
+      ...testRunOf(
+        oracle.result,
+        oracleXml,
+        tutorial.oracleCases[handoff.item] ?? [],
+      ),
       ...(plantedOracle ? PLANTED : {}),
     };
     if (

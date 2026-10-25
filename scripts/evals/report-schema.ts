@@ -201,7 +201,8 @@ const item = z.strictObject({
 const benchmark = z.strictObject({
   configuration: z.string(),
   baselineHash: hash.nullable(),
-  items: z.array(item).length(5),
+  // O número de itens vem do tutorial do manifesto; o agregado confere os ids.
+  items: z.array(item),
   finalVerification: z
     .strictObject({ report: changeReportSchema.nullable(), command })
     .nullable(),
