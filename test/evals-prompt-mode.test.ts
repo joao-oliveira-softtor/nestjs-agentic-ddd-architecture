@@ -95,3 +95,36 @@ test('brief com specHash divergente do packet falha em vez de medir o item errad
     }),
   ).toThrow(/specHash divergente/);
 });
+
+test('bare traz id, arquivo e comando de teste, sem packet, skill, covers nem critérios', () => {
+  const prompt = buildImplementationPrompt({
+    ...base,
+    mode: 'bare',
+    item: 'method:Task.create',
+  });
+  for (const part of [
+    'method:Task.create',
+    'app/domain/task.ts Task.create',
+    'bun test app/test/entity-Task.test.ts',
+    FORMAT,
+  ])
+    expect(prompt).toContain(part);
+  for (const part of ['SKILL.md', 'covers', 'Packet:', 'Critérios'])
+    expect(prompt).not.toContain(part);
+});
+
+test('escopo de classe usa o texto de classe e item sem método não imprime .null', () => {
+  const prompt = buildImplementationPrompt({
+    ...base,
+    mode: 'legacy',
+    item: 'valueobject:AlunoId',
+    file: 'app/domain/aluno-id.ts',
+    className: 'AlunoId',
+    method: null,
+  });
+  expect(prompt).toContain(
+    'app/domain/aluno-id.ts AlunoId (altere só corpos e membros #privados da classe',
+  );
+  expect(prompt).not.toContain('.null');
+  expect(prompt).not.toContain('somente interior do corpo');
+});

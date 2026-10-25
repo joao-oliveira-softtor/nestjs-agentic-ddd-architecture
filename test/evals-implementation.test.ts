@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test as bunTest } from 'bun:test';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { auditSubmission } from '../scripts/evals/audit';
+import { auditSubmission, scopeFindings } from '../scripts/evals/audit';
 import {
   evaluateImplementation,
   prepareTasksBaseline,
@@ -643,3 +643,29 @@ test('private oracle detects omitted save even when shared in-memory references 
   expect(item.attempts[1]?.accepted).toBe(true);
   expect(benchmark.finalVerification?.report?.status).toBe('done');
 }, 120000);
+
+const VO = `export class Money {
+  #cache = 0;
+  constructor(amount: number) {
+    this.#cache = amount;
+  }
+  #helper(): number {
+    return 1;
+  }
+}
+`;
+const voAudit = (after: string) =>
+  scopeFindings('valueobject:Money', VO, after, 'Money', 'x', 'a.ts');
+
+bunTest(
+  'auditoria de escopo de classe aceita mudança em membro #privado de VO',
+  () => {
+    expect(voAudit(VO.replace('return 1;', 'return 2;'))).toEqual([]);
+  },
+);
+
+bunTest('auditoria de escopo de classe reprova mudança de extends', () => {
+  expect(
+    voAudit(VO.replace('class Money', 'class Money extends Base')),
+  ).not.toEqual([]);
+});

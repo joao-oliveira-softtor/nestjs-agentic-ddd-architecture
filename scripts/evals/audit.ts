@@ -1,7 +1,8 @@
 import { lstat, opendir, readlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { AuditReport } from './contracts';
-import { bodyOnlyFindings } from '../boundary-gates';
+import { bodyOnlyFindings, classScopeFindings } from '../boundary-gates';
+import { isClassScopeItem } from '../../src/compiler/packet';
 import { sha256 } from './isolation';
 import { readPrivateBytes } from './private-files';
 
@@ -128,6 +129,19 @@ export async function treeHash(root: string): Promise<string> {
     ),
   );
 }
+/** Escopo de classe (VO/adapter) ou só o corpo do método. */
+export function scopeFindings(
+  item: string,
+  before: string,
+  after: string,
+  className: string,
+  method: string,
+  path: string,
+): string[] {
+  return isClassScopeItem(item)
+    ? classScopeFindings(before, after, className, path)
+    : bodyOnlyFindings(before, after, className, method, path);
+}
 export async function auditSubmission(
   baselineRoot: string,
   submissionRoot: string,
@@ -195,7 +209,8 @@ export async function auditSubmission(
       continue;
     }
     findings.push(
-      ...bodyOnlyFindings(
+      ...scopeFindings(
+        item,
         before.content,
         after.content,
         assignment.className!,

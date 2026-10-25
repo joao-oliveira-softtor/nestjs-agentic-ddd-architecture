@@ -246,11 +246,12 @@ const green = (t: Verification['executorTests']) =>
   t.cases.length > 0 &&
   t.cases.every((c) => c.status === 'passed');
 /** `verify-item` do item com os gates I1–I5 aprovados. */
-const itemGatesGreen = (attempt: ItemAttempt, v: Verification) =>
+export const itemGatesGreen = (attempt: ItemAttempt, v: Verification) =>
   v.itemReport?.item === attempt.handoff.item &&
   v.itemReport.status === 'done' &&
   v.itemReport.gates
     .map((g) => g.id)
+    .filter((id) => id !== 'T')
     .sort()
     .join() === 'I1,I2,I3,I4,I5' &&
   v.itemReport.gates.every((g) => g.status === 'passed');

@@ -84,6 +84,10 @@ async function clearOutfile(path: string): Promise<boolean> {
   return existed;
 }
 const PLANTED = { collectionError: 'JUnit output existed before the run' };
+/** 5 gates, ou 6 quando o sexto é o T (matriculas). */
+export const gateCountValid = (gates: readonly { id: string }[]) =>
+  gates.length === 5 || (gates.length === 6 && gates.some((g) => g.id === 'T'));
+
 export async function verifySubmission(
   source: PreparedSource,
   submitted: AttemptWorkspace,
@@ -156,7 +160,7 @@ export async function verifySubmission(
         !report ||
         report.item !== handoff.item ||
         !['done', 'failed'].includes(report.status) ||
-        report.gates.length !== 5
+        !gateCountValid(report.gates)
       )
         throw Error('invalid gates');
       evidence.itemReport = report;

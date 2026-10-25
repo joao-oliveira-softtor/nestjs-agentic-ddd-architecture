@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { stableStringify } from '@agentic-ddd/compiler';
 import {
   aggregateCampaign,
+  itemGatesGreen,
   main,
   nearestRank,
   renderAggregate,
@@ -896,4 +897,20 @@ test('cycle-20: o agregado só ganha chaves novas e o markdown não muda', async
   expect(sha256(JSON.stringify(legacy, null, 2) + '\n')).toBe(
     CYCLE_20_JSON_SHA256,
   );
+});
+
+test('itemGatesGreen aceita I1..I5 com ou sem T e recusa gate extra desconhecido', async () => {
+  const attempt = { handoff: { item: 'entity:X' } } as never;
+  const v = (ids: string[]) =>
+    ({
+      itemReport: {
+        item: 'entity:X',
+        status: 'done',
+        gates: ids.map((id) => ({ id, status: 'passed' })),
+      },
+    }) as never;
+  const five = ['I1', 'I2', 'I3', 'I4', 'I5'];
+  expect(itemGatesGreen(attempt, v(five))).toBe(true);
+  expect(itemGatesGreen(attempt, v([...five, 'T']))).toBe(true);
+  expect(itemGatesGreen(attempt, v([...five, 'G1']))).toBe(false);
 });

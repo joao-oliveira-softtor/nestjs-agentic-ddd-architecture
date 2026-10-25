@@ -4,7 +4,11 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { parseJUnit } from '@agentic-ddd/compiler';
 import { TASK_ITEMS } from '../scripts/evals/audit';
 import type { ProcessResult } from '../scripts/evals/contracts';
-import { ORACLE_CASES, testRunOf } from '../scripts/evals/reference';
+import {
+  ORACLE_CASES,
+  gateCountValid,
+  testRunOf,
+} from '../scripts/evals/reference';
 
 const ROOT = resolve(import.meta.dir, '..');
 
@@ -105,4 +109,15 @@ test('ORACLE_CASES bate com os JUnits do oráculo publicados na campanha 20', as
   }
   expect([...seen].sort()).toEqual(TASK_ITEMS.map((i) => i.id).sort());
   expect(Object.keys(ORACLE_CASES).sort()).toEqual([...seen].sort());
+});
+
+describe('gateCountValid', () => {
+  const gates = (...ids: string[]) => ids.map((id) => ({ id }));
+  test('5 gates, ou 6 com T', () => {
+    expect(gateCountValid(gates('I1', 'I2', 'I3', 'I4', 'I5'))).toBe(true);
+    expect(gateCountValid(gates('I1', 'I2', 'I3', 'I4', 'I5', 'T'))).toBe(true);
+    expect(gateCountValid(gates('I1', 'I2', 'I3', 'I4', 'I5', 'G1'))).toBe(
+      false,
+    );
+  });
 });

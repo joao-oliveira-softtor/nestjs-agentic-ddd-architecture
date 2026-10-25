@@ -169,11 +169,13 @@ function startStep(routing: Routing, layer: string): number {
       'domain',
       'application',
       'operators',
+      'infrastructure',
       (known) => routing.byLayer[known],
     )
     .otherwise(() => {
       throw Error(`routing sem modelo para a camada ${layer}`);
     });
+  if (!model) throw Error(`routing sem modelo para a camada ${layer}`);
   return routing.ladder.findIndex((step) => step.model === model);
 }
 
@@ -522,6 +524,7 @@ export async function evaluateImplementation(
         const previous = item.attempts.at(-1);
         const prompt = buildImplementationPrompt({
           mode: configuration.promptMode ?? 'legacy',
+          item: eligible,
           packet,
           root: workspace.root,
           configPath: workspace.configPath,

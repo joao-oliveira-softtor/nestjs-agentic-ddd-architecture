@@ -116,6 +116,7 @@ const gate = z.strictObject({
     'I3',
     'I4',
     'I5',
+    'T',
   ]),
   name: z.string(),
   status: z.enum(['passed', 'failed', 'pending']),
