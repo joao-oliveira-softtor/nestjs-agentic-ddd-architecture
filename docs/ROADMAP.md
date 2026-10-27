@@ -75,13 +75,27 @@ A #69 (servidor MCP remoto) e o épico #70 não entram nesta versão e seguem ab
 | [#68](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/68) | Servidor MCP local (stdio), somente leitura | #65 |
 | [#69](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/69) | Servidor MCP remoto (HTTP + autenticação) | #65, #68 |
 
-A linha de base do critério de sucesso é o A0 do piloto cycle-21 (Sonnet medium, 10 de 10 aceitos).
+A linha de base do critério de sucesso é o A0 do piloto cycle-21 (Sonnet medium, 10 de 10 aceitos). A #69 foi substituída pela fase 1 do épico #105.
+
+## Frente atual — MCP como ponto de entrada do domínio (v0.6)
+
+Épico [#105](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/105), decidido no [ADR-0007](adr/ADR-0007.md). O MCP vira a porta única do domínio para clientes leigos, desenvolvedores e sistemas externos: consulta, skill de autoria, propostas compiladas em pacote (camada neutra, de qualquer linguagem, e alvo `nestjs-ts`) e operators como tools. Substitui a #69 e a #11.
+
+| Fase | Tickets | Entrega |
+| --- | --- | --- |
+| 0 | #109, #110, #111 | Texto gerado, briefs, `ROLE_CORES`, skill autoral e mensagens em inglês (mudança de compatibilidade) |
+| 1 | #112, #113, #114 | MCP de domínio remoto com resource server OAuth 2.1 e escopos por capacidade e módulo |
+| 2 | #115, #116 | Pesquisa de suporte dos clientes; skill de autoria pelo MCP |
+| 3 | #117–#122 | Delta, pacote compilado, camada neutra, `agentic apply`, `ChangeSink` e medição pré-registrada |
+| 4 | #123, #124 | MCP de runtime com operators como tools |
+
+À parte: [#106](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/106) (implementador sem supervisão), [#107](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/107) (migração do repositório para inglês) e [#108](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/108) (protocolo de verificação neutro).
 
 ## Ordem das próximas frentes
 
-1. Épico #70: falta só a #69 (servidor MCP remoto), que depende de #65 e #68, já entregues na v0.5.0.
+1. Épico #105: começam em paralelo #109, #110, #111, #112, #115, #117 e #123; as dependências estão nas próprias issues.
 2. Em paralelo, a frente de runtime: decidir o provider no [ADR-0004](adr/ADR-0004.md), depois #7 (com os requisitos F8 do runtime) e #8. A parte offline da #8 (CLI, aprovação e `FakeLlm`) não depende da #7.
-3. A superfície HTTP da #11 e da #69 é decidida uma vez, no mesmo ADR, por causa do gate que proíbe `@Controller`.
+3. O ciclo 22 (pré-registrado em `evals/campaigns/cycle-22-control/`) aguarda orçamento autorizado.
 
 ## Backlog — Extensões e distribuição
 
@@ -89,7 +103,6 @@ A linha de base do critério de sucesso é o A0 do piloto cycle-21 (Sonnet mediu
 
 - [#9 — Gerar testes de contrato das máquinas de estado](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/9)
 - [#10 — Operators reativos a eventos com fila e proteção contra cascata](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/10)
-- [#11 — Canal HTTP genérico para executar operators](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/11)
 - [#12 — Suportar múltiplas propostas abertas sem reconciliar ambiguamente](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/12)
 
 ## Critério para iniciar um plano
