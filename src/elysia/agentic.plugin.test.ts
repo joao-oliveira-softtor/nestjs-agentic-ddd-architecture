@@ -86,17 +86,22 @@ test('use-case route through Eden: typed, publishes the event and maps DomainErr
     items,
   });
   expect(duplicate.status).toBe(422);
-  expect(duplicate.error?.value).toMatchObject({
-    code: 'ORDER_ALREADY_EXISTS',
-  });
+  const domain = duplicate.error?.value;
+  if (!domain || !('code' in domain)) throw new Error('expected a DomainError');
+  expect(domain.code).toBe('ORDER_ALREADY_EXISTS');
 
   const invalid = await api.agentic['use-cases'].create_order.post({
     order_id: '',
     customer_id: 'c',
-    // @ts-expect-error quantity must be a number: Eden carries the use-case's zod schema
+    // @ts-expect-error quantity must be a number: the body type comes from the use-case's UseCase<I, O> generics
     items: [{ sku: 'sku', quantity: '1', unit_price: 10 }],
   });
   expect(invalid.status).toBe(422);
+  const validation = invalid.error?.value;
+  if (!validation || 'code' in validation)
+    throw new Error('expected a validation error');
+  expect(validation.type).toBe('validation');
+  expect(validation.on).toBe('body');
   expect(eventBus.events).toHaveLength(1);
 });
 
@@ -186,6 +191,95 @@ test('output outside its schema answers 500', async () => {
     post('/agentic/use-cases/elysia_probe', { n: 'x' }),
   );
   expect(response.status).toBe(500);
+});
+
+@AgentUseCase({
+  name: 'elysia_leaky',
+  description: 'Always fails with an internal detail.',
+  whenToUse: 'Only in tests.',
+  input: z.object({}),
+  output: z.object({}),
+  uses: [],
+  emits: [],
+})
+class Leaky implements UseCase<{}, {}> {
+  async execute(): Promise<{}> {
+    throw new Error('secret detail');
+  }
+}
+
+test('an unexpected error answers a generic 500 and the app onError still sees the original', async () => {
+  const seen: unknown[] = [];
+  const plugin = await agentic({
+    root,
+    modules: [{ name: 'elysia-test', path: 'src/elysia' }],
+    llm: new FakeLlm([]),
+    operators: [],
+    useCases: { elysia_leaky: new Leaky() },
+    http: {},
+  });
+  const app = new Elysia()
+    .onError(({ error }) => {
+      seen.push(error);
+    })
+    .use(plugin);
+  const response = await app.handle(
+    post('/agentic/use-cases/elysia_leaky', {}),
+  );
+  expect(response.status).toBe(500);
+  expect(await response.text()).not.toContain('secret detail');
+  expect((seen[0] as Error).cause).toMatchObject({ message: 'secret detail' });
+});
+
+test('a subclass of a declared use-case mounts under the declared name', async () => {
+  class LoggingCreateOrder extends CreateOrder {}
+  const plugin = await agentic({
+    root,
+    modules,
+    llm: new FakeLlm([]),
+    operators: [OrderOperator],
+    useCases: {
+      create_order: new LoggingCreateOrder(new InMemoryOrderRepository()),
+      confirm_order: new ConfirmOrder(new InMemoryOrderRepository()),
+      cancel_order: new CancelOrder(new InMemoryOrderRepository()),
+    },
+    http: {},
+  });
+  const body = { order_id: 'sub-1', customer_id: 'c', items };
+  expect(
+    (await plugin.handle(post('/agentic/use-cases/create_order', body))).status,
+  ).toBe(200);
+});
+
+test("prefix '/' means no prefix", async () => {
+  const plugin = await agentic({
+    root,
+    modules,
+    llm: new FakeLlm([]),
+    operators: [],
+    useCases: { create_order: new CreateOrder(new InMemoryOrderRepository()) },
+    http: { prefix: '/' },
+  });
+  const body = { order_id: 'root-1', customer_id: 'c', items };
+  expect(
+    (await plugin.handle(post('/use-cases/create_order', body))).status,
+  ).toBe(200);
+  // The Eden path follows the runtime path: no prefix segment.
+  const created = await treaty(plugin)['use-cases'].create_order.post(body);
+  expect(created.status).toBe(422);
+});
+
+test('an http option typed as possibly undefined type-checks', async () => {
+  const cond = Math.random() > 2;
+  const plugin = await agentic({
+    root,
+    modules,
+    llm: new FakeLlm([]),
+    operators: [],
+    useCases: { create_order: new CreateOrder(new InMemoryOrderRepository()) },
+    http: cond ? {} : undefined,
+  });
+  expect(plugin.decorator.agentic).toBeInstanceOf(OperatorRuntime);
 });
 
 test('two plugins with different prefixes on one app both answer', async () => {

@@ -37,9 +37,7 @@ export async function runUseCase(
       publish: guard.publish,
     });
   } catch (error) {
-    if (guard.undeclared)
-      throw new Error(`Use-case ${record.name} published an undeclared event`);
-    throw error;
+    if (!guard.undeclared) throw error;
   } finally {
     guard.end();
   }

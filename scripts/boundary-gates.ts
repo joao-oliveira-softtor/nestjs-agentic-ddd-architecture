@@ -288,6 +288,7 @@ export function importDirectionFindings(
         if (
           specifier.startsWith('@nestjs/') ||
           specifier.startsWith('elysia/') ||
+          specifier.startsWith('@elysiajs/') ||
           FRAMEWORK_RUNTIME.has(specifier)
         ) {
           findings.push(
