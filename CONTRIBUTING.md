@@ -2,7 +2,7 @@
 
 ## Ambiente
 
-- [Bun](https://bun.sh) 1.4.2: `bun install`.
+- [Bun](https://bun.sh) 1.4.4: `bun install`.
 - Antes de abrir um PR: `bun run typecheck && bun run lint && bun test && bun run build && bun run agentic compile --check`.
 
 ## Como trabalhamos

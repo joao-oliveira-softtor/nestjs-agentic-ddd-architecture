@@ -46,7 +46,7 @@ O exemplo completo está em [`examples/orders`](examples/orders); as skills gera
 
 ## Quickstart
 
-Requer [Bun](https://bun.sh) 1.4.2.
+Requer [Bun](https://bun.sh) 1.4.4.
 
 ```bash
 bun install
