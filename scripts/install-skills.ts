@@ -24,16 +24,16 @@ type Artifact =
   { path: string; content: string } | { path: string; link: string };
 const DESCRIPTIONS = {
   manager:
-    'Prepara propostas e contratos agentic-ddd e coordena execução sequencial por packet e verify.',
+    'Prepares agentic-ddd proposals and contracts and coordinates sequential execution through packet and verify.',
   executor:
-    'Implementa somente corpos atribuídos e testes agentic-ddd, preservando contratos e o hash do packet.',
+    'Implements only assigned agentic-ddd bodies and tests, keeping contracts and the packet hash.',
   reviewer:
-    'Revisa o diff contra o contrato e os gates agentic-ddd, citando IDs de regras ou gates, sem editar arquivos.',
+    'Reviews the diff against the agentic-ddd contract and gates, citing rule or gate IDs, without editing files.',
 };
 const ROLE_NAMES = {
-  manager: 'gerente',
+  manager: 'manager',
   executor: 'executor',
-  reviewer: 'revisor',
+  reviewer: 'reviewer',
 } as const;
 // Cursor usa o mesmo formato do Claude: o cursor-agent não expande ${workspaceFolder} (validado na #68).
 const mcpJson = (cli: string) =>
@@ -78,18 +78,18 @@ function artifacts(options: InstallOptions): Artifact[] {
       const moduleSkill =
         role === 'reviewer'
           ? ''
-          : ' Consulte também a skill gerada do módulo indicado pela configuração.';
+          : ' Also read the generated skill of the module named by the configuration.';
       // O revisor lê só a própria referência: a skill geral manda ler configuração e skill do módulo.
       const reading =
         role === 'reviewer'
-          ? `Leia só as [instruções do papel](${base}/references/reviewer.md) antes de agir`
-          : `Leia [skill](${base}/SKILL.md) e [instruções do papel](${base}/references/${role}.md) antes de agir`;
-      const instructions = `Você é o ${ROLE_NAMES[role]} agentic-ddd. ${reading}. Caminhos relativos são resolvidos a partir da raiz do projeto.${moduleSkill} Siga o contrato do papel; devolva resultados e findings para a sessão principal quando não houver delegação aninhada.`;
+          ? `Read only the [role instructions](${base}/references/reviewer.md) before acting`
+          : `Read the [skill](${base}/SKILL.md) and the [role instructions](${base}/references/${role}.md) before acting`;
+      const instructions = `You are the agentic-ddd ${ROLE_NAMES[role]}. ${reading}. Relative paths resolve from the project root.${moduleSkill} Follow the role contract; return results and findings to the main session when there is no nested delegation.`;
       const name = `agentic-ddd-${role}`;
       const content =
         target === 'codex'
-          ? `# Instalado por skills:install; instruções compartilhadas na fonte autoral.\nname = ${JSON.stringify(name)}\ndescription = ${JSON.stringify(DESCRIPTIONS[role])}\ndeveloper_instructions = ${JSON.stringify(instructions)}\n`
-          : `---\nname: ${name}\ndescription: ${JSON.stringify(DESCRIPTIONS[role])}\nmodel: inherit\n${target === 'claude' && role !== 'reviewer' ? 'skills:\n  - agentic-ddd\n' : ''}---\n\n<!-- Instalado por skills:install; instruções compartilhadas na fonte autoral. -->\n\n${instructions}\n`;
+          ? `# Installed by skills:install; shared instructions live in the authored source.\nname = ${JSON.stringify(name)}\ndescription = ${JSON.stringify(DESCRIPTIONS[role])}\ndeveloper_instructions = ${JSON.stringify(instructions)}\n`
+          : `---\nname: ${name}\ndescription: ${JSON.stringify(DESCRIPTIONS[role])}\nmodel: inherit\n${target === 'claude' && role !== 'reviewer' ? 'skills:\n  - agentic-ddd\n' : ''}---\n\n<!-- Installed by skills:install; shared instructions live in the authored source. -->\n\n${instructions}\n`;
       result.push({
         path: join(
           options.root,

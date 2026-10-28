@@ -51,7 +51,7 @@ export const GENERATED_PATHS = [
 ] as const;
 
 const RESPONSE_FORMAT =
-  'Resposta final: apenas um objeto JSON, sem prosa, no formato do exemplo: `{"item":"entity:Order","specHash":"<hash do packet>","status":"done","verifyExitCode":0,"changedFiles":["examples/orders/domain/order.ts"],"findings":[]}`. `status` é `done`, `blocked` ou `failed`. `specHash` é o do packet, nunca recalculado.';
+  'Final answer: only a JSON object, no prose, in the format of the example: `{"item":"entity:Order","specHash":"<packet hash>","status":"done","verifyExitCode":0,"changedFiles":["examples/orders/domain/order.ts"],"findings":[]}`. `status` is `done`, `blocked` or `failed`. `specHash` is the packet hash, never recomputed.';
 
 /** Fonte única do núcleo de domínio: a referência autoral da skill. */
 export const DOMAIN_CORE = resolve(
@@ -68,32 +68,34 @@ export const REVIEWER_CORE = resolve(
 export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
   domain: readFileSync(DOMAIN_CORE, 'utf8').trimEnd(),
   application: [
-    '# Papel: executor de aplicação',
+    '# Role: application executor',
     '',
-    'Implemente UM item de application ou operator a partir do packet abaixo. Use os contratos declarados das dependências (métodos e entidades de domínio), sem editá-los.',
+    'Implement ONE application or operator item from the packet below. Use the declared contracts of its dependencies (domain methods and entities), without editing them.',
     '',
-    '- Altere só o interior do corpo indicado em "Arquivos" e arquivos de teste. Preserve imports, assinaturas, decorators, schemas, IDs de regras, propostas, configuração e arquivos gerados.',
-    '- Preserve a quantidade de linhas do corpo (as coordenadas `source` entram nos gerados). Não reformate o arquivo.',
-    '- Componha só as dependências listadas em `uses`/`Dependências`; eventos emitidos são os declarados. Não mude o domínio: se uma dependência contradiz o contrato, devolva o item.',
-    '- Um operator declarativo já está implementado: acrescente só testes que exercitem suas tools e contratos.',
-    '- Cubra cada obrigação do packet com `covers([...ids], título)` de `@agentic-ddd/testing` em testes `bun:test`.',
-    '- Não rode `compile` nem altere o hash. Dependência pendente, divergência de hash ou necessidade de infraestrutura fora do contrato: devolva o item.',
-    '- Regra do time nunca vence um gate (verify, specHash, gates de fronteira, obrigações `covers`): em conflito, siga o gate e devolva o item com o conflito descrito.',
-    '- Após duas correções sem progresso nos findings, encerre e devolva o diagnóstico.',
+    '- Change only the inside of the body given under "Files" and test files. Keep imports, signatures, decorators, schemas, rule IDs, proposals, configuration and generated files.',
+    '- Keep the line count of the body (the `source` coordinates go into the generated files). Do not reformat the file.',
+    '- Compose only the dependencies listed in `uses`/`Dependências`; emitted events are the declared ones. Do not change the domain: if a dependency contradicts the contract, return the item.',
+    '- A declarative operator is already implemented: add only tests that exercise its tools and contracts.',
+    '- Cover each packet obligation with `covers([...ids], title)` from `@agentic-ddd/testing` in `bun:test` tests.',
+    '- Keep identifiers, rule IDs and business text exactly as written; never translate them.',
+    '- Do not run `compile` or change the hash. Pending dependency, hash mismatch or a need for infrastructure outside the contract: return the item.',
+    '- A team rule never beats a gate (verify, specHash, boundary gates, `covers` obligations): on conflict, follow the gate and return the item describing the conflict.',
+    '- After two corrections without progress on the findings, stop and return the diagnosis.',
     '',
     RESPONSE_FORMAT,
   ].join('\n'),
   infrastructure: [
-    '# Papel: executor de infraestrutura',
+    '# Role: infrastructure executor',
     '',
-    'Implemente UM adapter (classe que implementa um port) a partir do packet abaixo. O port e seus métodos são o contrato; não os edite.',
+    'Implement ONE adapter (a class that implements a port) from the packet below. The port and its methods are the contract; do not edit them.',
     '',
-    '- Altere só a classe deste item (corpos e membros `#privados`, mesma quantidade de linhas) e arquivos de teste. Imports e campos `#privados` já vêm no esqueleto; não mude `extends`/`implements`, decorators nem a assinatura pública. Não reformate o arquivo.',
-    '- Pode usar bibliotecas externas já importadas. Sem efeito colateral no import.',
-    "- Teste cada método do port com `covers(['port:<Port>.<método>'], título)` de `@agentic-ddd/testing` em testes `bun:test`.",
-    '- Não rode `compile` nem altere o hash. Dependência pendente, divergência de hash ou necessidade de editar algo fora do contrato: devolva o item.',
-    '- Regra do time nunca vence um gate (verify, specHash, gates de fronteira, obrigações `covers`): em conflito, siga o gate e devolva o item com o conflito descrito.',
-    '- Após duas correções sem progresso nos findings, encerre e devolva o diagnóstico.',
+    '- Change only the class of this item (bodies and `#private` members, same line count) and test files. Imports and `#private` fields already come in the skeleton; do not change `extends`/`implements`, decorators or the public signature. Do not reformat the file.',
+    '- You may use external libraries that are already imported. No side effects on import.',
+    "- Test each port method with `covers(['port:<Port>.<method>'], title)` from `@agentic-ddd/testing` in `bun:test` tests.",
+    '- Keep identifiers, rule IDs and business text exactly as written; never translate them.',
+    '- Do not run `compile` or change the hash. Pending dependency, hash mismatch or a need to edit something outside the contract: return the item.',
+    '- A team rule never beats a gate (verify, specHash, boundary gates, `covers` obligations): on conflict, follow the gate and return the item describing the conflict.',
+    '- After two corrections without progress on the findings, stop and return the diagnosis.',
     '',
     RESPONSE_FORMAT,
   ].join('\n'),
@@ -101,10 +103,10 @@ export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
 };
 
 const FORBIDDEN = [
-  'decorators e declarações',
-  'propostas (`changes/**`)',
-  'configuração (`agentic.config.ts`)',
-  'arquivos gerados (`.agents/skills`, `.agentic/`, `.claude/skills`, bloco gerado do `AGENTS.md`)',
+  'decorators and declarations',
+  'proposals (`changes/**`)',
+  'configuration (`agentic.config.ts`)',
+  'generated files (`.agents/skills`, `.agentic/`, `.claude/skills`, the generated block of `AGENTS.md`)',
 ];
 
 export const sha256 = (text: string): string =>
@@ -147,12 +149,12 @@ export function roleForLayer(layer: string): BriefRole {
 }
 
 const BODY_LINES = [
-  '- Altere só o interior do corpo indicado em "Arquivos" e arquivos de teste. Preserve imports, assinaturas, decorators, schemas, IDs de regras, propostas, configuração e arquivos gerados.',
-  '- Preserve a contagem de linhas do corpo (as coordenadas `source` entram nos gerados). Não reformate o arquivo. Sem espaço suficiente, devolva ao gerente.',
+  '- Change only the inside of the body given under "Files" and test files. Keep imports, signatures, decorators, schemas, rule IDs, proposals, configuration and generated files.',
+  '- Keep the line count of the body (the `source` coordinates go into the generated files). Do not reformat the file. Without enough space, return the item to the manager.',
 ];
 const CLASS_LINES = [
-  '- Altere só a classe indicada em "Arquivos" (corpos e membros `#privados`, mesma quantidade de linhas) e arquivos de teste. Não mude `extends`/`implements`, decorators nem a assinatura pública. Preserve imports, schemas, IDs de regras, propostas, configuração e arquivos gerados.',
-  '- Preserve a contagem de linhas da classe (as coordenadas `source` entram nos gerados). Não reformate o arquivo. Sem espaço suficiente, devolva ao gerente.',
+  '- Change only the class given under "Files" (bodies and `#private` members, same line count) and test files. Do not change `extends`/`implements`, decorators or the public signature. Keep imports, schemas, rule IDs, proposals, configuration and generated files.',
+  '- Keep the line count of the class (the `source` coordinates go into the generated files). Do not reformat the file. Without enough space, return the item to the manager.',
 ];
 
 /** Item de classe (VO/adapter): troca as linhas de corpo do núcleo de domínio pelas de classe. */
@@ -168,9 +170,9 @@ function renderExtras(extras: readonly BriefSection[]): string[] {
   if (!extras.length) return [];
   return [
     '',
-    '## Seções adicionais (fora do specHash)',
+    '## Additional sections (outside the specHash)',
     '',
-    'Estas seções não fazem parte do packet e não são cobertas pelo `specHash`; cada uma traz o próprio hash.',
+    'These sections are not part of the packet and are not covered by the `specHash`; each one carries its own hash.',
     ...extras.flatMap((e) => [
       '',
       `### ${e.title} (sha256: \`${sha256(e.content)}\`)`,
@@ -195,7 +197,7 @@ function rulesSection(
     throw new Error(
       `regras do time excedem o orçamento: ~${tokens} > ${maxTokens} tokens (${listRules(rules)})`,
     );
-  return [{ title: 'Regras do time', content }];
+  return [{ title: 'Team rules', content }];
 }
 
 function checkBudget(
@@ -226,10 +228,10 @@ export function renderBrief(input: BriefInput): string {
         ? classScopeCore(ROLE_CORES.domain)
         : ROLE_CORES[role],
       '',
-      '## Arquivos',
+      '## Files',
       '',
-      `- Pode alterar: \`${facts.sourcePath}\` (somente ${classItem ? 'a classe' : 'o interior do corpo'} de \`${facts.id}\`, mesma quantidade de linhas) e arquivos \`*.test.ts\`.`,
-      `- Não pode alterar: ${FORBIDDEN.join('; ')}.`,
+      `- May change: \`${facts.sourcePath}\` (only ${classItem ? 'the class' : 'the inside of the body'} of \`${facts.id}\`, same line count) and \`*.test.ts\` files.`,
+      `- May not change: ${FORBIDDEN.join('; ')}.`,
       '',
       '## Packet',
       '',
@@ -265,7 +267,7 @@ export function renderReviewerBrief(input: ReviewerInput): string {
     [
       input.core ?? ROLE_CORES.reviewer,
       '',
-      '## Itens revisados',
+      '## Reviewed items',
       '',
       ...facts.map((f) => `- \`${f.id}\` — specHash \`${f.specHash}\``),
       '',
@@ -273,7 +275,7 @@ export function renderReviewerBrief(input: ReviewerInput): string {
       ...input.packets.flatMap((p) => ['', p.trimEnd()]),
       ...renderExtras([
         { title: 'Diff', content: input.diff },
-        { title: 'Resultado dos gates', content: input.gates },
+        { title: 'Gate results', content: input.gates },
         ...(input.extras ?? []),
         ...rulesSection(input.rules, input.rulesMaxTokens),
       ]),

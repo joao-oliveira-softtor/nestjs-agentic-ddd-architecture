@@ -58,7 +58,7 @@ export interface Arm {
   reviewer(reviewCase: ReviewCase): Reviewer;
 }
 
-const AUTHOR_REPORT_TITLE = 'Relato do executor';
+const AUTHOR_REPORT_TITLE = 'Executor report';
 
 /**
  * Núcleo do braço `authored`: o do revisor sem as duas frases que proíbem o relato do
@@ -71,12 +71,12 @@ export function authoredReviewerCore(
 ): string {
   const swaps: [string, string][] = [
     [
-      'Você vê só o diff, os packets e os resultados dos gates, sem o histórico de quem implementou.',
-      'Você vê o diff, os packets, os resultados dos gates e o relato do executor.',
+      'You see only the diff, the packets and the gate results, without the history of whoever implemented them.',
+      'You see the diff, the packets, the gate results and the executor report.',
     ],
     [
-      'Não leia a conversa nem o relatório do executor.',
-      'Não leia a conversa.',
+      "Do not read the conversation or the executor's report.",
+      'Do not read the conversation.',
     ],
   ];
   return swaps.reduce((text, [from, to]) => {

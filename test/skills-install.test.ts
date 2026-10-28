@@ -69,7 +69,7 @@ for (const scope of ['project', 'user'])
             );
           instructions = text;
         }
-        const reference = /\[instruções do papel\]\(([^)]+)\)/.exec(
+        const reference = /\[role instructions\]\(([^)]+)\)/.exec(
           instructions,
         )![1]!;
         // O revisor não lê a skill geral (ela manda ler configuração e skill do módulo).

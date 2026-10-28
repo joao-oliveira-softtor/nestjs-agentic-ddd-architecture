@@ -1,23 +1,24 @@
 # Executor
 
-Para um item `domain` recebido como brief, siga [executor-domain.md](executor-domain.md): ele dispensa a skill do módulo e mantém o executor sem contexto de outras camadas.
+For a `domain` item received as a brief, follow [executor-domain.md](executor-domain.md): it does without the module skill and keeps the executor free of other layers' context.
 
-Receba packet completo, hash original, configuração, raiz, limites de arquivos/corpos e critérios automáticos. Leia a skill gerada do módulo e os contratos referenciados no packet. Se faltar informação necessária, devolva o item ao gerente com o dado faltante.
+Receive the full packet, original hash, configuration, root, file/body limits and automatic criteria. Read the module's generated skill and the contracts referenced in the packet. If necessary information is missing, return the item to the manager with the missing data.
 
-- Altere somente o corpo atribuído e arquivos de testes permitidos. Preserve imports, assinaturas, decorators, schemas, IDs, propostas (abertas ou arquivadas), configuração, infraestrutura (exceto num item `adapter:`, que é a própria infraestrutura) e gerados. Não implemente dependências ou outros itens. Preserve edições de outros agentes no workspace.
-- O compilador atual inclui coordenadas de fonte nos gerados. Preserve a contagem de linhas do corpo para não deslocar declarações seguintes; use o espaço preparado no esqueleto e conserve linhas vazias restantes. Não reformate o arquivo inteiro. Se o espaço for insuficiente, devolva ao gerente para preparar/recompilar o esqueleto antes de redispatchar. Body-only pode preservar hash e ainda deslocar source: isso reprova `compile --check` e pode tornar a skill de runtime obsoleta.
-- Item de classe (`valueobject:`/`adapter:`): o escopo é a classe do item (corpos e membros `#privados`, mesma quantidade de linhas), sem mudar `extends`/`implements` nem a assinatura pública.
-- Um operator declarativo já está implementado; acrescente somente testes que exercitem suas tools e contratos. Não invente um corpo para ele.
-- Escreva testes `bun:test` com `covers([...ids], título)` de `@agentic-ddd/testing` para obrigações e critérios automáticos do packet. Teste comportamento positivo, regras e transições inválidas pertinentes. Implemente o corpo preservando a especificação.
-- Execute o comando **exato** de `verify --item <item> --spec-hash <hash-original>` do packet (inclusive `--config`). Nunca substitua o hash. Registre stdout/stderr, código de saída, gates/findings e erros de importação/coleta JUnit; ausência de coleta não significa sucesso.
-- Dependência pendente, divergência de hash ou necessidade de import/declaração/infra/config fora do contrato devolvem o item ao gerente. Após duas correções consecutivas sem progresso nos findings, encerre esta execução e devolva diagnóstico. Não contorne falhas removendo regras ou cobertura.
-- Só resultado `done` conclui o item. `needs-human` pertence à change e é tratado pelo gerente.
+- Change only the assigned body and the allowed test files. Keep imports, signatures, decorators, schemas, IDs, proposals (open or archived), configuration, infrastructure (except in an `adapter:` item, which is the infrastructure itself) and generated files. Do not implement dependencies or other items. Keep other agents' edits in the workspace.
+- The current compiler puts source coordinates in the generated files. Keep the body's line count so the following declarations do not shift; use the space prepared in the skeleton and keep the remaining empty lines. Do not reformat the whole file. If the space is not enough, return the item to the manager to prepare/recompile the skeleton before dispatching again. Body-only can keep the hash and still shift `source`: that fails `compile --check` and can make the runtime skill stale.
+- Class item (`valueobject:`/`adapter:`): the scope is the item's class (bodies and `#private` members, same line count), without changing `extends`/`implements` or the public signature.
+- A declarative operator is already implemented; add only tests that exercise its tools and contracts. Do not invent a body for it.
+- Write `bun:test` tests with `covers([...ids], title)` from `@agentic-ddd/testing` for the packet's obligations and automatic criteria. Test positive behaviour and the relevant rules and invalid transitions. Implement the body keeping the specification.
+- Keep identifiers, rule IDs and business text exactly as written; never translate them.
+- Run the packet's **exact** `verify --item <item> --spec-hash <original-hash>` command (including `--config`). Never replace the hash. Record stdout/stderr, exit code, gates/findings and JUnit import/collection errors; missing collection does not mean success.
+- Pending dependency, hash mismatch or a need for imports/declarations/infra/config outside the contract return the item to the manager. After two consecutive corrections without progress on the findings, end this run and return a diagnosis. Do not work around failures by removing rules or coverage.
+- Only the result `done` completes the item. `needs-human` belongs to the change and is handled by the manager.
 
-Devolva item, hash original, comando e código de saída, status, arquivos alterados/diff e findings (incluindo coleta), com o impedimento quando houver. Retome com o packet/hash originais. Novo hash exige revisão da especificação pelo gerente. Não execute compile para regenerar contratos no papel de executor.
+Return the item, original hash, command and exit code, status, changed files/diff and findings (including collection), with the blocker when there is one. Resume with the original packet/hash. A new hash requires the manager to review the specification. As executor, do not run compile to regenerate contracts.
 
-## Elementos táticos (v0.5)
+## Tactical elements (v0.5)
 
-- O port é contrato: o executor de um item `adapter:` o implementa e nunca o altera.
-- O gate T roda no `verify --item` de itens `entity:` e `valueobject:` (detalhes em [authoring.md](authoring.md), "Gate T"); não roda em `adapter:`.
-- Só num item `valueobject:` o executor troca o tipo de um membro `#privado` que ele criou. O que é declaração (campo, parameter property, `contains`/`references`, props do VO, port) volta ao gerente: proposta e compile quando a IR muda, novo packet quando o specHash muda.
-- Executor guiado só por brief aprende o T pelos achados do `verify`: cada um traz o `fix`.
+- The port is a contract: the executor of an `adapter:` item implements it and never changes it.
+- Gate T runs in `verify --item` for `entity:` and `valueobject:` items (details in [authoring.md](authoring.md), "Gate T"); it does not run on `adapter:`.
+- Only in a `valueobject:` item may the executor change the type of a `#private` member it created. Anything that is a declaration (field, parameter property, `contains`/`references`, value object props, port) goes back to the manager: proposal and compile when the IR changes, a new packet when the specHash changes.
+- An executor guided only by a brief learns T from the `verify` findings: each one carries the `fix`.

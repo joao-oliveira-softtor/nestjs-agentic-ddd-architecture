@@ -1,32 +1,32 @@
-# Orquestração por camada e modelo
+# Orchestration by layer and model
 
-Driver sequencial que distribui os itens do grafo entre níveis de modelo. É ferramenta de experimento, não o padrão: o piloto de #36 mostrou que um modelo só (Sonnet medium) iguala o roteamento em aceite com custo igual ou menor, então o padrão é o modelo `inherit` com brief e gates (ADR-0003, Resultado do experimento). O modo padrão do driver não executa nada.
+A sequential driver that spreads the graph's items across model tiers. It is an experiment tool, not the default: the #36 pilot showed that a single model (Sonnet medium) matches routing on acceptance at equal or lower cost, so the default is the `inherit` model with brief and gates (ADR-0003, experiment result). The driver's default mode executes nothing.
 
 ```
 bun scripts/orchestrate.ts [--static] [--change NNNN] [--tier domain=sonnet] [--ladder sonnet,opus]
 bun scripts/orchestrate.ts --real --max-invocations 20 [--max-tokens N] [--review]
 ```
 
-- **Plano (padrão):** lista, por onda, o nível, o modelo e o tamanho do brief de cada item. Não chama modelo. `--static` evita rodar os testes, mas então nenhum item conta como `done` e todos entram no plano.
-- **Roteamento:** `domain` começa em Haiku; `application`, `operators` e `infrastructure` (adapters), em Sonnet, com o papel de executor de infraestrutura. `--tier` e `--ladder` montam os controles do experimento (por exemplo, tudo em Sonnet).
-- **Brief:** renderizado do packet (`scripts/agent-briefs.ts`), sem LLM. Na retentativa, a saída da falha entra numa seção própria, fora do `specHash`.
-- **Aceite:** quem aceita um item são os gates do driver, nunca o relato do executor: escopo do worktree inteiro (só o arquivo-fonte do item e `*.test.ts` podem mudar), imports por camada, só o corpo atribuído em itens `method:`, só a classe (corpos e membros `#privados`, mesmas linhas, sem mudar assinatura) em itens `valueobject:`/`adapter:` e `verify --item` com o hash do packet (que inclui o gate T em itens `entity:`/`valueobject:` de projeto com elemento tático). O baseline é tirado uma vez por item, antes da primeira tentativa, e vale para as retentativas.
-- **Escalação:** 1 retentativa no mesmo nível com a saída da falha; depois o nível acima (o worktree volta ao baseline do item); esgotada a escada, `needs-human`. `blocked` sobe sem retentativa. Dependentes de um item `needs-human` são pulados.
-- **Revisão (`--review`):** uma passada do Opus em contexto limpo, depois que todos os itens passam nos gates; o diff que ela recebe inclui os arquivos novos (testes criados pelo executor). O relatório é validado por `scripts/reviewer-report.ts`; `changes_requested` ou resposta inválida nunca conclui em silêncio. Não há reexecução automática por achado (ADR-0003 D12 segue adiada).
-- **Execução real:** exige `--real`, `--max-invocations`, `ANTHROPIC_API_KEY` e o CLI `claude`. Cada invocação usa `claude --bare` (sem `CLAUDE.md`, hooks nem configuração de usuário), `--max-turns`, `--max-budget-usd` e `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`; `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` nunca é repassado. `--max-tokens` usa tokens medidos; uso indisponível com esse teto ativo interrompe novas execuções.
-- **Telemetria:** `.agentic-tasks/runs/<id>/telemetry.jsonl`, uma linha por tentativa (nível, modelo, gate, decisão, tokens, tempo), uma por revisão e uma de fechamento. Custo em dólar não é calculado.
+- **Plan (default):** lists, per wave, each item's tier, model and brief size. Calls no model. `--static` avoids running the tests, but then no item counts as `done` and all of them enter the plan.
+- **Routing:** `domain` starts on Haiku; `application`, `operators` and `infrastructure` (adapters) on Sonnet, with the infrastructure executor role. `--tier` and `--ladder` build the experiment's controls (for example, everything on Sonnet).
+- **Brief:** rendered from the packet (`scripts/agent-briefs.ts`), without an LLM. On retry, the failure output goes into its own section, outside the `specHash`.
+- **Acceptance:** items are accepted by the driver's gates, never by the executor's report: whole-worktree scope (only the item's source file and `*.test.ts` may change), imports per layer, only the assigned body in `method:` items, only the class (bodies and `#private` members, same lines, no signature change) in `valueobject:`/`adapter:` items, and `verify --item` with the packet hash (which includes gate T in `entity:`/`valueobject:` items of a project with tactical elements). The baseline is taken once per item, before the first attempt, and holds for the retries.
+- **Escalation:** 1 retry on the same tier with the failure output; then the next tier up (the worktree goes back to the item's baseline); when the ladder is exhausted, `needs-human`. `blocked` moves up without a retry. Dependents of a `needs-human` item are skipped.
+- **Review (`--review`):** one Opus pass in a clean context, after every item passes the gates; the diff it receives includes new files (tests created by the executor). The report is validated by `scripts/reviewer-report.ts`; `changes_requested` or an invalid answer never completes silently. There is no automatic re-run per finding (ADR-0003 D12 is still deferred).
+- **Real run:** requires `--real`, `--max-invocations`, `ANTHROPIC_API_KEY` and the `claude` CLI. Each invocation uses `claude --bare` (no `CLAUDE.md`, hooks or user configuration), `--max-turns`, `--max-budget-usd` and `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`; `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is never passed through. `--max-tokens` uses measured tokens; unavailable usage with that ceiling active stops new runs.
+- **Telemetry:** `.agentic-tasks/runs/<id>/telemetry.jsonl`, one line per attempt (tier, model, gate, decision, tokens, time), one per review and one for closing. Dollar cost is not computed.
 
-## Benchmark de revisão
+## Review benchmark
 
-Mede o que o revisor pega além dos gates (ADR-0003 D12). As 19 regressões plantadas do ciclo evals-19 (`scripts/evals/review-defects.ts`) passam em I1–I5 por construção, porque o teste foi trocado por cobertura superficial verde; só a revisão as detecta. Cada item do workspace `tasks` ganha também um controle limpo, onde o revisor deve aprovar (24 casos).
+Measures what the reviewer catches beyond the gates (ADR-0003 D12). The 19 planted regressions of the evals-19 cycle (`scripts/evals/review-defects.ts`) pass I1–I5 by construction, because the test was swapped for green shallow coverage; only the review detects them. Each item of the `tasks` workspace also gets a clean control, where the reviewer must approve (24 cases).
 
 ```
 bun scripts/evals/review-benchmark.ts [--only defect:normalization,clean:entity:Task]
 bun scripts/evals/review-benchmark.ts --real --max-invocations 48 [--cycles 2] [--arms clean,authored] [--model <id>]
 ```
 
-- **Padrão:** monta os casos (um workspace por caso, itens anteriores concluídos) e mostra o tamanho do brief. Não chama modelo.
-- **Isolamento:** o revisor real roda sem nenhuma ferramenta (`--tools=`) e em diretório vazio, vendo só packet, diff e gates. `defect`, `kind` e `expected` ficam no caso e nunca entram no brief; assim a solução de referência e os oráculos privados não alcançam o modelo.
-- **Braços:** `clean` (packet, diff e gates) e `authored` (soma o relato otimista do executor, para medir o viés de autoria). O braço `authored` usa o núcleo do revisor sem as duas frases que proíbem o relato e o histórico; sem isso a única diferença entre os braços contradiria a instrução e mediria desobediência. Um revisor de outra família entra como mais um braço quando houver adapter; hoje só há Claude.
-- **Métricas** (por ciclo e agregadas; `null` quando o denominador é zero): `recall` (defeito apontado pelo ID esperado), `weakRecall` (aceita `I4`, o teste superficial), `precision` (revisões `changes_requested` que apontam o defeito ou `I4`), falsos verdes (defeito aprovado), controles limpos apontados e achados espúrios (fora do esperado; no controle limpo, todos). Casos `not_run` ficam fora dos denominadores e são contados à parte.
-- **Orçamento:** `--real` exige `--max-invocations` (inteiro: é o teto de chamadas pagas); `--max-tokens` usa tokens medidos e uso indisponível interrompe. Resultados em `<work>/results/<id>/{scores.jsonl,summary.json}`.
+- **Default:** builds the cases (one workspace per case, earlier items done) and shows the brief size. Calls no model.
+- **Isolation:** the real reviewer runs with no tools (`--tools=`) in an empty directory, seeing only packet, diff and gates. `defect`, `kind` and `expected` stay in the case and never enter the brief; so the reference solution and the private oracles never reach the model.
+- **Arms:** `clean` (packet, diff and gates) and `authored` (adds the executor's optimistic report, to measure authorship bias). The `authored` arm uses the reviewer core without the two sentences that forbid the report and the history; otherwise the only difference between the arms would contradict the instruction and measure disobedience. A reviewer from another model family joins as another arm when there is an adapter; today there is only Claude.
+- **Metrics** (per cycle and aggregated; `null` when the denominator is zero): `recall` (defect flagged with the expected ID), `weakRecall` (accepts `I4`, the shallow test), `precision` (`changes_requested` reviews that flag the defect or `I4`), false greens (defect approved), clean controls flagged and spurious findings (outside the expected; in the clean control, all of them). `not_run` cases stay out of the denominators and are counted apart.
+- **Budget:** `--real` requires `--max-invocations` (an integer: the ceiling on paid calls); `--max-tokens` uses measured tokens and unavailable usage stops the run. Results in `<work>/results/<id>/{scores.jsonl,summary.json}`.
