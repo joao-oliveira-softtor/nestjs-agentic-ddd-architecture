@@ -10,7 +10,9 @@ export function parseFrame(line: string): SourceLoc | null {
   // Regex anchored at END: matches both formats
   // - at <anything> (PATH:L:C)
   // - at PATH:L:C
-  const FRAME = /(?:\(|at )((?:file:\/\/)?\/.+?):(\d+):\d+\)?$/;
+  // PATH: POSIX (/), Windows drive (C:\ or C:/), UNC (\\server) or file:// URL.
+  const FRAME =
+    /(?:\(|at )((?:file:\/\/)?(?:\/|[A-Za-z]:[\\/]|\\\\).+?):(\d+):\d+\)?$/;
   const trimmed = line.trim();
   const match = FRAME.exec(trimmed);
   if (!match) return null;

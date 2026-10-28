@@ -75,7 +75,10 @@ export function startMcpServer({ root }: { root: string }): {
       },
       guarded<{ path: string }>((s, { path }) => {
         // Clientes costumam mandar caminho absoluto; o glob das regras é relativo à raiz.
-        const rel = isAbsolute(path) ? relative(s.root, path) : path;
+        // `\` vira `/` antes da checagem, como rulesForPath faz: `..\x` também é fora da raiz.
+        const rel = (
+          isAbsolute(path) ? relative(s.root, path) : path
+        ).replaceAll('\\', '/');
         if (isAbsolute(rel) || rel === '..' || rel.startsWith('../'))
           throw new Error(`${path}: fora da raiz do projeto (${s.root})`);
         return rulesForPath(s.rules, rel);

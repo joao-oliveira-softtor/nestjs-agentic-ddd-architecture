@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { SHOP_MODULE, defineShop } from './__fixtures__/shop';
 import { analyze } from './analyze';
+import { toPosix } from './ir';
 import type { ResolvedConfig } from './config';
 import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
 import { DEFAULT_OUT, renderAll } from './render/index';
@@ -123,7 +124,7 @@ describe('writeOutputs / checkOutputs', () => {
     expect(await readFile(join(out, 'CLAUDE.md'), 'utf8')).toBe(
       CLAUDE_MD_CONTENT,
     );
-    expect(await readlink(join(out, '.claude/skills/shop-dev'))).toBe(
+    expect(toPosix(await readlink(join(out, '.claude/skills/shop-dev')))).toBe(
       '../../.agents/skills/shop-dev',
     );
   });
@@ -260,10 +261,12 @@ describe('writeOutputs / checkOutputs', () => {
 
     expect(await lstat(join(skills, 'velha-dev')).catch(() => null)).toBeNull();
     expect(await lstat(join(skills, 'sumiu')).catch(() => null)).toBeNull();
-    expect(await readlink(join(skills, 'minha'))).toBe(
+    expect(toPosix(await readlink(join(skills, 'minha')))).toBe(
       '../../.agents/skills/minha',
     );
-    expect(await readlink(join(skills, 'fora'))).toBe('../../fora/nao-existe');
+    expect(toPosix(await readlink(join(skills, 'fora')))).toBe(
+      '../../fora/nao-existe',
+    );
     expect(await readFile(join(mine, 'SKILL.md'), 'utf8')).toBe(
       '---\nname: minha\n---\n',
     );

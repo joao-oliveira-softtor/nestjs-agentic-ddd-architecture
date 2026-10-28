@@ -2,6 +2,14 @@
 
 ## [Não lançado]
 
+- **Windows nativo (#128):** o framework passa a funcionar no Windows sem WSL, e o CI ganha o job `ci-windows`, com o mesmo gate do `ci` em `windows-latest`.
+  - O `compile` falhava em qualquer projeto: `parseFrame` só reconhecia caminhos POSIX, e todo decorator ficava com origem `<desconhecido>`. Agora ele aceita letra de unidade, UNC e `file:///C:/`.
+  - O `compile --check` acusava o espelho de skill desatualizado, porque o `readlink` devolve `\`.
+  - O `skills:install` grava os links dos adaptadores com `/`, então o adaptador é idêntico em qualquer sistema.
+  - O tutorial `skills:example` grava os caminhos do framework com `/`.
+  - O `test:package` extrai o pacote com caminhos relativos, porque o GNU tar do Git Bash lia `C:` como host remoto.
+  - **Segurança:** `rules.dir` fora da raiz, a tool MCP `rules_for_path` com `..\` e o `within` do harness de evals aceitavam caminhos fora da raiz no Windows, porque a checagem só via `../`. Agora o caminho é normalizado antes de ser comparado.
+
 - **Mudança de compatibilidade (#110, ADR-0007 D13):** a skill autoral `skills/agentic-ddd` (SKILL.md e referências), os núcleos de papel (`ROLE_CORES`), o texto dos briefs de executor e revisor e os adaptadores instalados por `skills:install` passam a ser só em inglês. Quem tem adaptadores instalados precisa removê-los e reinstalar (o texto antigo conta como conflito). Os briefs e os núcleos ganham a linha que manda manter identificadores, IDs de regra e texto de negócio sem tradução, e a skill manda responder ao usuário no idioma dele. Os rótulos do packet, as mensagens de erro e os tutoriais de exemplo (`tasks`, `matriculas`) não mudam nesta etapa. O texto medido no cycle-21 e no benchmark de revisão muda; o snapshot `agent-briefs` e o hash da árvore do tutorial foram regenerados.
 
 ## [0.5.0] — 2026-10-25

@@ -1,6 +1,6 @@
 import { cp, symlink, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, parse, resolve } from 'node:path';
 import ts from 'typescript';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -103,7 +103,8 @@ export async function orderSkeleton() {
     JSON.stringify({
       extends: join(ROOT, 'tsconfig.json'),
       compilerOptions: {
-        rootDir: '/',
+        // Raiz do disco: `/` no POSIX, `C:\` no Windows (onde `/` não contém C:/...).
+        rootDir: parse(ROOT).root,
         typeRoots: [join(ROOT, 'node_modules/@types')],
         experimentalDecorators: true,
         paths: {

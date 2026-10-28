@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { z } from 'zod';
+import { toPosix } from '../contracts/ir';
 import { AggregateRoot, DomainEvent, notImplemented } from '@agentic-ddd/core';
 import {
   AgentAdapter,
@@ -93,9 +94,9 @@ describe('decorators de domínio', () => {
   test('a fonte aponta para este arquivo de teste', () => {
     const { registry } = declareProduct();
     const publish = registry.methods.find((m) => m.name === 'publish')!;
-    expect(publish.source.file.endsWith('/src/decorators/domain.test.ts')).toBe(
-      true,
-    );
+    expect(
+      toPosix(publish.source.file).endsWith('/src/decorators/domain.test.ts'),
+    ).toBe(true);
     expect(publish.source.line).toBeGreaterThan(0);
   });
 
@@ -158,7 +159,7 @@ describe('decorators de domínio', () => {
     expect(registry.valueObjects[0]!.target).toBe(Money);
     expect(registry.valueObjects[0]!.description).toBe('Valor em centavos.');
     expect(
-      registry.valueObjects[0]!.source.file.endsWith(
+      toPosix(registry.valueObjects[0]!.source.file).endsWith(
         '/src/decorators/domain.test.ts',
       ),
     ).toBe(true);

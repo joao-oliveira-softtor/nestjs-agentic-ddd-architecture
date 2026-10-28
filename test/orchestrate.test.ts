@@ -654,8 +654,10 @@ test('claude oauth-token: --safe-mode no lugar de --bare e nenhuma variável que
     expect(env[name]).toBeUndefined();
   expect(env.CLAUDE_CODE_OAUTH_TOKEN).toBe('token');
   expect(env.HOME).toBe('/tmp/home');
-  expect(env.CLAUDE_CONFIG_DIR).toBe('/tmp/home/.claude');
-  expect(env.BUN_INSTALL_CACHE_DIR).toBe('/home/real/.bun/install/cache');
+  expect(env.CLAUDE_CONFIG_DIR).toBe(join('/tmp/home', '.claude'));
+  expect(env.BUN_INSTALL_CACHE_DIR).toBe(
+    join('/home/real', '.bun/install/cache'),
+  );
   // Sem token, o modo antigo continua igual: --bare e a chave intacta.
   expect(claudeRunEnv(base).ANTHROPIC_API_KEY).toBe('key');
   expect(
@@ -755,88 +757,93 @@ test('claudeAuth: o token de assinatura tem precedência; sem credencial nada ro
   expect(() => claudeAuth({})).toThrow('CLAUDE_CODE_OAUTH_TOKEN');
 });
 
-test('claude oauth-token: o executor roda com HOME temporário, removido depois, e recusa cobrança por chave', async () => {
-  const { chmod, writeFile } = await import('node:fs/promises');
-  const { existsSync } = await import('node:fs');
-  const { createClaudeExecutor } = await import('../scripts/orchestrate-ports');
-  const dir = await mkdtemp(join(tmpdir(), 'orchestrate-oauth-'));
-  try {
-    const executable = join(dir, 'claude');
-    const seen = join(dir, 'home.txt');
-    const transcript = (source: string) =>
-      [
-        {
-          type: 'system',
-          subtype: 'init',
-          session_id: 's',
-          model: 'claude-haiku-5-5',
-          apiKeySource: source,
-        },
-        {
-          type: 'result',
-          subtype: 'success',
-          is_error: false,
-          session_id: 's',
-          result: '{"status":"done","findings":[]}',
-          modelUsage: {
-            'claude-haiku-5-5': {
-              inputTokens: 10,
-              cacheCreationInputTokens: 0,
-              cacheReadInputTokens: 0,
-              outputTokens: 5,
+// O CLI falso é um script #!/bin/sh, que o Windows não executa; o ambiente é coberto no teste acima.
+test.skipIf(process.platform === 'win32')(
+  'claude oauth-token: o executor roda com HOME temporário, removido depois, e recusa cobrança por chave',
+  async () => {
+    const { chmod, writeFile } = await import('node:fs/promises');
+    const { existsSync } = await import('node:fs');
+    const { createClaudeExecutor } =
+      await import('../scripts/orchestrate-ports');
+    const dir = await mkdtemp(join(tmpdir(), 'orchestrate-oauth-'));
+    try {
+      const executable = join(dir, 'claude');
+      const seen = join(dir, 'home.txt');
+      const transcript = (source: string) =>
+        [
+          {
+            type: 'system',
+            subtype: 'init',
+            session_id: 's',
+            model: 'claude-haiku-5-5',
+            apiKeySource: source,
+          },
+          {
+            type: 'result',
+            subtype: 'success',
+            is_error: false,
+            session_id: 's',
+            result: '{"status":"done","findings":[]}',
+            modelUsage: {
+              'claude-haiku-5-5': {
+                inputTokens: 10,
+                cacheCreationInputTokens: 0,
+                cacheReadInputTokens: 0,
+                outputTokens: 5,
+              },
             },
           },
+        ]
+          .map((event) => JSON.stringify(event))
+          .join('\\n');
+      const fake = (source: string) =>
+        `#!/bin/sh\nif [ -n "$ANTHROPIC_API_KEY" ]; then exit 25; fi\nprintf '%s' "$HOME" > '${seen}'\nprintf '${transcript(source)}\\n'\n`;
+      const task = {
+        item: { id: 'entity:Task', layer: 'domain', dependsOn: [] },
+        facts: {} as never,
+        tier: 'haiku' as const,
+        model: 'claude-haiku-5-5',
+        attempt: 1,
+        brief: 'brief',
+      };
+      const options = {
+        executable,
+        root: dir,
+        maxTurns: 1,
+        maxUsdPerInvocation: 1,
+        timeoutMs: 5000,
+        authentication: 'oauth-token' as const,
+        env: {
+          PATH: '/usr/bin:/bin',
+          HOME: '/home/real',
+          ANTHROPIC_API_KEY: 'k',
+          CLAUDE_CODE_OAUTH_TOKEN: 't',
         },
-      ]
-        .map((event) => JSON.stringify(event))
-        .join('\\n');
-    const fake = (source: string) =>
-      `#!/bin/sh\nif [ -n "$ANTHROPIC_API_KEY" ]; then exit 25; fi\nprintf '%s' "$HOME" > '${seen}'\nprintf '${transcript(source)}\\n'\n`;
-    const task = {
-      item: { id: 'entity:Task', layer: 'domain', dependsOn: [] },
-      facts: {} as never,
-      tier: 'haiku' as const,
-      model: 'claude-haiku-5-5',
-      attempt: 1,
-      brief: 'brief',
-    };
-    const options = {
-      executable,
-      root: dir,
-      maxTurns: 1,
-      maxUsdPerInvocation: 1,
-      timeoutMs: 5000,
-      authentication: 'oauth-token' as const,
-      env: {
-        PATH: '/usr/bin:/bin',
-        HOME: '/home/real',
-        ANTHROPIC_API_KEY: 'k',
-        CLAUDE_CODE_OAUTH_TOKEN: 't',
-      },
-    };
-    await writeFile(executable, fake('none'));
-    await chmod(executable, 0o700);
-    const ok = await createClaudeExecutor(options).run(
-      task,
-      new AbortController().signal,
-    );
-    expect(ok.status).toBe('done');
-    expect(ok.inputTokens).toBe(10);
-    const home = await readFile(seen, 'utf8');
-    expect(home).not.toBe('/home/real');
-    expect(existsSync(home)).toBe(false);
+      };
+      await writeFile(executable, fake('none'));
+      await chmod(executable, 0o700);
+      const ok = await createClaudeExecutor(options).run(
+        task,
+        new AbortController().signal,
+      );
+      expect(ok.status).toBe('done');
+      expect(ok.inputTokens).toBe(10);
+      const home = await readFile(seen, 'utf8');
+      expect(home).not.toBe('/home/real');
+      expect(existsSync(home)).toBe(false);
 
-    await writeFile(executable, fake('ANTHROPIC_API_KEY'));
-    const billed = await createClaudeExecutor(options).run(
-      task,
-      new AbortController().signal,
-    );
-    expect(billed.status).toBe('failed');
-    expect(billed.diagnostic).toContain('auth_source_mismatch');
-  } finally {
-    await rm(dir, { recursive: true, force: true });
-  }
-});
+      await writeFile(executable, fake('ANTHROPIC_API_KEY'));
+      const billed = await createClaudeExecutor(options).run(
+        task,
+        new AbortController().signal,
+      );
+      expect(billed.status).toBe('failed');
+      expect(billed.diagnostic).toContain('auth_source_mismatch');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  },
+);
 
 test('claude: a resposta final do executor só classifica; fora do formato é falha', async () => {
   const { parseExecutorResponse } =
@@ -867,6 +874,8 @@ async function gitRepo() {
     expect(run.exitCode).toBe(0);
   };
   git('init', '-q');
+  // Isola do core.autocrlf global (padrão no Windows): o checkout do restore viraria CRLF.
+  git('config', 'core.autocrlf', 'false');
   git('config', 'user.email', 'test@example.com');
   git('config', 'user.name', 'Test');
   await mkdir(join(root, 'orders/domain'), { recursive: true });

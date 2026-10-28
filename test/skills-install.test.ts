@@ -73,6 +73,8 @@ for (const scope of ['project', 'user'])
           instructions,
         )![1]!;
         // O revisor não lê a skill geral (ela manda ler configuração e skill do módulo).
+        // Adaptador idêntico em qualquer SO: o link nunca leva `\` (#128).
+        expect(reference).not.toContain('\\');
         expect(instructions.includes('/SKILL.md')).toBe(role !== 'reviewer');
         expect(await readFile(resolve(root, reference), 'utf8')).toContain(
           {

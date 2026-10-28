@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { expect, test } from 'bun:test';
+import { resolve } from 'node:path';
 import { Test } from '@nestjs/testing';
 import { OperatorRuntime } from '@agentic-ddd/runtime';
 import { FakeLlm, FakeApproval, InMemoryEventBus } from '@agentic-ddd/testing';
@@ -11,7 +12,7 @@ import {
 import { InMemoryOrderRepository } from '../../examples/orders/infrastructure/in-memory-order.repository';
 import { CreateOrder } from '../../examples/orders/application/create-order';
 
-const root = new URL('../../', import.meta.url).pathname;
+const root = resolve(import.meta.dir, '../..');
 const modules = [{ name: 'orders', path: 'examples/orders' }];
 test('TestingModule resolves ports, repository, injected use-cases and runtime by name', async () => {
   const llm = new FakeLlm([

@@ -11,7 +11,7 @@ import {
   symlink,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import type {
   AdapterRequest,
   AttemptWorkspace,
@@ -28,7 +28,7 @@ export function getWorkspace(root: string): AttemptWorkspace {
 export const sha256 = (bytes: string | Uint8Array) =>
   new Bun.CryptoHasher('sha256').update(bytes).digest('hex');
 export const within = (root: string, path: string) => {
-  const r = relative(root, path);
+  const r = relative(root, path).split(sep).join('/');
   return r === '' || (!r.startsWith('../') && r !== '..' && !isAbsolute(r));
 };
 function git(root: string, args: string[]): Buffer {

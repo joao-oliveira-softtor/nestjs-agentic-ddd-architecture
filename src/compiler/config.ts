@@ -294,7 +294,7 @@ export function resolveConfig(
   const rulesDir = toPosix(config.rules?.dir ?? '.ai/rules')
     .replace(/^(\.\/)+/, '')
     .replace(/\/+$/, '');
-  const rulesFromRoot = relative(root, resolve(root, rulesDir));
+  const rulesFromRoot = toPosix(relative(root, resolve(root, rulesDir)));
   if (isAbsolute(rulesDir) || /^[A-Za-z]:/.test(rulesDir))
     throw new Error(
       'agentic.config.ts: rules.dir deve ser relativo à raiz do projeto',

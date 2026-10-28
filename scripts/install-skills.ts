@@ -70,11 +70,12 @@ function artifacts(options: InstallOptions): Artifact[] {
     });
   for (const target of targets)
     for (const role of ['manager', 'executor', 'reviewer'] as const) {
-      const skill = join(
-        target === 'claude' ? '.claude' : '.agents',
-        'skills/agentic-ddd',
-      );
-      const base = options.scope === 'user' ? join(options.root, skill) : skill;
+      // Links com `/` em qualquer SO, para o adaptador não mudar entre plataformas.
+      const skill = `${target === 'claude' ? '.claude' : '.agents'}/skills/agentic-ddd`;
+      const base =
+        options.scope === 'user'
+          ? join(options.root, skill).split('\\').join('/')
+          : skill;
       const moduleSkill =
         role === 'reviewer'
           ? ''

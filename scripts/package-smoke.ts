@@ -54,7 +54,8 @@ try {
   const pack = packed[0]!;
   const tarball = join(workspace, pack.filename);
   await mkdir(join(workspace, 'unpacked'));
-  await run(['tar', '-xzf', tarball, '-C', join(workspace, 'unpacked')], repo);
+  // Caminhos relativos ao workspace: o GNU tar do Git Bash lê `C:` como host remoto.
+  await run(['tar', '-xzf', pack.filename, '-C', 'unpacked'], workspace);
   const paths = pack.files.map((f) => f.path);
   await auditDirectory(join(workspace, 'unpacked/package'), paths);
   console.log(`Audited ${paths.length} distributed files.`);
