@@ -130,7 +130,7 @@ Here, entities and events live in `src/shop/core/model`, with events in `.evt.ts
 
 - `domain`, `application` and `operators` are each the name of a single folder inside the module; `infrastructure` accepts a list of folders. A nested layout, such as `src/<bc>/core/domain`, is done through `modules[].path`; layers under different parents are not supported.
 - An item's layer still comes from the decorator, not from the folder.
-- `forbiddenImports` says what `domain` and `application` may not import. A list replaces the default, it does not add to it; declaring one layer keeps the other's default. `[]` turns off the folder rule for that layer, but the barrier to `@nestjs/*` and to the runtime stays. `operators` has no import rule.
+- `forbiddenImports` says what `domain` and `application` may not import. A list replaces the default, it does not add to it; declaring one layer keeps the other's default. `[]` turns off the folder rule for that layer, but the barrier to `@nestjs/*`, `elysia` and to the runtime stays. `operators` has no import rule.
 - `suffixes` only changes the text of the "how to extend" table; no gate checks file names by suffix.
 - These conventions apply to the "how to extend" table of the dev skill, to the layer text in the AGENTS.md block and to the import gate of `orchestrate`.
 - A team rule with the key `core/layers` changes only the text; the gate stays the same.

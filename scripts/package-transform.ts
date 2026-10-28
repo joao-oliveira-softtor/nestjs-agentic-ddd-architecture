@@ -8,7 +8,7 @@ export function packageTransform<T extends ts.Node>(
     const textOf = (text: string) =>
       text
         .replace(
-          /@agentic-ddd\/(core|decorators|compiler|runtime|nestjs|testing)\b/g,
+          /@agentic-ddd\/(core|decorators|compiler|runtime|nestjs|elysia|testing)\b/g,
           `${name}/$1`,
         )
         .replace(/\bbun run agentic\b/g, 'bun run agentic-ddd');

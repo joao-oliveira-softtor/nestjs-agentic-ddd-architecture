@@ -24,7 +24,8 @@
       "@agentic-ddd/compiler": ["./src/compiler/index.ts"],
       "@agentic-ddd/testing": ["./src/testing/index.ts"],
       "@agentic-ddd/runtime": ["./src/runtime/index.ts"],
-      "@agentic-ddd/nestjs": ["./src/nestjs/index.ts"]
+      "@agentic-ddd/nestjs": ["./src/nestjs/index.ts"],
+      "@agentic-ddd/elysia": ["./src/elysia/index.ts"]
     }
   },
   "exclude": ["node_modules", "dist", "test/fixtures/package-consumer"]

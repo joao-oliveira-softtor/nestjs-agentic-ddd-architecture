@@ -2,6 +2,14 @@
 
 ## [Não lançado]
 
+- **Adaptador Elysia (ADR-0008):** o mesmo domínio decorado monta no Elysia por `@agentic-ddd/elysia` (`elysia` é peer opcional).
+  - `agentic({ ...RuntimeOptions, operators, useCases, http? })` registra os operators e decora o app com o runtime. Os use-cases entram como instâncias com a chave igual ao `name` do `@AgentUseCase`; chave diferente ou valor sem decorator falha na montagem.
+  - Com `http`, cada use-case ganha `POST {prefix}/use-cases/<name>` validado pelos schemas zod do decorator, e o Eden infere os tipos de ponta a ponta. `DomainError` responde 422 `{ code, message }`, tipado junto com o 422 de validação do Elysia (`ValidationErrorBody`) para o cliente distinguir os dois; qualquer outro erro responde 500 genérico, sem a mensagem original. As rotas não passam pelo `ApprovalPort`; a autenticação fica com o app. Operators não ganham rota HTTP (ADR-0007 D5).
+  - Aceita instância de subclasse de um use-case declarado (como o `useClass` do Nest), e `prefix: '/'` monta sem prefixo. Monte um único `agentic()` por app.
+  - `@agentic-ddd/runtime` ganha `createRuntime` (usado pelos dois adaptadores) e `executeUseCase`, que roda um use-case fora de operator com a mesma regra de `emits`, agora num guard compartilhado com o loop do operator. `runUseCase` faz o mesmo com um input já validado: a rota usa esse caminho porque o Elysia entrega o body já transformado pelo zod, e validar duas vezes quebraria schemas com `transform`.
+  - O gate de direção de import barra `elysia` e `@agentic-ddd/elysia` em domínio e aplicação, como já barrava o Nest.
+  - Exemplo em `examples/orders/elysia.ts`.
+
 - **Windows nativo (#128):** o framework passa a funcionar no Windows sem WSL, e o CI ganha o job `ci-windows`, com o mesmo gate do `ci` em `windows-latest`.
   - O `compile` falhava em qualquer projeto: `parseFrame` só reconhecia caminhos POSIX, e todo decorator ficava com origem `<desconhecido>`. Agora ele aceita letra de unidade, UNC e `file:///C:/`.
   - O `compile --check` acusava o espelho de skill desatualizado, porque o `readlink` devolve `\`.
