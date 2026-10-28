@@ -42,8 +42,10 @@ jobs:
       run:
         shell: bash
     steps:
-      # The repo versions skill symlinks; without this git checks them out as text files.
-      - run: git config --global core.symlinks true
+      # Skill symlinks would check out as text files, and validation records exceed MAX_PATH.
+      - run: |
+          git config --global core.symlinks true
+          git config --global core.longpaths true
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:

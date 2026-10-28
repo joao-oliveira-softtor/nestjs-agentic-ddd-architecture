@@ -56,18 +56,14 @@ describe('parseFrame', () => {
     expect(result?.line).toBe(3);
   });
 
-  test.if(process.platform === 'win32')(
-    'reconhece URL file:// com letra de unidade',
-    () => {
-      expect(parseFrame('    at foo (file:///C:/u/proj/a.ts:3:20)')).toEqual({
-        file: 'C:\\u\\proj\\a.ts',
-        line: 3,
-      });
-    },
-  );
+  test('reconhece URL file:// com letra de unidade em qualquer SO', () => {
+    expect(parseFrame('    at foo (file:///C:/u/proj/a.ts:3:20)')).toEqual({
+      file: 'C:\\u\\proj\\a.ts',
+      line: 3,
+    });
+  });
 
-  // fileURLToPath só converte URL da plataforma: file:///home/... não é caminho no Windows.
-  test.skipIf(process.platform === 'win32')('reconhece URL file://', () => {
+  test('reconhece URL file://', () => {
     const result = parseFrame('    at foo (file:///home/user/proj/a.ts:3:20)');
     expect(result).not.toBeNull();
     expect(result?.file).toBe('/home/user/proj/a.ts');

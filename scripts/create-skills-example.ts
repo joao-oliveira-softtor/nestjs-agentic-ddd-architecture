@@ -1,5 +1,6 @@
 import { lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve, sep } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { toPosix } from '../src/contracts/ir';
 import { match, P } from 'ts-pattern';
 import { installSkills } from './install-skills';
 import { shellQuote } from '../src/compiler/packet';
@@ -47,7 +48,7 @@ export async function createSkillsExample(
     );
   }
   // Caminhos gravados com `/` em qualquer SO (Bun e tsc aceitam no Windows).
-  const fw = (path: string) => join(FRAMEWORK, path).split(sep).join('/');
+  const fw = (path: string) => toPosix(join(FRAMEWORK, path));
   const tsc = fw('node_modules/typescript/bin/tsc');
   await put(
     'package.json',

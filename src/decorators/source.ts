@@ -18,7 +18,10 @@ export function parseFrame(line: string): SourceLoc | null {
   if (!match) return null;
 
   const raw = match[1]!;
-  const file = raw.startsWith('file://') ? fileURLToPath(raw) : raw;
+  // A URL com letra de unidade é do Windows em qualquer SO onde o frame for lido.
+  const file = raw.startsWith('file://')
+    ? fileURLToPath(raw, { windows: /^file:\/\/\/[A-Za-z]:/.test(raw) })
+    : raw;
   const lineNum = Number(match[2])!;
 
   return { file, line: lineNum };
