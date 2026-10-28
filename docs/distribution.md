@@ -4,7 +4,7 @@ A distribuição usa um pacote ESM único com sete fronteiras. O nome `nestjs-ag
 
 ## Compatibilidade
 
-- Bun 1.4.2 é o runtime usado na validação; compiler/CLI dependem de Bun.Glob, Bun.spawn e Bun.YAML.
+- Bun 1.4.4 é o runtime usado na validação (CI em Linux e Windows); o mínimo declarado em `engines` segue 1.4.2. Compiler/CLI dependem de Bun.Glob, Bun.spawn e Bun.YAML.
 - Nest 12, reflect-metadata 0.2 e rxjs 7 são peers e devem ser compartilhados com a aplicação.
 - Zod 4 e TypeScript 6 são dependências runtime: o compilador usa a API de TypeScript para evidências estáticas.
 - Os imports ESM e declarações são validados com resolução TypeScript NodeNext e bundler, sem paths e com skipLibCheck false. Isso não certifica execução do framework inteiro em Node.

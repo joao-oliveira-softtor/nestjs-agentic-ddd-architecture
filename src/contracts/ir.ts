@@ -1,7 +1,11 @@
-import { realpathSync } from 'node:fs';
-import { basename, dirname, join, relative, sep } from 'node:path';
+import { relative, sep } from 'node:path';
 import { z, type ZodType } from 'zod';
-import type { ClassRef, Registry, SourceLoc } from '@agentic-ddd/decorators';
+import {
+  canonicalPath,
+  type ClassRef,
+  type Registry,
+  type SourceLoc,
+} from '@agentic-ddd/decorators';
 import { byId, sha256, stableStringify } from './canonical';
 
 export type JsonSchema = Record<string, unknown>;
@@ -145,24 +149,11 @@ export function toPosix(path: string): string {
   return path.split(sep).join('/');
 }
 
-/**
- * Caminho por extenso, para comparar raiz e arquivo de stack frame: no Windows um nome 8.3
- * (RUNNER~1) e o nome longo são o mesmo arquivo, e cada versão do Bun usa um nos frames.
- * shortcut: só no Windows; no POSIX o realpath também resolveria symlinks, o que hoje não é preciso.
- */
-export function canonicalPath(path: string): string {
-  if (process.platform !== 'win32') return path;
-  try {
-    return realpathSync.native(path);
-  } catch {
-    // Caminho que (ainda) não existe: normaliza o diretório existente mais próximo.
-    const parent = dirname(path);
-    return parent === path ? path : join(canonicalPath(parent), basename(path));
-  }
-}
+// Reexportado para quem compara raízes; o arquivo do SourceLoc já vem canônico do captureSource.
+export { canonicalPath };
 
 export function sourceOf(root: string, loc: SourceLoc): string {
-  return `${toPosix(relative(canonicalPath(root), canonicalPath(loc.file)))}:${loc.line}`;
+  return `${toPosix(relative(canonicalPath(root), loc.file))}:${loc.line}`;
 }
 
 export function irHash(ir: IR): string {
@@ -181,7 +172,7 @@ export function buildIR(
   const loc = (s: SourceLoc): string => sourceOf(root, s);
 
   const moduleOf = (s: SourceLoc): string => {
-    const file = toPosix(relative(root, canonicalPath(s.file)));
+    const file = toPosix(relative(root, s.file));
     const found = modules.find(
       (m) => file === m.path || file.startsWith(`${m.path}/`),
     );

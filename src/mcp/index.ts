@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
-import { isAbsolute, relative } from 'node:path';
+import { isAbsolute, posix, relative } from 'node:path';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { canonicalPath } from '../contracts/ir';
@@ -77,9 +77,13 @@ export function startMcpServer({ root }: { root: string }): {
       guarded<{ path: string }>((s, { path }) => {
         // Clientes costumam mandar caminho absoluto; o glob das regras é relativo à raiz.
         // `\` vira `/` antes da checagem, como rulesForPath faz: `..\x` também é fora da raiz.
-        const rel = (
-          isAbsolute(path) ? relative(s.root, canonicalPath(path)) : path
-        ).replaceAll('\\', '/');
+        // normalize resolve `./` e `x/..` internos: `./../a` e `x/../../a` também saem da raiz.
+        const rel = posix.normalize(
+          (isAbsolute(path)
+            ? relative(s.root, canonicalPath(path))
+            : path
+          ).replaceAll('\\', '/'),
+        );
         if (isAbsolute(rel) || rel === '..' || rel.startsWith('../'))
           throw new Error(`${path}: fora da raiz do projeto (${s.root})`);
         return rulesForPath(s.rules, rel);

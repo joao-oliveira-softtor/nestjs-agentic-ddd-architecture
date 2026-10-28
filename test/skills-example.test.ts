@@ -306,12 +306,15 @@ test('tutorial tasks sem opção: hash da árvore gerada estável e portável', 
     const full = join(root, file);
     const info = await lstat(full);
     hash.update(`${file}\0`);
-    if (info.isSymbolicLink())
-      // O Bun no Windows devolve o alvo relativo; resolver dá o mesmo valor no Linux.
+    if (info.isSymbolicLink()) {
+      const target = await readlink(full);
+      const resolved = resolve(dirname(full), target);
+      // Link interno entra pelo alvo literal (relativo, pega um absoluto por engano); link para
+      // o framework entra resolvido, porque o Bun no Windows o devolve relativo à pasta temporária.
       hash.update(
-        `link:${strip(toPosix(resolve(dirname(full), await readlink(full))))}`,
+        `link:${resolved.startsWith(root) ? toPosix(target) : strip(toPosix(resolved))}`,
       );
-    else if (info.isFile()) hash.update(strip(await readFile(full, 'utf8')));
+    } else if (info.isFile()) hash.update(strip(await readFile(full, 'utf8')));
     hash.update('\0');
   }
   expect(hash.digest('hex')).toMatchSnapshot();

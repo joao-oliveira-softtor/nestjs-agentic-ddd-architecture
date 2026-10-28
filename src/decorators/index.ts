@@ -40,4 +40,9 @@ export {
   type UseCaseRecord,
   type ValueObjectRecord,
 } from './registry';
-export { captureSource, parseFrame, type SourceLoc } from './source';
+export {
+  canonicalPath,
+  captureSource,
+  parseFrame,
+  type SourceLoc,
+} from './source';

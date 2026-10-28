@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { DomainEvent } from '@agentic-ddd/core';
-import { createRegistry } from '@agentic-ddd/decorators';
+import { canonicalPath, createRegistry } from '@agentic-ddd/decorators';
 import { buildIR, irHash } from '../../src/contracts/ir';
 export class Changed extends DomainEvent {}
 const dirs: string[] = [];
@@ -13,7 +13,8 @@ afterEach(() => {
     rmSync(dir, { recursive: true, force: true });
 });
 export function fixture() {
-  const root = mkdtempSync(join(tmpdir(), 'runtime-'));
+  // SourceLoc à mão não passa pelo captureSource: a raiz já vem na forma canônica.
+  const root = canonicalPath(mkdtempSync(join(tmpdir(), 'runtime-')));
   dirs.push(root);
   const registry = createRegistry();
   class Tool {}

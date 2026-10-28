@@ -23,7 +23,7 @@ export function declarationsInModules(
   ] as const) {
     (scoped[key] as unknown[]).push(
       ...registry[key].filter((record) => {
-        const file = toPosix(relative(root, canonicalPath(record.source.file)));
+        const file = toPosix(relative(root, record.source.file));
         return modules.some((module) => {
           const path = toPosix(relative(root, resolve(root, module.path)));
           return file === path || file.startsWith(`${path}/`);

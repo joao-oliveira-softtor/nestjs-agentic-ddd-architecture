@@ -269,7 +269,7 @@ export function resolveConfig(
       );
     names.add(module.name);
   }
-  const root = resolve(configDir, config.root ?? '.');
+  const root = canonicalPath(resolve(configDir, config.root ?? '.'));
   const modulePaths = new Map<ModuleConfig, string>();
   const owners = new Map<string, string>();
   for (const module of config.modules) {
@@ -316,7 +316,9 @@ export function resolveConfig(
     );
   return {
     root,
-    outRoot: overrides.outRoot ? resolve(overrides.outRoot) : root,
+    outRoot: overrides.outRoot
+      ? canonicalPath(resolve(overrides.outRoot))
+      : root,
     modules: config.modules.map((m) => ({
       name: m.name,
       path: modulePaths.get(m)!,

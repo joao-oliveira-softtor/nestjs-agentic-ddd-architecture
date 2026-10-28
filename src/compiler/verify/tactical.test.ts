@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import ts from 'typescript';
 import { compile } from '@agentic-ddd/compiler';
+import { canonicalPath } from '@agentic-ddd/decorators';
 import { SHOP_MODULE, defineShop } from '../__fixtures__/shop';
 import {
   ENROLLMENT_MODULE,
@@ -221,7 +222,8 @@ describe('tacticalGate', () => {
     target: class Matricula {},
     source: { file, line: 1 },
   });
-  const dir = mkdtempSync(join(tmpdir(), 'tactical-'));
+  // SourceLoc à mão não passa pelo captureSource: a pasta já vem na forma canônica.
+  const dir = canonicalPath(mkdtempSync(join(tmpdir(), 'tactical-')));
 
   test('arquivo sem decorator na linha informada: fail-closed', () => {
     const file = join(dir, 'a.ts');
