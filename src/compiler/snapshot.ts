@@ -4,7 +4,7 @@ import { sha256, stableStringify } from './canonical';
 import { moduleFiles } from './load';
 import { parseLock, type DomainLock } from './lock';
 import { ruleFiles, type Rule } from './rules';
-import { toPosix } from './ir';
+import { realRoot, toPosix } from './ir';
 
 export const SNAPSHOT_PATH = '.agentic/mcp/snapshot.json';
 
@@ -88,11 +88,13 @@ export async function removeSnapshot(outRoot: string): Promise<void> {
 }
 
 export async function checkSnapshot(
-  outRoot: string,
+  given: string,
 ): Promise<
   | { ok: true; lock: DomainLock; rules: Rule[]; root: string }
   | { ok: false; reason: string }
 > {
+  // Com a raiz 8.3 o realpath das regras sairia da raiz e o hash divergiria.
+  const outRoot = realRoot(given);
   const file = join(outRoot, SNAPSHOT_PATH);
   const text = await readFile(file, 'utf8').catch(() => null);
   // Pasta errada é o caso comum de snapshot ausente: a mensagem mostra onde procurou.

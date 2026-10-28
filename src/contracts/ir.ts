@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs';
 import { relative, sep } from 'node:path';
 import { z, type ZodType } from 'zod';
 import type { ClassRef, Registry, SourceLoc } from '@agentic-ddd/decorators';
@@ -144,6 +145,20 @@ export function toPosix(path: string): string {
   return path.split(sep).join('/');
 }
 
+/**
+ * Raiz comparável aos caminhos dos stack frames, que o Bun dá por extenso.
+ * shortcut: só no Windows, onde uma raiz 8.3 (RUNNER~1) não bate com os frames; no POSIX o
+ * realpath também resolveria symlinks da raiz, o que hoje não é preciso.
+ */
+export function realRoot(root: string): string {
+  if (process.platform !== 'win32') return root;
+  try {
+    return realpathSync.native(root);
+  } catch {
+    return root;
+  }
+}
+
 export function sourceOf(root: string, loc: SourceLoc): string {
   return `${toPosix(relative(root, loc.file))}:${loc.line}`;
 }
@@ -160,10 +175,11 @@ export function buildIR(
   const modules = [...options.modules].sort(
     (a, b) => b.path.length - a.path.length,
   );
-  const loc = (s: SourceLoc): string => sourceOf(options.root, s);
+  const root = realRoot(options.root);
+  const loc = (s: SourceLoc): string => sourceOf(root, s);
 
   const moduleOf = (s: SourceLoc): string => {
-    const file = toPosix(relative(options.root, s.file));
+    const file = toPosix(relative(root, s.file));
     const found = modules.find(
       (m) => file === m.path || file.startsWith(`${m.path}/`),
     );

@@ -150,7 +150,7 @@ try {
   const reply = await readReply(mcp.stdout, 2);
   assert(
     reply.result && reply.result.isError !== true,
-    'domain_overview failed over stdio',
+    `domain_overview failed over stdio: ${JSON.stringify(reply).slice(0, 500)}`,
   );
   void mcp.stdin.end();
   assert.equal(
