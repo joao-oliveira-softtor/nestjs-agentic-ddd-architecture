@@ -3,6 +3,7 @@ import {
   type DomainEvent,
   type UseCaseContext,
 } from '@agentic-ddd/core';
+import { guardEmits } from './emits-guard';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import type { MountedOperator } from './operator-runtime';
 import type {
@@ -165,48 +166,28 @@ export async function runOperator(
             continue;
           }
         }
-        let toolActive = true;
-        // Set before the first await so even a swallowed or un-awaited failure fails the run.
-        let undeclared = false;
+        const guard = guardEmits(
+          tool.record,
+          async (event) => {
+            event.stamp(runId, step.id);
+            trace.events.push(event);
+            step.events.push(event);
+            events.push(event);
+            // One event at a time: after timeout no next publication is admitted.
+            await wait(() => ports.eventBus.publish([event]));
+          },
+          check,
+        );
         const ctx: UseCaseContext = {
           correlationId: runId,
           causationId: step.id,
-          async publish(batch) {
-            check();
-            if (!toolActive)
-              throw new Error('Use-case execution already ended');
-            // By name, like the IR and skills: identity breaks when a module is loaded twice.
-            const refused = batch.find(
-              (event) =>
-                !tool.record.emits.some((cls) => cls.name === event.name),
-            );
-            if (refused) {
-              undeclared = true;
-              throw new Error(
-                `Event ${refused.name} is not declared in emits of use-case ${tool.record.name}`,
-              );
-            }
-            for (const event of batch) {
-              check();
-              // Earlier, or concurrently while this batch awaited the bus.
-              if (undeclared)
-                throw new Error(
-                  `Use-case ${tool.record.name} already published an undeclared event`,
-                );
-              event.stamp(runId, step.id);
-              trace.events.push(event);
-              step.events.push(event);
-              events.push(event);
-              // One event at a time: after timeout no next publication is admitted.
-              await wait(() => ports.eventBus.publish([event]));
-            }
-          },
+          publish: guard.publish,
         };
         try {
           const output = await wait(() =>
             tool.instance.execute(parsed.data, ctx),
           );
-          if (undeclared) return finish('failed', 'use_case_error');
+          if (guard.undeclared) return finish('failed', 'use_case_error');
           const validated = tool.record.output.safeParse(output);
           if (!validated.success) return finish('failed', 'use_case_error');
           result(
@@ -221,10 +202,10 @@ export async function runOperator(
           );
         } catch (error) {
           if (error instanceof RunTimeout) throw error;
-          if (undeclared || !(error instanceof DomainError)) throw error;
+          if (guard.undeclared || !(error instanceof DomainError)) throw error;
           result({ code: error.code, message: error.message }, true);
         } finally {
-          toolActive = false;
+          guard.end();
         }
       }
       messages.push({ role: 'tool', results });

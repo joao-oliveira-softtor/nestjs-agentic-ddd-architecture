@@ -128,6 +128,35 @@ O `AppModule` compõe orders com FakeLlm de roteiro vazio: o v0 não fornece can
 
 Os [E2E](examples/orders/test/operator.test.ts) compilam a skill e validam criação/confirmação, cancelamento, aprovação, outputs, eventos e IDs com a composição Nest.
 
+## Executar no Elysia
+
+O mesmo domínio decorado monta no Elysia por `@agentic-ddd/elysia` ([ADR-0008](docs/adr/ADR-0008.md)). Os use-cases entram como instâncias, com a chave igual ao `name` do `@AgentUseCase`:
+
+```ts
+import { Elysia } from 'elysia';
+import { agentic } from '@agentic-ddd/elysia';
+
+const orders = new InMemoryOrderRepository();
+const app = new Elysia().use(
+  await agentic({
+    llm,
+    modules: [{ name: 'orders', path: 'examples/orders' }],
+    operators: [OrderOperator],
+    useCases: {
+      create_order: new CreateOrder(orders),
+      confirm_order: new ConfirmOrder(orders),
+      cancel_order: new CancelOrder(orders),
+    },
+    http: {}, // opcional: POST /agentic/use-cases/<name>
+  }),
+);
+export type App = typeof app;
+```
+
+O plugin registra os operators e decora o app com o runtime como `agentic`; a skill desatualizada falha na inicialização, como no `forFeature`. Chave diferente do `name` do decorator, ou valor que não é use-case declarado nos módulos configurados, é erro de montagem. Com `http`, cada use-case ganha `POST {prefix}/use-cases/<name>` (prefixo default `/agentic`), validado pelo zod de `input` e respondendo o `output`; `DomainError` vira 422 `{ code, message }`. No frontend, `treaty<App>(url).agentic['use-cases'].create_order.post(...)` sai tipado pelos mesmos schemas.
+
+As rotas alteram o domínio e não passam pelo `ApprovalPort` (aprovação é política do operator sobre o LLM): autentique-as no app, por exemplo montando o plugin num `group` com `beforeHandle`. Operators não ganham rota HTTP (ADR-0007 D5): rode `ctx.agentic.run(name, { message, context })` no seu handler, com `context` derivado no servidor. A composição completa está em [`examples/orders/elysia.ts`](examples/orders/elysia.ts).
+
 ## Mudanças de domínio e conclusão de tarefas
 
 Toda mudança de regra de negócio fica registrada em `changes/`, e o compilador mantém um snapshot do domínio em `.agentic/domain.lock.json`.
@@ -233,6 +262,7 @@ Exits: `0` para avaliação concluída, inclusive erros do agente; `1` para infr
 | `src/contracts`   | projeção canônica de declarações e hash compartilhados pelo compiler/runtime           |
 | `src/runtime`     | ports, registro de operators, loop, aprovação, eventos e traces                        |
 | `src/nestjs`      | `AgenticModule.forRoot/forFeature` e tokens de DI                                      |
+| `src/elysia`      | plugin `agentic()` e rotas de use-case tipadas para o Eden                             |
 | `src/testing`     | `covers()`, `createTestContext()`, `FakeLlm`, `FakeApproval` e bus in-memory           |
 | `src/cli`         | `agentic-ddd compile`, `ir`, `status`, `next`, `packet` e `verify`                     |
 | `examples/orders` | domínio de exemplo                                                                     |

@@ -87,6 +87,8 @@ test('domínio não importa application, operators, infraestrutura, Nest nem o r
     `import { Injectable } from '@nestjs/common';`,
     `import { r } from '@agentic-ddd/runtime';`,
     `import { n } from '@agentic-ddd/nestjs';`,
+    `import { Elysia } from 'elysia';`,
+    `import { agentic } from '@agentic-ddd/elysia';`,
     `import { u } from '../application/create-order';`,
     `import type { o } from '../operators/order-operator';`,
     `import { db } from '../../infrastructure/db';`,

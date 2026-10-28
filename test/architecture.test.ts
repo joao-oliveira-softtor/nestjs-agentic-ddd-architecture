@@ -73,7 +73,9 @@ describe('arquitetura', () => {
     const forbidden = (s: string) =>
       s.startsWith('@nestjs/') ||
       s === '@agentic-ddd/runtime' ||
-      s === '@agentic-ddd/nestjs';
+      s === '@agentic-ddd/nestjs' ||
+      s === 'elysia' ||
+      s === '@agentic-ddd/elysia';
     expect(offenders(files, (_f, s) => !forbidden(s))).toEqual([]);
   });
 

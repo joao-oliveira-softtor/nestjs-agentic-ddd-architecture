@@ -118,6 +118,11 @@ try {
     '-e',
     `const mod = await import('${pkg.name}/mcp'); if (typeof mod.startMcpServer !== 'function') throw new Error('startMcpServer is not exported');`,
   ]);
+  await run([
+    'bun',
+    '-e',
+    `const mod = await import('${pkg.name}/elysia'); if (typeof mod.agentic !== 'function') throw new Error('agentic is not exported');`,
+  ]);
   const mcp = Bun.spawn([cli, 'mcp', '--root', consumer], {
     stdin: 'pipe',
     stdout: 'pipe',

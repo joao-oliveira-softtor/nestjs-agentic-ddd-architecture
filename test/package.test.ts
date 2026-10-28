@@ -2,13 +2,14 @@ import { expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-test('package exposes only the seven public boundaries with declarations', () => {
+test('package exposes only the eight public boundaries with declarations', () => {
   for (const boundary of [
     'core',
     'decorators',
     'compiler',
     'runtime',
     'nestjs',
+    'elysia',
     'testing',
     'mcp',
   ]) {
@@ -24,6 +25,7 @@ test('package exposes only the seven public boundaries with declarations', () =>
     './compiler',
     './core',
     './decorators',
+    './elysia',
     './mcp',
     './nestjs',
     './runtime',
