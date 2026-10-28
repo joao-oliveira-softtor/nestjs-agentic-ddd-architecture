@@ -8,7 +8,7 @@ import {
   type ImportTarget,
   type ResolvedConventions,
 } from './conventions';
-import { realRoot, toPosix } from './ir';
+import { canonicalPath, toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
 
 export {
@@ -351,7 +351,7 @@ export async function loadConfig(
   overrides: { outRoot?: string } = {},
 ): Promise<ResolvedConfig> {
   // Raiz 8.3 importaria o domínio por outro caminho, com outra instância do registry.
-  const absolute = realRoot(resolve(configPath));
+  const absolute = canonicalPath(resolve(configPath));
   const loaded = (await import(pathToFileURL(absolute).href)) as {
     default?: AgenticConfig;
   };

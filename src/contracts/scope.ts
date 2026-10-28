@@ -1,6 +1,6 @@
 import { relative, resolve } from 'node:path';
 import { Registry } from '@agentic-ddd/decorators';
-import { realRoot, toPosix, type IRModule } from './ir';
+import { canonicalPath, toPosix, type IRModule } from './ir';
 
 /** Isolates declarations by the compiler's complete module paths (no imports/I/O). */
 export function declarationsInModules(
@@ -9,7 +9,7 @@ export function declarationsInModules(
   modules: readonly IRModule[],
 ): Registry {
   const scoped = new Registry();
-  root = realRoot(root);
+  root = canonicalPath(root);
   for (const key of [
     'entities',
     'valueObjects',
@@ -23,7 +23,7 @@ export function declarationsInModules(
   ] as const) {
     (scoped[key] as unknown[]).push(
       ...registry[key].filter((record) => {
-        const file = toPosix(relative(root, record.source.file));
+        const file = toPosix(relative(root, canonicalPath(record.source.file)));
         return modules.some((module) => {
           const path = toPosix(relative(root, resolve(root, module.path)));
           return file === path || file.startsWith(`${path}/`);

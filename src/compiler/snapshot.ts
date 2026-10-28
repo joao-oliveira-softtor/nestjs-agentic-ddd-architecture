@@ -4,7 +4,7 @@ import { sha256, stableStringify } from './canonical';
 import { moduleFiles } from './load';
 import { parseLock, type DomainLock } from './lock';
 import { ruleFiles, type Rule } from './rules';
-import { realRoot, toPosix } from './ir';
+import { canonicalPath, toPosix } from './ir';
 
 export const SNAPSHOT_PATH = '.agentic/mcp/snapshot.json';
 
@@ -94,7 +94,7 @@ export async function checkSnapshot(
   | { ok: false; reason: string }
 > {
   // Com a raiz 8.3 o realpath das regras sairia da raiz e o hash divergiria.
-  const outRoot = realRoot(given);
+  const outRoot = canonicalPath(given);
   const file = join(outRoot, SNAPSHOT_PATH);
   const text = await readFile(file, 'utf8').catch(() => null);
   // Pasta errada é o caso comum de snapshot ausente: a mensagem mostra onde procurou.
