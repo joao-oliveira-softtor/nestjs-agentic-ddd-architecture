@@ -1,6 +1,6 @@
 import { cp, symlink, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, parse, resolve } from 'node:path';
+import { dirname, join, parse, resolve } from 'node:path';
 import ts from 'typescript';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -92,7 +92,10 @@ function stageTests(
 }
 
 export async function orderSkeleton() {
-  const dir = await mkdtemp(join(tmpdir(), 'agentic-order-skeleton-'));
+  // O tsc precisa de um rootDir que contenha o esqueleto e o framework: mesmo disco no Windows.
+  const base =
+    parse(tmpdir()).root === parse(ROOT).root ? tmpdir() : dirname(ROOT);
+  const dir = await mkdtemp(join(base, 'agentic-order-skeleton-'));
   await cp(join(ROOT, 'examples/orders'), join(dir, 'app'), {
     recursive: true,
   });
