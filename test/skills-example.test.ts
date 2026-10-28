@@ -10,7 +10,8 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { toPosix } from '../src/contracts/ir';
 
 const ROOT = resolve(import.meta.dir, '..');
 const dirs: string[] = [];
@@ -293,20 +294,27 @@ test('tutorial tasks sem opção: hash da árvore gerada estável e portável', 
     onlyFiles: false,
     dot: true,
   }))
-    if (!file.startsWith('node_modules')) files.push(file);
+    if (!file.startsWith('node_modules')) files.push(toPosix(file));
+  // Portável: nomes e alvos com `/`, raiz do framework removida nas duas formas.
+  const strip = (text: string) =>
+    text
+      .replaceAll(toPosix(root), '<ROOT>')
+      .replaceAll(ROOT, '<FRAMEWORK>')
+      .replaceAll(toPosix(ROOT), '<FRAMEWORK>');
   const hash = new Bun.CryptoHasher('sha256');
   for (const file of files.sort()) {
     const full = join(root, file);
     const info = await lstat(full);
     hash.update(`${file}\0`);
-    if (info.isSymbolicLink())
+    if (info.isSymbolicLink()) {
+      const target = await readlink(full);
+      const resolved = resolve(dirname(full), target);
+      // Link interno entra pelo alvo literal (relativo, pega um absoluto por engano); link para
+      // o framework entra resolvido, porque o Bun no Windows o devolve relativo à pasta temporária.
       hash.update(
-        `link:${(await readlink(full)).replaceAll(ROOT, '<FRAMEWORK>')}`,
+        `link:${resolved.startsWith(root) ? toPosix(target) : strip(toPosix(resolved))}`,
       );
-    else if (info.isFile())
-      hash.update(
-        (await readFile(full, 'utf8')).replaceAll(ROOT, '<FRAMEWORK>'),
-      );
+    } else if (info.isFile()) hash.update(strip(await readFile(full, 'utf8')));
     hash.update('\0');
   }
   expect(hash.digest('hex')).toMatchSnapshot();

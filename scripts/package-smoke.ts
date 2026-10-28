@@ -54,7 +54,8 @@ try {
   const pack = packed[0]!;
   const tarball = join(workspace, pack.filename);
   await mkdir(join(workspace, 'unpacked'));
-  await run(['tar', '-xzf', tarball, '-C', join(workspace, 'unpacked')], repo);
+  // Caminhos relativos ao workspace: o GNU tar do Git Bash lê `C:` como host remoto.
+  await run(['tar', '-xzf', pack.filename, '-C', 'unpacked'], workspace);
   const paths = pack.files.map((f) => f.path);
   await auditDirectory(join(workspace, 'unpacked/package'), paths);
   console.log(`Audited ${paths.length} distributed files.`);
@@ -149,7 +150,7 @@ try {
   const reply = await readReply(mcp.stdout, 2);
   assert(
     reply.result && reply.result.isError !== true,
-    'domain_overview failed over stdio',
+    `domain_overview failed over stdio: ${JSON.stringify(reply).slice(0, 500)}`,
   );
   void mcp.stdin.end();
   assert.equal(

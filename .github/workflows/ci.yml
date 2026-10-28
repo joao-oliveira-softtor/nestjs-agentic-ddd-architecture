@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.4
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run lint
@@ -35,6 +35,37 @@ jobs:
       - run: bun run agentic compile --check
       - run: bun run skills:install --check
 
+  ci-windows:
+    # Same gate as `ci` on native Windows (#128): paths, symlinks and line endings.
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # Skill symlinks would check out as text files, and validation records exceed MAX_PATH.
+      - run: |
+          git config --global core.symlinks true
+          git config --global core.longpaths true
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run lint
+      - run: bun test --path-ignore-patterns='test/evals-*'
+      - name: Verify example change 0001 is done
+        env:
+          VERIFY_JSON: ${{ runner.temp }}/verify-0001.json
+        run: |
+          bun run agentic verify 0001 > "$VERIFY_JSON"
+          test "$(bun -e 'console.log((await Bun.file(process.env.VERIFY_JSON).json()).status)')" = done
+      - run: bun run build
+      - name: Validate packed framework in an isolated consumer
+        run: bun run test:package
+      - run: bun run agentic compile --check
+      - run: bun run skills:install --check
+
   evals:
     # ubuntu-latest rejected the bubblewrap uid map; keep the required probe.
     runs-on: ubuntu-22.04
@@ -42,7 +73,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.4
       - run: bun install --frozen-lockfile
       - name: Install and probe offline isolation runtime
         run: |

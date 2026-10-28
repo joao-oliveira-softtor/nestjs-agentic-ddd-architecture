@@ -316,7 +316,8 @@ export async function checkOutputs(
         drift.push({ path: `${mirror}/${dir}`, reason: 'conflict' });
       } else if (
         !stat ||
-        (await readlink(link)) !== mirrorTarget(config, mirror, dir)
+        // No Windows o readlink devolve o alvo com `\`.
+        toPosix(await readlink(link)) !== mirrorTarget(config, mirror, dir)
       ) {
         drift.push({ path: `${mirror}/${dir}`, reason: 'mirror' });
       }

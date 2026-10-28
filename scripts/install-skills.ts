@@ -10,6 +10,7 @@ import {
 } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
+import { toPosix } from '../src/contracts/ir';
 
 export const SKILL_SOURCE = resolve(import.meta.dir, '../skills/agentic-ddd');
 type Target = 'cursor' | 'codex' | 'claude';
@@ -70,11 +71,10 @@ function artifacts(options: InstallOptions): Artifact[] {
     });
   for (const target of targets)
     for (const role of ['manager', 'executor', 'reviewer'] as const) {
-      const skill = join(
-        target === 'claude' ? '.claude' : '.agents',
-        'skills/agentic-ddd',
-      );
-      const base = options.scope === 'user' ? join(options.root, skill) : skill;
+      // Links com `/` em qualquer SO, para o adaptador não mudar entre plataformas.
+      const skill = `${target === 'claude' ? '.claude' : '.agents'}/skills/agentic-ddd`;
+      const base =
+        options.scope === 'user' ? toPosix(join(options.root, skill)) : skill;
       const moduleSkill =
         role === 'reviewer'
           ? ''

@@ -1,3 +1,3 @@
 // Bun Snapshot v1, https://bun.sh/docs/test/snapshots
 
-exports[`tutorial tasks sem opção: hash da árvore gerada estável e portável 1`] = `"cb4dd7d7871473c5efe590b7b129379a9e32ae2f9f1ea1db4969eb1afcb8d7d5"`;
+exports[`tutorial tasks sem opção: hash da árvore gerada estável e portável 1`] = `"cf7fe6ed69bda5b13b9742187cda9d67dbf6adba58e2f3b79579e7d1866e047b"`;

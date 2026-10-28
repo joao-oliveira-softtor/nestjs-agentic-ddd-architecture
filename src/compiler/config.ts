@@ -8,7 +8,7 @@ import {
   type ImportTarget,
   type ResolvedConventions,
 } from './conventions';
-import { toPosix } from './ir';
+import { canonicalPath, toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
 
 export {
@@ -269,7 +269,7 @@ export function resolveConfig(
       );
     names.add(module.name);
   }
-  const root = resolve(configDir, config.root ?? '.');
+  const root = canonicalPath(resolve(configDir, config.root ?? '.'));
   const modulePaths = new Map<ModuleConfig, string>();
   const owners = new Map<string, string>();
   for (const module of config.modules) {
@@ -294,7 +294,7 @@ export function resolveConfig(
   const rulesDir = toPosix(config.rules?.dir ?? '.ai/rules')
     .replace(/^(\.\/)+/, '')
     .replace(/\/+$/, '');
-  const rulesFromRoot = relative(root, resolve(root, rulesDir));
+  const rulesFromRoot = toPosix(relative(root, resolve(root, rulesDir)));
   if (isAbsolute(rulesDir) || /^[A-Za-z]:/.test(rulesDir))
     throw new Error(
       'agentic.config.ts: rules.dir deve ser relativo à raiz do projeto',
@@ -316,7 +316,9 @@ export function resolveConfig(
     );
   return {
     root,
-    outRoot: overrides.outRoot ? resolve(overrides.outRoot) : root,
+    outRoot: overrides.outRoot
+      ? canonicalPath(resolve(overrides.outRoot))
+      : root,
     modules: config.modules.map((m) => ({
       name: m.name,
       path: modulePaths.get(m)!,
@@ -350,7 +352,8 @@ export async function loadConfig(
   configPath: string,
   overrides: { outRoot?: string } = {},
 ): Promise<ResolvedConfig> {
-  const absolute = resolve(configPath);
+  // Raiz 8.3 importaria o domínio por outro caminho, com outra instância do registry.
+  const absolute = canonicalPath(resolve(configPath));
   const loaded = (await import(pathToFileURL(absolute).href)) as {
     default?: AgenticConfig;
   };

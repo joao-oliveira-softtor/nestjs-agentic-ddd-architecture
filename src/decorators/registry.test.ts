@@ -8,16 +8,21 @@ import {
   withRegistry,
 } from '@agentic-ddd/decorators';
 import { located } from '../../test/fixtures/located';
+import { toPosix } from '../contracts/ir';
 
 describe('captureSource', () => {
   test('aponta o arquivo e a linha de quem chamou', () => {
-    expect(located.file.endsWith('/test/fixtures/located.ts')).toBe(true);
+    expect(toPosix(located.file).endsWith('/test/fixtures/located.ts')).toBe(
+      true,
+    );
     expect(located.line).toBe(3);
   });
 
   test('chama captureSource direto dentro de registry.test.ts', () => {
     const loc = captureSource();
-    expect(loc.file.endsWith('/src/decorators/registry.test.ts')).toBe(true);
+    expect(toPosix(loc.file).endsWith('/src/decorators/registry.test.ts')).toBe(
+      true,
+    );
     expect(loc.line).toBeGreaterThan(0);
   });
 });
@@ -51,11 +56,40 @@ describe('parseFrame', () => {
     expect(result?.line).toBe(3);
   });
 
+  test('reconhece URL file:// com letra de unidade em qualquer SO', () => {
+    expect(parseFrame('    at foo (file:///C:/u/proj/a.ts:3:20)')).toEqual({
+      file: 'C:\\u\\proj\\a.ts',
+      line: 3,
+    });
+  });
+
   test('reconhece URL file://', () => {
     const result = parseFrame('    at foo (file:///home/user/proj/a.ts:3:20)');
     expect(result).not.toBeNull();
     expect(result?.file).toBe('/home/user/proj/a.ts');
     expect(result?.line).toBe(3);
+  });
+
+  test('reconhece frame do Windows com letra de unidade (#128)', () => {
+    expect(parseFrame('    at foo (C:\\Users\\u\\proj\\a.ts:3:20)')).toEqual({
+      file: 'C:\\Users\\u\\proj\\a.ts',
+      line: 3,
+    });
+    expect(parseFrame('    at C:\\Users\\u\\proj\\a.ts:3:20')).toEqual({
+      file: 'C:\\Users\\u\\proj\\a.ts',
+      line: 3,
+    });
+    expect(parseFrame('    at foo (d:/my u/pro(j)/a.ts:7:1)')).toEqual({
+      file: 'd:/my u/pro(j)/a.ts',
+      line: 7,
+    });
+  });
+
+  test('reconhece caminho UNC do Windows', () => {
+    expect(parseFrame('    at foo (\\\\srv\\share\\a.ts:3:20)')).toEqual({
+      file: '\\\\srv\\share\\a.ts',
+      line: 3,
+    });
   });
 
   test('retorna null para linha sem frame', () => {

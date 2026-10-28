@@ -1,6 +1,11 @@
 import { relative, sep } from 'node:path';
 import { z, type ZodType } from 'zod';
-import type { ClassRef, Registry, SourceLoc } from '@agentic-ddd/decorators';
+import {
+  canonicalPath,
+  type ClassRef,
+  type Registry,
+  type SourceLoc,
+} from '@agentic-ddd/decorators';
 import { byId, sha256, stableStringify } from './canonical';
 
 export type JsonSchema = Record<string, unknown>;
@@ -144,8 +149,11 @@ export function toPosix(path: string): string {
   return path.split(sep).join('/');
 }
 
+// Reexportado para quem compara raízes; o arquivo do SourceLoc já vem canônico do captureSource.
+export { canonicalPath };
+
 export function sourceOf(root: string, loc: SourceLoc): string {
-  return `${toPosix(relative(root, loc.file))}:${loc.line}`;
+  return `${toPosix(relative(canonicalPath(root), loc.file))}:${loc.line}`;
 }
 
 export function irHash(ir: IR): string {
@@ -160,10 +168,11 @@ export function buildIR(
   const modules = [...options.modules].sort(
     (a, b) => b.path.length - a.path.length,
   );
-  const loc = (s: SourceLoc): string => sourceOf(options.root, s);
+  const root = canonicalPath(options.root);
+  const loc = (s: SourceLoc): string => sourceOf(root, s);
 
   const moduleOf = (s: SourceLoc): string => {
-    const file = toPosix(relative(options.root, s.file));
+    const file = toPosix(relative(root, s.file));
     const found = modules.find(
       (m) => file === m.path || file.startsWith(`${m.path}/`),
     );

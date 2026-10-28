@@ -130,6 +130,15 @@ describe('agentic mcp (subprocesso)', () => {
         .result;
       expect(outside.isError).toBe(true);
       expect(outside.content[0].text).toContain('fora da raiz');
+      // Separador do Windows, `./` inicial e `..` interno também não escapam da raiz (#128).
+      for (const path of [
+        '..\\fora\\a.ts',
+        './../fora/a.ts',
+        'x/../../fora/a.ts',
+      ])
+        expect((await call('rules_for_path', { path })).result.isError).toBe(
+          true,
+        );
 
       await writeFile(join(tmp, LOCK), `${lockText} `);
       const stale = (await call('domain_overview')).result;

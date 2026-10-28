@@ -1,10 +1,10 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { sha256, stableStringify } from './canonical';
 import { moduleFiles } from './load';
 import { parseLock, type DomainLock } from './lock';
 import { ruleFiles, type Rule } from './rules';
-import { toPosix } from './ir';
+import { canonicalPath, toPosix } from './ir';
 
 export const SNAPSHOT_PATH = '.agentic/mcp/snapshot.json';
 
@@ -40,11 +40,12 @@ export async function sourceLines(
   s: Omit<Locations, 'lock'>,
   modules: readonly { path: string }[],
 ): Promise<string[]> {
-  const root = join(outRoot, s.root);
+  // resolve, não join: em outro disco do Windows, s.root é absoluto (D:/...).
+  const root = resolve(outRoot, s.root);
   // shortcut: imports de fora das pastas dos módulos não entram no hash; incluir se virar problema real.
   const rulesAbs = join(root, s.rulesDir);
   return fileLines(outRoot, [
-    join(outRoot, s.config),
+    resolve(outRoot, s.config),
     ...(await moduleFiles(root, modules)),
     ...(await ruleFiles(rulesAbs)).map((f) => join(rulesAbs, f)),
   ]);
@@ -87,11 +88,13 @@ export async function removeSnapshot(outRoot: string): Promise<void> {
 }
 
 export async function checkSnapshot(
-  outRoot: string,
+  given: string,
 ): Promise<
   | { ok: true; lock: DomainLock; rules: Rule[]; root: string }
   | { ok: false; reason: string }
 > {
+  // Com a raiz 8.3 o realpath das regras sairia da raiz e o hash divergiria.
+  const outRoot = canonicalPath(given);
   const file = join(outRoot, SNAPSHOT_PATH);
   const text = await readFile(file, 'utf8').catch(() => null);
   // Pasta errada é o caso comum de snapshot ausente: a mensagem mostra onde procurou.
@@ -110,7 +113,7 @@ export async function checkSnapshot(
     const sources = await sourceLines(outRoot, s, lock.ir.modules);
     if ((await inputsHash(outRoot, s, sources, s.rules)) !== s.inputsHash)
       return { ok: false, reason: STALE };
-    return { ok: true, lock, rules: s.rules, root: join(outRoot, s.root) };
+    return { ok: true, lock, rules: s.rules, root: resolve(outRoot, s.root) };
   } catch {
     return { ok: false, reason: STALE };
   }

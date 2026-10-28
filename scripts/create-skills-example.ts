@@ -1,5 +1,6 @@
 import { lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import { toPosix } from '../src/contracts/ir';
 import { match, P } from 'ts-pattern';
 import { installSkills } from './install-skills';
 import { shellQuote } from '../src/compiler/packet';
@@ -46,7 +47,9 @@ export async function createSkillsExample(
       await readFile(join(ASSETS, file), 'utf8'),
     );
   }
-  const tsc = join(FRAMEWORK, 'node_modules/typescript/bin/tsc');
+  // Caminhos gravados com `/` em qualquer SO (Bun e tsc aceitam no Windows).
+  const fw = (path: string) => toPosix(join(FRAMEWORK, path));
+  const tsc = fw('node_modules/typescript/bin/tsc');
   await put(
     'package.json',
     JSON.stringify(
@@ -55,7 +58,7 @@ export async function createSkillsExample(
         private: true,
         type: 'module',
         scripts: {
-          agentic: `bun ${shellQuote(join(FRAMEWORK, 'src/cli/main.ts'))}`,
+          agentic: `bun ${shellQuote(fw('src/cli/main.ts'))}`,
           typecheck: `bun ${shellQuote(tsc)} --noEmit --project tsconfig.json`,
           test: 'bun test',
         },
@@ -80,8 +83,8 @@ export async function createSkillsExample(
           noEmit: true,
           types: ['bun'],
           paths: {
-            '@agentic-ddd/*': [join(FRAMEWORK, 'src/*/index.ts')],
-            zod: [join(FRAMEWORK, 'node_modules/zod')],
+            '@agentic-ddd/*': [fw('src/*/index.ts')],
+            zod: [fw('node_modules/zod')],
           },
         },
         include: ['app/**/*.ts', 'agentic.config.ts'],
