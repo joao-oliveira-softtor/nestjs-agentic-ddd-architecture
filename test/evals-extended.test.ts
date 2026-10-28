@@ -129,12 +129,12 @@ test('20 literal cases agree with declarations, full nested schemas and document
     ),
     'utf8',
   );
-  expect(dev).toContain("uses: ['method:<Entidade>.<método>']");
+  expect(dev).toContain("uses: ['method:<Entity>.<method>']");
   expect(agents).toContain('hash');
-  expect(agents).toContain('corpo vazio conta como implementado');
-  expect(agents).toContain('escreva antes a proposta');
-  expect(agents).toContain('nunca certifica `done`');
-  expect(agents).toContain('Gerados (não edite)');
+  expect(agents).toContain('an empty body counts as implemented');
+  expect(agents).toContain('first write the proposal');
+  expect(agents).toContain('never certifies `done`');
+  expect(agents).toContain('Generated (do not edit)');
   expect(runtime).toContain('approval_denied');
   expect(runtime).toContain('motivo não vazio');
   const confirm = ir.entities
