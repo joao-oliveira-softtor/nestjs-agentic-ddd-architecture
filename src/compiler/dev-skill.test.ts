@@ -21,13 +21,13 @@ describe('renderDevSkill', () => {
   });
 
   test('lista o histórico de mudanças nas referências', () => {
-    expect(skill).toContain('- [Histórico de mudanças](references/history.md)');
+    expect(skill).toContain('- [Change history](references/history.md)');
   });
 
   test('frontmatter de dev com nome do módulo', () => {
     expect(
       skill.startsWith(
-        '---\nname: shop-dev\ndescription: "Domínio shop: entidades Product; use-cases create_product, publish_product; operators catalog-operator.',
+        '---\nname: shop-dev\ndescription: "Domain shop: entities Product; use-cases create_product, publish_product; operators catalog-operator.',
       ),
     ).toBe(true);
     expect(skill).toContain('  agentic-ddd.audience: dev');
@@ -55,7 +55,7 @@ describe('renderDevSkill', () => {
 
   test('explica como estender usando o caminho do módulo', () => {
     expect(skill).toContain(
-      '| Use-case | `src/compiler/__fixtures__/application/<nome>.ts` |',
+      '| Use-case | `src/compiler/__fixtures__/application/<name>.ts` |',
     );
   });
 
@@ -168,24 +168,24 @@ describe('value objects no módulo', () => {
 
   test('resumo do frontmatter lista os value objects', () => {
     expect(voSkill).toContain(
-      'description: "Domínio vo: value objects Dinheiro, Quantidade. Use quando',
+      'description: "Domain vo: value objects Dinheiro, Quantidade. Use when',
     );
   });
 
   test('descreve value object com invariante e sem tabela quando não tem', () => {
     expect(voSkill).toContain('## Value objects');
     expect(voSkill).toContain('### Dinheiro — `valueobject:Dinheiro`');
-    expect(voSkill).toContain('Fonte: `src/vo/Dinheiro.ts:1`');
+    expect(voSkill).toContain('Source: `src/vo/Dinheiro.ts:1`');
     expect(voSkill).toMatch(
-      /\| Invariante \| Regra \| Fonte \|\n\|---\|---\|---\|\n\| `invariant:Dinheiro\/nao-negativo` \| Dinheiro não pode ser negativo\. \| `src\/vo\/Dinheiro\.ts:12` \|/,
+      /\| Invariant \| Rule \| Source \|\n\|---\|---\|---\|\n\| `invariant:Dinheiro\/nao-negativo` \| Dinheiro não pode ser negativo\. \| `src\/vo\/Dinheiro\.ts:12` \|/,
     );
     expect(voSkill).toContain('### Quantidade — `valueobject:Quantidade`');
-    expect(voSkill.split('| Invariante | Regra | Fonte |').length - 1).toBe(1);
-    expect(voSkill).not.toContain('Garantida por');
+    expect(voSkill.split('| Invariant | Rule | Source |').length - 1).toBe(1);
+    expect(voSkill).not.toContain('Guaranteed by');
   });
 
   test('módulo só com value object não sai como sem elementos declarados', () => {
-    expect(voSkill).not.toContain('sem elementos declarados');
+    expect(voSkill).not.toContain('no declared elements');
   });
 
   test('snapshot da skill com value objects', () => {

@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **Mudança de compatibilidade (#109, ADR-0007 D13):** o texto que o `compile` gera passa a sair só em inglês, sem opção de idioma: as skills de dev (`<módulo>-dev`), as skills de runtime dos operators, as referências `history.md` e `state-machine.md`, o bloco do `AGENTS.md` e o cabeçalho de arquivo gerado. As regras do núcleo (`core/...`) também foram traduzidas, mas as chaves e os marcadores `{{…}}` não mudaram, então uma regra do time que substitui uma delas continua valendo. O texto de negócio (descrições, `text` das invariantes, `instructions` e propostas) continua no idioma do autor. Rodar `bun run agentic compile` regenera tudo; o `compile --check` acusa os gerados antigos até isso. Os packets e as mensagens da CLI ficam para o #111.
+
 - **Windows nativo (#128):** o framework passa a funcionar no Windows sem WSL, e o CI ganha o job `ci-windows`, com o mesmo gate do `ci` em `windows-latest`.
   - O `compile` falhava em qualquer projeto: `parseFrame` só reconhecia caminhos POSIX, e todo decorator ficava com origem `<desconhecido>`. Agora ele aceita letra de unidade, UNC e `file:///C:/`.
   - O `compile --check` acusava o espelho de skill desatualizado, porque o `readlink` devolve `\`.

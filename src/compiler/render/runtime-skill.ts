@@ -46,7 +46,7 @@ export function renderRuntimeSkill(
     '',
     '## Tools',
     '',
-    'Tools marcadas com **Exige aprovação humana: sim** só executam depois de uma pessoa aprovar; se a aprovação for negada, a tool devolve o erro `approval_denied` e nada é alterado.',
+    'Tools marked **Requires human approval: yes** run only after a person approves them; if approval is denied, the tool returns the `approval_denied` error and nothing is changed.',
     '',
   ];
   for (const useCase of useCases) {
@@ -55,23 +55,23 @@ export function renderRuntimeSkill(
       '',
       useCase.description,
       '',
-      `- **Quando usar:** ${useCase.whenToUse}`,
+      `- **When to use:** ${useCase.whenToUse}`,
     );
     if (useCase.whenNotToUse)
-      lines.push(`- **Quando não usar:** ${useCase.whenNotToUse}`);
+      lines.push(`- **When not to use:** ${useCase.whenNotToUse}`);
     lines.push(
-      `- **Aciona:** ${idList(useCase.uses)}`,
-      `- **Emite:** ${idList(useCase.emits)}`,
-      `- **Exige aprovação humana:** ${operator.requiresApproval.includes(useCase.id) ? 'sim' : 'não'}`,
+      `- **Triggers:** ${idList(useCase.uses)}`,
+      `- **Emits:** ${idList(useCase.emits)}`,
+      `- **Requires human approval:** ${operator.requiresApproval.includes(useCase.id) ? 'yes' : 'no'}`,
       '',
     );
     const rows = parameterRows(useCase.inputSchema);
     lines.push(
       rows.length > 0
-        ? table(['Parâmetro', 'Tipo', 'Obrigatório', 'Descrição'], rows)
-        : '_Sem parâmetros._',
+        ? table(['Parameter', 'Type', 'Required', 'Description'], rows)
+        : '_No parameters._',
       '',
-      `Schema completo (restrições, campos aninhados e saída): \`references/tools.schema.json\` → \`${useCase.name}\`.`,
+      `Full schema (constraints, nested fields and output): \`references/tools.schema.json\` → \`${useCase.name}\`.`,
       '',
     );
   }
@@ -81,9 +81,9 @@ export function renderRuntimeSkill(
   );
   if (invariants.length > 0)
     lines.push(
-      '## Regras de negócio',
+      '## Business rules',
       '',
-      table(['Invariante', 'Regra', 'Garantida por'], invariants),
+      table(['Invariant', 'Rule', 'Guaranteed by'], invariants),
       '',
     );
 
@@ -98,14 +98,14 @@ export function renderRuntimeSkill(
   );
   if (transitions.length > 0)
     lines.push(
-      '## Estados e transições',
+      '## States and transitions',
       '',
-      table(['Método', 'De', 'Para'], transitions),
+      table(['Method', 'From', 'To'], transitions),
       '',
     );
 
   lines.push(
-    'Detalhes: [schemas das tools](references/tools.schema.json) · [máquina de estados](references/state-machine.md)',
+    'Details: [tool schemas](references/tools.schema.json) · [state machine](references/state-machine.md)',
     '',
   );
 

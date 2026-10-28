@@ -198,7 +198,7 @@ describe('writeOutputs / checkOutputs', () => {
     expect(await checkOutputs(config, rendered)).toEqual([]);
     await writeFile(
       join(out, 'AGENTS.md'),
-      agents.replace('## Domínio (agentic-ddd)', '## Mexido'),
+      agents.replace('## Domain (agentic-ddd)', '## Mexido'),
     );
     expect(await checkOutputs(config, rendered)).toEqual([
       { path: 'AGENTS.md', reason: 'changed' },
