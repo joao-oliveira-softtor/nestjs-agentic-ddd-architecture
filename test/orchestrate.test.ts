@@ -134,8 +134,8 @@ test('sucesso: ondas em ordem, Haiku no domínio e Sonnet na aplicação, um reg
     [order.id, 'claude-haiku-5-5'],
     [create.id, 'claude-sonnet-5-5'],
   ]);
-  expect(p.tasks[0]!.brief).toContain('# Executor de domínio');
-  expect(p.tasks[1]!.brief).toContain('# Papel: executor de aplicação');
+  expect(p.tasks[0]!.brief).toContain('# Domain executor');
+  expect(p.tasks[1]!.brief).toContain('# Role: application executor');
   expect(telemetry.records.map((r) => r.kind)).toEqual([
     'attempt',
     'attempt',
@@ -172,8 +172,8 @@ test('falha: uma retentativa no mesmo nível, com a saída da falha no brief', a
   });
   expect(result.items[0]).toMatchObject({ outcome: 'done', tier: 'haiku' });
   expect(p.tasks.map((t) => t.tier)).toEqual(['haiku', 'haiku']);
-  expect(p.tasks[0]!.brief).not.toContain('Falha da tentativa anterior');
-  expect(p.tasks[1]!.brief).toContain('Falha da tentativa anterior');
+  expect(p.tasks[0]!.brief).not.toContain('Previous attempt failure');
+  expect(p.tasks[1]!.brief).toContain('Previous attempt failure');
   expect(p.tasks[1]!.brief).toContain('I3 Cobertura: falta covers(method:x)');
   expect(p.restored).toEqual([]);
   expect(

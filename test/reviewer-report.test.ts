@@ -15,7 +15,7 @@ test('relatório válido: aprovado sem achados e mudanças com achados', () => {
 });
 
 test('o exemplo do núcleo do revisor é um relatório válido', () => {
-  const example = /no formato do exemplo: `(\{.*?\})`\./.exec(
+  const example = /in the format of the example: `(\{.*?\})`\./.exec(
     ROLE_CORES.reviewer,
   )![1]!;
   expect(parseReviewerReport(example).status).toBe('changes_requested');

@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **Mudança de compatibilidade (#110, ADR-0007 D13):** a skill autoral `skills/agentic-ddd` (SKILL.md e referências), os núcleos de papel (`ROLE_CORES`), o texto dos briefs de executor e revisor e os adaptadores instalados por `skills:install` passam a ser só em inglês. Quem tem adaptadores instalados precisa removê-los e reinstalar (o texto antigo conta como conflito). Os briefs e os núcleos ganham a linha que manda manter identificadores, IDs de regra e texto de negócio sem tradução, e a skill manda responder ao usuário no idioma dele. Os rótulos do packet, as mensagens de erro e os tutoriais de exemplo (`tasks`, `matriculas`) não mudam nesta etapa. O texto medido no cycle-21 e no benchmark de revisão muda; o snapshot `agent-briefs` e o hash da árvore do tutorial foram regenerados.
+
 ## [0.5.0] — 2026-10-25
 
 Adiciona o modelo tático do domínio (value objects, relações entre agregados, ports e adapters) com gates de verificação, regras do time e servidor MCP local.

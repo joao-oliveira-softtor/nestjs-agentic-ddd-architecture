@@ -17,13 +17,13 @@ afterEach(async () => {
 // Obrigações que o executor de domínio herda do executor geral. Se uma delas sumir de
 // um dos dois textos, os papéis divergiram em silêncio.
 const SHARED = [
-  'contagem de linhas',
-  'covers([...ids], título)',
+  'line count',
+  'covers([...ids], title)',
   'verify --item',
-  'hash original',
+  'original hash',
   'compile',
-  'duas correções',
-  'devolva',
+  'corrections without progress',
+  'return the item',
 ] as const;
 
 test('executor de domínio e executor geral compartilham as obrigações de contrato', async () => {
@@ -43,8 +43,8 @@ test('o executor de domínio dispensa a skill do módulo e o executor geral apon
     read('references/executor-domain.md'),
     read('SKILL.md'),
   ]);
-  expect(domain).toContain('Não leia');
-  expect(domain).not.toMatch(/Leia a skill/);
+  expect(domain).toContain('Do not read');
+  expect(domain).not.toMatch(/Read the module/);
   expect(general).toContain('(executor-domain.md)');
   expect(skill).toContain('(references/executor-domain.md)');
   expect(ROLE_CORES.domain).toBe(domain.trimEnd());
@@ -77,9 +77,11 @@ test('o revisor lê só o diff, os packets e os gates, não edita e cita ID ou g
     read('references/reviewer.md'),
     read('SKILL.md'),
   ]);
-  expect(reviewer).toContain('Não edite arquivos');
-  expect(reviewer).toContain('Não leia a conversa nem o relatório do executor');
-  expect(reviewer).toContain('Sem ID ou gate, não é achado');
+  expect(reviewer).toContain('Do not edit files');
+  expect(reviewer).toContain(
+    "Do not read the conversation or the executor's report",
+  );
+  expect(reviewer).toContain('Without an ID or gate, it is not a finding');
   // Os packets só listam obrigações (método, caso de uso, invariante); o revisor pode citá-las.
   expect(reviewer).toContain('Obrigações de teste');
   expect(reviewer).toContain('expect(true)');
@@ -97,13 +99,13 @@ test('os adaptadores do revisor não mandam consultar a skill do módulo', async
     '.codex/agents/agentic-ddd-reviewer.toml',
   ]) {
     const text = await readFile(join(root, file), 'utf8');
-    expect(text).toContain('Você é o revisor agentic-ddd');
-    expect(text).not.toContain('skill gerada do módulo');
+    expect(text).toContain('You are the agentic-ddd reviewer');
+    expect(text).not.toContain('generated skill of the module');
   }
   expect(
     await readFile(
       join(root, '.claude/agents/agentic-ddd-executor.md'),
       'utf8',
     ),
-  ).toContain('skill gerada do módulo');
+  ).toContain('generated skill of the module');
 });

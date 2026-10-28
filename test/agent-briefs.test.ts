@@ -62,7 +62,7 @@ test('executor de domínio não é mandado ler a skill do módulo nem conhece ou
   expect(core).not.toContain('SKILL.md');
   expect(core).not.toContain('orders-dev');
   expect(brief).not.toContain('orders-dev');
-  expect(core).toContain('não conhece nem deve inferir outras camadas');
+  expect(core).toContain('do not know and must not infer other layers');
 });
 
 test('o papel vem da camada do item', () => {
@@ -78,7 +78,7 @@ test('o papel vem da camada do item', () => {
   expect(roleForLayer('infrastructure')).toBe('infrastructure');
   expect(() => roleForLayer('presentation')).toThrow('sem papel');
   expect(renderBrief({ packet: packet('usecase:create_order') })).toContain(
-    '# Papel: executor de aplicação',
+    '# Role: application executor',
   );
 });
 
@@ -108,12 +108,12 @@ test('conteúdo fora do packet fica em seção própria com hash próprio', () =
     packet: text,
     extras: [{ title: 'Critérios arquivados', content: archived }],
   });
-  expect(brief).toContain('## Seções adicionais (fora do specHash)');
+  expect(brief).toContain('## Additional sections (outside the specHash)');
   expect(brief).toContain(`(sha256: \`${sha256(archived)}\`)`);
   expect(brief.indexOf(archived)).toBeGreaterThan(
     brief.indexOf(text.trimEnd()),
   );
-  expect(renderBrief({ packet: text })).not.toContain('fora do specHash');
+  expect(renderBrief({ packet: text })).not.toContain('outside the specHash');
 });
 
 test('orçamento de tokens: núcleos curtos e brief acima do limite falha', () => {
@@ -143,7 +143,7 @@ test('brief de revisor: packets mais diff e gates em seções com hash próprio'
   expect(brief.startsWith(ROLE_CORES.reviewer)).toBe(true);
   for (const p of packetsText) expect(brief).toContain(p.trimEnd());
   expect(brief).toContain(`(sha256: \`${sha256('diff --git a/x b/x')}\`)`);
-  expect(brief).toContain('Resultado dos gates');
+  expect(brief).toContain('Gate results');
   expect(ROLE_CORES.reviewer).toContain('expect(true)');
 });
 
@@ -186,7 +186,7 @@ test('CLI grava um brief por item e recusa saída em caminho gerado', async () =
 
 test('os exemplos de resposta dos papéis são JSON válido com as chaves do contrato', () => {
   const example = (core: string): Record<string, unknown> => {
-    const match = /no formato do exemplo: `(\{.*?\})`\./.exec(core);
+    const match = /in the format of the example: `(\{.*?\})`\./.exec(core);
     expect(match).not.toBeNull();
     return JSON.parse(match![1]!);
   };
@@ -202,7 +202,7 @@ test('os exemplos de resposta dos papéis são JSON válido com as chaves do con
   const reviewer = example(ROLE_CORES.reviewer);
   expect(reviewer.status).toBe('changes_requested');
   expect(reviewer.findings).toEqual([
-    { ref: 'I4', message: 'o teste não exercita a regra' },
+    { ref: 'I4', message: 'the test does not exercise the rule' },
   ]);
 });
 
@@ -244,7 +244,7 @@ test('brief com regras traz só as aplicáveis e a substituição do time, nunca
   );
   const rules = briefRules(all, ['examples/orders/domain/order.ts']);
   const brief = renderBrief({ packet: text, rules });
-  expect(brief).toContain('Regras do time');
+  expect(brief).toContain('Team rules');
   expect(brief).toContain('#### core/done\n\n- Versão do time de done.');
   expect(brief).toContain('- Regra geral do time.');
   expect(brief).toContain('- Só para o domínio.');
@@ -317,7 +317,7 @@ test('CLI com agentic.config.ts e .ai/rules grava as regras aplicáveis e respei
   try {
     expect(await main(args)).toBe(0);
     const brief = await readFile(join(out, 'entity-Order.md'), 'utf8');
-    expect(brief).toContain('### Regras do time');
+    expect(brief).toContain('### Team rules');
     expect(brief).toContain('- REGRA-GERAL');
     expect(brief).toContain('- REGRA-DOMINIO');
     expect(brief).not.toContain('REGRA-FORA');
@@ -359,14 +359,14 @@ test('CLI: --packet-file sem agentic.config.ts funciona; --config explícito ine
 
 test('brief de item de classe troca o escopo de corpo; method: fica igual', () => {
   const method = renderBrief({ packet: packet('method:Order.cancel') });
-  expect(method).toContain('Altere só o interior do corpo indicado');
+  expect(method).toContain('Change only the inside of the body given');
   const vo = packet('entity:Order')
     .replaceAll('entity:Order', 'valueobject:Dinheiro')
     .replace(/--item 'valueobject:Dinheiro'/, '--item valueobject:Dinheiro');
   const brief = renderBrief({ packet: vo });
-  expect(brief).toContain('Altere só a classe indicada');
-  expect(brief).not.toContain('interior do corpo');
-  expect(brief).toContain('somente a classe de `valueobject:Dinheiro`');
+  expect(brief).toContain('Change only the class given');
+  expect(brief).not.toContain('inside of the body');
+  expect(brief).toContain('only the class of `valueobject:Dinheiro`');
 });
 
 test('brief de adapter usa o papel de infraestrutura com escopo de classe', () => {
@@ -375,6 +375,6 @@ test('brief de adapter usa o papel de infraestrutura com escopo de classe', () =
     .replace('Camada: domain', 'Camada: infrastructure');
   const brief = renderBrief({ packet: text });
   expect(brief.startsWith(ROLE_CORES.infrastructure)).toBe(true);
-  expect(brief).toContain('somente a classe de `adapter:Repo`');
-  expect(brief).toContain("covers(['port:<Port>.<método>']");
+  expect(brief).toContain('only the class of `adapter:Repo`');
+  expect(brief).toContain("covers(['port:<Port>.<method>']");
 });

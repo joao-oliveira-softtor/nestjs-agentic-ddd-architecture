@@ -160,8 +160,8 @@ test('o brief só leva packet, diff, gates e (se o braço pedir) o relato do aut
     expect(brief).not.toContain('method:A.create');
     expect(brief).not.toContain('expected');
   }
-  expect(clean).not.toContain('Relato do executor');
-  expect(authored).toContain('Relato do executor');
+  expect(clean).not.toContain('Executor report');
+  expect(authored).toContain('Executor report');
   expect(authored).toContain('"status":"done"');
   expect(authored).toContain('"verifyExitCode":0');
 });
@@ -169,17 +169,19 @@ test('o brief só leva packet, diff, gates e (se o braço pedir) o relato do aut
 test('o braço autoral troca as frases que proíbem o relato; sem isso o experimento mediria desobediência', () => {
   const clean = buildReviewBrief(A, 'clean');
   const authored = buildReviewBrief(A, 'authored');
-  const prohibition = 'Não leia a conversa nem o relatório do executor';
-  const history = 'sem o histórico de quem implementou';
+  const prohibition = "Do not read the conversation or the executor's report";
+  const history = 'without the history of whoever implemented them';
   expect(clean).toContain(prohibition);
   expect(clean).toContain(history);
   expect(authored).not.toContain(prohibition);
   expect(authored).not.toContain(history);
-  expect(authored).toContain('Não leia a conversa.');
-  expect(authored).toContain('e o relato do executor');
+  expect(authored).toContain('Do not read the conversation.');
+  expect(authored).toContain('and the executor report');
   // O resto do papel é idêntico: a única diferença entre os braços é o tratamento.
-  expect(authoredReviewerCore()).toContain('Não edite arquivos');
-  expect(authoredReviewerCore()).toContain('Sem ID ou gate, não é achado');
+  expect(authoredReviewerCore()).toContain('Do not edit files');
+  expect(authoredReviewerCore()).toContain(
+    'Without an ID or gate, it is not a finding',
+  );
   expect(() => authoredReviewerCore('núcleo de outro papel')).toThrow(
     'núcleo do revisor mudou',
   );
@@ -269,7 +271,7 @@ test('resposta fora do formato ou sem texto é inválida e não conta como acert
 test('ciclos: um resumo por ciclo e o agregado; braço com relato do autor recebe a seção extra', async () => {
   const clean = scripted(() => approved);
   const authored = scripted((brief) =>
-    brief.includes('Relato do executor') ? approved : requested('x'),
+    brief.includes('Executor report') ? approved : requested('x'),
   );
   const result = await runReviewBenchmark({
     cases: [A, C],
@@ -289,10 +291,10 @@ test('ciclos: um resumo por ciclo e o agregado; braço com relato do autor receb
     ['autoral', 2, 2],
     ['autoral', 'all', 4],
   ]);
-  expect(clean.briefs.some((b) => b.includes('Relato do executor'))).toBe(
+  expect(clean.briefs.some((b) => b.includes('Executor report'))).toBe(
     false,
   );
-  expect(authored.briefs.every((b) => b.includes('Relato do executor'))).toBe(
+  expect(authored.briefs.every((b) => b.includes('Executor report'))).toBe(
     true,
   );
 });

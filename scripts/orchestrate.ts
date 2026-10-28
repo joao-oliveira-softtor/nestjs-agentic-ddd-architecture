@@ -216,7 +216,7 @@ const clip = (text: string): string =>
 
 function failureSection(failure: string | null) {
   return failure
-    ? [{ title: 'Falha da tentativa anterior', content: clip(failure) }]
+    ? [{ title: 'Previous attempt failure', content: clip(failure) }]
     : [];
 }
 

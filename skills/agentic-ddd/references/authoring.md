@@ -1,17 +1,19 @@
-# Autoria do domínio
+# Domain authoring
 
-Leia a configuração em uso: `modules[].path` define raiz do módulo; `out.devSkills`, `out.runtimeSkills`, `mirrors`, `changes` e `verify` podem substituir padrões. Consulte `AGENTS.md` e a skill gerada `<módulo>-dev/SKILL.md` nesses caminhos. Não suponha `examples/orders` em consumidores.
+Read the configuration in use: `modules[].path` sets the module root; `out.devSkills`, `out.runtimeSkills`, `mirrors`, `changes` and `verify` can override the defaults. Check `AGENTS.md` and the generated skill `<module>-dev/SKILL.md` in those paths. Do not assume `examples/orders` in consumers.
 
-Crie entidades, eventos, value objects e ports em `<módulo>/domain`, use-cases em `<módulo>/application`, operators em `<módulo>/operators` e adapters em `<módulo>/infrastructure` (camada própria, ver "Adapters"); a composição segue o projeto. Importe building blocks de `@agentic-ddd/core`, decorators de `@agentic-ddd/decorators`, testes de `@agentic-ddd/testing` e schemas de `zod`.
+Create entities, events, value objects and ports in `<module>/domain`, use-cases in `<module>/application`, operators in `<module>/operators` and adapters in `<module>/infrastructure` (its own layer, see "Adapters"); composition follows the project. Import building blocks from `@agentic-ddd/core`, decorators from `@agentic-ddd/decorators`, tests from `@agentic-ddd/testing` and schemas from `zod`.
 
-- `@AgentEntity({ description, states })` declara entidade e estados. Cada regra é `@Invariant({ id, text })`, na classe ou método; preserve IDs kebab-case, gerando obrigações `invariant:Entidade/id`.
-- Todo método público de negócio tem `@AgentMethod({ description, emits, transition })`; auxiliares usam `#privado`. Fábrica estática `create` estabelece construção (`entity:Entidade`); métodos são `method:Entidade.nome`. Getters de estado e métodos herdados dos building blocks seguem as convenções existentes.
-- `@AgentEvent({ description, payload: z.object(...) })` em classes que estendem `DomainEvent<Payload>` declara eventos; agregados usam `record`/`pullEvents`. Mantenha `emits` coerente nos métodos e use-cases. O `emits` do use-case cobre tudo o que os métodos em `uses` emitem (o compile reprova o que faltar), e o runtime recusa evento publicado fora dele.
-- `@AgentUseCase({ name, description, whenToUse, whenNotToUse, input, output, uses, emits, ports })` usa schemas Zod explícitos e tipos `z.infer`. `uses` lista IDs reais como `method:Task.create` e `method:Task.complete`; define dependências. `ports` é opcional (ver "Ports"). Implemente `UseCase<In, Out>` e `execute(input, ctx)`, injete port de repositório e publique eventos via `ctx.publish`.
-- `@Operator({ name, description, instructions, useCases, requiresApproval })` referencia classes de use-case; é declarativo, sem corpo execute obrigatório. Prepare a infraestrutura de execução/teste antes de despachar.
-- Corpo ainda pendente: `return notImplemented();` importado de core. Só a chamada literal é reconhecida; corpo vazio conta como implementado. Não substitua por throw genérico ou wrapper.
+- `@AgentEntity({ description, states })` declares an entity and its states. Each rule is `@Invariant({ id, text })`, on the class or method; keep kebab-case IDs, which produce the obligations `invariant:Entity/id`.
+- Every public business method has `@AgentMethod({ description, emits, transition })`; helpers use `#private`. A static `create` factory sets construction (`entity:Entity`); methods are `method:Entity.name`. State getters and methods inherited from the building blocks follow the existing conventions.
+- `@AgentEvent({ description, payload: z.object(...) })` on classes that extend `DomainEvent<Payload>` declares events; aggregates use `record`/`pullEvents`. Keep `emits` consistent in methods and use-cases. A use-case's `emits` covers everything the methods in `uses` emit (compile fails on anything missing), and the runtime refuses an event published outside it.
+- `@AgentUseCase({ name, description, whenToUse, whenNotToUse, input, output, uses, emits, ports })` uses explicit Zod schemas and `z.infer` types. `uses` lists real IDs such as `method:Task.create` and `method:Task.complete`; it defines dependencies. `ports` is optional (see "Ports"). Implement `UseCase<In, Out>` and `execute(input, ctx)`, inject the repository port and publish events through `ctx.publish`.
+- `@Operator({ name, description, instructions, useCases, requiresApproval })` references use-case classes; it is declarative, with no mandatory execute body. Prepare the run/test infrastructure before dispatching.
+- A still pending body: `return notImplemented();` imported from core. Only the literal call is recognized; an empty body counts as implemented. Do not replace it with a generic throw or a wrapper.
 
-Antes de mudar regra, escreva proposta no diretório configurado:
+Business text (`text`, `description`, `instructions`, the proposal) is written in the author's language and never translated by the framework or by agents.
+
+Before changing a rule, write a proposal in the configured directory. The `## Motivo` heading is required by the compiler and the proposal is only applied when it is filled in:
 
 ```yaml
 ---
@@ -36,39 +38,39 @@ acceptance:
 O usuário precisa de tarefas identificadas com um título válido.
 ```
 
-Preencha delta completo (eventos/use-cases/operators e os ids `valueobject:`/`port:`/`adapter:` inclusive; mudar um port exige proposta) e critérios Given/When/Then automáticos ou `manual: true`. Depois declare e rode `bun run agentic compile --config <config>`. Se código já mudou, `compile --draft-change <slug>` apenas gera rascunho; preencha Motivo/critérios antes de compilar. Compare lock/skills gerados e não os edite.
+Fill in the complete delta (events/use-cases/operators and the `valueobject:`/`port:`/`adapter:` ids too; changing a port requires a proposal) and automatic Given/When/Then criteria or `manual: true`. Then declare and run `bun run agentic compile --config <config>`. If the code already changed, `compile --draft-change <slug>` only generates a draft; fill in the reason and criteria before compiling. Compare the generated lock/skills and do not edit them.
 
-Testes: `test(covers(['method:Task.create', 'invariant:Task/titulo-obrigatorio', 'criterion:0001/titulo-invalido'], 'rejeita título vazio'), () => { ... });`. IDs do packet determinam obrigações; não use cobertura sem asserções reais.
+Tests: `test(covers(['method:Task.create', 'invariant:Task/titulo-obrigatorio', 'criterion:0001/titulo-invalido'], 'rejects an empty title'), () => { ... });`. The packet's IDs set the obligations; do not use coverage without real assertions.
 
 ## Value objects
 
-Value object (objeto de valor, definido pelos seus valores e sem identidade própria) usa `@AgentValueObject({ description })` em classe que estende `ValueObject` de `@agentic-ddd/core`. Vira o item `valueobject:<Nome>` da camada `domain`.
+A value object (defined by its values, with no identity of its own) uses `@AgentValueObject({ description })` on a class that extends `ValueObject` from `@agentic-ddd/core`. It becomes the item `valueobject:<Name>` of the `domain` layer.
 
-- Aceita `@Invariant` na classe (`invariant:<Nome>/<id>`); em método é erro.
-- Obrigações: o próprio `valueobject:<Nome>` e cada invariante, cobertos por `covers([...])` nos testes.
-- Esqueleto: a chamada literal `notImplemented()` em qualquer corpo da classe (construtor, `#privado` ou método).
-- Não instancie um VO esqueleto no topo do módulo (ex.: `static ZERO = new Dinheiro(...)`): o `compile` importa o arquivo e lança erro.
-- O arquivo do VO precisa ser importado pela aplicação, como o de uma entidade; o `irHash` do runtime inclui os VOs.
+- It accepts `@Invariant` on the class (`invariant:<Name>/<id>`); on a method it is an error.
+- Obligations: the `valueobject:<Name>` itself and each invariant, covered by `covers([...])` in the tests.
+- Skeleton: the literal call `notImplemented()` in any body of the class (constructor, `#private` or method).
+- Do not instantiate a skeleton value object at module top level (e.g. `static ZERO = new Dinheiro(...)`): `compile` imports the file and throws.
+- The value object's file must be imported by the application, like an entity's; the runtime's `irHash` includes value objects.
 
 ```ts
 @AgentValueObject({ description: 'Valor monetário em centavos.' })
 @Invariant({ id: 'nao-negativo', text: 'Dinheiro não é negativo.' })
 export class Dinheiro extends ValueObject<{ centavos: number; moeda: string }> {
-  // corpo com notImplemented() enquanto estiver pendente
+  // body with notImplemented() while pending
 }
 ```
 
-## Relações entre agregados
+## Relations between aggregates
 
-`@AgentEntity({ contains: () => [...], references: () => [...] })` declara as relações, sempre no dono e sempre por função (o que importa a classe depois de carregada).
+`@AgentEntity({ contains: () => [...], references: () => [...] })` declares the relations, always on the owner and always through a function (which imports the class after it is loaded).
 
-- `contains`: VO ou entidade filha do mesmo agregado. Os itens contidos entram no `dependsOn` da entidade, então vêm antes dela nas ondas.
-- `references`: só entidades (raiz de outro agregado). Citar um VO é erro. Não cria aresta, então agregados podem se referenciar em ciclo; o packet traz o contrato do id e da raiz referenciada.
-- Raiz: é derivada. A entidade que nenhum `contains` cita é raiz.
-- Erros: entidade filha em mais de um `contains`; entidade filha de outro módulo (um VO de outro módulo é aceito); ciclo de `contains` entre entidades; função de `contains`/`references` que lança ou devolve classe sem decorator (erro de compilação, com o `source` do dono).
-- Um VO pode estar em vários `contains`; uma entidade filha, em um só.
-- Aviso, não erro: raiz que não estende `AggregateRoot`, ou filha que estende.
-- O que o campo guarda é conferido pelo "Gate T" (T1 e T3).
+- `contains`: a value object or child entity of the same aggregate. Contained items enter the entity's `dependsOn`, so they come before it in the waves.
+- `references`: entities only (root of another aggregate). Citing a value object is an error. It creates no edge, so aggregates may reference each other in a cycle; the packet carries the contract of the id and of the referenced root.
+- Root: it is derived. The entity no `contains` cites is a root.
+- Errors: a child entity in more than one `contains`; a child entity from another module (a value object from another module is accepted); a `contains` cycle between entities; a `contains`/`references` function that throws or returns a class without a decorator (compile error, with the owner's `source`).
+- A value object can be in several `contains`; a child entity, in only one.
+- Warning, not error: a root that does not extend `AggregateRoot`, or a child that does.
+- What the field holds is checked by "Gate T" (T1 and T3).
 
 ```ts
 @AgentEntity({
@@ -80,39 +82,39 @@ export class Dinheiro extends ValueObject<{ centavos: number; moeda: string }> {
 export class Matricula extends AggregateRoot<string> {}
 ```
 
-## Invariante em use-case
+## Invariant on a use-case
 
-`@Invariant({ id, text })` também vale em `@AgentUseCase`, para regra que atravessa agregados (como "aluno ativo"). O id é `invariant:<use-case>/<id>` (`matricular_aluno/aluno-ativo`), com `on: null`, e é obrigação do item do use-case: cubra com `covers([...])` no teste dele.
+`@Invariant({ id, text })` also works on `@AgentUseCase`, for a rule that crosses aggregates (such as "active student"). The id is `invariant:<use-case>/<id>` (`matricular_aluno/aluno-ativo`), with `on: null`, and it is an obligation of the use-case item: cover it with `covers([...])` in its test.
 
 ## Ports
 
-Port (contrato de repositório que o domínio usa) é uma classe `abstract` com `@AgentPort({ description, root: () => Raiz, methods: { nome: 'descrição' } })`. Vira o elemento `port:<Nome>`, sem item próprio: quem o implementa é o adapter (ver "Adapters").
+A port (the repository contract the domain uses) is an `abstract` class with `@AgentPort({ description, root: () => Root, methods: { name: 'description' } })`. It becomes the element `port:<Name>`, with no item of its own: whoever implements it is the adapter (see "Adapters").
 
-- `root` precisa ser raiz de agregado.
-- Todo método abstrato da classe está em `methods`, e todo método de `methods` é abstrato na classe; a diferença é erro de compilação.
-- Os métodos entram no `specHash`, então mudar um port exige proposta.
-- O use-case declara `ports: () => [Port]` e o packet dele traz os métodos. Isso não cria `dependsOn`; a ordem vem de `uses`.
-- Port sem métodos deixa o adapter em erro, porque ele ficaria sem obrigações.
+- `root` must be an aggregate root.
+- Every abstract method of the class is in `methods`, and every method in `methods` is abstract in the class; a difference is a compile error.
+- The methods enter the `specHash`, so changing a port requires a proposal.
+- The use-case declares `ports: () => [Port]` and its packet carries the methods. This creates no `dependsOn`; the order comes from `uses`.
+- A port without methods leaves the adapter in error, because it would have no obligations.
 
 ## Gate T
 
-O gate T confere, em `entity:` e `valueobject:`, o que o campo guarda. T1: campo ou parâmetro de construtor cujo tipo nomeia a raiz de outro agregado (guarde o id, como `AlunoId`). T2: campo ou prop de VO que nomeia uma entidade. T3: campo de entidade que nomeia um VO fora do seu `contains`, ou uma entidade filha de outro agregado; filhas do mesmo agregado são permitidas.
+Gate T checks, in `entity:` and `valueobject:`, what a field holds. T1: a field or constructor parameter whose type names the root of another aggregate (hold the id, such as `AlunoId`). T2: a field or value object prop that names an entity. T3: an entity field that names a value object outside its `contains`, or a child entity of another aggregate; children of the same aggregate are allowed.
 
-O T roda só no `verify --item` de item `entity:` ou `valueobject:` em projeto com elemento tático (VO, `contains`/`references`, port ou adapter). `status` e `verify <NNNN>` não o veem, e um use-case ou operator que edite o arquivo da entidade não é reconferido.
+T runs only in `verify --item` of an `entity:` or `valueobject:` item in a project with tactical elements (value object, `contains`/`references`, port or adapter). `status` and `verify <NNNN>` do not see it, and a use-case or operator that edits the entity's file is not re-checked.
 
-Quem corrige: o executor só troca o tipo de um `#privado` que criou num VO. Campo declarado, parameter property, `contains`/`references` e props do VO são declaração, e o gerente ajusta: proposta e compile quando a IR muda, novo packet quando o specHash muda.
+Who fixes it: the executor only changes the type of a `#private` it created in a value object. A declared field, parameter property, `contains`/`references` and value object props are declarations, and the manager adjusts them: proposal and compile when the IR changes, a new packet when the specHash changes.
 
-Falsos negativos, que o T não enxerga: alias de tipo e import renomeado; tipo inferido sem anotação; props do VO em interface ou alias nomeado (`ValueObject<Props>`); tipos de função, `typeof`, `keyof`, acesso indexado (`Aluno['id']`) e argumentos de genérico do usuário (`Partial<Aluno>`); `Promise`, `WeakMap`, `WeakSet` e `WeakRef` não são abertos; campos herdados não são lidos; o tipo do id em `extends AggregateRoot<X>` não é conferido.
+False negatives that T does not see: type aliases and renamed imports; inferred types without annotation; value object props in a named interface or alias (`ValueObject<Props>`); function types, `typeof`, `keyof`, indexed access (`Aluno['id']`) and user generic arguments (`Partial<Aluno>`); `Promise`, `WeakMap`, `WeakSet` and `WeakRef` are not opened; inherited fields are not read; the id type in `extends AggregateRoot<X>` is not checked.
 
-Limite herdado: classe por expressão ou decorator por alias cai no fail-closed, que reprova com "classe não encontrada" em vez de passar.
+Inherited limit: a class expression or a decorator through an alias falls into fail-closed, which fails with "class not found" instead of passing.
 
-## Regras do time
+## Team rules
 
-As regras do time ficam em `.ai/rules/*.md` (pasta trocável por `rules.dir`); cada arquivo é uma regra e a chave é o caminho sem `.md`, como `testes` para `.ai/rules/testes.md`. Um frontmatter opcional com só `paths:` (globs relativos à raiz) limita a regra: sem ele, ela entra inteira em "Convenções" do AGENTS.md; com ele, entra no índice "Regras por caminho" e na seção "Regras do time" das skills de dev cujos arquivos casam. O corpo é lista com `- `, sem título `#`. Um arquivo com a mesma chave de uma regra do núcleo (`core/...`) substitui essa regra, e `rules.exclude` remove uma; os briefs de executor e revisor recebem as regras do time aplicáveis ao arquivo do item (as do núcleo não; uma substituição sua, inclusive de regra de coordenação como `core/coordination`, chega ao executor), até `rules.briefMaxTokens` (padrão 2000), e acima do limite o brief falha em vez de truncar. Gates (verify, specHash, fronteiras, `covers`) sempre vencem uma regra. Depois de editar, recompile: `compile --check` reprova regra alterada sem recompilação.
+Team rules live in `.ai/rules/*.md` (folder changeable through `rules.dir`); each file is a rule and its key is the path without `.md`, such as `testes` for `.ai/rules/testes.md`. An optional frontmatter with only `paths:` (globs relative to the root) limits the rule: without it, the rule goes whole into the AGENTS.md conventions; with it, it goes into the per-path rule index and into the team rules section of the dev skills whose files match. The body is a `- ` list, with no `#` heading. A file with the same key as a core rule (`core/...`) replaces that rule, and `rules.exclude` removes one; executor and reviewer briefs receive the team rules that apply to the item's file (not the core ones; your replacement of one, including a coordination rule such as `core/coordination`, reaches the executor), up to `rules.briefMaxTokens` (default 2000), and above the limit the brief fails instead of truncating. Gates (verify, specHash, boundaries, `covers`) always beat a rule. After editing, recompile: `compile --check` fails on a rule changed without recompiling.
 
-## Convenções de layout
+## Layout conventions
 
-Por padrão, as camadas são `domain`, `application` e `operators` dentro de cada módulo; `infrastructure` (adapters) tem as pastas em `conventions.infrastructure` (padrão `['infrastructure', 'infra']`), não em `conventions.layers`. Para mudar nomes de pasta, sufixos ou imports proibidos, use `conventions` em `agentic.config.ts`:
+By default, the layers are `domain`, `application` and `operators` inside each module; `infrastructure` (adapters) has its folders in `conventions.infrastructure` (default `['infrastructure', 'infra']`), not in `conventions.layers`. To change folder names, suffixes or forbidden imports, use `conventions` in `agentic.config.ts`:
 
 ```ts
 export default defineConfig({
@@ -124,25 +126,25 @@ export default defineConfig({
 });
 ```
 
-Aqui, entidades e eventos ficam em `src/shop/core/model`, com eventos em `.evt.ts`; `application` e `operators` seguem o padrão.
+Here, entities and events live in `src/shop/core/model`, with events in `.evt.ts`; `application` and `operators` follow the default.
 
-- `domain`, `application` e `operators` são, cada uma, o nome de uma pasta só dentro do módulo; `infrastructure` aceita uma lista de pastas. Layout aninhado, como `src/<bc>/core/domain`, se faz por `modules[].path`; camadas em pais diferentes não são suportadas.
-- A camada de um item continua vindo do decorator, não da pasta.
-- `forbiddenImports` diz o que `domain` e `application` não podem importar. Uma lista substitui o padrão, não soma a ele; declarar uma camada mantém o padrão da outra. `[]` desliga a regra de pastas daquela camada, mas a barreira a `@nestjs/*` e ao runtime continua. `operators` não tem regra de import.
-- `suffixes` só muda o texto da tabela "Como estender"; nenhum gate valida nome de arquivo pelo sufixo.
-- Essas convenções valem para a tabela "Como estender" da skill de dev, para o texto de camadas no bloco do AGENTS.md e para o gate de import do `orchestrate`.
-- Uma regra do time com a chave `core/layers` muda só o texto; o gate continua o mesmo.
-- O CLI `bun scripts/boundary-gates.ts imports` usa só o padrão; ele não lê o `agentic.config.ts`.
+- `domain`, `application` and `operators` are each the name of a single folder inside the module; `infrastructure` accepts a list of folders. A nested layout, such as `src/<bc>/core/domain`, is done through `modules[].path`; layers under different parents are not supported.
+- An item's layer still comes from the decorator, not from the folder.
+- `forbiddenImports` says what `domain` and `application` may not import. A list replaces the default, it does not add to it; declaring one layer keeps the other's default. `[]` turns off the folder rule for that layer, but the barrier to `@nestjs/*` and to the runtime stays. `operators` has no import rule.
+- `suffixes` only changes the text of the "how to extend" table; no gate checks file names by suffix.
+- These conventions apply to the "how to extend" table of the dev skill, to the layer text in the AGENTS.md block and to the import gate of `orchestrate`.
+- A team rule with the key `core/layers` changes only the text; the gate stays the same.
+- The CLI `bun scripts/boundary-gates.ts imports` uses only the default; it does not read `agentic.config.ts`.
 
 ## Adapters
 
-Adapter (implementação de um port, o contrato de repositório que o domínio usa) usa `@AgentAdapter({ description, implements: () => Port })` em classe que estende o port, declarado como classe abstrata com `@AgentPort`. Fica em `<módulo>/infrastructure` (as pastas aceitas estão em `conventions.infrastructure`; padrão `infrastructure` ou `infra`) e vira o item `adapter:<Nome>` da camada `infrastructure`, que depende da raiz do port.
+An adapter (the implementation of a port, the repository contract the domain uses) uses `@AgentAdapter({ description, implements: () => Port })` on a class that extends the port, declared as an abstract class with `@AgentPort`. It lives in `<module>/infrastructure` (the accepted folders are in `conventions.infrastructure`; default `infrastructure` or `infra`) and becomes the item `adapter:<Name>` of the `infrastructure` layer, which depends on the port's root.
 
-- Obrigações: um id `port:<Port>.<método>` por método do port, cada um coberto por `covers([...])` no teste do adapter.
-- Um adapter por port na v0.5; um segundo adapter do mesmo port é erro.
-- Escopo de classe: o executor altera corpos e membros `#privados`, mas não os decorators, o `extends`/`implements` nem a assinatura pública.
-- Imports e campos `#privados` já vêm no esqueleto.
-- O arquivo não pode ter efeito colateral no import (o `compile` importa todo `.ts` do módulo): conexões ficam no construtor ou numa fábrica.
+- Obligations: one id `port:<Port>.<method>` per port method, each covered by `covers([...])` in the adapter's test.
+- One adapter per port in v0.5; a second adapter for the same port is an error.
+- Class scope: the executor changes bodies and `#private` members, but not the decorators, `extends`/`implements` or the public signature.
+- Imports and `#private` fields already come in the skeleton.
+- The file must have no side effect on import (`compile` imports every `.ts` in the module): connections go in the constructor or a factory.
 
 ```ts
 @AgentAdapter({
