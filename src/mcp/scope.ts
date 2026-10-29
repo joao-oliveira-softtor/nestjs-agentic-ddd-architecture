@@ -1,5 +1,6 @@
 import type { ModuleAccess } from '../auth/scopes';
 import type { DomainLock } from '../compiler/lock';
+import { moduleOfPath } from '../contracts/module-path';
 import { rulesFor, type Rule } from '../compiler/rules';
 
 /**
@@ -89,12 +90,7 @@ export function pathModule(
   lock: DomainLock,
   relPath: string,
 ): string | undefined {
-  let best: { name: string; path: string } | undefined;
-  for (const m of lock.ir.modules) {
-    const inside = relPath === m.path || relPath.startsWith(`${m.path}/`);
-    if (inside && (!best || m.path.length > best.path.length)) best = m;
-  }
-  return best?.name;
+  return moduleOfPath(lock.ir.modules, relPath)?.name;
 }
 
 /** Rules already matched for `path`, with `paths` cut to the globs that match it: the others may name hidden modules. */
