@@ -131,7 +131,7 @@ describe('arquitetura', () => {
       s.startsWith('@modelcontextprotocol/') ||
       resolvesInto(f, s, 'src/mcp') ||
       /^\.\.\/compiler\/(lock|canonical|rules|snapshot|ir|config)$/.test(s) ||
-      s === '../auth/resource-server' ||
+      /^\.\.\/auth\/(resource-server|scopes)$/.test(s) ||
       s.startsWith('../contracts/');
     expect(offenders(filesIn('src/mcp'), allowed)).toEqual([]);
   });

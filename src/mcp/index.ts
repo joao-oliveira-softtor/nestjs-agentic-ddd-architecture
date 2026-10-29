@@ -15,6 +15,9 @@ import { checkSnapshot } from '../compiler/snapshot';
 import { narrowRulePaths, pathModule, scopeLock } from './scope';
 import { changes, element, overview, rulesForPath } from './tools';
 
+// The one scope the gate requires and the per-module filter narrows.
+const CAPABILITY = 'domain:read';
+
 type Fresh = Extract<Awaited<ReturnType<typeof checkSnapshot>>, { ok: true }>;
 // `lock` is already filtered to what the caller may read; `fullLock` is for server-side decisions only.
 type Scoped = Omit<Fresh, 'lock'> & {
@@ -47,7 +50,7 @@ function createDomainServer(root: string, remote: boolean): McpServer {
         }
         // Fail closed: a remote call without a grant sees nothing.
         const access: ModuleAccess = remote
-          ? (moduleAccess(ctx?.http?.authInfo?.scopes ?? [], 'domain:read') ??
+          ? (moduleAccess(ctx?.http?.authInfo?.scopes ?? [], CAPABILITY) ??
             new Set<string>())
           : 'all';
         const scoped: Scoped = {
@@ -218,7 +221,7 @@ export async function startMcpHttpServer({
     issuer: mcp.issuer,
     resource: mcp.resource,
     jwksUri: mcp.jwksUri,
-    requiredScopes: ['domain:read'],
+    requiredScopes: [CAPABILITY],
   });
   const resource = new URL(mcp.resource);
   const mcpPath = trimSlash(resource.pathname);

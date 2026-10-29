@@ -200,12 +200,14 @@ describe('domain MCP: module scopes, transport parity, no leak', () => {
 
   afterAll(async () => {
     // Independent cleanups: one failing must not skip the others.
-    await Promise.allSettled([
-      stdio?.close(),
-      handle?.close(),
+    // rm runs after the closes settle (an open child holds the dir on Windows); the first failure is rethrown at the end.
+    const closes = await Promise.allSettled([stdio?.close(), handle?.close()]);
+    const removed = await Promise.allSettled([
       rm(root, { recursive: true, force: true }),
     ]);
     auth?.stop();
+    const failed = [...closes, ...removed].find((r) => r.status === 'rejected');
+    if (failed) throw (failed as PromiseRejectedResult).reason;
   });
 
   test('stdio and HTTP with domain:read return identical results', async () => {
