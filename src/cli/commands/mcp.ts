@@ -85,6 +85,15 @@ export async function mcpCommand(
       });
     } catch (error) {
       const { code, message } = error as { code?: string; message?: string };
+      if (code === 'EADDRINUSE') {
+        console.error(
+          formatCoded({
+            code: 'cli.port-in-use',
+            message: `port ${port} is already in use on ${host}`,
+          }),
+        );
+        return 1;
+      }
       // The auth module is loaded lazily, so a missing `jose` surfaces here.
       if (
         code !== 'ERR_MODULE_NOT_FOUND' ||

@@ -8,6 +8,7 @@ import {
   type ImportTarget,
   type ResolvedConventions,
 } from './conventions';
+import { isSecureOrLoopbackUrl } from '../contracts/url';
 import { AgenticError, canonicalPath, toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
 
@@ -177,7 +178,6 @@ function importTargets(value: unknown, path: string): ImportTarget[] {
 }
 
 const MCP_KEYS = ['issuer', 'resource', 'jwksUri'];
-const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '[::1]'];
 
 // Returns the value as written: URL.href would add a trailing slash to a bare origin,
 // and the issuer must match the token's iss exactly.
@@ -198,12 +198,9 @@ function mcpUrl(value: unknown, path: string, noQuery = false): string {
   } catch {
     throw fail('must be an absolute https: URL');
   }
-  // Plain http is accepted only on loopback so a local issuer can run without TLS.
-  const local =
-    url.protocol === 'http:' && LOOPBACK_HOSTS.includes(url.hostname);
-  if (url.protocol !== 'https:' && !local)
+  if (!isSecureOrLoopbackUrl(url))
     throw fail(
-      'must be an absolute https: URL (http: only for 127.0.0.1, localhost or [::1])',
+      'must be an absolute https: URL (http: only for loopback hosts: 127.0.0.0/8, localhost or [::1])',
     );
   if (url.hash !== '') throw fail('must not have a fragment');
   if (noQuery && url.search !== '') throw fail('must not have a query');

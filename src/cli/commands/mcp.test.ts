@@ -238,4 +238,30 @@ describe('mcpCommand', () => {
     expect(messages).toContain('jose@6.2.14');
     expect(messages).toContain('[cli.jose-missing]');
   });
+
+  test('--http on an occupied port exits 1 with cli.port-in-use', async () => {
+    const server = Bun.serve({
+      hostname: '127.0.0.1',
+      port: 0,
+      fetch: () => new Response('x'),
+    });
+    const error = captureErrors();
+    try {
+      const code = await mcpCommand([
+        '--http',
+        '--root',
+        dir,
+        '--config',
+        await configFile(MCP),
+        '--port',
+        String(server.port),
+      ]);
+      const messages = error.mock.calls.flat().join('\n');
+      expect(code).toBe(1);
+      expect(messages).toContain('[cli.port-in-use]');
+    } finally {
+      error.mockRestore();
+      await server.stop(true);
+    }
+  });
 });
