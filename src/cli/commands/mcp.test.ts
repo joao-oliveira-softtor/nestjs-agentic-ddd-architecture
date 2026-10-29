@@ -329,14 +329,20 @@ describe('mcpCommand', () => {
           '--config',
           await configFile(MCP),
         ],
-        { stdout: 'pipe', stderr: 'pipe' },
+        { stdout: 'ignore', stderr: 'pipe' },
       );
-      const [stderr, exitCode] = await Promise.all([
-        new Response(proc.stderr).text(),
-        proc.exited,
-      ]);
-      expect(exitCode).toBe(1);
-      expect(stderr).toContain('[cli.host-unavailable]');
+      try {
+        const [stderr, exitCode] = await Promise.all([
+          new Response(proc.stderr).text(),
+          proc.exited,
+        ]);
+        expect(exitCode).toBe(1);
+        expect(stderr).toContain('[cli.host-unavailable]');
+      } finally {
+        // A bind that unexpectedly succeeds would otherwise keep the child alive.
+        proc.kill();
+      }
     },
+    15_000,
   );
 });
