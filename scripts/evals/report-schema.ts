@@ -1,3 +1,4 @@
+import { ERROR_CODES, type ErrorCode } from '@agentic-ddd/compiler';
 import { z } from 'zod';
 import {
   answerSchema,
@@ -99,6 +100,7 @@ const command = z.strictObject({
   result: process,
 });
 const finding = z.strictObject({
+  code: z.custom<ErrorCode>((v) => typeof v === 'string' && v in ERROR_CODES),
   message: z.string(),
   fix: z.string().nullable(),
   source: z.string().nullable(),

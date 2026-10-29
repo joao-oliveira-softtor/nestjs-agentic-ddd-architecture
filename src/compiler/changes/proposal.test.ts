@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { AgenticError } from '../ir';
 import {
   MOTIVO_PLACEHOLDER,
   extractMotivo,
@@ -47,6 +48,8 @@ const parse = (raw: string, dir = '0002-cancelamento-exige-motivo') =>
   parseProposal(raw, dir, PATH, false);
 const messages = (raw: string, dir?: string) =>
   parse(raw, dir).errors.map((e) => e.message);
+const codes = (raw: string, dir?: string) =>
+  parse(raw, dir).errors.map((e) => e.code);
 
 let dir: string;
 
@@ -59,7 +62,7 @@ afterEach(async () => {
 });
 
 describe('parseProposal', () => {
-  test('lê uma proposta válida', () => {
+  test('reads a valid proposal', () => {
     const { proposal, errors } = parse(VALID);
     expect(errors).toEqual([]);
     expect(proposal).toMatchObject({
@@ -106,36 +109,41 @@ describe('parseProposal', () => {
     );
   });
 
-  test('sem frontmatter, YAML inválido ou pasta fora do padrão', () => {
-    expect(messages('# sem frontmatter\n')).toEqual([
-      'frontmatter YAML ausente (o arquivo deve começar com ---)',
+  test('missing frontmatter, invalid YAML or a non-standard folder name', () => {
+    expect(codes('# sem frontmatter\n')).toEqual([
+      'proposal.frontmatter-missing',
     ]);
-    expect(messages('---\ndelta: [aberto\n---\n')[0]).toStartWith(
-      'frontmatter YAML inválido:',
+    expect(codes('---\ndelta: [aberto\n---\n')).toEqual([
+      'proposal.frontmatter-invalid',
+    ]);
+    expect(codes(VALID, 'cancelamento')).toEqual([
+      'proposal.folder-name-invalid',
+    ]);
+    expect(messages(VALID, 'cancelamento')[0]).toContain('"cancelamento"');
+  });
+
+  test('an unquoted id (read as a number) reports id-mismatch with a hint', () => {
+    expect(codes(VALID.replace('id: "0002"', 'id: 0002'))).toEqual([
+      'proposal.id-mismatch',
+    ]);
+    expect(messages(VALID.replace('id: "0002"', 'id: 0002'))[0]).toContain(
+      'id: "0002"',
     );
-    expect(messages(VALID, 'cancelamento')).toEqual([
-      'nome de pasta "cancelamento" inválido (esperado NNNN-slug-em-kebab-case)',
-    ]);
   });
 
-  test('id sem aspas (lido como número) dá erro com dica', () => {
-    expect(messages(VALID.replace('id: "0002"', 'id: 0002'))).toEqual([
-      'id "2" difere do número da pasta (0002); escreva o id entre aspas: id: "0002"',
-    ]);
-  });
-
-  test('campos obrigatórios e IDs do delta são validados', () => {
+  test('required fields and delta IDs are validated', () => {
     const raw = VALID.replace('title: Cancelamento exige motivo', 'title: ""')
       .replace('status: proposed', 'status: aberta')
       .replace('"usecase:cancel_order"', '"cancel_order"');
-    expect(messages(raw)).toEqual([
-      'title é obrigatório',
-      'status deve ser proposed ou applied',
-      'delta.modified: ID inválido cancel_order (esperado tipo:caminho, ex.: usecase:cancel_order)',
+    expect(codes(raw)).toEqual([
+      'proposal.title-missing',
+      'proposal.status-invalid',
+      'proposal.element-id-invalid',
     ]);
+    expect(messages(raw)[2]).toContain('cancel_order');
   });
 
-  test('delta aceita ID de value object', () => {
+  test('delta accepts a value object ID', () => {
     const raw = VALID.replace(
       '    - "invariant:Order/cancelamento-exige-motivo"',
       '    - "valueobject:Dinheiro"',
@@ -145,7 +153,7 @@ describe('parseProposal', () => {
     expect(proposal!.delta.added).toEqual(['valueobject:Dinheiro']);
   });
 
-  test('delta aceita ID de port', () => {
+  test('delta accepts a port ID', () => {
     const raw = VALID.replace(
       '    - "invariant:Order/cancelamento-exige-motivo"',
       '    - "port:PedidoRepository"',
@@ -155,7 +163,7 @@ describe('parseProposal', () => {
     expect(proposal!.delta.added).toEqual(['port:PedidoRepository']);
   });
 
-  test('delta aceita ID de adapter', () => {
+  test('delta accepts an adapter ID', () => {
     const raw = VALID.replace(
       '    - "invariant:Order/cancelamento-exige-motivo"',
       '    - "adapter:PedidoRepositoryMemoria"',
@@ -165,14 +173,13 @@ describe('parseProposal', () => {
     expect(proposal!.delta.added).toEqual(['adapter:PedidoRepositoryMemoria']);
   });
 
-  test('delta com chave desconhecida é rejeitado', () => {
+  test('delta with an unknown key is rejected', () => {
     const raw = VALID.replace('  removed: []', '  removed: []\n  renamed: []');
-    expect(messages(raw)).toEqual([
-      'delta: chave desconhecida "renamed" (esperado added, modified ou removed)',
-    ]);
+    expect(codes(raw)).toEqual(['proposal.delta-key-unknown']);
+    expect(messages(raw)[0]).toContain('"renamed"');
   });
 
-  test('proposta arquivada com delta fora da forma continua aceita (imutável)', () => {
+  test('an archived proposal with a malformed delta is still accepted (immutable)', () => {
     const extra = VALID.replace(
       '  removed: []',
       '  removed: []\n  renamed: []',
@@ -185,14 +192,14 @@ describe('parseProposal', () => {
     }
   });
 
-  test('delta que não é objeto é rejeitado', () => {
+  test('a delta that is not an object is rejected', () => {
     const lista = VALID.replace(/delta:\n(?: {2}.*\n)+/, 'delta: [a, b]\n');
-    expect(messages(lista)).toEqual(['delta deve ser um objeto']);
+    expect(codes(lista)).toEqual(['proposal.delta-invalid']);
     const texto = VALID.replace(/delta:\n(?: {2}.*\n)+/, 'delta: nada\n');
-    expect(messages(texto)).toEqual(['delta deve ser um objeto']);
+    expect(codes(texto)).toEqual(['proposal.delta-invalid']);
   });
 
-  test('critérios: id repetido, automático sem covers/given/when', () => {
+  test('criteria: duplicate id, automatic criterion without covers/given/when', () => {
     const raw = VALID.replace(
       'id: revisao-de-copy\n    manual: true',
       'id: rejeita-cancelamento-sem-motivo',
@@ -200,17 +207,18 @@ describe('parseProposal', () => {
       '    covers: ["invariant:Order/cancelamento-exige-motivo"]\n',
       '',
     );
-    expect(messages(raw)).toEqual([
-      'acceptance[0]: critério automático precisa de covers',
-      'acceptance[1]: id "rejeita-cancelamento-sem-motivo" repetido',
-      'acceptance[1]: critério automático precisa de covers',
-      'acceptance[1]: critério automático precisa de given e when',
+    expect(codes(raw)).toEqual([
+      'proposal.criterion-covers-missing',
+      'proposal.criterion-id-duplicate',
+      'proposal.criterion-covers-missing',
+      'proposal.criterion-given-when-missing',
     ]);
+    expect(messages(raw)[1]).toContain('"rejeita-cancelamento-sem-motivo"');
   });
 });
 
-describe('Motivo, rascunho e numeração', () => {
-  test('extractMotivo ignora comentários HTML e para no próximo ##', () => {
+describe('Motivo, draft and numbering', () => {
+  test('extractMotivo ignores HTML comments and stops at the next ##', () => {
     expect(extractMotivo(`\n## Motivo\n\n${MOTIVO_PLACEHOLDER}\n`)).toBe('');
     expect(
       extractMotivo('## Motivo\n\nPorque sim.\n\n## Notas\n\nOutra coisa.\n'),
@@ -218,13 +226,13 @@ describe('Motivo, rascunho e numeração', () => {
     expect(extractMotivo('sem seção\n')).toBe('');
   });
 
-  test('summarize devolve o primeiro parágrafo numa linha', () => {
+  test('summarize returns the first paragraph on one line', () => {
     expect(summarize('Linha um\ncontinua.\n\nOutro parágrafo.')).toBe(
       'Linha um continua.',
     );
   });
 
-  test('renderDraft gera uma proposta code-first que o parser aceita, com Motivo vazio', () => {
+  test('renderDraft produces a code-first proposal the parser accepts, with an empty Motivo', () => {
     const raw = renderDraft({
       id: '0001',
       slug: 'estado-inicial',
@@ -249,7 +257,7 @@ describe('Motivo, rascunho e numeração', () => {
     expect(raw).toContain(MOTIVO_PLACEHOLDER);
   });
 
-  test('markApplied troca só a linha de status', () => {
+  test('markApplied only replaces the status line', () => {
     expect(markApplied(VALID)).toBe(
       VALID.replace('status: proposed', 'status: applied'),
     );
@@ -295,14 +303,17 @@ describe('Motivo, rascunho e numeração', () => {
     expect(result.includes('Algum texto com status: proposed')).toBe(true);
   });
 
-  test('markApplied sem linha de status lança erro', () => {
+  test('markApplied without a status line throws an AgenticError', () => {
     const raw = VALID.replace('status: proposed', 'status: drafted');
+    expect(() => markApplied(raw)).toThrow(AgenticError);
     expect(() => markApplied(raw)).toThrow(
-      'markApplied: linha "status: proposed" não encontrada no frontmatter',
+      expect.objectContaining({
+        code: 'proposal.mark-applied-status-missing',
+      }),
     );
   });
 
-  test('nextChangeId usa o maior número + 1, com 4 dígitos', () => {
+  test('nextChangeId uses the highest number + 1, zero-padded to 4 digits', () => {
     expect(nextChangeId([])).toBe('0001');
     expect(nextChangeId([{ id: '0001' }, { id: '0009' }] as never)).toBe(
       '0010',
@@ -311,7 +322,7 @@ describe('Motivo, rascunho e numeração', () => {
 });
 
 describe('listProposals', () => {
-  test('lê abertas e arquivadas; acusa proposal.md ausente e número repetido', async () => {
+  test('reads open and archived proposals; reports missing proposal.md and duplicate number', async () => {
     await mkdir(join(dir, '0002-cancelamento-exige-motivo'), {
       recursive: true,
     });
@@ -345,26 +356,26 @@ describe('listProposals', () => {
       ['changes/archive/0001-estado-inicial/proposal.md', true],
       ['changes/archive/0002-duplicada/proposal.md', true],
     ]);
-    expect(errors).toEqual([
-      { message: 'proposal.md ausente', source: 'changes/0003-vazia' },
-      {
-        message:
-          'número 0002 repetido (também em changes/0002-cancelamento-exige-motivo/proposal.md)',
-        source: 'changes/archive/0002-duplicada/proposal.md',
-      },
+    expect(errors.map((e) => [e.code, e.source])).toEqual([
+      ['proposal.file-missing', 'changes/0003-vazia'],
+      [
+        'proposal.number-duplicate',
+        'changes/archive/0002-duplicada/proposal.md',
+      ],
     ]);
+    expect(errors[1]?.message).toContain('0002');
   });
 
-  test('pasta changes inexistente não é erro', async () => {
+  test('a missing changes folder is not an error', async () => {
     expect(await listProposals(join(dir, 'nao-existe'), 'changes')).toEqual({
       proposals: [],
       errors: [],
     });
   });
 
-  test('listProposals com arquivo no lugar de pasta lança erro', async () => {
+  test('listProposals throws when a file sits where the folder should be', async () => {
     const filePath = join(dir, 'changes');
-    await writeFile(filePath, 'não é pasta');
+    await writeFile(filePath, 'not a folder');
     let thrown = false;
     try {
       await listProposals(filePath, 'changes');

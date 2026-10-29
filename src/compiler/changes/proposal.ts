@@ -1,21 +1,24 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { CompileError } from '../ir';
+import { AgenticError, type CompileError, type ErrorCode } from '../ir';
 
 export const ELEMENT_ID =
   /^(entity|invariant|method|event|usecase|operator|valueobject|port|adapter):\S+$/;
 export const MOTIVO_PLACEHOLDER =
-  '<!-- Escreva aqui por que esta mudança existe (obrigatório). O compilador só aplica a proposta com o Motivo preenchido. -->';
+  '<!-- Write here why this change exists (required). The compiler only applies the proposal once the Motivo is filled in. -->';
 
 const CHANGE_DIR = /^(\d{4})-([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/;
 
-/** YAML do frontmatter como objeto; lança se não for um objeto. */
+/** YAML frontmatter as an object; throws if it is not an object. */
 export function parseFrontmatterData(yaml: string): Record<string, unknown> {
   const parsed: unknown = Bun.YAML.parse(yaml);
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed))
-    throw new Error('o frontmatter não é um objeto');
+    throw new AgenticError(
+      'proposal.frontmatter-not-object',
+      'the frontmatter is not an object',
+    );
   return parsed as Record<string, unknown>;
 }
 
@@ -76,11 +79,11 @@ const nonEmpty = (value: unknown): string | null =>
 function stringList(
   value: unknown,
   field: string,
-  err: (message: string) => void,
+  err: (code: ErrorCode, message: string) => void,
 ): string[] {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
-    err(`${field} deve ser uma lista de strings`);
+    err('proposal.list-invalid', `${field} must be a list of strings`);
     return [];
   }
   return value as string[];
@@ -93,26 +96,33 @@ export function parseProposal(
   archived: boolean,
 ): ParsedProposal {
   const errors: CompileError[] = [];
-  const err = (message: string): void => {
-    errors.push({ message, source: path });
+  const err = (code: ErrorCode, message: string): void => {
+    errors.push({ code, message, source: path });
   };
   const dir = CHANGE_DIR.exec(dirName);
   if (!dir) {
     err(
-      `nome de pasta "${dirName}" inválido (esperado NNNN-slug-em-kebab-case)`,
+      'proposal.folder-name-invalid',
+      `invalid folder name "${dirName}" (expected NNNN-kebab-case-slug)`,
     );
     return { proposal: null, errors };
   }
   const match = FRONTMATTER.exec(raw);
   if (!match) {
-    err('frontmatter YAML ausente (o arquivo deve começar com ---)');
+    err(
+      'proposal.frontmatter-missing',
+      'YAML frontmatter missing (the file must start with ---)',
+    );
     return { proposal: null, errors };
   }
   let data: Record<string, unknown>;
   try {
     data = parseFrontmatterData(match[1]!);
   } catch (error) {
-    err(`frontmatter YAML inválido: ${(error as Error).message}`);
+    err(
+      'proposal.frontmatter-invalid',
+      `invalid YAML frontmatter: ${(error as Error).message}`,
+    );
     return { proposal: null, errors };
   }
 
@@ -121,29 +131,34 @@ export function parseProposal(
   );
   if (id !== dir[1])
     err(
-      `id "${id}" difere do número da pasta (${dir[1]!}); escreva o id entre aspas: id: "${dir[1]!}"`,
+      'proposal.id-mismatch',
+      `id "${id}" differs from the folder number (${dir[1]!}); quote the id: id: "${dir[1]!}"`,
     );
   const title = nonEmpty(data.title);
-  if (!title) err('title é obrigatório');
+  if (!title) err('proposal.title-missing', 'title is required');
   const status = data.status;
   if (status !== 'proposed' && status !== 'applied')
-    err('status deve ser proposed ou applied');
+    err('proposal.status-invalid', 'status must be proposed or applied');
   const origin = data.origin;
   if (origin !== 'proposal-first' && origin !== 'code-first')
-    err('origin deve ser proposal-first ou code-first');
+    err(
+      'proposal.origin-invalid',
+      'origin must be proposal-first or code-first',
+    );
 
   const rawDelta = data.delta ?? {};
   let deltaData: Record<string, unknown> = {};
-  // Propostas arquivadas são imutáveis (o hash está no lock): a forma do delta
-  // só é exigida nas abertas, para não quebrar o que já foi aplicado.
+  // Archived proposals are immutable (their hash is in the lock): the delta shape
+  // is only required for open ones, so already-applied proposals keep parsing.
   if (typeof rawDelta !== 'object' || Array.isArray(rawDelta)) {
-    if (!archived) err('delta deve ser um objeto');
+    if (!archived) err('proposal.delta-invalid', 'delta must be an object');
   } else {
     deltaData = rawDelta as Record<string, unknown>;
     for (const key of Object.keys(deltaData)) {
       if (!archived && !['added', 'modified', 'removed'].includes(key))
         err(
-          `delta: chave desconhecida "${key}" (esperado added, modified ou removed)`,
+          'proposal.delta-key-unknown',
+          `delta: unknown key "${key}" (expected added, modified or removed)`,
         );
     }
   }
@@ -156,7 +171,8 @@ export function parseProposal(
     for (const elementId of ids) {
       if (!ELEMENT_ID.test(elementId))
         err(
-          `delta.${field}: ID inválido ${elementId} (esperado tipo:caminho, ex.: usecase:cancel_order)`,
+          'proposal.element-id-invalid',
+          `delta.${field}: invalid ID ${elementId} (expected type:path, e.g. usecase:cancel_order)`,
         );
     }
   }
@@ -164,38 +180,54 @@ export function parseProposal(
   const acceptance: AcceptanceCriterion[] = [];
   const acceptanceData = data.acceptance ?? [];
   if (!Array.isArray(acceptanceData)) {
-    err('acceptance deve ser uma lista');
+    err('proposal.acceptance-not-list', 'acceptance must be a list');
   } else {
     const seen = new Set<string>();
     acceptanceData.forEach((item: unknown, index: number) => {
       const where = `acceptance[${index}]`;
       if (item === null || typeof item !== 'object') {
-        err(`${where} deve ser um objeto`);
+        err('proposal.criterion-not-object', `${where} must be an object`);
         return;
       }
       const c = item as Record<string, unknown>;
       const criterionId = String(typeof c.id === 'string' ? c.id : '');
       if (!KEBAB.test(criterionId))
-        err(`${where}: id "${criterionId}" deve ser kebab-case`);
+        err(
+          'proposal.criterion-id-invalid',
+          `${where}: id "${criterionId}" must be kebab-case`,
+        );
       else if (seen.has(criterionId))
-        err(`${where}: id "${criterionId}" repetido`);
+        err(
+          'proposal.criterion-id-duplicate',
+          `${where}: id "${criterionId}" is duplicated`,
+        );
       seen.add(criterionId);
       const manual = c.manual === true;
       const covered = stringList(c.covers, `${where}.covers`, err);
       for (const elementId of covered) {
         if (!ELEMENT_ID.test(elementId))
-          err(`${where}.covers: ID inválido ${elementId}`);
+          err(
+            'proposal.element-id-invalid',
+            `${where}.covers: invalid ID ${elementId}`,
+          );
       }
       const given = nonEmpty(c.given);
       const when = nonEmpty(c.when);
       // eslint-disable-next-line unicorn/no-thenable
       const then = nonEmpty(c.then);
-      if (!then) err(`${where}: then é obrigatório`);
+      if (!then)
+        err('proposal.criterion-then-missing', `${where}: then is required`);
       if (!manual) {
         if (covered.length === 0)
-          err(`${where}: critério automático precisa de covers`);
+          err(
+            'proposal.criterion-covers-missing',
+            `${where}: an automatic criterion needs covers`,
+          );
         if (!given || !when)
-          err(`${where}: critério automático precisa de given e when`);
+          err(
+            'proposal.criterion-given-when-missing',
+            `${where}: an automatic criterion needs given and when`,
+          );
       }
       // eslint-disable-next-line unicorn/no-thenable
       acceptance.push({
@@ -261,7 +293,8 @@ export async function listProposals(
         const code = (error as NodeJS.ErrnoException).code;
         if (code === 'ENOENT') {
           errors.push({
-            message: 'proposal.md ausente',
+            code: 'proposal.file-missing',
+            message: 'proposal.md is missing',
             source: `${dirRel}/${name}`,
           });
           continue;
@@ -285,7 +318,8 @@ export async function listProposals(
     const previous = byNumber.get(proposal.id);
     if (previous)
       errors.push({
-        message: `número ${proposal.id} repetido (também em ${previous})`,
+        code: 'proposal.number-duplicate',
+        message: `number ${proposal.id} is duplicated (also in ${previous})`,
         source: proposal.path,
       });
     else byNumber.set(proposal.id, proposal.path);
@@ -335,7 +369,10 @@ export function renderDraft(input: {
 export function markApplied(raw: string): string {
   const match = FRONTMATTER.exec(raw);
   if (!match) {
-    throw new Error('markApplied: frontmatter não encontrado');
+    throw new AgenticError(
+      'proposal.mark-applied-frontmatter-missing',
+      'markApplied: frontmatter not found',
+    );
   }
 
   const frontmatter = match[1]!;
@@ -345,8 +382,9 @@ export function markApplied(raw: string): string {
   );
 
   if (newFrontmatter === frontmatter) {
-    throw new Error(
-      'markApplied: linha "status: proposed" não encontrada no frontmatter',
+    throw new AgenticError(
+      'proposal.mark-applied-status-missing',
+      'markApplied: "status: proposed" line not found in the frontmatter',
     );
   }
 

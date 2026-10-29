@@ -8,7 +8,7 @@ import {
   type ImportTarget,
   type ResolvedConventions,
 } from './conventions';
-import { canonicalPath, toPosix } from './ir';
+import { AgenticError, canonicalPath, toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
 
 export {
@@ -19,7 +19,7 @@ export {
   type ResolvedConventions,
 };
 
-/** Sub-orçamento padrão das regras do time no brief (ADR-0005 D4). */
+/** Default token sub-budget for the team rules in the brief (ADR-0005 D4). */
 export const DEFAULT_RULES_MAX_TOKENS = 2000;
 
 export interface ModuleConfig {
@@ -68,8 +68,8 @@ export interface ResolvedConfig {
       readonly command: readonly string[];
     }[];
   };
-  // Opcional só para que testes que montam ResolvedConfig à mão continuem compilando;
-  // resolveConfig sempre preenche.
+  // Optional only so tests that build ResolvedConfig by hand keep compiling;
+  // resolveConfig always fills it in.
   readonly conventions?: ResolvedConventions;
 }
 
@@ -83,16 +83,21 @@ function checkKeys(
 ): Record<string, unknown> {
   if (value === undefined) return {};
   if (typeof value !== 'object' || value === null || Array.isArray(value))
-    throw new Error(`agentic.config.ts: ${path} deve ser um objeto`);
+    throw new AgenticError(
+      'config.not-object',
+      `agentic.config.ts: ${path} must be an object`,
+    );
   const object = value as Record<string, unknown>;
   for (const key of Object.keys(object)) {
     if (allowed.includes(key)) continue;
     if (Object.hasOwn(hints, key))
-      throw new Error(
-        `agentic.config.ts: ${path}.${key} não é válido: ${hints[key]}`,
+      throw new AgenticError(
+        'config.key-invalid',
+        `agentic.config.ts: ${path}.${key} is not valid: ${hints[key]}`,
       );
-    throw new Error(
-      `agentic.config.ts: ${path}.${key} não existe; as chaves válidas em ${path} são: ${allowed.join(', ')}`,
+    throw new AgenticError(
+      'config.key-unknown',
+      `agentic.config.ts: ${path}.${key} does not exist; the valid keys in ${path} are: ${allowed.join(', ')}`,
     );
   }
   return object;
@@ -100,20 +105,28 @@ function checkKeys(
 
 function folderName(value: unknown, path: string, nested = true): string {
   if (typeof value !== 'string')
-    throw new Error(`agentic.config.ts: ${path} deve ser um texto`);
+    throw new AgenticError(
+      'config.not-text',
+      `agentic.config.ts: ${path} must be a string`,
+    );
   if (value === '' || value === '.' || value === '..' || /[/\\]/.test(value))
-    throw new Error(
-      `agentic.config.ts: ${path} "${value}" deve ser o nome de uma pasta só dentro do módulo${nested ? '; layout aninhado se faz por modules[].path' : ''}`,
+    throw new AgenticError(
+      'config.folder-invalid',
+      `agentic.config.ts: ${path} "${value}" must be a single folder name inside the module${nested ? '; nested layouts are set through modules[].path' : ''}`,
     );
   return value;
 }
 
 function suffixName(value: unknown, path: string): string {
   if (typeof value !== 'string')
-    throw new Error(`agentic.config.ts: ${path} deve ser um texto`);
+    throw new AgenticError(
+      'config.not-text',
+      `agentic.config.ts: ${path} must be a string`,
+    );
   if (/\.(test|spec|d)\.ts$/.test(value) || value.includes('..'))
-    throw new Error(
-      `agentic.config.ts: ${path} "${value}" não pode terminar em ".test.ts", ".spec.ts" ou ".d.ts" (arquivo de teste ou de declaração) nem ter segmento vazio ("..")`,
+    throw new AgenticError(
+      'config.suffix-test-file',
+      `agentic.config.ts: ${path} "${value}" cannot end in ".test.ts", ".spec.ts" or ".d.ts" (test or declaration file) nor contain an empty segment ("..")`,
     );
   if (
     !value.startsWith('.') ||
@@ -121,15 +134,19 @@ function suffixName(value: unknown, path: string): string {
     !value.endsWith('.ts') ||
     /[/\\]/.test(value)
   )
-    throw new Error(
-      `agentic.config.ts: ${path} "${value}" deve começar com "." e terminar em ".ts" (ex.: ".events.ts"), sem "/" nem "\\"`,
+    throw new AgenticError(
+      'config.suffix-format',
+      `agentic.config.ts: ${path} "${value}" must start with "." and end in ".ts" (e.g. ".events.ts"), with no "/" or "\\"`,
     );
   return value;
 }
 
 function stringList(value: unknown, path: string): string[] {
   if (!Array.isArray(value) || !value.every((item) => typeof item === 'string'))
-    throw new Error(`agentic.config.ts: ${path} deve ser uma lista de textos`);
+    throw new AgenticError(
+      'config.not-text-list',
+      `agentic.config.ts: ${path} must be a list of strings`,
+    );
   return [...value];
 }
 
@@ -141,8 +158,9 @@ function importTargets(value: unknown, path: string): ImportTarget[] {
   ] satisfies ImportTarget[];
   return stringList(value, path).map((target) => {
     if (!allowed.includes(target))
-      throw new Error(
-        `agentic.config.ts: ${path} aceita só application, operators ou infrastructure (recebido "${target}")`,
+      throw new AgenticError(
+        'config.import-target-invalid',
+        `agentic.config.ts: ${path} only accepts application, operators or infrastructure (received "${target}")`,
       );
     return target as ImportTarget;
   });
@@ -169,8 +187,7 @@ function resolveConventions(input: unknown): ResolvedConventions {
     'conventions.forbiddenImports',
     Object.keys(DEFAULT_CONVENTIONS.forbiddenImports),
     {
-      operators:
-        'operators não tem regra de import; só domain e application têm',
+      operators: 'operators has no import rule; only domain and application do',
     },
   );
 
@@ -191,8 +208,9 @@ function resolveConventions(input: unknown): ResolvedConventions {
   const events = suffix('events');
   const operator = suffix('operator');
   if (events === operator)
-    throw new Error(
-      `agentic.config.ts: conventions.suffixes.events e conventions.suffixes.operator não podem ser iguais ("${events}")`,
+    throw new AgenticError(
+      'config.suffix-duplicate',
+      `agentic.config.ts: conventions.suffixes.events and conventions.suffixes.operator cannot be equal ("${events}")`,
     );
 
   const infrastructure =
@@ -203,8 +221,9 @@ function resolveConventions(input: unknown): ResolvedConventions {
             folderName(item, `conventions.infrastructure[${i}]`, false),
         );
   if (infrastructure.length === 0)
-    throw new Error(
-      'agentic.config.ts: conventions.infrastructure não pode ser vazio; informe ao menos uma pasta',
+    throw new AgenticError(
+      'config.infrastructure-empty',
+      'agentic.config.ts: conventions.infrastructure cannot be empty; list at least one folder',
     );
 
   const forbidden = (key: 'domain' | 'application'): ImportTarget[] =>
@@ -212,7 +231,7 @@ function resolveConventions(input: unknown): ResolvedConventions {
       ? [...DEFAULT_CONVENTIONS.forbiddenImports[key]]
       : importTargets(forbiddenIn[key], `conventions.forbiddenImports.${key}`);
 
-  // Uma pasta só pode servir a uma camada ou a um item de infrastructure.
+  // A folder can serve only one layer or one infrastructure entry.
   const folders = new Map<string, string>();
   const claims: [string, string][] = [
     ['conventions.layers.domain', layers.domain],
@@ -226,8 +245,9 @@ function resolveConventions(input: unknown): ResolvedConventions {
   for (const [where, name] of claims) {
     const first = folders.get(name);
     if (first !== undefined)
-      throw new Error(
-        `agentic.config.ts: a pasta "${name}" aparece mais de uma vez (${first} e ${where})`,
+      throw new AgenticError(
+        'config.folder-duplicate',
+        `agentic.config.ts: the folder "${name}" appears more than once (${first} and ${where})`,
       );
     folders.set(name, where);
   }
@@ -253,19 +273,22 @@ export function resolveConfig(
   overrides: { outRoot?: string } = {},
 ): ResolvedConfig {
   if (!Array.isArray(config.modules) || config.modules.length === 0) {
-    throw new Error(
-      'agentic.config.ts: modules precisa listar ao menos um módulo',
+    throw new AgenticError(
+      'config.modules-empty',
+      'agentic.config.ts: modules must list at least one module',
     );
   }
   const names = new Set<string>();
   for (const module of config.modules) {
     if (!MODULE_NAME.test(module.name))
-      throw new Error(
-        `agentic.config.ts: o nome do módulo "${module.name}" deve ser kebab-case`,
+      throw new AgenticError(
+        'config.module-name-invalid',
+        `agentic.config.ts: the module name "${module.name}" must be kebab-case`,
       );
     if (names.has(module.name))
-      throw new Error(
-        `agentic.config.ts: o nome do módulo "${module.name}" está repetido`,
+      throw new AgenticError(
+        'config.module-duplicate',
+        `agentic.config.ts: the module name "${module.name}" is duplicated`,
       );
     names.add(module.name);
   }
@@ -276,18 +299,21 @@ export function resolveConfig(
     const fromRoot = relative(root, resolve(root, module.path));
     modulePaths.set(module, toPosix(fromRoot));
     if (fromRoot === '')
-      throw new Error(
-        `agentic.config.ts: o módulo "${module.name}" não pode apontar para a raiz do projeto`,
+      throw new AgenticError(
+        'config.module-root',
+        `agentic.config.ts: the module "${module.name}" cannot point to the project root`,
       );
     if (fromRoot.startsWith('..') || isAbsolute(fromRoot))
-      throw new Error(
-        `agentic.config.ts: o módulo "${module.name}" não pode apontar para fora da raiz do projeto`,
+      throw new AgenticError(
+        'config.module-outside',
+        `agentic.config.ts: the module "${module.name}" cannot point outside the project root`,
       );
     const posix = toPosix(fromRoot);
     const owner = owners.get(posix);
     if (owner !== undefined)
-      throw new Error(
-        `agentic.config.ts: os módulos "${owner}" e "${module.name}" apontam para o mesmo caminho "${posix}"`,
+      throw new AgenticError(
+        'config.module-path-duplicate',
+        `agentic.config.ts: the modules "${owner}" and "${module.name}" point to the same path "${posix}"`,
       );
     owners.set(posix, module.name);
   }
@@ -296,8 +322,9 @@ export function resolveConfig(
     .replace(/\/+$/, '');
   const rulesFromRoot = toPosix(relative(root, resolve(root, rulesDir)));
   if (isAbsolute(rulesDir) || /^[A-Za-z]:/.test(rulesDir))
-    throw new Error(
-      'agentic.config.ts: rules.dir deve ser relativo à raiz do projeto',
+    throw new AgenticError(
+      'config.rules-dir-absolute',
+      'agentic.config.ts: rules.dir must be relative to the project root',
     );
   if (
     rulesFromRoot === '' ||
@@ -305,14 +332,16 @@ export function resolveConfig(
     rulesFromRoot.startsWith('../') ||
     isAbsolute(rulesFromRoot)
   )
-    throw new Error(
-      'agentic.config.ts: rules.dir não pode apontar para a raiz nem para fora da raiz do projeto',
+    throw new AgenticError(
+      'config.rules-dir-outside',
+      'agentic.config.ts: rules.dir cannot point to the root or outside the project root',
     );
   const briefMaxTokens =
     config.rules?.briefMaxTokens ?? DEFAULT_RULES_MAX_TOKENS;
   if (!Number.isInteger(briefMaxTokens) || briefMaxTokens <= 0)
-    throw new Error(
-      `agentic.config.ts: rules.briefMaxTokens deve ser um inteiro positivo (recebido ${String(briefMaxTokens)})`,
+    throw new AgenticError(
+      'config.brief-tokens-invalid',
+      `agentic.config.ts: rules.briefMaxTokens must be a positive integer (received ${String(briefMaxTokens)})`,
     );
   return {
     root,
@@ -352,25 +381,27 @@ export async function loadConfig(
   configPath: string,
   overrides: { outRoot?: string } = {},
 ): Promise<ResolvedConfig> {
-  // Raiz 8.3 importaria o domínio por outro caminho, com outra instância do registry.
+  // Root 8.3 would import the domain by another path, with another registry instance.
   const absolute = canonicalPath(resolve(configPath));
   const loaded = (await import(pathToFileURL(absolute).href)) as {
     default?: AgenticConfig;
   };
   if (!loaded.default)
-    throw new Error(
-      `${configPath}: esperado export default defineConfig({ modules: [...] })`,
+    throw new AgenticError(
+      'config.default-export-missing',
+      `${configPath}: expected export default defineConfig({ modules: [...] })`,
     );
   const config = resolveConfig(loaded.default, dirname(absolute), overrides);
-  // A checagem de existência fica aqui (e não em resolveConfig) para que
-  // resolveConfig continue puro, sem I/O.
+  // The existence check lives here (not in resolveConfig) so that
+  // resolveConfig stays pure, with no I/O.
   for (const module of config.modules) {
     const info = await stat(resolve(config.root, module.path)).catch(
       () => null,
     );
     if (info === null || !info.isDirectory())
-      throw new Error(
-        `agentic.config.ts: o caminho "${module.path}" do módulo "${module.name}" não existe ou não é um diretório`,
+      throw new AgenticError(
+        'config.module-path-missing',
+        `agentic.config.ts: the path "${module.path}" of the module "${module.name}" does not exist or is not a directory`,
       );
   }
   return config;

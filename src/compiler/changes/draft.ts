@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { ResolvedConfig } from '../config';
 import { EMPTY_IR, semanticDiff } from '../diff';
-import type { IR } from '../ir';
+import { AgenticError, type IR } from '../ir';
 import type { DomainLock } from '../lock';
 import {
   nextChangeId,
@@ -21,17 +21,24 @@ export async function writeDraft(
   slug: string,
 ): Promise<{ path: string; proposal: Proposal }> {
   if (!SLUG.test(slug))
-    throw new Error(`--draft-change: o slug "${slug}" deve ser kebab-case`);
+    throw new AgenticError(
+      'proposal.slug-invalid',
+      `--draft-change: the slug "${slug}" must be kebab-case`,
+    );
   if (proposals.some((p) => !p.archived)) {
-    throw new Error(
-      `já existe uma proposta aberta em ${config.changesDir}/; aplique-a ou remova-a antes de criar outra`,
+    throw new AgenticError(
+      'proposal.open-exists',
+      `an open proposal already exists in ${config.changesDir}/; apply or remove it before creating another`,
     );
   }
   const required = semanticDiff(lock?.ir ?? EMPTY_IR, ir).filter(
     (item) => item.classification !== 'docs',
   );
   if (required.length === 0)
-    throw new Error('não há mudança de domínio para propor');
+    throw new AgenticError(
+      'proposal.draft-no-change',
+      'there is no domain change to propose',
+    );
   const id = nextChangeId(proposals);
   const pick = (kind: string): string[] =>
     required.filter((item) => item.kind === kind).map((item) => item.id);

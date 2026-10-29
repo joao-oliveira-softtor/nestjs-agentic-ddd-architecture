@@ -1,3 +1,4 @@
+import { AgenticError, type ErrorCode } from '../ir';
 import { collectStatus, stateContext } from '../project-state';
 import type { Finding, GateResult } from './gates';
 import { hasTacticalElements, tacticalGate } from './tactical';
@@ -20,9 +21,19 @@ export async function verifyItem(
   const context = await stateContext(options.configPath);
   const report = await collectStatus(context);
   const item = report.items.find((i) => i.id === options.item);
-  if (!item) throw new Error(`work item ${options.item} não encontrado`);
-  const findings = (messages: string[], fix: string): Finding[] =>
-    messages.sort().map((message) => ({ message, fix, source: item.source }));
+  if (!item)
+    throw new AgenticError(
+      'state.item-not-found',
+      `work item ${options.item} not found`,
+    );
+  const findings = (
+    code: ErrorCode,
+    messages: string[],
+    fix: string,
+  ): Finding[] =>
+    messages
+      .sort()
+      .map((message) => ({ code, message, fix, source: item.source }));
   const gate = (
     id: GateResult['id'],
     name: string,
@@ -47,49 +58,55 @@ export async function verifyItem(
   const gates = [
     gate(
       'I1',
-      'Dependências',
+      'Dependencies',
       findings(
-        item.blockedBy.map((id) => `${id} não está done`),
-        'conclua as dependências com packet e verify --item',
+        'verify.item-dependency-not-done',
+        item.blockedBy.map((id) => `${id} is not done`),
+        'finish the dependencies with packet and verify --item',
       ),
     ),
     gate(
       'I2',
-      'Implementação',
+      'Implementation',
       findings(
+        'verify.item-not-implemented',
         item.baseState === 'declared'
-          ? ['corpo ainda contém notImplemented() ou execute está ausente']
+          ? ['body still contains notImplemented() or execute is missing']
           : [],
-        `implemente o corpo de ${item.id}`,
+        `implement the body of ${item.id}`,
       ),
     ),
     gate(
       'I3',
-      'Especificação',
+      'Specification',
       findings(
+        'verify.item-spec-hash-mismatch',
         item.specHash !== options.specHash
-          ? ['specHash diverge da especificação atual']
+          ? ['specHash differs from the current specification']
           : [],
-        `restaure a declaração ou peça novo packet ${item.id}`,
+        `restore the declaration or request a new packet ${item.id}`,
       ),
     ),
-    gate('I4', 'Obrigações', [
+    gate('I4', 'Obligations', [
       ...findings(
-        item.missingObligations.map((id) => `${id} sem teste`),
-        'crie testes com covers para as obrigações',
+        'verify.item-obligation-untested',
+        item.missingObligations.map((id) => `${id} has no test`),
+        'create tests with covers for the obligations',
       ),
       ...item.unsuccessfulTests.map((t) => ({
-        message: `teste ${t.status}: ${t.name}`,
+        code: 'verify.item-test-unsuccessful' as const,
+        message: `test ${t.status}: ${t.name}`,
         source: `${t.file}:${t.line}`,
-        fix: 'corrija o código ou teste até passar',
+        fix: 'fix the code or the test until it passes',
       })),
     ]),
     gate(
       'I5',
       'Typecheck',
       findings(
-        exitCode !== 0 ? [`typecheck saiu com ${exitCode}`] : [],
-        `rode ${command.join(' ')} e corrija`,
+        'verify.item-typecheck-failed',
+        exitCode !== 0 ? [`typecheck exited with ${exitCode}`] : [],
+        `run ${command.join(' ')} and fix it`,
       ),
     ),
   ];
@@ -111,7 +128,7 @@ export async function verifyItem(
     gates.push(
       gate(
         'T',
-        'Tático',
+        'Tactical',
         record
           ? tacticalGate({
               ir,
@@ -122,8 +139,9 @@ export async function verifyItem(
             })
           : [
               {
-                message: `T: classe ${name} não encontrada no registry`,
-                fix: 'confira o decorator na linha do source',
+                code: 'verify.tactical-class-missing' as const,
+                message: `T: class ${name} not found in the registry`,
+                fix: 'check the decorator on the source line',
                 source: item.source,
               },
             ],

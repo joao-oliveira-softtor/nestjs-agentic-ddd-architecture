@@ -31,7 +31,7 @@ export async function mcpCommand(
     )
       throw error;
     console.error(
-      'agentic-ddd: instale @modelcontextprotocol/server@2.3.1 para usar `agentic-ddd mcp`',
+      'agentic-ddd: install @modelcontextprotocol/server@2.3.1 to use `agentic-ddd mcp` [cli.mcp-sdk-missing]',
     );
     return 1;
   }

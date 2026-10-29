@@ -4,7 +4,7 @@ import { sha256 } from './canonical';
 import type { ResolvedConfig } from './config';
 import { DEFAULT_CONVENTIONS, type ResolvedConventions } from './conventions';
 import { FRONTMATTER, parseFrontmatterData } from './changes/proposal';
-import { toPosix } from './ir';
+import { AgenticError, toPosix, type ErrorCode } from './ir';
 
 export interface Rule {
   readonly key: string;
@@ -13,12 +13,13 @@ export interface Rule {
   readonly body: string;
 }
 
-export class RuleError extends Error {
+export class RuleError extends AgenticError {
   constructor(
     readonly source: string,
+    code: ErrorCode,
     message: string,
   ) {
-    super(message);
+    super(code, message);
     this.name = 'RuleError';
   }
 }
@@ -98,25 +99,33 @@ const BLOCK_MARKERS = [
 ];
 
 function parseRule(key: string, file: string, raw: string): Rule {
-  const fail = (message: string) => new RuleError(file, `${file}: ${message}`);
+  const fail = (code: ErrorCode, message: string) =>
+    new RuleError(file, code, `${file}: ${message}`);
   const text = raw.replaceAll('\r\n', '\n');
   const match = FRONTMATTER.exec(text);
   let paths: string[] | null = null;
   let body = text;
   if (!match && text.startsWith('---\n'))
-    throw fail('frontmatter vazio ou sem o "---" de fechamento');
+    throw fail(
+      'rules.frontmatter-unclosed',
+      'frontmatter is empty or missing the closing "---"',
+    );
   if (match) {
     body = match[2]!;
     let data: Record<string, unknown>;
     try {
       data = parseFrontmatterData(match[1]!);
     } catch (error) {
-      throw fail(`frontmatter YAML inválido: ${(error as Error).message}`);
+      throw fail(
+        'rules.frontmatter-invalid',
+        `invalid YAML frontmatter: ${(error as Error).message}`,
+      );
     }
     for (const name of Object.keys(data))
       if (name !== 'paths')
         throw fail(
-          `chave de frontmatter desconhecida "${name}" (só "paths" é aceita)`,
+          'rules.frontmatter-key-unknown',
+          `unknown frontmatter key "${name}" (only "paths" is accepted)`,
         );
     if ('paths' in data) {
       const value = data.paths;
@@ -125,29 +134,40 @@ function parseRule(key: string, file: string, raw: string): Rule {
         value.length === 0 ||
         !value.every((p) => typeof p === 'string' && p.trim() !== '')
       )
-        throw fail('"paths" deve ser uma lista não vazia de globs (texto)');
-      // `./app/**` nunca casaria com `app/x.ts`: normaliza como o rules.dir.
+        throw fail(
+          'rules.paths-invalid',
+          '"paths" must be a non-empty list of globs (strings)',
+        );
+      // `./app/**` would never match `app/x.ts`: normalize it like rules.dir.
       paths = (value as string[]).map((g) => g.trim().replace(/^(\.\/)+/, ''));
       for (const glob of paths)
         if (glob.startsWith('/') || glob.split('/').includes('..'))
           throw fail(
-            `o glob "${glob}" deve ser relativo à raiz e sem segmento ".."`,
+            'rules.glob-invalid',
+            `the glob "${glob}" must be relative to the root and have no ".." segment`,
           );
     }
   }
   body = body.trim();
-  if (body === '') throw fail('o corpo da regra está vazio');
+  if (body === '') throw fail('rules.body-empty', 'the rule body is empty');
   if (/^#{1,6}\s/m.test(body))
     throw fail(
-      'o corpo não pode ter linha de título Markdown (#); use uma lista com "- "',
+      'rules.body-heading',
+      'the body cannot have a Markdown heading line (#); use a "- " list',
     );
-  // Os corpos entram em sequência, sem linha em branco: um parágrafo depois de
-  // um item `- ` viraria continuação dele.
+  // Bodies are concatenated without a blank line: a paragraph after a `- ` item
+  // would become its continuation.
   if (!body.startsWith('- '))
-    throw fail('o corpo deve começar com um item de lista "- "');
+    throw fail(
+      'rules.body-not-list',
+      'the body must start with a "- " list item',
+    );
   for (const marker of BLOCK_MARKERS)
     if (body.includes(marker))
-      throw fail(`o corpo não pode conter o marcador ${marker}`);
+      throw fail(
+        'rules.body-marker',
+        `the body cannot contain the marker ${marker}`,
+      );
   return { key, file, paths, body };
 }
 
@@ -159,12 +179,14 @@ export function composeRules(team: Rule[], exclude: readonly string[]): Rule[] {
     if (rule.key.startsWith('core/') && !coreKeys.has(rule.key))
       throw new RuleError(
         file,
-        `${file}: a chave "${rule.key}" não existe no núcleo; chaves "core/" só substituem regras do núcleo (${[...coreKeys].join(', ')})`,
+        'rules.core-key-unknown',
+        `${file}: the key "${rule.key}" does not exist in the core; "core/" keys only replace core rules (${[...coreKeys].join(', ')})`,
       );
     if (coreKeys.has(rule.key) && rule.paths !== null)
       throw new RuleError(
         file,
-        `${file}: regra que substitui "${rule.key}" não pode ter "paths"; para restringir, exclua a do núcleo em rules.exclude e use outra chave`,
+        'rules.core-paths',
+        `${file}: a rule that replaces "${rule.key}" cannot have "paths"; to restrict it, exclude the core rule in rules.exclude and use another key`,
       );
   }
   const known = new Set([...coreKeys, ...byKey.keys()]);
@@ -172,12 +194,14 @@ export function composeRules(team: Rule[], exclude: readonly string[]): Rule[] {
     if (byKey.has(key))
       throw new RuleError(
         'agentic.config.ts',
-        `agentic.config.ts: rules.exclude lista "${key}", que também tem arquivo em ${byKey.get(key)!.file}; remova um dos dois`,
+        'rules.exclude-conflict',
+        `agentic.config.ts: rules.exclude lists "${key}", which also has a file at ${byKey.get(key)!.file}; remove one of them`,
       );
     if (!known.has(key))
       throw new RuleError(
         'agentic.config.ts',
-        `agentic.config.ts: rules.exclude lista "${key}", que não existe (chaves do núcleo: ${[...coreKeys].join(', ')})`,
+        'rules.exclude-unknown',
+        `agentic.config.ts: rules.exclude lists "${key}", which does not exist (core keys: ${[...coreKeys].join(', ')})`,
       );
   }
   const dropped = new Set(exclude);
@@ -190,7 +214,7 @@ export function composeRules(team: Rule[], exclude: readonly string[]): Rule[] {
   return ordered.filter((r) => !dropped.has(r.key));
 }
 
-// Pasta inexistente = nenhuma regra do time.
+// A missing folder means no team rules.
 export async function ruleFiles(cwd: string): Promise<string[]> {
   const files: string[] = [];
   try {
@@ -209,12 +233,12 @@ export async function loadRules(config: ResolvedConfig): Promise<Rule[]> {
   const cwd = join(config.root, config.rules.dir);
   const team: Rule[] = [];
   const files: string[] = [];
-  // O config só valida o caminho no texto; um link (na pasta ou num pai) pode
-  // apontar para fora do projeto e levar texto alheio ao AGENTS.md e aos briefs.
+  // The config only validates the path as text; a link (in the folder or in a
+  // parent) can point outside the project and bring foreign text into AGENTS.md and the briefs.
   const real = await realpath(cwd).catch(() => null);
   if (real !== null) {
-    // Mesmo critério do rules.dir em config.ts: nem a raiz (o scan varreria o
-    // repositório) nem fora dela; `..regras` é um nome válido.
+    // Same rule as rules.dir in config.ts: neither the root (the scan would read the
+    // repository) nor outside it; `..regras` is a valid name.
     const inside = toPosix(relative(await realpath(config.root), real));
     if (
       inside === '' ||
@@ -224,7 +248,8 @@ export async function loadRules(config: ResolvedConfig): Promise<Rule[]> {
     )
       throw new RuleError(
         config.rules.dir,
-        `${config.rules.dir}: a pasta de regras aponta para a raiz ou para fora da raiz do projeto (${real})`,
+        'rules.dir-outside',
+        `${config.rules.dir}: the rules folder points to the root or outside the project root (${real})`,
       );
   }
   try {
@@ -233,7 +258,8 @@ export async function loadRules(config: ResolvedConfig): Promise<Rule[]> {
     const code = (error as NodeJS.ErrnoException).code;
     throw new RuleError(
       config.rules.dir,
-      `${config.rules.dir}: não foi possível ler a pasta de regras (${code ?? (error as Error).message})`,
+      'rules.dir-unreadable',
+      `${config.rules.dir}: could not read the rules folder (${code ?? (error as Error).message})`,
     );
   }
   for (const posix of files)

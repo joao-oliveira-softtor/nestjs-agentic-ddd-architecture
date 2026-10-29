@@ -94,7 +94,7 @@ export function parseStaticTests(text: string, file: string): StaticEvidence {
         });
       else
         diagnostics.push(
-          `${file}:${line}: declaração de teste dinâmica não resolvida (covers)`,
+          `${file}:${line}: dynamic test declaration not resolved (covers)`,
         );
     }
     ts.forEachChild(node, visit);

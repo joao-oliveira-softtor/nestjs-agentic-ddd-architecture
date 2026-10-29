@@ -17,7 +17,7 @@ export async function irCommand(args: readonly string[]): Promise<number> {
     configPath: parsed.values.get('--config') ?? 'agentic.config.ts',
   });
   for (const error of errors)
-    console.error(`${error.source ?? '-'}: ${error.message}`);
+    console.error(`${error.source ?? '-'}: ${error.message} [${error.code}]`);
   if (errors.length > 0) return 1;
   process.stdout.write(stableStringify(ir));
   return 0;

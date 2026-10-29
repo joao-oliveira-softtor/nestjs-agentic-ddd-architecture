@@ -39,16 +39,16 @@ afterEach(async () => {
 });
 
 describe('agentic-ddd compile (CLI)', () => {
-  test('escreve e depois --check sai com 0', async () => {
+  test('writes, then --check exits 0', async () => {
     await bootstrapChanges(out);
     expect(run('compile', '--out-root', out).code).toBe(0);
     expect((await checkSnapshot(out)).ok).toBe(true);
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(0);
-    expect(check.stdout).toContain('arquivos gerados estão em dia');
+    expect(check.stdout).toContain('generated files are up to date');
   });
 
-  test('--check sai com 1 e lista o arquivo desatualizado', async () => {
+  test('--check exits 1 and lists the outdated file', async () => {
     run('compile', '--out-root', out);
     const skillPath = join(out, '.agents/skills/orders-dev/SKILL.md');
     await writeFile(
@@ -58,11 +58,11 @@ describe('agentic-ddd compile (CLI)', () => {
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(1);
     expect(check.stderr).toContain(
-      'desatualizado (changed): .agents/skills/orders-dev/SKILL.md',
+      'outdated (changed): .agents/skills/orders-dev/SKILL.md',
     );
   });
 
-  test('--check com diretório real no lugar do link do espelho dá dica de remover/renomear', async () => {
+  test('--check with a real directory in place of the mirror link suggests removing or renaming it', async () => {
     await bootstrapChanges(out);
     run('compile', '--out-root', out);
     const mirror = join(out, '.claude/skills/orders-dev');
@@ -71,34 +71,34 @@ describe('agentic-ddd compile (CLI)', () => {
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(1);
     expect(check.stderr).toContain(
-      'desatualizado (conflict): .claude/skills/orders-dev',
+      'outdated (conflict): .claude/skills/orders-dev',
     );
-    expect(check.stderr).toContain('remova ou renomeie o diretório existente');
-    expect(check.stderr).not.toContain('rode `bun run agentic compile`');
+    expect(check.stderr).toContain('remove or rename the existing directory');
+    expect(check.stderr).not.toContain('run `bun run agentic compile`');
   });
 
-  test('--check com link do espelho ausente manda rodar o compile', async () => {
+  test('--check with a missing mirror link tells you to run compile', async () => {
     await bootstrapChanges(out);
     run('compile', '--out-root', out);
     await rm(join(out, '.claude/skills/orders-dev'));
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(1);
     expect(check.stderr).toContain(
-      'desatualizado (mirror): .claude/skills/orders-dev',
+      'outdated (mirror): .claude/skills/orders-dev',
     );
-    expect(check.stderr).toContain('rode `bun run agentic compile`');
-    expect(check.stderr).not.toContain('remova ou renomeie');
+    expect(check.stderr).toContain('run `bun run agentic compile`');
+    expect(check.stderr).not.toContain('remove or rename');
   });
 
-  test('--check com mudança sem proposta imprime pendente e sai com 1', () => {
+  test('--check with a change without a proposal prints pending and exits 1', () => {
     run('compile', '--out-root', out);
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(1);
-    expect(check.stderr).toContain('pendente: há ');
+    expect(check.stderr).toContain('pending: there are ');
     expect(check.stderr).toContain('--draft-change <slug>');
   });
 
-  test('--draft-change pelo CLI cria a proposta e orienta o próximo passo', () => {
+  test('--draft-change from the CLI creates the proposal and guides the next step', () => {
     const result = run(
       'compile',
       '--draft-change',
@@ -108,14 +108,14 @@ describe('agentic-ddd compile (CLI)', () => {
     );
     expect(result.code).toBe(0);
     expect(result.stdout).toContain(
-      'proposta criada em changes/0001-estado-inicial/proposal.md',
+      'proposal created at changes/0001-estado-inicial/proposal.md',
     );
     expect(result.stderr).toContain(
-      'pendente: proposta 0001: a seção ## Motivo está vazia',
+      'pending: proposal 0001: the ## Motivo section is empty',
     );
   });
 
-  test('erro de declaração sai com 1 e aponta arquivo:linha', () => {
+  test('declaration error exits 1 and points to file:line', () => {
     const result = run(
       'compile',
       '--config',
@@ -124,18 +124,17 @@ describe('agentic-ddd compile (CLI)', () => {
       out,
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain(
-      'domain/thing.ts:5: invariant:Thing/Id Ruim: o id da invariante deve ser kebab-case',
-    );
+    expect(result.stderr).toContain('domain/thing.ts:5:');
+    expect(result.stderr).toContain('[validate.invariant-id-format]');
   });
 
-  test('uso incorreto sai com 2', () => {
+  test('wrong usage exits 2', () => {
     expect(run('build').code).toBe(2);
     expect(run('compile', '--nada').code).toBe(2);
     expect(run('constructor').code).toBe(2);
   });
 
-  test('--report imprime tokens por arquivo', () => {
+  test('--report prints tokens per file', () => {
     const result = run('compile', '--report', '--out-root', out);
     expect(result.code).toBe(0);
     expect(result.stdout).toContain(
@@ -144,7 +143,7 @@ describe('agentic-ddd compile (CLI)', () => {
     expect(result.stdout).toContain('≈tokens');
   });
 
-  test('erro de lint no modo write sai com 1 mas ainda escreve', async () => {
+  test('lint error in write mode exits 1 but still writes', async () => {
     const result = run(
       'compile',
       '--config',
@@ -153,7 +152,7 @@ describe('agentic-ddd compile (CLI)', () => {
       out,
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('lint: description com');
+    expect(result.stderr).toContain('[lint.description-length]');
     const skillPath = join(out, '.agentic/runtime/long-operator/SKILL.md');
     try {
       await access(skillPath);
@@ -163,7 +162,7 @@ describe('agentic-ddd compile (CLI)', () => {
     }
   });
 
-  test('erro de lint no modo write não arquiva a proposta nem grava o lock', async () => {
+  test('lint error in write mode does not archive the proposal or write the lock', async () => {
     const longConfig = 'test/fixtures/long-description/agentic.config.ts';
     const draft = run(
       'compile',
@@ -185,22 +184,22 @@ describe('agentic-ddd compile (CLI)', () => {
     );
     const result = run('compile', '--config', longConfig, '--out-root', out);
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('lint: description com');
+    expect(result.stderr).toContain('[lint.description-length]');
     const exists = (path: string) =>
       access(join(out, path)).then(
         () => true,
         () => false,
       );
-    // a proposta continua aberta e o lock não é gravado
+    // the proposal stays open and the lock is not written
     expect(await exists('changes/0001-estado-inicial/proposal.md')).toBe(true);
     expect(await exists('changes/archive/0001-estado-inicial')).toBe(false);
     expect(await exists('.agentic/domain.lock.json')).toBe(false);
     expect(await exists('.agentic/mcp/snapshot.json')).toBe(false);
-    // os artefatos gerados continuam sendo escritos (decisão do c9b29b9)
+    // generated artifacts are still written (decision in c9b29b9)
     expect(await exists('.agentic/runtime/long-operator/SKILL.md')).toBe(true);
   });
 
-  test('erro de lint no modo --check sai com 1', () => {
+  test('lint error in --check mode exits 1', () => {
     run(
       'compile',
       '--config',
@@ -217,10 +216,10 @@ describe('agentic-ddd compile (CLI)', () => {
       out,
     );
     expect(checkResult.code).toBe(1);
-    expect(checkResult.stderr).toContain('lint: description com');
+    expect(checkResult.stderr).toContain('[lint.description-length]');
   });
 
-  test('ir imprime a IR canônica', () => {
+  test('ir prints the canonical IR', () => {
     const result = run('ir');
     expect(result.code).toBe(0);
     const ir = JSON.parse(result.stdout) as {
@@ -232,7 +231,7 @@ describe('agentic-ddd compile (CLI)', () => {
     expect(result.stdout.endsWith('}\n')).toBe(true);
   });
 
-  test('ir com erro de declaração sai com 1', () => {
+  test('ir with a declaration error exits 1', () => {
     const result = run(
       'ir',
       '--config',
@@ -242,7 +241,7 @@ describe('agentic-ddd compile (CLI)', () => {
     expect(result.stderr).toContain('domain/thing.ts:5:');
   });
 
-  test('ir com argumento sobrando sai com 2', () => {
+  test('ir with an extra argument exits 2', () => {
     expect(run('ir', 'extra').code).toBe(2);
   });
 });

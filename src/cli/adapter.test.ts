@@ -61,7 +61,7 @@ test(covers(['entity:Matricula', 'method:Matricula.criar'], 'matricula'), () => 
 test(covers(['port:MatriculaRepository.save'], 'save'), () => expect(new InMemoryMatriculaRepository()).toBeDefined());
 ${contar ? "test(covers(['port:MatriculaRepository.contarPorTurma'], 'contar'), () => expect(1).toBe(1));" : ''}`;
 
-test('adapter: status, packet, verify, covers faltando, esqueleto e segundo adapter', async () => {
+test('adapter: status, packet, verify, missing covers, skeleton and second adapter', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'agentic-adapter-'));
   try {
     await mkdir(join(dir, 'app/infrastructure'), { recursive: true });
@@ -115,7 +115,7 @@ test('adapter: status, packet, verify, covers faltando, esqueleto e segundo adap
 
     const packet = run('packet', ID);
     expect(packet.code).toBe(0);
-    expect(packet.stdout).toContain('membros #privados da classe deste item');
+    expect(packet.stdout).toContain('#private members of this item');
     expect(packet.stdout).toContain('port:MatriculaRepository.save');
     expect(packet.stdout).toContain('Persistência de matrículas.');
     const hash = /specHash: `([a-f0-9]{64})`/.exec(packet.stdout)![1]!;

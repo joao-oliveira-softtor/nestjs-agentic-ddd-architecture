@@ -3,6 +3,7 @@ import type { Proposal } from './changes/proposal';
 import { listProposals } from './changes/proposal';
 import { analyzeProject, type ProjectAnalysis } from './compile';
 import { implementation } from './implementation';
+import { AgenticError } from './ir';
 import {
   evaluateStatus,
   selectChange,
@@ -26,16 +27,18 @@ export interface StateContext {
 export async function stateContext(configPath: string): Promise<StateContext> {
   const project = await analyzeProject({ configPath });
   if (project.errors.length)
-    throw new Error(
-      `o domínio não compila:\n${project.errors.map((e) => `${e.source ?? '-'}: ${e.message}`).join('\n')}`,
+    throw new AgenticError(
+      'state.domain-invalid',
+      `the domain does not compile:\n${project.errors.map((e) => `${e.source ?? '-'}: ${e.message} [${e.code}]`).join('\n')}`,
     );
   const listed = await listProposals(
     join(project.config.outRoot, project.config.changesDir),
     project.config.changesDir,
   );
   if (listed.errors.length)
-    throw new Error(
-      `propostas inválidas:\n${listed.errors.map((e) => `${e.source}: ${e.message}`).join('\n')}`,
+    throw new AgenticError(
+      'state.proposals-invalid',
+      `invalid proposals:\n${listed.errors.map((e) => `${e.source}: ${e.message} [${e.code}]`).join('\n')}`,
     );
   return { project, proposals: listed.proposals };
 }
@@ -73,20 +76,23 @@ export async function collectStatus(
   }
   const evidence = await runTests(config.verify.test, config.root);
   if (evidence.collectionError && !(allowEmptySuite && evidence.emptySuite))
-    throw new Error(evidence.collectionError);
+    throw new AgenticError('verify.collection-error', evidence.collectionError);
   return statusFromEvidence(context, evidence);
 }
 
 export async function status(options: StatusOptions): Promise<ProjectStatus> {
   if (options.change !== undefined && !/^\d{4}$/.test(options.change))
-    throw new Error('change deve ser NNNN');
+    throw new AgenticError('state.change-format', 'change must be NNNN');
   const context = await stateContext(options.configPath);
   const proposal =
     options.change === undefined
       ? undefined
       : context.proposals.find((p) => p.id === options.change);
   if (options.change !== undefined && !proposal)
-    throw new Error(`proposta ${options.change} não encontrada`);
+    throw new AgenticError(
+      'state.change-not-found',
+      `proposal ${options.change} not found`,
+    );
   const report = await collectStatus(context, options.static, true);
   return proposal ? selectChange(report, context.project.ir, proposal) : report;
 }

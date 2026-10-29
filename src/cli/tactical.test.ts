@@ -93,7 +93,7 @@ test(covers(['entity:Matricula'], 'matricula'), () => expect(1).toBe(1));`,
 
 const gateT = (r: Report) => r.gates.find((g) => g.id === 'T');
 
-test('gate T: falha com raiz de outro agregado, passa com o id, só em entidade e VO', async () => {
+test('gate T: fails with the root of another aggregate, passes with the id, only on entity and VO', async () => {
   const bad = await fixture('aluno!: Aluno;');
   const good = await fixture('alunoId!: AlunoId;');
   try {

@@ -76,7 +76,7 @@ async function fixture() {
   return { dir, run, hashOf };
 }
 
-test('value objects: packet, verify done com covers, falta de covers e esqueleto', async () => {
+test('value objects: packet, verify done with covers, missing covers and skeleton', async () => {
   const { dir, run, hashOf } = await fixture();
   try {
     const packet = run('packet', 'valueobject:Dinheiro');

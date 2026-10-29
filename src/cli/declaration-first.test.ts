@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test';
+import { MOTIVO_PLACEHOLDER } from '@agentic-ddd/compiler';
 import { readFile, writeFile, rm, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { orderSkeleton } from '../../test/helpers/order-skeleton';
@@ -18,7 +19,7 @@ async function generated(dir: string): Promise<Record<string, string>> {
   );
 }
 
-test('Order declarado: quatro ondas, packets, verify item RED→GREEN, gerados estáveis, hash protege decorators e G7 conclui', async () => {
+test('declared Order: four waves, packets, verify item RED→GREEN, stable generated files, hash protects decorators and G7 passes', async () => {
   const { dir, run, stage } = await orderSkeleton();
   try {
     expect(run('compile', '--draft-change', 'pedido').code).toBe(0);
@@ -26,10 +27,7 @@ test('Order declarado: quatro ondas, packets, verify item RED→GREEN, gerados e
     const draft = await readFile(proposalPath, 'utf8');
     await writeFile(
       proposalPath,
-      draft.replace(
-        '<!-- Escreva aqui por que esta mudança existe (obrigatório). O compilador só aplica a proposta com o Motivo preenchido. -->',
-        'Declaração primeiro do pedido.',
-      ),
+      draft.replace(MOTIVO_PLACEHOLDER, 'Declaração primeiro do pedido.'),
     );
     expect(run('compile').code).toBe(0);
     const initial = await generated(dir);

@@ -162,7 +162,7 @@ test('G7 resolve fábrica e invariantes em um único proprietário, ignora event
   const findings = workItemFindings(ir, declared, changed);
   expect(findings).toHaveLength(1);
   expect(findings[0]).toMatchObject({
-    message: 'entity:Product está declared',
+    code: 'verify.item-not-done',
     fix: 'bun run agentic packet entity:Product',
   });
 });
@@ -347,7 +347,7 @@ test('G7 com delta só de port reprova o use-case que o usa quando está em esqu
   });
   expect(workItemFindings(portIr, declared, portChange)).toMatchObject([
     {
-      message: 'usecase:publish_product está blocked(declared)',
+      code: 'verify.item-not-done',
       fix: 'bun run agentic packet usecase:publish_product',
     },
   ]);
@@ -391,6 +391,6 @@ test('item de adapter: spec com port e raiz nos contratos; G7 de port reprova ad
     mode: 'dynamic',
   });
   expect(
-    workItemFindings(adapterIr, declared, portChange).map((f) => f.message),
-  ).toContain('adapter:MemoryRepo está blocked(declared)');
+    workItemFindings(adapterIr, declared, portChange).map((f) => f.code),
+  ).toContain('verify.item-not-done');
 });

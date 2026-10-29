@@ -69,13 +69,15 @@ const input = (
 ) => ({ ir: current, lock, proposals, changesDir: 'changes' });
 
 describe('reconcile', () => {
-  test('sem lock e sem proposta: nada é aplicado e fica pendente', () => {
+  test('without a lock or a proposal: nothing is applied and it stays pending', () => {
     const plan = reconcile(input(null, []));
     expect(plan.nextLock).toBeNull();
     expect(plan.apply).toBeNull();
     expect(plan.errors).toEqual([]);
     expect(plan.pending).toEqual([
-      'há 10 mudança(s) de domínio sem proposta; escreva changes/NNNN-<slug>/proposal.md ou rode `bun run agentic compile --draft-change <slug>`',
+      expect.stringContaining(
+        'there are 10 domain change(s) without a proposal',
+      ),
     ]);
   });
 
@@ -100,7 +102,7 @@ describe('reconcile', () => {
     ]);
   });
 
-  test('Motivo vazio e divergências de delta ficam pendentes', () => {
+  test('an empty Motivo and delta divergences stay pending', () => {
     const delta: Delta = {
       added: [
         ...allAdded.added.filter((id) => id !== 'entity:Product'),
@@ -113,13 +115,13 @@ describe('reconcile', () => {
     expect(plan.apply).toBeNull();
     expect(plan.nextLock).toBeNull();
     expect(plan.pending).toEqual([
-      'proposta 0001: mudança no código fora do delta: added entity:Product',
-      'proposta 0001: ID no delta sem mudança correspondente no código: added entity:Fantasma',
-      'proposta 0001: a seção ## Motivo está vazia',
+      'proposal 0001: code change outside the delta: added entity:Product',
+      'proposal 0001: ID in the delta with no matching code change: added entity:Fantasma',
+      'proposal 0001: the ## Motivo section is empty',
     ]);
   });
 
-  test('diff só de docs atualiza o lock sem proposta', () => {
+  test('a docs-only diff updates the lock without a proposal', () => {
     const applied = proposal({
       motivo: 'Base.',
       archived: true,
@@ -152,7 +154,7 @@ describe('reconcile', () => {
     });
   });
 
-  test('só a description de um port muda, sem proposta: fica pendente', () => {
+  test('only a port description changes, without a proposal: stays pending', () => {
     const port = {
       id: 'port:Repo',
       name: 'Repo',
@@ -190,12 +192,14 @@ describe('reconcile', () => {
     expect(plan.errors).toEqual([]);
     expect(plan.apply).toBeNull();
     expect(plan.pending).toEqual([
-      expect.stringContaining('há 1 mudança(s) de domínio sem proposta'),
+      expect.stringContaining(
+        'there are 1 domain change(s) without a proposal',
+      ),
     ]);
     expect(plan.nextLock).toBe(lock);
   });
 
-  test('proposta aberta sem mudança no código fica pendente', () => {
+  test('an open proposal with no code change stays pending', () => {
     const applied = proposal({
       motivo: 'Base.',
       archived: true,
@@ -222,12 +226,12 @@ describe('reconcile', () => {
     });
     const plan = reconcile(input(lock, [applied, open]));
     expect(plan.pending).toEqual([
-      'a proposta 0002 está aberta, mas o código ainda não tem as mudanças de domínio do delta',
+      expect.stringContaining('the proposal 0002 is open'),
     ]);
     expect(plan.nextLock).toEqual(lock);
   });
 
-  test('proposta arquivada editada, ausente ou não registrada é erro duro', () => {
+  test('an archived proposal that was edited, missing or unregistered is a hard error', () => {
     const applied = proposal({
       motivo: 'Base.',
       archived: true,
@@ -247,46 +251,42 @@ describe('reconcile', () => {
         },
       ],
     };
-    expect(
-      reconcile(input(lock, [applied])).errors.map((e) => e.message),
-    ).toEqual([
-      'a proposta aplicada 0001 foi editada depois de aplicada; propostas arquivadas são imutáveis (restaure-a pelo git e abra uma nova proposta)',
+    expect(reconcile(input(lock, [applied])).errors.map((e) => e.code)).toEqual(
+      ['proposal.applied-edited'],
+    );
+    expect(reconcile(input(lock, [])).errors.map((e) => e.code)).toEqual([
+      'proposal.applied-not-archived',
     ]);
-    expect(reconcile(input(lock, [])).errors.map((e) => e.message)).toEqual([
-      'a proposta aplicada 0001 não está em changes/archive',
-    ]);
-    expect(
-      reconcile(input(null, [applied])).errors.map((e) => e.message),
-    ).toEqual(['a proposta arquivada 0001 não está registrada no lock']);
+    expect(reconcile(input(null, [applied])).errors.map((e) => e.code)).toEqual(
+      ['proposal.archived-not-in-lock'],
+    );
   });
 
-  test('duas propostas abertas e status incoerente são erro duro', () => {
+  test('two open proposals and an inconsistent status are hard errors', () => {
     const plan = reconcile(
       input(null, [proposal({ id: '0001' }), proposal({ id: '0002' })]),
     );
-    expect(plan.errors.map((e) => e.message)).toEqual([
-      'há 2 propostas abertas (0001, 0002); o v0 aceita uma por vez',
-    ]);
+    expect(plan.errors.map((e) => e.code)).toEqual(['proposal.multiple-open']);
+    expect(plan.errors[0]?.message).toContain('0001, 0002');
     expect(
       reconcile(input(null, [proposal({ applied: true })])).errors.map(
-        (e) => e.message,
+        (e) => e.code,
       ),
-    ).toEqual(['proposta com status applied fora de archive']);
+    ).toEqual(['proposal.applied-outside-archive']);
   });
 
-  describe('covers dos critérios de aceite da proposta aberta', () => {
-    const messages = (plan: ReturnType<typeof reconcile>) =>
-      plan.errors.map((e) => e.message);
+  describe('covers of the open proposal acceptance criteria', () => {
+    const codes = (plan: ReturnType<typeof reconcile>) =>
+      plan.errors.map((e) => e.code);
 
-    test('ID que não está na IR nem em delta.added é erro', () => {
+    test('an ID that is in neither the IR nor delta.added is an error', () => {
       const open = proposal({
         motivo: 'Base.',
         covers: ['usecase:fantasma'],
       });
       const plan = reconcile(input(null, [open]));
-      expect(messages(plan)).toEqual([
-        'critério criterio: covers cita usecase:fantasma, que não está na IR nem em delta.added',
-      ]);
+      expect(codes(plan)).toEqual(['proposal.covers-unknown']);
+      expect(plan.errors[0]?.message).toContain('usecase:fantasma');
       expect(plan.errors[0]?.source).toBe(open.path);
       expect(plan.apply).toBeNull();
     });
@@ -299,10 +299,10 @@ describe('reconcile', () => {
         delta,
         covers: ['invariant:Product/preco-positivo', nova],
       });
-      expect(messages(reconcile(input(null, [open])))).toEqual([]);
+      expect(codes(reconcile(input(null, [open])))).toEqual([]);
     });
 
-    test('covers de port:X.método de um adapter da IR é aceito', () => {
+    test('port:X.method covers of an IR adapter are accepted', () => {
       const withAdapter: IR = {
         ...structuredClone(ir),
         ports: [
@@ -329,26 +329,24 @@ describe('reconcile', () => {
       };
       const open = proposal({ motivo: 'Base.', covers: ['port:Repo.salvar'] });
       expect(
-        messages(reconcile({ ...input(null, [open]), ir: withAdapter })),
+        codes(reconcile({ ...input(null, [open]), ir: withAdapter })),
       ).toEqual([]);
     });
 
-    test('proposta arquivada não é validada contra a IR atual', () => {
+    test('an archived proposal is not checked against the current IR', () => {
       const archived = proposal({
         motivo: 'Base.',
         archived: true,
         applied: true,
         covers: ['usecase:fantasma'],
       });
-      expect(
-        messages(reconcile(input(null, [archived]))).some((m) =>
-          m.includes('covers'),
-        ),
-      ).toBe(false);
+      expect(codes(reconcile(input(null, [archived])))).not.toContain(
+        'proposal.covers-unknown',
+      );
     });
   });
 
-  test('status não reescrevível vira erro de reconciliação em vez de exceção', () => {
+  test('a status that cannot be rewritten becomes a reconcile error instead of an exception', () => {
     const open = proposal({ motivo: 'Base.', delta: allAdded });
     let raw = open.raw.replace(/^status: proposed$/m, '"status": proposed');
     const parsed = parseProposal(
@@ -360,8 +358,8 @@ describe('reconcile', () => {
     expect(parsed.proposal).not.toBeNull();
 
     const plan = reconcile(input(null, [parsed.proposal!]));
-    expect(plan.errors.map((e) => e.message)).toEqual([
-      'não foi possível marcar a proposta 0001 como aplicada; escreva a linha "status: proposed" literalmente no frontmatter',
+    expect(plan.errors.map((e) => e.code)).toEqual([
+      'proposal.mark-applied-failed',
     ]);
     expect(plan.nextLock).toBeNull();
     expect(plan.apply).toBeNull();
@@ -466,9 +464,9 @@ describe('reconcile', () => {
       const plan = reconcile(input(lock, [archivedBase(), open], current));
       expect(plan.apply).toBeNull();
       expect(plan.pending).toEqual([
-        'a proposta 0002 está aberta, mas o código ainda não tem as mudanças de domínio do delta',
+        expect.stringContaining('the proposal 0002 is open'),
       ]);
-      // comportamento atual: o lock absorve o diff só de docs e não registra change
+      // current behavior: the lock absorbs the docs-only diff and records no change
       expect(plan.nextLock).toEqual({
         lockVersion: 1,
         ir: current,

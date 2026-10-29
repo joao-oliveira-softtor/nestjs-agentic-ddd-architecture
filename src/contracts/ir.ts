@@ -7,6 +7,9 @@ import {
   type SourceLoc,
 } from '@agentic-ddd/decorators';
 import { byId, sha256, stableStringify } from './canonical';
+import type { ErrorCode } from './codes';
+
+export { AgenticError, ERROR_CODES, type ErrorCode } from './codes';
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -129,6 +132,7 @@ export interface IR {
 }
 
 export interface CompileError {
+  readonly code: ErrorCode;
   readonly message: string;
   readonly source: string | null;
 }
@@ -143,13 +147,13 @@ export interface IRBuildResult {
   readonly errors: CompileError[];
 }
 
-export const UNASSIGNED_MODULE = '<sem-modulo>';
+export const UNASSIGNED_MODULE = '<unassigned>';
 
 export function toPosix(path: string): string {
   return path.split(sep).join('/');
 }
 
-// Reexportado para quem compara raízes; o arquivo do SourceLoc já vem canônico do captureSource.
+// Re-exported for callers that compare roots; the SourceLoc file is already canonical from captureSource.
 export { canonicalPath };
 
 export function sourceOf(root: string, loc: SourceLoc): string {
@@ -178,7 +182,8 @@ export function buildIR(
     );
     if (found) return found.name;
     errors.push({
-      message: 'elemento declarado fora dos módulos de agentic.config.ts',
+      code: 'ir.outside-modules',
+      message: 'element declared outside the modules of agentic.config.ts',
       source: loc(s),
     });
     return UNASSIGNED_MODULE;
@@ -187,7 +192,8 @@ export function buildIR(
   const eventId = (cls: ClassRef, at: SourceLoc): string => {
     if (!registry.events.some((e) => e.target === cls)) {
       errors.push({
-        message: `emits aponta para ${cls.name}, que não tem @AgentEvent`,
+        code: 'ir.emits-target-missing',
+        message: `emits points to ${cls.name}, which has no @AgentEvent`,
         source: loc(at),
       });
     }
@@ -198,7 +204,8 @@ export function buildIR(
     const found = registry.useCases.find((u) => u.target === cls);
     if (found) return `usecase:${found.name}`;
     errors.push({
-      message: `${owner}: ${cls.name} não tem @AgentUseCase`,
+      code: 'ir.usecase-missing',
+      message: `${owner}: ${cls.name} has no @AgentUseCase`,
       source: loc(at),
     });
     return `usecase:${cls.name}`;
@@ -218,14 +225,15 @@ export function buildIR(
       return json;
     } catch (error) {
       errors.push({
-        message: `${what}: schema Zod não representável em JSON Schema (${(error as Error).message})`,
+        code: 'ir.schema-unrepresentable',
+        message: `${what}: Zod schema cannot be represented as JSON Schema (${(error as Error).message})`,
         source: loc(at),
       });
       return {};
     }
   };
 
-  // Chama o thunk e converte em ids dentro do try; o que não resolve fica fora da lista.
+  // Calls the thunk and converts to ids inside the try; anything that does not resolve stays out of the list.
   const relation = (
     rec: Registry['entities'][number],
     field: 'contains' | 'references',
@@ -233,33 +241,42 @@ export function buildIR(
     const thunk = rec[field];
     if (!thunk) return [];
     const owner = `entity:${rec.target.name}`;
-    const fail = (message: string): void => {
-      errors.push({ message: `${owner}: ${message}`, source: loc(rec.source) });
+    const fail = (code: ErrorCode, message: string): void => {
+      errors.push({
+        code,
+        message: `${owner}: ${message}`,
+        source: loc(rec.source),
+      });
     };
     try {
       const list = thunk();
       if (!Array.isArray(list)) {
-        fail(`${field} não devolveu uma lista`);
+        fail('ir.relation-not-list', `${field} did not return a list`);
         return [];
       }
       const ids = new Set<string>();
       for (const cls of list as unknown[]) {
         if (typeof cls !== 'function') {
-          fail(`${field} tem entrada que não é classe`);
+          fail(
+            'ir.relation-not-class',
+            `${field} has an entry that is not a class`,
+          );
         } else if (registry.entities.some((e) => e.target === cls)) {
           ids.add(`entity:${cls.name}`);
         } else if (registry.valueObjects.some((v) => v.target === cls)) {
           ids.add(`valueobject:${cls.name}`);
         } else {
           fail(
-            `${field} cita ${cls.name}, sem @AgentEntity nem @AgentValueObject`,
+            'ir.relation-target-invalid',
+            `${field} cites ${cls.name}, which has neither @AgentEntity nor @AgentValueObject`,
           );
         }
       }
       return [...ids].sort();
     } catch (error) {
       fail(
-        `${field} lançou ${error instanceof Error ? error.message : String(error)}`,
+        'ir.thunk-threw',
+        `${field} threw ${error instanceof Error ? error.message : String(error)}`,
       );
       return [];
     }
@@ -348,8 +365,12 @@ export function buildIR(
   const ports = registry.ports
     .flatMap((rec): IRPort[] => {
       const id = `port:${rec.target.name}`;
-      const fail = (message: string): IRPort[] => {
-        errors.push({ message: `${id}: ${message}`, source: loc(rec.source) });
+      const fail = (code: ErrorCode, message: string): IRPort[] => {
+        errors.push({
+          code,
+          message: `${id}: ${message}`,
+          source: loc(rec.source),
+        });
         return [];
       };
       let root: unknown;
@@ -357,13 +378,17 @@ export function buildIR(
         root = rec.root();
       } catch (error) {
         return fail(
-          `root lançou ${error instanceof Error ? error.message : String(error)}`,
+          'ir.thunk-threw',
+          `root threw ${error instanceof Error ? error.message : String(error)}`,
         );
       }
       if (typeof root !== 'function')
-        return fail('root não devolveu uma classe');
+        return fail('ir.root-not-class', 'root did not return a class');
       if (!registry.entities.some((e) => e.target === root))
-        return fail(`root cita ${root.name}, sem @AgentEntity`);
+        return fail(
+          'ir.root-not-entity',
+          `root cites ${root.name}, which has no @AgentEntity`,
+        );
       portTargets.set(rec.target, id);
       return [
         {
@@ -384,8 +409,12 @@ export function buildIR(
   const adapters = registry.adapters
     .flatMap((rec): IRAdapter[] => {
       const id = `adapter:${rec.target.name}`;
-      const fail = (message: string): IRAdapter[] => {
-        errors.push({ message: `${id}: ${message}`, source: loc(rec.source) });
+      const fail = (code: ErrorCode, message: string): IRAdapter[] => {
+        errors.push({
+          code,
+          message: `${id}: ${message}`,
+          source: loc(rec.source),
+        });
         return [];
       };
       let port: unknown;
@@ -393,14 +422,21 @@ export function buildIR(
         port = rec.implements();
       } catch (error) {
         return fail(
-          `implements lançou ${error instanceof Error ? error.message : String(error)}`,
+          'ir.thunk-threw',
+          `implements threw ${error instanceof Error ? error.message : String(error)}`,
         );
       }
       if (typeof port !== 'function')
-        return fail('implements não devolveu uma classe');
+        return fail(
+          'ir.implements-not-class',
+          'implements did not return a class',
+        );
       const portId = portTargets.get(port as ClassRef);
       if (portId === undefined)
-        return fail(`implements cita ${port.name}, sem @AgentPort`);
+        return fail(
+          'ir.implements-not-port',
+          `implements cites ${port.name}, which has no @AgentPort`,
+        );
       return [
         {
           id,
@@ -416,8 +452,9 @@ export function buildIR(
 
   const portIds = (rec: Registry['useCases'][number]): string[] => {
     if (!rec.ports) return [];
-    const fail = (message: string): string[] => {
+    const fail = (code: ErrorCode, message: string): string[] => {
       errors.push({
+        code,
         message: `usecase:${rec.name}: ${message}`,
         source: loc(rec.source),
       });
@@ -427,9 +464,12 @@ export function buildIR(
       const ids = new Set<string>();
       for (const cls of rec.ports()) {
         if (typeof cls !== 'function') {
-          fail('ports tem entrada que não é classe');
+          fail('ir.ports-not-class', 'ports has an entry that is not a class');
         } else if (!registry.ports.some((p) => p.target === cls)) {
-          fail(`ports cita ${cls.name}, sem @AgentPort`);
+          fail(
+            'ir.ports-not-port',
+            `ports cites ${cls.name}, which has no @AgentPort`,
+          );
         } else {
           const id = portTargets.get(cls);
           if (id) ids.add(id);
@@ -438,7 +478,8 @@ export function buildIR(
       return [...ids].sort();
     } catch (error) {
       return fail(
-        `ports lançou ${error instanceof Error ? error.message : String(error)}`,
+        'ir.thunk-threw',
+        `ports threw ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   };
@@ -508,7 +549,7 @@ export function buildIR(
     })
     .sort(byId);
 
-  // ADR-0006 D2: chave nova em elemento já existente (e no topo da IR) entra como ...(xs.length > 0 && { xs }); nunca xs: undefined nem xs: [].
+  // ADR-0006 D2: a new key on an existing element (and at the top of the IR) goes in as ...(xs.length > 0 && { xs }); never xs: undefined or xs: [].
   return {
     ir: {
       irVersion: 1,

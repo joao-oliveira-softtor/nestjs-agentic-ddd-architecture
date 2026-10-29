@@ -132,7 +132,7 @@ describe('buildIR', () => {
       modules: [{ name: 'compiler', path: 'src/compiler' }],
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]!.message).toContain('não representável em JSON Schema');
+    expect(errors[0]!.code).toBe('ir.schema-unrepresentable');
     expect(errors[0]!.source).toMatch(/^src\/compiler\/ir\.test\.ts:\d+$/);
   });
 
@@ -141,9 +141,7 @@ describe('buildIR', () => {
       root: ROOT,
       modules: [{ name: 'outro', path: 'examples/outro' }],
     });
-    expect(errors.some((e) => e.message.includes('fora dos módulos'))).toBe(
-      true,
-    );
+    expect(errors.some((e) => e.code === 'ir.outside-modules')).toBe(true);
   });
 
   test('invariantes de use-case: id, on null, ordem e chave ausente sem elas', () => {
@@ -350,7 +348,7 @@ describe('buildIR: contains e references', () => {
 
   const only = (define: () => void) => {
     const { ir, errors } = build(define);
-    return { ir, errors: errors.map((e) => e.message) };
+    return { ir, errors: errors.map((e) => `${e.code} ${e.message}`) };
   };
 
   test('função que lança vira erro do dono', () => {
@@ -364,7 +362,7 @@ describe('buildIR: contains e references', () => {
       class A extends AggregateRoot<string> {}
       void A;
     });
-    expect(errors).toEqual(['entity:A: contains lançou boom']);
+    expect(errors).toEqual(['ir.thunk-threw entity:A: contains threw boom']);
     expect('contains' in ir.entities[0]!).toBe(false);
   });
 
@@ -379,8 +377,8 @@ describe('buildIR: contains e references', () => {
       void A;
     });
     expect(errors.sort()).toEqual([
-      'entity:A: contains não devolveu uma lista',
-      'entity:A: references tem entrada que não é classe',
+      'ir.relation-not-class entity:A: references has an entry that is not a class',
+      'ir.relation-not-list entity:A: contains did not return a list',
     ]);
     expect('contains' in ir.entities[0]!).toBe(false);
     expect('references' in ir.entities[0]!).toBe(false);
@@ -397,7 +395,7 @@ describe('buildIR: contains e references', () => {
       class A extends AggregateRoot<string> {}
       void A;
     });
-    expect(errors).toEqual(['entity:A: contains lançou texto']);
+    expect(errors).toEqual(['ir.thunk-threw entity:A: contains threw texto']);
   });
 
   test('classe sem decorator nos dois campos', () => {
@@ -412,8 +410,8 @@ describe('buildIR: contains e references', () => {
       void A;
     });
     expect(errors.sort()).toEqual([
-      'entity:A: contains cita Solta, sem @AgentEntity nem @AgentValueObject',
-      'entity:A: references cita Solta, sem @AgentEntity nem @AgentValueObject',
+      'ir.relation-target-invalid entity:A: contains cites Solta, which has neither @AgentEntity nor @AgentValueObject',
+      'ir.relation-target-invalid entity:A: references cites Solta, which has neither @AgentEntity nor @AgentValueObject',
     ]);
     expect('contains' in ir.entities[0]!).toBe(false);
   });
@@ -514,10 +512,10 @@ describe('buildIR: ports', () => {
       class Faz {}
       void [A, B, C, Faz];
     });
-    expect(errors.map((e) => e.message).sort()).toEqual([
-      'port:A: root lançou boom',
-      'port:B: root não devolveu uma classe',
-      'port:C: root cita Solta, sem @AgentEntity',
+    expect(errors.map((e) => `${e.code} ${e.message}`).sort()).toEqual([
+      'ir.root-not-class port:B: root did not return a class',
+      'ir.root-not-entity port:C: root cites Solta, which has no @AgentEntity',
+      'ir.thunk-threw port:A: root threw boom',
     ]);
     expect(
       errors.every((e) => /^src\/compiler\/ir\.test\.ts:\d+$/.test(e.source!)),
@@ -553,9 +551,9 @@ describe('buildIR: ports', () => {
       class B {}
       void [A, B];
     });
-    expect(errors.map((e) => e.message).sort()).toEqual([
-      'usecase:a: ports cita Solta, sem @AgentPort',
-      'usecase:b: ports lançou boom',
+    expect(errors.map((e) => `${e.code} ${e.message}`).sort()).toEqual([
+      'ir.ports-not-port usecase:a: ports cites Solta, which has no @AgentPort',
+      'ir.thunk-threw usecase:b: ports threw boom',
     ]);
     expect(ir.useCases.every((u) => !('ports' in u))).toBe(true);
   });
@@ -631,10 +629,10 @@ describe('buildIR: adapters', () => {
       class C {}
       void [A, B, C];
     });
-    expect(errors.map((e) => e.message).sort()).toEqual([
-      'adapter:A: implements cita Solta, sem @AgentPort',
-      'adapter:B: implements lançou boom',
-      'adapter:C: implements não devolveu uma classe',
+    expect(errors.map((e) => `${e.code} ${e.message}`).sort()).toEqual([
+      'ir.implements-not-class adapter:C: implements did not return a class',
+      'ir.implements-not-port adapter:A: implements cites Solta, which has no @AgentPort',
+      'ir.thunk-threw adapter:B: implements threw boom',
     ]);
     expect(
       errors.every((e) => /^src\/compiler\/ir\.test\.ts:\d+$/.test(e.source!)),

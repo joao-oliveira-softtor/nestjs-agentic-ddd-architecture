@@ -45,7 +45,7 @@ function errorsOf(define: () => void): string[] {
   return analyze(registry, {
     root: ROOT,
     modules: [{ name: 'compiler', path: 'src/compiler' }],
-  }).errors.map((e) => `${e.source ?? '-'} ${e.message}`);
+  }).errors.map((e) => `${e.source ?? '-'} ${e.code} ${e.message}`);
 }
 
 describe('validate', () => {
@@ -65,7 +65,7 @@ describe('validate', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(HERE);
     expect(errors[0]).toContain(
-      'invariant:Thing/Id Ruim: o id da invariante deve ser kebab-case',
+      'validate.invariant-id-format invariant:Thing/Id Ruim',
     );
   });
 
@@ -83,9 +83,7 @@ describe('validate', () => {
     });
     expect(
       errors.some((e) =>
-        e.includes(
-          'entity:Door tem métodos com transition, mas @AgentEntity não declara states',
-        ),
+        e.includes('validate.transition-without-states entity:Door'),
       ),
     ).toBe(true);
   });
@@ -104,7 +102,7 @@ describe('validate', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain(
-      'method:Door.open: estado "locked" não está em states de Door',
+      'validate.transition-state-unknown method:Door.open',
     );
   });
 
@@ -120,7 +118,7 @@ describe('validate', () => {
     });
     expect(
       errors.some((e) =>
-        e.includes('emits aponta para NotAnEvent, que não tem @AgentEvent'),
+        e.includes('ir.emits-target-missing emits points to NotAnEvent'),
       ),
     ).toBe(true);
   });
@@ -138,9 +136,7 @@ describe('validate', () => {
       void DoIt;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain(
-      'usecase:do_it: uses cita method:Ghost.boo, que não existe',
-    );
+    expect(errors[0]).toContain('validate.uses-unknown usecase:do_it');
   });
 
   test('emits do use-case precisa vir dos métodos em uses', () => {
@@ -165,9 +161,7 @@ describe('validate', () => {
       void RingBell;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain(
-      'usecase:ring_bell: emite event:Rang, mas nenhum método em uses emite esse evento',
-    );
+    expect(errors[0]).toContain('validate.emit-unreachable usecase:ring_bell');
   });
 
   test('emits do use-case precisa cobrir o que os métodos em uses emitem', () => {
@@ -192,9 +186,7 @@ describe('validate', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(HERE);
-    expect(errors[0]).toContain(
-      'usecase:ring_bell: method:Bell.ring emite event:Rang, que falta em emits (o runtime recusaria a publicação)',
-    );
+    expect(errors[0]).toContain('validate.emit-undeclared usecase:ring_bell');
   });
 
   test('requiresApproval precisa estar na allowlist', () => {
@@ -227,7 +219,7 @@ describe('validate', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain(
-      'operator:op: requiresApproval cita usecase:b_case, que não está em useCases',
+      'validate.operator-approval-unknown operator:op',
     );
   });
 
@@ -244,9 +236,7 @@ describe('validate', () => {
       void Op;
     });
     expect(
-      errors.some((e) =>
-        e.includes('operator:op: Plain não tem @AgentUseCase'),
-      ),
+      errors.some((e) => e.includes('ir.usecase-missing operator:op')),
     ).toBe(true);
   });
 
@@ -267,9 +257,7 @@ describe('validate', () => {
       void Account;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain(
-      'Account.helper é público e não tem @AgentMethod',
-    );
+    expect(errors[0]).toContain('validate.method-undecorated Account.helper');
   });
 
   test('duas entidades com o mesmo nome geram ID duplicado', () => {
@@ -288,7 +276,7 @@ describe('validate', () => {
     expect(
       errors.some((e) =>
         e.includes(
-          'ID duplicado entity:Item (também declarado em src/compiler/validate.test.ts:',
+          'validate.duplicate-id duplicate ID entity:Item (also declared in src/compiler/validate.test.ts:',
         ),
       ),
     ).toBe(true);
@@ -306,12 +294,14 @@ describe('validate', () => {
       class PublishProduct {}
       void PublishProduct;
     });
-    expect(errors.some((e) => e.includes('name deve ser snake_case'))).toBe(
+    expect(errors.some((e) => e.includes('validate.usecase-name-format'))).toBe(
       true,
     );
-    expect(errors.some((e) => e.includes('whenToUse é obrigatório'))).toBe(
-      true,
-    );
+    expect(
+      errors.some(
+        (e) => e.includes('validate.required-empty') && e.includes('whenToUse'),
+      ),
+    ).toBe(true);
   });
 
   test('@Invariant em método sem @AgentMethod', () => {
@@ -326,7 +316,7 @@ describe('validate', () => {
     expect(
       errors.some((e) =>
         e.includes(
-          'invariant:Box/nunca-cheia está num método sem @AgentMethod (method:Box.fill)',
+          'validate.invariant-method-undeclared invariant:Box/nunca-cheia',
         ),
       ),
     ).toBe(true);
@@ -372,11 +362,9 @@ describe('validate', () => {
     expect(result.errors.some((e) => e.message.includes('Bad-Case'))).toBe(
       true,
     );
-    expect(
-      result.errors.some((e) =>
-        e.message.includes('Plain não tem @AgentUseCase'),
-      ),
-    ).toBe(true);
+    expect(result.errors.some((e) => e.code === 'ir.usecase-missing')).toBe(
+      true,
+    );
   });
 
   test('invariante com text vazio', () => {
@@ -388,7 +376,7 @@ describe('validate', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain(
-      'invariant:Thing/empty-text: text é obrigatório e não pode ser vazio',
+      'validate.required-empty invariant:Thing/empty-text: text',
     );
   });
 
@@ -405,7 +393,7 @@ describe('validate', () => {
       void Door;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('transition precisa de from (não vazio) e to');
+    expect(errors[0]).toContain('validate.transition-incomplete');
   });
 
   test('transition com estado vazio em from é rejeitado', () => {
@@ -422,7 +410,7 @@ describe('validate', () => {
         void Door;
       });
       expect(errors).toHaveLength(1);
-      expect(errors[0]).toContain('transition não aceita estado vazio');
+      expect(errors[0]).toContain('validate.transition-empty-state');
     }
   });
 
@@ -438,7 +426,7 @@ describe('validate', () => {
       void Op;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain('operator:op: useCases não pode ser vazio');
+    expect(errors[0]).toContain('validate.operator-usecases-empty operator:op');
   });
 
   test('operator com name fora de kebab-case', () => {
@@ -462,7 +450,7 @@ describe('validate', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain(
-      'operator:Op Ruim: name deve ser kebab-case com até 64 caracteres',
+      'validate.operator-name-format operator:Op Ruim',
     );
   });
 
@@ -494,7 +482,9 @@ describe('validate', () => {
         void Op;
       });
       expect(errors).toHaveLength(1);
-      expect(errors[0]).toContain('operator:op: limits inválidos');
+      expect(errors[0]).toContain(
+        'validate.operator-limits-invalid operator:op',
+      );
     }
   });
 
@@ -507,9 +497,7 @@ describe('validate', () => {
       void Account;
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]).toContain(
-      'Account.helper é público e não tem @AgentMethod',
-    );
+    expect(errors[0]).toContain('validate.method-undecorated Account.helper');
   });
 
   test('@AgentMethod numa classe sem @AgentEntity', () => {
@@ -522,7 +510,7 @@ describe('validate', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain(
-      'NotEntity.doIt tem @AgentMethod, mas NotEntity não tem @AgentEntity',
+      'validate.method-entity-missing NotEntity.doIt',
     );
   });
 });
@@ -548,17 +536,17 @@ describe('validate: @Invariant em use-case', () => {
     });
     expect(
       errors.some((e) =>
-        e.includes(
-          'invariant:caso/Id Ruim: o id da invariante deve ser kebab-case',
-        ),
+        e.includes('validate.invariant-id-format invariant:caso/Id Ruim'),
       ),
     ).toBe(true);
     expect(
-      errors.some((e) => e.includes('ID duplicado invariant:caso/dup')),
+      errors.some((e) =>
+        e.includes('validate.duplicate-id duplicate ID invariant:caso/dup'),
+      ),
     ).toBe(true);
     expect(
       errors.some((e) =>
-        e.includes('invariant:caso/vazia: text é obrigatório'),
+        e.includes('validate.required-empty invariant:caso/vazia: text'),
       ),
     ).toBe(true);
   });
@@ -586,7 +574,7 @@ describe('validate: @Invariant em use-case', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(HERE);
     expect(errors[0]).toContain(
-      '@Invariant regra em Caso.execute: em use-case, @Invariant vai na classe',
+      'validate.invariant-method-misplaced @Invariant regra on Caso.execute',
     );
   });
 
@@ -601,7 +589,7 @@ describe('validate: @Invariant em use-case', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(HERE);
     expect(errors[0]).toContain(
-      '@Invariant dupla em Dupla: a classe tem @AgentEntity e @AgentUseCase, e o dono da invariante fica ambíguo',
+      'validate.invariant-owner-ambiguous @Invariant dupla on Dupla',
     );
   });
 
@@ -613,7 +601,7 @@ describe('validate: @Invariant em use-case', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toContain(
-      '@Invariant solta em Plain, que não tem @AgentEntity, @AgentUseCase nem @AgentValueObject',
+      'validate.invariant-owner-missing @Invariant solta on Plain',
     );
   });
 
@@ -639,21 +627,19 @@ describe('validate: @Invariant em use-case', () => {
       });
       expect(
         errors.some((e) =>
-          e.includes(
-            'valueobject:dinheiro: o nome da classe deve ser PascalCase',
-          ),
-        ),
-      ).toBe(true);
-      expect(
-        errors.some((e) =>
-          e.includes('valueobject:dinheiro: description é obrigatório'),
+          e.includes('validate.name-pascal-case valueobject:dinheiro'),
         ),
       ).toBe(true);
       expect(
         errors.some((e) =>
           e.includes(
-            'invariant:dinheiro/Ruim: o id da invariante deve ser kebab-case',
+            'validate.required-empty valueobject:dinheiro: description',
           ),
+        ),
+      ).toBe(true);
+      expect(
+        errors.some((e) =>
+          e.includes('validate.invariant-id-format invariant:dinheiro/Ruim'),
         ),
       ).toBe(true);
     });
@@ -667,7 +653,7 @@ describe('validate: @Invariant em use-case', () => {
       expect(errors).toHaveLength(1);
       expect(errors[0]).toMatch(HERE);
       expect(errors[0]).toContain(
-        'valueobject:Solto: não estende ValueObject de @agentic-ddd/core (projeto e CLI com cópias diferentes do pacote?)',
+        'validate.value-object-base-missing valueobject:Solto',
       );
     });
 
@@ -680,7 +666,11 @@ describe('validate: @Invariant em use-case', () => {
         AgentValueObject({ description: 'VO.' })(Vo);
       });
       expect(
-        errors.some((e) => e.includes('Igual') && e.includes('entidade')),
+        errors.some(
+          (e) =>
+            e.includes('validate.value-object-name-collision') &&
+            e.includes('Igual'),
+        ),
       ).toBe(true);
     });
 
@@ -700,7 +690,7 @@ describe('validate: @Invariant em use-case', () => {
       expect(
         errors.some((e) =>
           e.includes(
-            'ID duplicado valueobject:Dinheiro (também declarado em src/compiler/validate.test.ts:',
+            'validate.duplicate-id duplicate ID valueobject:Dinheiro (also declared in src/compiler/validate.test.ts:',
           ),
         ),
       ).toBe(true);
@@ -717,7 +707,7 @@ describe('validate: @Invariant em use-case', () => {
       expect(
         errors.some((e) =>
           e.includes(
-            '@Invariant dupla em Dupla: a classe tem mais de um entre @AgentEntity, @AgentUseCase e @AgentValueObject, e o dono da invariante fica ambíguo',
+            'validate.invariant-owner-ambiguous @Invariant dupla on Dupla',
           ),
         ),
       ).toBe(true);
@@ -735,7 +725,7 @@ describe('validate: @Invariant em use-case', () => {
       expect(
         errors.some((e) =>
           e.includes(
-            '@Invariant regra em Dinheiro.soma: em value object, @Invariant vai na classe',
+            'validate.invariant-method-misplaced @Invariant regra on Dinheiro.soma',
           ),
         ),
       ).toBe(true);
@@ -752,9 +742,7 @@ describe('validate: @Invariant em use-case', () => {
         root: ROOT,
         modules: [{ name: 'x', path: 'src/outro' }],
       });
-      expect(errors.some((e) => e.message.includes('fora dos módulos'))).toBe(
-        true,
-      );
+      expect(errors.some((e) => e.code === 'ir.outside-modules')).toBe(true);
     });
   });
 });
@@ -775,9 +763,7 @@ describe('validate: contains e references', () => {
     });
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatch(HERE);
-    expect(errors[0]).toContain(
-      'entity:A: references só aponta para entidade, não para valueobject:Dinheiro',
-    );
+    expect(errors[0]).toContain('validate.references-value-object entity:A');
   });
 
   test('entidade filha com dois donos é erro; VO em vários é aceito', () => {
@@ -795,7 +781,7 @@ describe('validate: contains e references', () => {
     const filha = errors.filter((e) => e.includes('entity:Filha'));
     expect(filha).toHaveLength(1);
     expect(filha[0]).toContain(
-      'entity:Filha está no contains de mais de um dono (entity:A, entity:B)',
+      'validate.contains-multiple-owners entity:Filha is in the contains of more than one owner (entity:A, entity:B)',
     );
     expect(errors).toHaveLength(1);
   });
@@ -809,7 +795,9 @@ describe('validate: contains e references', () => {
       void A;
       void B;
     });
-    expect(errors.some((e) => e.includes('ciclo de contains'))).toBe(true);
+    expect(errors.some((e) => e.includes('validate.contains-cycle'))).toBe(
+      true,
+    );
   });
 
   test('ciclo que não passa pela entidade de partida aponta para quem o fecha', () => {
@@ -824,10 +812,10 @@ describe('validate: contains e references', () => {
       void B;
       void C;
     });
-    const cycle = errors.filter((e) => e.includes('ciclo de contains'));
+    const cycle = errors.filter((e) => e.includes('validate.contains-cycle'));
     expect(cycle).toHaveLength(1);
     expect(cycle[0]).toMatch(
-      /^src\/compiler\/validate\.test\.ts:\d+ entity:C: ciclo de contains/,
+      /^src\/compiler\/validate\.test\.ts:\d+ validate.contains-cycle entity:C:/,
     );
   });
 
@@ -837,10 +825,10 @@ describe('validate: contains e references', () => {
       class A extends AggregateRoot<string> {}
       void A;
     });
-    expect(errors.filter((e) => e.includes('ciclo de contains'))).toHaveLength(
-      1,
-    );
-    expect(errors[0]).toContain('entity:A: ciclo de contains');
+    expect(
+      errors.filter((e) => e.includes('validate.contains-cycle')),
+    ).toHaveLength(1);
+    expect(errors[0]).toContain('validate.contains-cycle entity:A');
   });
 
   test('contains entre módulos é erro', () => {
@@ -863,10 +851,8 @@ describe('validate: contains e references', () => {
         e.name === 'Filha' ? { ...e, module: 'outro' } : e,
       ),
     };
-    const errors = validate(moved, registry, ROOT).map((e) => e.message);
-    expect(errors).toEqual([
-      'entity:A: contains cita entity:Filha, de outro módulo (outro)',
-    ]);
+    const errors = validate(moved, registry, ROOT).map((e) => e.code);
+    expect(errors).toEqual(['validate.contains-cross-module']);
   });
 });
 
@@ -898,8 +884,8 @@ describe('relationWarnings', () => {
     });
     const { ir } = buildIR(registry, opts);
     expect(relationWarnings(ir, registry)).toEqual([
-      'entity:Filha: entidade contida estende AggregateRoot',
-      'entity:Raiz: raiz de agregado não estende AggregateRoot',
+      'entity:Filha: contained entity extends AggregateRoot',
+      'entity:Raiz: aggregate root does not extend AggregateRoot',
     ]);
   });
 });
@@ -919,14 +905,14 @@ describe('validate: ports', () => {
       expect.arrayContaining([expect.stringMatching(HERE)]),
     );
     const text = errors.join('\n');
+    expect(text).toContain('validate.name-pascal-case port:repo_ruim');
     expect(text).toContain(
-      'port:repo_ruim: o nome da classe deve ser PascalCase',
+      'validate.required-empty port:repo_ruim: description',
     );
-    expect(text).toContain('port:repo_ruim: description é obrigatório');
-    expect(text).toContain('port:repo_ruim.a: description é obrigatório');
     expect(text).toContain(
-      'port:repo_ruim: root cita entity:Filha, que não é raiz de agregado',
+      'validate.required-empty port:repo_ruim.a: description',
     );
+    expect(text).toContain('validate.port-root-not-aggregate port:repo_ruim');
   });
 
   test('ID duplicado entre dois ports de mesmo nome', () => {
@@ -937,7 +923,9 @@ describe('validate: ports', () => {
       abstract class Repo {}
       void Repo;
     });
-    expect(errors.filter((e) => e.includes('ID duplicado'))).toEqual([]);
+    expect(errors.filter((e) => e.includes('validate.duplicate-id'))).toEqual(
+      [],
+    );
     const dup = errorsOf(() => {
       @AgentEntity({ description: 'Conta.' })
       class Conta extends AggregateRoot<string> {}
@@ -950,7 +938,11 @@ describe('validate: ports', () => {
         void Repo;
       }
     });
-    expect(dup.some((e) => e.includes('ID duplicado port:Repo'))).toBe(true);
+    expect(
+      dup.some((e) =>
+        e.includes('validate.duplicate-id duplicate ID port:Repo'),
+      ),
+    ).toBe(true);
   });
 
   test('port fora dos módulos usa a regra do moduleOf', () => {
@@ -966,16 +958,16 @@ describe('validate: ports', () => {
       root: ROOT,
       modules: [{ name: 'x', path: 'src/outro' }],
     });
-    expect(
-      errors.filter((e) => e.message.includes('fora dos módulos')).length,
-    ).toBe(2);
+    expect(errors.filter((e) => e.code === 'ir.outside-modules').length).toBe(
+      2,
+    );
   });
 });
 
 describe('validate: métodos abstratos do port (árvore sintática)', () => {
   const check = (registry: ReturnType<typeof createRegistry>) =>
     analyze(registry, { root: ROOT, modules: [PORTS_MODULE] }).errors.map(
-      (e) => e.message,
+      (e) => e.code,
     );
 
   test('port correto não gera erro (método concreto auxiliar não conta)', () => {
@@ -984,8 +976,8 @@ describe('validate: métodos abstratos do port (árvore sintática)', () => {
 
   test('método abstrato faltando e sobrando em methods', () => {
     expect(check(definePortDivergente())).toEqual([
-      'port:Faltando: métodos abstratos sem declaração em methods: buscar',
-      'port:Sobrando: methods declara métodos que a classe não tem abstratos: apagar',
+      'validate.port-methods-undeclared',
+      'validate.port-methods-extra',
     ]);
   });
 
@@ -994,14 +986,14 @@ describe('validate: métodos abstratos do port (árvore sintática)', () => {
   });
 
   test('classes homônimas são conferidas cada uma contra a sua', () => {
-    // o ID duplicado é esperado (mesmo nome); o que importa é cada AST ser conferida contra a classe certa
+    // the duplicate ID is expected (same name); what matters is that each AST is checked against the right class
     expect(
       check(definePortsHomonimos()).filter(
-        (m) => !m.startsWith('ID duplicado'),
+        (m) => m !== 'validate.duplicate-id',
       ),
     ).toEqual([
-      'port:Repo: methods declara métodos que a classe não tem abstratos: listar',
-      'port:Repo: métodos abstratos sem declaração em methods: buscar',
+      'validate.port-methods-undeclared',
+      'validate.port-methods-extra',
     ]);
   });
 
@@ -1014,9 +1006,7 @@ describe('validate: métodos abstratos do port (árvore sintática)', () => {
   });
 
   test('classe sem abstract é erro', () => {
-    expect(check(definePortConcreto())).toEqual([
-      'port:Concreto: a classe precisa ser abstract',
-    ]);
+    expect(check(definePortConcreto())).toEqual(['validate.port-not-abstract']);
   });
 
   test('classe não encontrada no arquivo do source é erro com source', () => {
@@ -1026,9 +1016,7 @@ describe('validate: métodos abstratos do port (árvore sintática)', () => {
       root: ROOT,
       modules: [PORTS_MODULE],
     });
-    expect(errors.map((e) => e.message)).toEqual([
-      'port:ContaRepository: classe não encontrada no arquivo de origem para conferir os métodos abstratos',
-    ]);
+    expect(errors.map((e) => e.code)).toEqual(['validate.port-class-missing']);
     expect(errors[0]!.source).toBe('src/compiler/__fixtures__/ports.ts:1');
   });
 
@@ -1043,9 +1031,8 @@ describe('validate: métodos abstratos do port (árvore sintática)', () => {
       modules: [PORTS_MODULE],
     });
     expect(errors).toHaveLength(1);
-    expect(errors[0]!.message).toContain(
-      'port:ContaRepository: não foi possível ler o arquivo de origem',
-    );
+    expect(errors[0]!.code).toBe('validate.port-source-unreadable');
+    expect(errors[0]!.message).toContain('port:ContaRepository');
     expect(errors[0]!.source).toStartWith(
       'src/compiler/__fixtures__/inexistente.ts:',
     );
@@ -1086,14 +1073,12 @@ describe('validate: adapters', () => {
       void mem_repo;
     }).join('\n');
     expect(text).toMatch(HERE);
+    expect(text).toContain('validate.name-pascal-case adapter:mem_repo');
     expect(text).toContain(
-      'adapter:mem_repo: o nome da classe deve ser PascalCase',
+      'validate.required-empty adapter:mem_repo: description',
     );
-    expect(text).toContain('adapter:mem_repo: description é obrigatório');
-    expect(text).toContain('adapter:mem_repo: não estende port:Repo');
-    expect(text).toContain(
-      'adapter:mem_repo: port:Repo não declara métodos; adapter ficaria sem obrigações',
-    );
+    expect(text).toContain('validate.adapter-not-extending adapter:mem_repo');
+    expect(text).toContain('validate.adapter-port-empty adapter:mem_repo');
   });
 
   test('segundo adapter para o mesmo port', () => {
@@ -1118,9 +1103,7 @@ describe('validate: adapters', () => {
       }
       void [AdapterA, AdapterB];
     }).join('\n');
-    expect(text).toContain(
-      'adapter:AdapterB: o port port:Repo já tem o adapter adapter:AdapterA',
-    );
+    expect(text).toContain('validate.adapter-duplicate adapter:AdapterB');
   });
 
   test('ID duplicado entre dois adapters de mesmo nome', () => {
@@ -1148,7 +1131,7 @@ describe('validate: adapters', () => {
         void Mem;
       }
     }).join('\n');
-    expect(text).toContain('ID duplicado adapter:Mem');
+    expect(text).toContain('validate.duplicate-id duplicate ID adapter:Mem');
   });
 
   test('adapter fora dos módulos usa a regra do moduleOf', () => {
@@ -1174,8 +1157,8 @@ describe('validate: adapters', () => {
       root: ROOT,
       modules: [{ name: 'x', path: 'src/outro' }],
     });
-    expect(
-      errors.filter((e) => e.message.includes('fora dos módulos')).length,
-    ).toBe(3);
+    expect(errors.filter((e) => e.code === 'ir.outside-modules').length).toBe(
+      3,
+    );
   });
 });

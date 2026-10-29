@@ -17,7 +17,7 @@ async function query(
   }
   const change = parsed.values.get('--change');
   if (change !== undefined && !/^\d{4}$/.test(change)) {
-    console.error('--change exige NNNN');
+    console.error('--change requires NNNN [state.change-format]');
     return 2;
   }
   const options = {
@@ -35,11 +35,11 @@ async function query(
       console.log(
         `${item.id}: ${item.state === 'blocked' ? `blocked(${item.baseState})` : item.state}`,
       );
-      console.log(`  obrigações: ${item.obligations.join(', ') || '—'}`);
+      console.log(`  obligations: ${item.obligations.join(', ') || '—'}`);
       if (item.blockedBy.length)
-        console.log(`  bloqueado por: ${item.blockedBy.join(', ')}`);
+        console.log(`  blocked by: ${item.blockedBy.join(', ')}`);
       if (item.missingObligations.length)
-        console.log(`  sem teste: ${item.missingObligations.join(', ')}`);
+        console.log(`  untested: ${item.missingObligations.join(', ')}`);
       for (const t of item.unsuccessfulTests)
         console.log(`  ${t.status}: ${t.name} (${t.file}:${t.line})`);
     }

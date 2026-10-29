@@ -24,16 +24,16 @@ export function parseArgs(
     } else if (spec.values.includes(arg)) {
       const value = args[++i];
       if (value === undefined || value.startsWith('--'))
-        return `${arg} exige um valor`;
+        return `${arg} requires a value [cli.option-value-required]`;
       values.set(arg, value);
     } else if (arg.startsWith('--')) {
-      return `opção desconhecida: ${arg}`;
+      return `unknown option: ${arg} [cli.option-unknown]`;
     } else {
       positionals.push(arg);
     }
   }
   if (positionals.length !== spec.positionals) {
-    return `esperado ${spec.positionals} argumento(s), recebido ${positionals.length}`;
+    return `expected ${spec.positionals} argument(s), received ${positionals.length} [cli.argument-count]`;
   }
   return { flags, values, positionals };
 }

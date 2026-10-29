@@ -51,7 +51,7 @@ test('brief é determinístico e traz núcleo do papel, arquivos e packet integr
   // Linhas voláteis (estado de testes e linha do source) não entram no snapshot.
   expect(
     brief
-      .replace(/^- Estado:.*$/m, '- Estado: <volátil>')
+      .replace(/^- State:.*$/m, '- State: <volátil>')
       .replace(/(source: `[^`]*?):\d+`/, '$1:N`'),
   ).toMatchSnapshot();
 });
@@ -372,7 +372,7 @@ test('brief de item de classe troca o escopo de corpo; method: fica igual', () =
 test('brief de adapter usa o papel de infraestrutura com escopo de classe', () => {
   const text = packet('entity:Order')
     .replaceAll('entity:Order', 'adapter:Repo')
-    .replace('Camada: domain', 'Camada: infrastructure');
+    .replace('Layer: domain', 'Layer: infrastructure');
   const brief = renderBrief({ packet: text });
   expect(brief.startsWith(ROLE_CORES.infrastructure)).toBe(true);
   expect(brief).toContain('only the class of `adapter:Repo`');
