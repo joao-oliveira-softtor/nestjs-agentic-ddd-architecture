@@ -38,9 +38,9 @@ describe('CORE_RULES', () => {
       runtimeSkills: 'r',
       layers,
     });
-    expect(text).toContain('`<caminho do módulo>/model` (entidades');
-    expect(text).toContain('`<caminho do módulo>/app` (use-cases');
-    expect(text).toContain('`<caminho do módulo>/ops` (operators');
+    expect(text).toContain('`<module path>/model` (entities');
+    expect(text).toContain('`<module path>/app` (use-cases');
+    expect(text).toContain('`<module path>/ops` (operators');
     expect(text).not.toContain('{{');
   });
 
@@ -53,16 +53,16 @@ describe('CORE_RULES', () => {
       runtimeSkills: 'out/runtime',
     };
     expect(CORE_RULES.map((r) => fillMarkers(r.body, values))).toEqual([
-      '- Entidades, métodos, eventos, use-cases e operators são declarados com `@AgentEntity`, `@AgentMethod`, `@AgentEvent`, `@AgentUseCase` e `@Operator` de `@agentic-ddd/decorators`; cada regra de negócio é um `@Invariant({ id, text })` com ID estável.',
-      '- Onde criar: `<caminho do módulo>/domain` (entidades, eventos, ports), `<caminho do módulo>/application` (use-cases, sempre com `uses`), `<caminho do módulo>/operators` (operators). A skill de dev do módulo tem os caminhos exatos.',
-      '- Todo método público de entidade tem `@AgentMethod`; métodos auxiliares usam `#privado`.',
-      '- Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.',
-      '- Coordenação: consulte `bun run agentic status` ou `next` (ondas); execute cada item a partir de `bun run agentic packet <item>` e valide com `bun run agentic verify --item <item> --spec-hash <hash>`. `status --static` lê declarações de teste sem executá-las e nunca certifica `done`.',
-      '- O sinal de esqueleto reconhece só a chamada literal `notImplemented()`; corpo vazio conta como implementado. Estado é calculado sob demanda e não entra nos arquivos gerados.',
-      '- Testes declaram o que cobrem com `covers([...ids], título)` de `@agentic-ddd/testing`.',
-      '- Mudança de regra de negócio: escreva antes a proposta em `docs/changes/NNNN-<slug>/proposal.md` (delta, critérios de aceite e `## Motivo`), implemente e rode `bun run agentic compile`; para mudança já feita no código, `bun run agentic compile --draft-change <slug>` gera o rascunho.',
-      '- Uma tarefa só está concluída quando `bun run agentic verify <NNNN>` retorna `done` ou `needs-human`.',
-      '- Gerados (não edite): `out/skills`, `out/runtime`, os espelhos de skills e este bloco. Altere o código decorado e rode `bun run agentic compile`; o CI roda `bun run agentic compile --check`.',
+      '- Entities, methods, events, use-cases and operators are declared with `@AgentEntity`, `@AgentMethod`, `@AgentEvent`, `@AgentUseCase` and `@Operator` from `@agentic-ddd/decorators`; each business rule is an `@Invariant({ id, text })` with a stable ID.',
+      "- Where to create: `<module path>/domain` (entities, events, ports), `<module path>/application` (use-cases, always with `uses`), `<module path>/operators` (operators). The module's dev skill has the exact paths.",
+      '- Every public entity method has `@AgentMethod`; helper methods use `#private`.',
+      '- A declared body that is not implemented yet uses `notImplemented()` from `@agentic-ddd/core`.',
+      '- Coordination: check `bun run agentic status` or `next` (waves); run each item from `bun run agentic packet <item>` and validate it with `bun run agentic verify --item <item> --spec-hash <hash>`. `status --static` reads test declarations without running them and never certifies `done`.',
+      '- The skeleton signal only recognizes the literal `notImplemented()` call; an empty body counts as implemented. State is computed on demand and is not written into generated files.',
+      '- Tests declare what they cover with `covers([...ids], title)` from `@agentic-ddd/testing`.',
+      '- Business rule change: first write the proposal in `docs/changes/NNNN-<slug>/proposal.md` (delta, acceptance criteria and a `## Motivo` section), implement it and run `bun run agentic compile`; for a change already made in the code, `bun run agentic compile --draft-change <slug>` generates the draft.',
+      '- A task is only complete when `bun run agentic verify <NNNN>` returns `done` or `needs-human`.',
+      '- Generated (do not edit): `out/skills`, `out/runtime`, the skill mirrors and this block. Change the decorated code and run `bun run agentic compile`; CI runs `bun run agentic compile --check`.',
     ]);
     expect(CORE_RULES.map((r) => r.key)).toEqual([
       'core/decorators',

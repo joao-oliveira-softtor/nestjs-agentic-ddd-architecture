@@ -94,9 +94,9 @@ export class OperatorRuntime {
         name: declared.name,
         description: [
           declared.description,
-          `Quando usar: ${declared.whenToUse}`,
+          `When to use: ${declared.whenToUse}`,
           ...(declared.whenNotToUse
-            ? [`Quando não usar: ${declared.whenNotToUse}`]
+            ? [`When not to use: ${declared.whenNotToUse}`]
             : []),
         ].join('\n'),
         inputSchema: schema.inputSchema,

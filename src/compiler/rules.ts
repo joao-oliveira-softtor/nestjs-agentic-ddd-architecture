@@ -33,43 +33,43 @@ const core = (key: string, body: string): Rule => ({
 export const CORE_RULES: readonly Rule[] = [
   core(
     'decorators',
-    '- Entidades, métodos, eventos, use-cases e operators são declarados com `@AgentEntity`, `@AgentMethod`, `@AgentEvent`, `@AgentUseCase` e `@Operator` de `@agentic-ddd/decorators`; cada regra de negócio é um `@Invariant({ id, text })` com ID estável.',
+    '- Entities, methods, events, use-cases and operators are declared with `@AgentEntity`, `@AgentMethod`, `@AgentEvent`, `@AgentUseCase` and `@Operator` from `@agentic-ddd/decorators`; each business rule is an `@Invariant({ id, text })` with a stable ID.',
   ),
   core(
     'layers',
-    '- Onde criar: `<caminho do módulo>/{{layer.domain}}` (entidades, eventos, ports), `<caminho do módulo>/{{layer.application}}` (use-cases, sempre com `uses`), `<caminho do módulo>/{{layer.operators}}` (operators). A skill de dev do módulo tem os caminhos exatos.',
+    "- Where to create: `<module path>/{{layer.domain}}` (entities, events, ports), `<module path>/{{layer.application}}` (use-cases, always with `uses`), `<module path>/{{layer.operators}}` (operators). The module's dev skill has the exact paths.",
   ),
   core(
     'private-methods',
-    '- Todo método público de entidade tem `@AgentMethod`; métodos auxiliares usam `#privado`.',
+    '- Every public entity method has `@AgentMethod`; helper methods use `#private`.',
   ),
   core(
     'not-implemented',
-    '- Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.',
+    '- A declared body that is not implemented yet uses `notImplemented()` from `@agentic-ddd/core`.',
   ),
   core(
     'coordination',
-    '- Coordenação: consulte `bun run agentic status` ou `next` (ondas); execute cada item a partir de `bun run agentic packet <item>` e valide com `bun run agentic verify --item <item> --spec-hash <hash>`. `status --static` lê declarações de teste sem executá-las e nunca certifica `done`.',
+    '- Coordination: check `bun run agentic status` or `next` (waves); run each item from `bun run agentic packet <item>` and validate it with `bun run agentic verify --item <item> --spec-hash <hash>`. `status --static` reads test declarations without running them and never certifies `done`.',
   ),
   core(
     'skeleton',
-    '- O sinal de esqueleto reconhece só a chamada literal `notImplemented()`; corpo vazio conta como implementado. Estado é calculado sob demanda e não entra nos arquivos gerados.',
+    '- The skeleton signal only recognizes the literal `notImplemented()` call; an empty body counts as implemented. State is computed on demand and is not written into generated files.',
   ),
   core(
     'tests-covers',
-    '- Testes declaram o que cobrem com `covers([...ids], título)` de `@agentic-ddd/testing`.',
+    '- Tests declare what they cover with `covers([...ids], title)` from `@agentic-ddd/testing`.',
   ),
   core(
     'changes',
-    '- Mudança de regra de negócio: escreva antes a proposta em `{{changes}}/NNNN-<slug>/proposal.md` (delta, critérios de aceite e `## Motivo`), implemente e rode `bun run agentic compile`; para mudança já feita no código, `bun run agentic compile --draft-change <slug>` gera o rascunho.',
+    '- Business rule change: first write the proposal in `{{changes}}/NNNN-<slug>/proposal.md` (delta, acceptance criteria and a `## Motivo` section), implement it and run `bun run agentic compile`; for a change already made in the code, `bun run agentic compile --draft-change <slug>` generates the draft.',
   ),
   core(
     'done',
-    '- Uma tarefa só está concluída quando `bun run agentic verify <NNNN>` retorna `done` ou `needs-human`.',
+    '- A task is only complete when `bun run agentic verify <NNNN>` returns `done` or `needs-human`.',
   ),
   core(
     'generated',
-    '- Gerados (não edite): `{{devSkills}}`, `{{runtimeSkills}}`, os espelhos de skills e este bloco. Altere o código decorado e rode `bun run agentic compile`; o CI roda `bun run agentic compile --check`.',
+    '- Generated (do not edit): `{{devSkills}}`, `{{runtimeSkills}}`, the skill mirrors and this block. Change the decorated code and run `bun run agentic compile`; CI runs `bun run agentic compile --check`.',
   ),
 ];
 

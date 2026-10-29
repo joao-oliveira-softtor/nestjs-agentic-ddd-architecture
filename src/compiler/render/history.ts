@@ -5,7 +5,8 @@ import type { LockChange } from '../lock';
 import { GENERATED_HEADER } from './frontmatter';
 import { code, table } from './markdown';
 
-const HEADERS = ['Change', 'Título', 'Mudanças', 'Motivo'];
+// "Motivo" matches the `## Motivo` section the proposal parser requires.
+const HEADERS = ['Change', 'Title', 'Changes', 'Motivo'];
 
 function entityOf(id: string): string | null {
   // dono snake_case = use-case (validate.ts garante PascalCase em entidade), vale também para item já removido
@@ -26,7 +27,7 @@ export function renderHistory(
   const lines = [
     GENERATED_HEADER(module.path),
     '',
-    `# Histórico do módulo ${code(module.name)}`,
+    `# Module ${code(module.name)} history`,
     '',
   ];
   const relevant = changes
@@ -36,7 +37,7 @@ export function renderHistory(
     }))
     .filter((entry) => entry.items.length > 0);
   if (relevant.length === 0) {
-    lines.push('_Nenhuma mudança registrada._', '');
+    lines.push('_No changes recorded._', '');
     return lines.join('\n');
   }
   const link = (change: LockChange): string =>
@@ -76,14 +77,14 @@ export function renderHistory(
     lines.push(
       `## ${name}`,
       '',
-      rows.length > 0 ? table(HEADERS, rows) : '_Nenhuma mudança registrada._',
+      rows.length > 0 ? table(HEADERS, rows) : '_No changes recorded._',
       '',
     );
   }
   const others = rowsFor((item) => entityOf(item.id) === null);
   if (others.length > 0)
     lines.push(
-      '## Eventos, use-cases e operators',
+      '## Events, use-cases and operators',
       '',
       table(HEADERS, others),
       '',

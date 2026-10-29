@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **Breaking change (#109, ADR-0007 D13):** the text `compile` generates is now English only, with no language option: the dev skills (`<module>-dev`), the operators' runtime skills, the `history.md` and `state-machine.md` references, the `AGENTS.md` block and the generated-file header. The operator runtime's tool descriptions also switch to `When to use:` / `When not to use:`. The core rules (`core/...`) were translated too, but their keys and `{{…}}` markers did not change, so a team rule that overrides one still applies. The proposal section keeps its name, `## Motivo`, and so does the matching history column. Business text (descriptions, invariant `text`, `instructions` and proposals) stays in the author's language. Running `bun run agentic compile` regenerates everything; until then, `compile --check` reports the old generated files. Packets and CLI messages follow in #111.
+
 - **Windows nativo (#128):** o framework passa a funcionar no Windows sem WSL, e o CI ganha o job `ci-windows`, com o mesmo gate do `ci` em `windows-latest`.
   - O `compile` falhava em qualquer projeto: `parseFrame` só reconhecia caminhos POSIX, e todo decorator ficava com origem `<desconhecido>`. Agora ele aceita letra de unidade, UNC e `file:///C:/`.
   - O `compile --check` acusava o espelho de skill desatualizado, porque o `readlink` devolve `\`.
@@ -119,8 +121,6 @@ Primeira release de código-fonte do `@agentic-ddd`, publicando os quatro planos
 Veja [demonstração e validação](docs/releases/0.1.0.md) e [roadmap](docs/ROADMAP.md).
 
 [0.1.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.1.0
-
 [0.3.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.3.0
-
 [0.4.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.4.0
 [0.5.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.5.0

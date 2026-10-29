@@ -344,7 +344,7 @@ export default defineConfig({
     expect((await run('write')).ok).toBe(true);
     const agents = await readFile(join(out, 'AGENTS.md'), 'utf8');
     expect(agents).toContain('- Regra X.');
-    expect(agents).toContain('### Regras por caminho');
+    expect(agents).toContain('### Rules by path');
     expect((await run('check')).ok).toBe(true);
     await writeFile(
       join(rulesDir, 'y.md'),
