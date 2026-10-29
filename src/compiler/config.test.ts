@@ -28,22 +28,29 @@ async function configFor(path: string): Promise<string> {
   return file;
 }
 
-async function failure(file: string): Promise<string> {
+async function failureCode(file: string): Promise<string> {
   try {
     await loadConfig(file);
     return '';
   } catch (error) {
-    return (error as Error).message;
+    return (error as { code?: string }).code ?? '';
+  }
+}
+
+function codeOf(run: () => unknown): string {
+  try {
+    run();
+    return '';
+  } catch (error) {
+    return (error as { code?: string }).code ?? '';
   }
 }
 
 describe('validação do caminho dos módulos', () => {
   test('resolveConfig rejeita "." (raiz do projeto)', () => {
-    expect(() =>
-      resolveConfig({ modules: [{ name: 'x', path: '.' }] }, dir),
-    ).toThrow(
-      'agentic.config.ts: o módulo "x" não pode apontar para a raiz do projeto',
-    );
+    expect(
+      codeOf(() => resolveConfig({ modules: [{ name: 'x', path: '.' }] }, dir)),
+    ).toBe('config.module-root');
   });
 
   test('resolveConfig normaliza o caminho relativo à raiz', () => {
@@ -56,61 +63,59 @@ describe('validação do caminho dos módulos', () => {
   });
 
   test('resolveConfig rejeita caminho fora da raiz', () => {
-    expect(() =>
-      resolveConfig({ modules: [{ name: 'x', path: '../fora' }] }, dir),
-    ).toThrow(
-      'agentic.config.ts: o módulo "x" não pode apontar para fora da raiz do projeto',
-    );
+    expect(
+      codeOf(() =>
+        resolveConfig({ modules: [{ name: 'x', path: '../fora' }] }, dir),
+      ),
+    ).toBe('config.module-outside');
   });
 
   test('loadConfig rejeita caminho inexistente', async () => {
     const file = await configFor('nao-existe');
-    expect(await failure(file)).toContain(
-      'agentic.config.ts: o caminho "nao-existe" do módulo "x" não existe ou não é um diretório',
-    );
+    expect(await failureCode(file)).toBe('config.module-path-missing');
   });
 
   test('loadConfig rejeita caminho que é arquivo', async () => {
     await writeFile(join(dir, 'arquivo.ts'), '');
     const file = await configFor('arquivo.ts');
-    expect(await failure(file)).toContain('não existe ou não é um diretório');
+    expect(await failureCode(file)).toBe('config.module-path-missing');
   });
 
   test('loadConfig rejeita "."', async () => {
     const file = await configFor('.');
-    expect(await failure(file)).toContain(
-      'o módulo "x" não pode apontar para a raiz do projeto',
-    );
+    expect(await failureCode(file)).toBe('config.module-root');
   });
 
   test('resolveConfig rejeita módulos com o mesmo nome', () => {
-    expect(() =>
-      resolveConfig(
-        {
-          modules: [
-            { name: 'x', path: 'src/a' },
-            { name: 'x', path: 'src/b' },
-          ],
-        },
-        dir,
+    expect(
+      codeOf(() =>
+        resolveConfig(
+          {
+            modules: [
+              { name: 'x', path: 'src/a' },
+              { name: 'x', path: 'src/b' },
+            ],
+          },
+          dir,
+        ),
       ),
-    ).toThrow('agentic.config.ts: o nome do módulo "x" está repetido');
+    ).toBe('config.module-duplicate');
   });
 
   test('resolveConfig rejeita módulos com o mesmo caminho', () => {
-    expect(() =>
-      resolveConfig(
-        {
-          modules: [
-            { name: 'a', path: 'src/x' },
-            { name: 'b', path: './src/x/' },
-          ],
-        },
-        dir,
+    expect(
+      codeOf(() =>
+        resolveConfig(
+          {
+            modules: [
+              { name: 'a', path: 'src/x' },
+              { name: 'b', path: './src/x/' },
+            ],
+          },
+          dir,
+        ),
       ),
-    ).toThrow(
-      'agentic.config.ts: os módulos "a" e "b" apontam para o mesmo caminho "src/x"',
-    );
+    ).toBe('config.module-path-duplicate');
   });
 
   test('loadConfig aceita diretório existente dentro da raiz', async () => {
@@ -159,22 +164,26 @@ describe('configuração das regras do time', () => {
   });
 
   test('resolveConfig rejeita rules.dir fora da raiz', () => {
-    expect(() =>
-      resolveConfig({ ...base, rules: { dir: '../fora' } }, dir),
-    ).toThrow('agentic.config.ts: rules.dir não pode apontar');
+    expect(
+      codeOf(() => resolveConfig({ ...base, rules: { dir: '../fora' } }, dir)),
+    ).toBe('config.rules-dir-outside');
   });
 
   test('resolveConfig rejeita rules.dir absoluto', () => {
-    expect(() =>
-      resolveConfig({ ...base, rules: { dir: '/etc/regras' } }, dir),
-    ).toThrow('agentic.config.ts: rules.dir deve ser relativo');
+    expect(
+      codeOf(() =>
+        resolveConfig({ ...base, rules: { dir: '/etc/regras' } }, dir),
+      ),
+    ).toBe('config.rules-dir-absolute');
   });
 
   test('resolveConfig rejeita briefMaxTokens que não é inteiro positivo', () => {
     for (const briefMaxTokens of [0, -1, 1.5, Number.NaN])
-      expect(() =>
-        resolveConfig({ ...base, rules: { briefMaxTokens } }, dir),
-      ).toThrow('agentic.config.ts: rules.briefMaxTokens deve ser um inteiro');
+      expect(
+        codeOf(() =>
+          resolveConfig({ ...base, rules: { briefMaxTokens } }, dir),
+        ),
+      ).toBe('config.brief-tokens-invalid');
   });
 });
 
@@ -234,23 +243,23 @@ describe('configuração das convenções', () => {
 
   test('rejeita nome de pasta de camada que não é uma pasta só', () => {
     for (const value of ['core/domain', 'core\\domain', '', '.', '..']) {
-      expect(() => withConventions({ layers: { domain: value } })).toThrow(
-        `agentic.config.ts: conventions.layers.domain "${value}" deve ser o nome de uma pasta só dentro do módulo; layout aninhado se faz por modules[].path`,
+      expect(codeOf(() => withConventions({ layers: { domain: value } }))).toBe(
+        'config.folder-invalid',
       );
     }
   });
 
   test('rejeita nome de pasta em infrastructure que não é uma pasta só', () => {
-    expect(() => withConventions({ infrastructure: ['a/b'] })).toThrow(
-      'agentic.config.ts: conventions.infrastructure[0] "a/b" deve ser o nome de uma pasta só dentro do módulo',
+    expect(codeOf(() => withConventions({ infrastructure: ['a/b'] }))).toBe(
+      'config.folder-invalid',
     );
   });
 
   test('rejeita sufixo de teste, declaração ou com segmento vazio', () => {
     for (const value of ['.x.test.ts', '.x.d.ts', '..ts'])
-      expect(() => withConventions({ suffixes: { events: value } })).toThrow(
-        `conventions.suffixes.events "${value}" não pode terminar em`,
-      );
+      expect(
+        codeOf(() => withConventions({ suffixes: { events: value } })),
+      ).toBe('config.suffix-test-file');
   });
 
   test('rejeita sufixo fora do formato ".nome.ts"', () => {
@@ -262,97 +271,75 @@ describe('configuração das convenções', () => {
       'x/.events.ts',
       '.a\\b.ts',
     ]) {
-      expect(() => withConventions({ suffixes: { events: value } })).toThrow(
-        `agentic.config.ts: conventions.suffixes.events "${value}" deve começar com "." e terminar em ".ts"`,
-      );
+      expect(
+        codeOf(() => withConventions({ suffixes: { events: value } })),
+      ).toBe('config.suffix-format');
     }
   });
 
   test('rejeita sufixo de eventos igual ao de operator', () => {
-    expect(() =>
-      withConventions({ suffixes: { operator: '.events.ts' } }),
-    ).toThrow(
-      'agentic.config.ts: conventions.suffixes.events e conventions.suffixes.operator não podem ser iguais',
-    );
+    expect(
+      codeOf(() => withConventions({ suffixes: { operator: '.events.ts' } })),
+    ).toBe('config.suffix-duplicate');
   });
 
   test('rejeita infrastructure vazio', () => {
-    expect(() => withConventions({ infrastructure: [] })).toThrow(
-      'agentic.config.ts: conventions.infrastructure não pode ser vazio',
+    expect(codeOf(() => withConventions({ infrastructure: [] }))).toBe(
+      'config.infrastructure-empty',
     );
   });
 
   test('rejeita nome de pasta repetido entre camadas e infrastructure', () => {
-    expect(() => withConventions({ layers: { application: 'infra' } })).toThrow(
-      'agentic.config.ts: a pasta "infra" aparece mais de uma vez (conventions.layers.application e conventions.infrastructure[1])',
-    );
-    expect(() => withConventions({ infrastructure: ['x', 'x'] })).toThrow(
-      'a pasta "x" aparece mais de uma vez',
+    expect(
+      codeOf(() => withConventions({ layers: { application: 'infra' } })),
+    ).toBe('config.folder-duplicate');
+    expect(codeOf(() => withConventions({ infrastructure: ['x', 'x'] }))).toBe(
+      'config.folder-duplicate',
     );
   });
 
-  test('rejeita tipo errado com mensagem indicando o campo', () => {
+  test('rejeita tipo errado com código indicando o tipo', () => {
     const cases: [unknown, string][] = [
-      ['x', 'conventions deve ser um objeto'],
-      [{ layers: 'x' }, 'conventions.layers deve ser um objeto'],
-      [
-        { layers: { domain: 1 } },
-        'conventions.layers.domain deve ser um texto',
-      ],
-      [{ suffixes: 'x' }, 'conventions.suffixes deve ser um objeto'],
-      [
-        { suffixes: { events: 1 } },
-        'conventions.suffixes.events deve ser um texto',
-      ],
-      [
-        { infrastructure: 'infra' },
-        'conventions.infrastructure deve ser uma lista de textos',
-      ],
-      [
-        { infrastructure: [1] },
-        'conventions.infrastructure deve ser uma lista de textos',
-      ],
-      [
-        { forbiddenImports: 'x' },
-        'conventions.forbiddenImports deve ser um objeto',
-      ],
-      [
-        { forbiddenImports: { domain: 'application' } },
-        'conventions.forbiddenImports.domain deve ser uma lista de textos',
-      ],
+      ['x', 'config.not-object'],
+      [{ layers: 'x' }, 'config.not-object'],
+      [{ layers: { domain: 1 } }, 'config.not-text'],
+      [{ suffixes: 'x' }, 'config.not-object'],
+      [{ suffixes: { events: 1 } }, 'config.not-text'],
+      [{ infrastructure: 'infra' }, 'config.not-text-list'],
+      [{ infrastructure: [1] }, 'config.not-text-list'],
+      [{ forbiddenImports: 'x' }, 'config.not-object'],
+      [{ forbiddenImports: { domain: 'application' } }, 'config.not-text-list'],
     ];
-    for (const [conventions, message] of cases)
-      expect(() => withConventions(conventions)).toThrow(
-        `agentic.config.ts: ${message}`,
-      );
+    for (const [conventions, code] of cases)
+      expect(codeOf(() => withConventions(conventions))).toBe(code);
   });
 
-  test('rejeita chave desconhecida em qualquer nível listando as válidas', () => {
-    expect(() => withConventions({ layer: { domain: 'core' } })).toThrow(
-      'agentic.config.ts: conventions.layer não existe; as chaves válidas em conventions são: layers, suffixes, infrastructure, forbiddenImports',
+  test('rejeita chave desconhecida em qualquer nível com código de chave inexistente', () => {
+    expect(codeOf(() => withConventions({ layer: { domain: 'core' } }))).toBe(
+      'config.key-unknown',
     );
-    expect(() => withConventions({ layers: { core: 'x' } })).toThrow(
-      'agentic.config.ts: conventions.layers.core não existe; as chaves válidas em conventions.layers são: domain, application, operators',
+    expect(codeOf(() => withConventions({ layers: { core: 'x' } }))).toBe(
+      'config.key-unknown',
     );
-    expect(() => withConventions({ suffixes: { event: '.x.ts' } })).toThrow(
-      'agentic.config.ts: conventions.suffixes.event não existe; as chaves válidas em conventions.suffixes são: events, operator',
-    );
-    expect(() => withConventions({ forbiddenImports: { infra: [] } })).toThrow(
-      'agentic.config.ts: conventions.forbiddenImports.infra não existe',
-    );
+    expect(
+      codeOf(() => withConventions({ suffixes: { event: '.x.ts' } })),
+    ).toBe('config.key-unknown');
+    expect(
+      codeOf(() => withConventions({ forbiddenImports: { infra: [] } })),
+    ).toBe('config.key-unknown');
   });
 
-  test('rejeita forbiddenImports.operators dizendo que operators não tem regra de import', () => {
-    expect(() =>
-      withConventions({ forbiddenImports: { operators: [] } }),
-    ).toThrow('operators não tem regra de import');
+  test('rejeita forbiddenImports.operators com código de chave inválida', () => {
+    expect(
+      codeOf(() => withConventions({ forbiddenImports: { operators: [] } })),
+    ).toBe('config.key-invalid');
   });
 
   test('rejeita alvo de forbiddenImports fora de application, operators e infrastructure', () => {
-    expect(() =>
-      withConventions({ forbiddenImports: { domain: ['domain'] } }),
-    ).toThrow(
-      'agentic.config.ts: conventions.forbiddenImports.domain aceita só application, operators ou infrastructure (recebido "domain")',
-    );
+    expect(
+      codeOf(() =>
+        withConventions({ forbiddenImports: { domain: ['domain'] } }),
+      ),
+    ).toBe('config.import-target-invalid');
   });
 });

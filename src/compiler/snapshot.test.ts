@@ -166,6 +166,8 @@ describe('snapshot do MCP', () => {
       await mutate();
       const r = await checkSnapshot(dir);
       expect(r.ok).toBe(false);
-      if (!r.ok) expect(r.reason).toContain('agentic compile');
+      const missing = name === 'snapshot ausente';
+      if (!r.ok)
+        expect(r.code).toBe(missing ? 'snapshot.missing' : 'snapshot.stale');
     });
 });

@@ -1,5 +1,6 @@
 import { analyzeProject } from '../../compiler/compile';
 import { stableStringify } from '../../compiler/canonical';
+import { formatCoded } from '../../contracts/codes';
 import { parseArgs } from '../args';
 import { USAGE } from '../usage';
 
@@ -17,7 +18,7 @@ export async function irCommand(args: readonly string[]): Promise<number> {
     configPath: parsed.values.get('--config') ?? 'agentic.config.ts',
   });
   for (const error of errors)
-    console.error(`${error.source ?? '-'}: ${error.message}`);
+    console.error(`${error.source ?? '-'}: ${formatCoded(error)}`);
   if (errors.length > 0) return 1;
   process.stdout.write(stableStringify(ir));
   return 0;

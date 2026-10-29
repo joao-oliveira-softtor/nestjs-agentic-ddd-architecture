@@ -21,11 +21,11 @@ const hash = (id: string) =>
   Bun.CryptoHasher.hash('sha256', id, 'hex') as string;
 function packetOf(item: PlanItem): string {
   return [
-    '# Identificação',
+    '# Identification',
     '',
     `- ID: \`${item.id}\``,
-    `- Camada: ${item.layer}`,
-    '- Módulo: shop',
+    `- Layer: ${item.layer}`,
+    '- Module: shop',
     `- source: \`src/${item.id.replace(/\W+/g, '-')}.ts:3\``,
     `- specHash: \`${hash(item.id)}\``,
     '',

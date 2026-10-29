@@ -21,22 +21,22 @@ function run(...args: string[]) {
 }
 
 describe('agentic-ddd verify', () => {
-  test('uso incorreto sai com 2', () => {
+  test('wrong usage exits 2', () => {
     expect(run('verify').code).toBe(2);
   });
 
-  test('número inválido sai com 2; proposta inexistente sai com 1 e explica', () => {
+  test('invalid change number exits 2; missing proposal exits 1 and explains', () => {
     const invalid = run('verify', 'abc');
     expect(invalid.code).toBe(2);
     expect(invalid.stderr).toContain(
-      'verify: número de change inválido "abc" (esperado NNNN)',
+      'verify: invalid change number "abc" (expected NNNN) [state.change-format]',
     );
     const missing = run('verify', '9999');
     expect(missing.code).toBe(1);
-    expect(missing.stderr).toContain('verify: proposta 9999 não encontrada');
+    expect(missing.stderr).toContain('[verify.proposal-not-found]');
   });
 
-  test('domínio que não compila mostra a causa em vez de "não encontrada"', () => {
+  test('domain that does not compile shows the cause instead of "not found"', () => {
     const result = run(
       'verify',
       '0001',
@@ -44,12 +44,12 @@ describe('agentic-ddd verify', () => {
       'test/fixtures/broken/agentic.config.ts',
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('verify: o domínio não compila');
+    expect(result.stderr).toContain('[state.domain-invalid]');
     expect(result.stderr).toContain('domain/thing.ts:5:');
-    expect(result.stderr).not.toContain('não encontrada');
+    expect(result.stderr).not.toContain('[verify.proposal-not-found]');
   });
 
-  test('proposta inválida mostra a dica do compile em vez de "não encontrada"', () => {
+  test('invalid proposal shows the compile hint instead of "not found"', () => {
     const result = run(
       'verify',
       '0001',
@@ -57,15 +57,13 @@ describe('agentic-ddd verify', () => {
       'test/fixtures/invalid-proposal/agentic.config.ts',
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain(
-      'verify: há propostas inválidas em changes/',
-    );
-    expect(result.stderr).toContain('escreva o id entre aspas');
-    expect(result.stderr).not.toContain('não encontrada');
+    expect(result.stderr).toContain('[state.proposals-invalid]');
+    expect(result.stderr).toContain('quote the id: id:');
+    expect(result.stderr).not.toContain('[verify.proposal-not-found]');
   });
 
   test.skipIf(insideVerify)(
-    'verify 0001 do exemplo retorna done',
+    'verify 0001 of the example returns done',
     () => {
       const result = run('verify', '0001', ...ORDERS);
       const report = JSON.parse(result.stdout) as {
@@ -75,13 +73,13 @@ describe('agentic-ddd verify', () => {
       expect(report.gates.filter((g) => g.status !== 'passed')).toEqual([]);
       expect(report.status).toBe('done');
       expect(result.code).toBe(0);
-      expect(result.stderr).toContain('G4 Regras: passed');
+      expect(result.stderr).toContain('G4 Rules: passed');
     },
     300_000,
   );
 
   test.skipIf(insideVerify)(
-    'verify 0002 do exemplo retorna needs-human por causa do critério manual',
+    'verify 0002 of the example returns needs-human because of the manual criterion',
     () => {
       const result = run('verify', '0002', ...ORDERS);
       const report = JSON.parse(result.stdout) as {
@@ -97,7 +95,7 @@ describe('agentic-ddd verify', () => {
       expect(report.status).toBe('needs-human');
       const g6 = report.gates.find((g) => g.id === 'G6')!;
       expect(g6.findings.map((f) => f.message)).toEqual([
-        'critério manual pendente: criterion:0002/revisao-de-copy — a mensagem de erro do cancelamento sem motivo foi revisada pelo time de produto',
+        'manual criterion pending: criterion:0002/revisao-de-copy — a mensagem de erro do cancelamento sem motivo foi revisada pelo time de produto',
       ]);
       expect(
         report.gates.find((g) => g.id === 'G4')!.warnings.length,

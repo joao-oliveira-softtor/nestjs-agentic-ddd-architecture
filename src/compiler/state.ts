@@ -1,6 +1,6 @@
 import type { Proposal } from './changes/proposal';
 import { workItems, type WorkItem } from './graph';
-import type { IR } from './ir';
+import { AgenticError, type IR } from './ir';
 import { itemSpecification, specHash } from './item-spec';
 import type { TestCaseResult, TestRun } from './verify/test-run';
 
@@ -155,7 +155,8 @@ export function waves(report: ProjectStatus): NextReport {
       .filter((i) => i.dependsOn.every((id) => !pending.has(id)))
       .map((i) => i.id)
       .sort();
-    if (!wave.length) throw new Error('grafo de work items contém ciclo');
+    if (!wave.length)
+      throw new AgenticError('state.cycle', 'work item graph contains a cycle');
     result.push(wave);
     wave.forEach((id) => pending.delete(id));
   }

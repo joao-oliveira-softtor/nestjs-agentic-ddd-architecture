@@ -115,7 +115,7 @@ const statusOf = (report: ReturnType<typeof evaluateGates>) =>
   Object.fromEntries(report.gates.map((g) => [g.id, g.status]));
 
 describe('evaluateGates', () => {
-  test('tudo coberto e sem critério manual → done', () => {
+  test('everything covered and no manual criterion → done', () => {
     const report = evaluateGates(
       input({ proposal: automaticOnly, lock: lock(automaticOnly.raw) }),
     );
@@ -131,15 +131,15 @@ describe('evaluateGates', () => {
     });
   });
 
-  test('com critério manual → needs-human e G6 lista o critério', () => {
+  test('manual criterion → needs-human and G6 lists it', () => {
     const report = evaluateGates(input());
     expect(report.status).toBe('needs-human');
-    expect(report.gates.find((g) => g.id === 'G6')!.findings[0]!.message).toBe(
-      'critério manual pendente: criterion:0002/revisao-de-copy — mensagem revisada',
-    );
+    const finding = report.gates.find((g) => g.id === 'G6')!.findings[0]!;
+    expect(finding.code).toBe('verify.criterion-manual-pending');
+    expect(finding.message).toContain('criterion:0002/revisao-de-copy');
   });
 
-  test('critério sem teste → failed com instrução acionável', () => {
+  test('criterion without a test → failed with an actionable fix', () => {
     const report = evaluateGates(
       input({
         tests: {
@@ -156,14 +156,15 @@ describe('evaluateGates', () => {
     expect(g3.status).toBe('failed');
     expect(g3.findings).toEqual([
       {
-        message: 'critério criterion:0002/rejeita-sem-motivo sem teste',
-        fix: `crie um teste com covers(['criterion:0002/rejeita-sem-motivo'], "falha com CANCELLATION_REASON_REQUIRED")`,
+        code: 'verify.criterion-untested',
+        message: 'criterion criterion:0002/rejeita-sem-motivo has no test',
+        fix: `create a test with covers(['criterion:0002/rejeita-sem-motivo'], "falha com CANCELLATION_REASON_REQUIRED")`,
         source: PATH,
       },
     ]);
   });
 
-  test('teste do critério falhando aparece com arquivo:linha', () => {
+  test('failing criterion test shows up with file:line', () => {
     const cases = [
       testCase(
         [
@@ -179,12 +180,12 @@ describe('evaluateGates', () => {
       input({ tests: { exitCode: 1, cases } }),
     ).gates.find((g) => g.id === 'G3')!;
     expect(g3.findings[0]).toMatchObject({
-      message: expect.stringContaining('teste falhou: '),
+      code: 'verify.test-failed',
       source: 'examples/orders/test/order.test.ts:42',
     });
   });
 
-  test('G4: regra sem teste, regra modificada vira aviso e covers com ID desconhecido falha', () => {
+  test('G4: untested rule, modified rule becomes a warning and covers with an unknown ID fails', () => {
     const cases = [
       goodTests[0]!,
       testCase(['usecase:cancel_ordr'], 'passed', 7),
@@ -193,20 +194,23 @@ describe('evaluateGates', () => {
       input({ tests: { exitCode: 0, cases } }),
     ).gates.find((g) => g.id === 'G4')!;
     expect(g4.status).toBe('failed');
-    expect(g4.findings.map((f) => f.message)).toEqual([
-      'usecase:cancel_order não tem teste com covers',
-      'covers cita usecase:cancel_ordr, que não existe',
+    expect(g4.findings.map((f) => f.code)).toEqual([
+      'verify.rule-untested',
+      'verify.covers-unknown',
     ]);
+    expect(g4.findings[0]!.message).toContain('usecase:cancel_order');
+    expect(g4.findings[1]!.message).toContain('usecase:cancel_ordr');
     expect(g4.findings[1]!.source).toBe('examples/orders/test/order.test.ts:7');
 
     const ok = evaluateGates(input()).gates.find((g) => g.id === 'G4')!;
     expect(ok.status).toBe('passed');
-    expect(ok.warnings.map((w) => w.message)).toEqual([
-      'revisar: [covers: usecase:cancel_order] teste 20 cobre usecase:cancel_order, que foi modificado',
+    expect(ok.warnings.map((w) => w.code)).toEqual([
+      'verify.rule-modified-review',
     ]);
+    expect(ok.warnings[0]!.message).toContain('usecase:cancel_order');
   });
 
-  test('G4: value object novo no delta exige covers; covers de VO existente não sai como desconhecido', () => {
+  test('G4: new value object in the delta requires covers; covers of an existing VO is not unknown', () => {
     const delta = {
       added: ['valueobject:Dinheiro'],
       modified: [],
@@ -216,9 +220,8 @@ describe('evaluateGates', () => {
     const g4 = evaluateGates(input({ proposal })).gates.find(
       (g) => g.id === 'G4',
     )!;
-    expect(g4.findings.map((f) => f.message)).toEqual([
-      'valueobject:Dinheiro não tem teste com covers',
-    ]);
+    expect(g4.findings.map((f) => f.code)).toEqual(['verify.rule-untested']);
+    expect(g4.findings[0]!.message).toContain('valueobject:Dinheiro');
 
     const cases = [
       ...goodTests,
@@ -234,13 +237,11 @@ describe('evaluateGates', () => {
     expect(ok.status).toBe('passed');
   });
 
-  test('G1: proposta arquivada editada ou com mudança de domínio depois dela', () => {
+  test('G1: archived proposal edited or with a domain change after it', () => {
     const edited = evaluateGates(
       input({ lock: lock('outro conteúdo') }),
     ).gates.find((g) => g.id === 'G1')!;
-    expect(edited.findings[0]!.message).toBe(
-      'a proposta 0002 foi editada depois de aplicada',
-    );
+    expect(edited.findings[0]!.code).toBe('proposal.applied-edited');
     const later = evaluateGates(
       input({
         diff: [
@@ -253,12 +254,13 @@ describe('evaluateGates', () => {
         ],
       }),
     ).gates.find((g) => g.id === 'G1')!;
-    expect(later.findings[0]!.message).toBe(
-      'o código tem mudança de domínio depois da proposta: modified method:Order.confirm',
+    expect(later.findings[0]!.code).toBe(
+      'verify.domain-changed-after-proposal',
     );
+    expect(later.findings[0]!.message).toContain('method:Order.confirm');
   });
 
-  test('G1: proposta aberta compara delta e diff', () => {
+  test('G1: open proposal compares delta and diff', () => {
     const open = parseProposal(
       RAW.replace('status: applied', 'status: proposed'),
       '0002-cancelamento-exige-motivo',
@@ -268,17 +270,23 @@ describe('evaluateGates', () => {
     const g1 = evaluateGates(
       input({ proposal: open, lock: null, diff: [] }),
     ).gates.find((g) => g.id === 'G1')!;
-    expect(g1.findings.map((f) => f.message)).toEqual([
-      'ID no delta sem mudança correspondente no código: added invariant:Order/cancelamento-exige-motivo',
-      'ID no delta sem mudança correspondente no código: modified usecase:cancel_order',
+    expect(g1.findings.map((f) => f.code)).toEqual([
+      'proposal.delta-mismatch',
+      'proposal.delta-mismatch',
     ]);
+    expect(g1.findings[0]!.message).toContain(
+      'added invariant:Order/cancelamento-exige-motivo',
+    );
+    expect(g1.findings[1]!.message).toContain('modified usecase:cancel_order');
   });
 
-  test('G2 e G5: check sujo, comando e suíte falhando', () => {
+  test('G2 and G5: dirty check, failing command and failing suite', () => {
     const report = evaluateGates(
       input({
         checkOk: false,
-        checkProblems: ['desatualizado (changed): AGENTS.md'],
+        checkProblems: [
+          { code: 'write.outdated', message: 'outdated (changed): AGENTS.md' },
+        ],
         commands: [
           { name: 'lint', command: ['bun', 'run', 'lint'], exitCode: 1 },
         ],
@@ -287,16 +295,17 @@ describe('evaluateGates', () => {
     );
     expect(report.status).toBe('failed');
     expect(report.gates.find((g) => g.id === 'G2')!.findings[0]).toEqual({
-      message: 'desatualizado (changed): AGENTS.md',
-      fix: 'rode `bun run agentic compile` e commite os arquivos gerados',
+      code: 'write.outdated',
+      message: 'outdated (changed): AGENTS.md',
+      fix: 'run `bun run agentic compile` and commit the generated files',
       source: null,
     });
     expect(
-      report.gates.find((g) => g.id === 'G5')!.findings.map((f) => f.message),
-    ).toEqual(['lint saiu com 1', 'a suíte de testes saiu com 1']);
+      report.gates.find((g) => g.id === 'G5')!.findings.map((f) => f.code),
+    ).toEqual(['verify.command-failed', 'verify.suite-failed']);
   });
 
-  test('G4: findings de testes com covers desconhecido saem em ordem estável (arquivo, linha, nome)', () => {
+  test('G4: findings of tests with unknown covers come out in stable order (file, line, name)', () => {
     const cases = [
       {
         name: '[covers: unknown:b] test b',
@@ -323,14 +332,14 @@ describe('evaluateGates', () => {
     ]);
   });
 
-  test('relatório done tem forma estável (snapshot)', () => {
+  test('done report has a stable shape (snapshot)', () => {
     const report = evaluateGates(
       input({ proposal: automaticOnly, lock: lock(automaticOnly.raw) }),
     );
     expect(JSON.stringify(report, null, 2)).toMatchSnapshot();
   });
 
-  test('relatório failed tem forma estável (snapshot)', () => {
+  test('failed report has a stable shape (snapshot)', () => {
     const report = evaluateGates(
       input({
         tests: {
@@ -346,12 +355,13 @@ describe('evaluateGates', () => {
   });
 });
 
-test('G7 reprova um finding por proprietário de ADDED/MODIFIED, preserva needs-human quando done', () => {
+test('G7 fails one finding per ADDED/MODIFIED owner and keeps needs-human when done', () => {
   const pending = evaluateGates(
     input({
       workItemFindings: [
         {
-          message: 'method:Order.cancel está blocked(declared)',
+          code: 'verify.item-not-done',
+          message: 'method:Order.cancel is blocked(declared)',
           source: 'examples/orders/domain/order.ts:1',
           fix: 'bun run agentic packet method:Order.cancel',
         },

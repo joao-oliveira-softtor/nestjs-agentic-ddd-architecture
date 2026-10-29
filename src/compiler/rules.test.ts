@@ -114,6 +114,7 @@ describe('composeRules', () => {
   test('chave core/ inexistente no núcleo é erro', () => {
     const error = failure(() => composeRules([team('core/nada')], []));
     expect(error.source).toBe('.ai/rules/core/nada.md');
+    expect(error.code).toBe('rules.core-key-unknown');
     expect(error.message).toContain('core/nada');
   });
 
@@ -122,21 +123,20 @@ describe('composeRules', () => {
       composeRules([team('core/layers', 'x', ['app/**'])], []),
     );
     expect(error.source).toBe('.ai/rules/core/layers.md');
-    expect(error.message).toContain('paths');
+    expect(error.code).toBe('rules.core-paths');
   });
 
   test('chave de exclude inexistente é erro', () => {
     const error = failure(() => composeRules([], ['nao/existe']));
     expect(error.source).toBe('agentic.config.ts');
+    expect(error.code).toBe('rules.exclude-unknown');
     expect(error.message).toContain('nao/existe');
   });
 
   test('chave no exclude que também tem arquivo do time é erro', () => {
     const error = failure(() => composeRules([team('a')], ['a']));
     expect(error.source).toBe('agentic.config.ts');
-    expect(error.message).toContain(
-      '"a", que também tem arquivo em .ai/rules/a.md',
-    );
+    expect(error.code).toBe('rules.exclude-conflict');
   });
 });
 
@@ -259,9 +259,7 @@ describe('validação do conteúdo da regra', () => {
         const error = await loadRules(config()).catch((e: unknown) => e);
         expect(error).toBeInstanceOf(RuleError);
         expect((error as RuleError).source).toBe('.ai/rules');
-        expect((error as RuleError).message).toContain(
-          'aponta para a raiz ou para fora da raiz do projeto',
-        );
+        expect((error as RuleError).code).toBe('rules.dir-outside');
       } finally {
         await rm(outside, { recursive: true, force: true });
       }
@@ -273,9 +271,7 @@ describe('validação do conteúdo da regra', () => {
     await symlink(dir, join(dir, '.ai/rules'), 'dir');
     const error = await loadRules(config()).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(RuleError);
-    expect((error as RuleError).message).toContain(
-      'aponta para a raiz ou para fora da raiz',
-    );
+    expect((error as RuleError).code).toBe('rules.dir-outside');
   });
 
   test('pasta de regras chamada ..regras é válida', async () => {
@@ -352,68 +348,56 @@ describe('validação do conteúdo da regra', () => {
     [
       'frontmatter YAML inválido',
       '---\na: [\n---\ncorpo',
-      'frontmatter YAML inválido',
+      'rules.frontmatter-invalid',
     ],
     [
       'frontmatter sem fechamento',
       '---\npaths: ["app/**"]\n- corpo',
-      'sem o "---" de fechamento',
+      'rules.frontmatter-unclosed',
     ],
     [
       'frontmatter que não é objeto',
       '---\n- a\n---\ncorpo',
-      'o frontmatter não é um objeto',
+      'rules.frontmatter-invalid',
     ],
     [
       'chave de frontmatter desconhecida',
       '---\nfoo: 1\n---\ncorpo',
-      'chave de frontmatter desconhecida "foo"',
+      'rules.frontmatter-key-unknown',
     ],
-    ['paths vazio', '---\npaths: []\n---\ncorpo', '"paths" deve ser uma lista'],
+    ['paths vazio', '---\npaths: []\n---\ncorpo', 'rules.paths-invalid'],
     [
       'paths que não é lista',
       '---\npaths: app/**\n---\ncorpo',
-      '"paths" deve ser uma lista',
+      'rules.paths-invalid',
     ],
     [
       'paths com item vazio',
       '---\npaths: [""]\n---\ncorpo',
-      '"paths" deve ser uma lista',
+      'rules.paths-invalid',
     ],
     [
       'glob absoluto',
       '---\npaths: ["/app/**"]\n---\ncorpo',
-      'o glob "/app/**" deve ser relativo',
+      'rules.glob-invalid',
     ],
     [
       'glob com ..',
       '---\npaths: ["app/../x"]\n---\ncorpo',
-      'o glob "app/../x" deve ser relativo à raiz e sem segmento ".."',
+      'rules.glob-invalid',
     ],
-    [
-      'corpo vazio',
-      '---\npaths: ["a/**"]\n---\n  \n',
-      'o corpo da regra está vazio',
-    ],
-    ['título Markdown', '- ok\n## Título\n- ok', 'linha de título Markdown'],
+    ['corpo vazio', '---\npaths: ["a/**"]\n---\n  \n', 'rules.body-empty'],
+    ['título Markdown', '- ok\n## Título\n- ok', 'rules.body-heading'],
     [
       'corpo que não começa com item de lista',
       'Parágrafo solto.\n- item',
-      'deve começar com um item de lista "- "',
+      'rules.body-not-list',
     ],
-    [
-      'marcador begin',
-      '- <!-- agentic-ddd:begin -->',
-      'marcador <!-- agentic-ddd:begin -->',
-    ],
-    [
-      'marcador end',
-      '- <!-- agentic-ddd:end -->',
-      'marcador <!-- agentic-ddd:end -->',
-    ],
-  ])('erro: %s', async (_nome, content, expected) => {
+    ['marcador begin', '- <!-- agentic-ddd:begin -->', 'rules.body-marker'],
+    ['marcador end', '- <!-- agentic-ddd:end -->', 'rules.body-marker'],
+  ])('erro: %s', async (_nome, content, code) => {
     const error = await loadError('r.md', content);
     expect(error.source).toBe('.ai/rules/r.md');
-    expect(error.message).toContain(expected);
+    expect(error.code as string).toBe(code);
   });
 });

@@ -1,6 +1,6 @@
 import type { DomainLock } from '../compiler/lock';
 import { rulesFor, type Rule } from '../compiler/rules';
-import type { IREntity, IRMethod } from '../contracts/ir';
+import type { ErrorCode, IREntity, IRMethod } from '../contracts/ir';
 
 type Finder = (lock: DomainLock, id: string) => object | undefined;
 
@@ -122,7 +122,7 @@ export function overview(lock: DomainLock) {
 export function element(
   lock: DomainLock,
   id: string,
-): { ok: true; value: object } | { ok: false; error: string } {
+): { ok: true; value: object } | { ok: false; error: string; code: ErrorCode } {
   const colon = id.indexOf(':');
   const prefix = colon === -1 ? '' : id.slice(0, colon);
   const finder = Object.hasOwn(FINDERS, prefix) ? FINDERS[prefix] : undefined;
@@ -130,7 +130,8 @@ export function element(
   if (value === undefined)
     return {
       ok: false,
-      error: `id desconhecido: ${id}; use domain_overview para ver os ids (prefixos: ${Object.keys(FINDERS).join(', ')})`,
+      code: 'mcp.element-unknown',
+      error: `unknown id: ${id}; use domain_overview to see the ids (prefixes: ${Object.keys(FINDERS).join(', ')})`,
     };
   return { ok: true, value };
 }

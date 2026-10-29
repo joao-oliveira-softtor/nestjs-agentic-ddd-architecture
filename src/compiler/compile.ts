@@ -8,7 +8,13 @@ import { listProposals } from './changes/proposal';
 import { reconcile } from './changes/reconcile';
 import { loadConfig, type ResolvedConfig } from './config';
 import type { DiffItem } from './diff';
-import { toPosix, type CompileError, type IR } from './ir';
+import {
+  AgenticError,
+  toPosix,
+  type Coded,
+  type CompileError,
+  type IR,
+} from './ir';
 import { lintRendered, type LintFinding } from './lint';
 import { importModules } from './load';
 import { readLock, serializeLock } from './lock';
@@ -40,7 +46,7 @@ export interface CompileResult {
   readonly rendered: Rendered | null;
   readonly config: ResolvedConfig;
   readonly diff: DiffItem[];
-  readonly pending: string[];
+  readonly pending: Coded[];
   readonly applied: string | null;
   readonly drafted: string | null;
 }
@@ -77,7 +83,7 @@ async function claudeWarnings(config: ResolvedConfig): Promise<string[]> {
     'utf8',
   ).catch(() => null);
   return content !== null && !content.includes('@AGENTS.md')
-    ? [`${config.out.claudeMd} existe mas não contém @AGENTS.md`]
+    ? [`${config.out.claudeMd} exists but does not contain @AGENTS.md`]
     : [];
 }
 
@@ -91,9 +97,9 @@ const byPath = (a: Drift, b: Drift): number =>
   a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
 
 export async function compile(options: CompileOptions): Promise<CompileResult> {
-  // Fontes lidas antes de importar: editar durante o compile deixa o snapshot
-  // do MCP desatualizado, nunca falsamente em dia. Falha aqui só impede o snapshot;
-  // o erro real aparece adiante (config, regras).
+  // Sources are read before importing: editing during compile leaves the MCP
+  // snapshot stale, never falsely current. A failure here only skips the snapshot;
+  // the real error shows up later (config, rules).
   const sources =
     options.mode === 'write'
       ? await loadConfig(options.configPath, { outRoot: options.outRoot })
@@ -123,7 +129,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   };
   if (errors.length > 0) return { ...empty, ok: false, errors };
 
-  // Antes de --draft-change: regra inválida não deixa rascunho gravado sem aviso.
+  // Before --draft-change: an invalid rule must not leave a draft written without a warning.
   let rules: Rule[];
   try {
     rules = await loadRules(config);
@@ -132,7 +138,9 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     return {
       ...empty,
       ok: false,
-      errors: [{ message: error.message, source: error.source }],
+      errors: [
+        { code: error.code, message: error.message, source: error.source },
+      ],
     };
   }
 
@@ -149,7 +157,10 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   let drafted: string | null = null;
   if (options.draftChange !== undefined) {
     if (options.mode !== 'write')
-      throw new Error('--draft-change não pode ser usado com --check');
+      throw new AgenticError(
+        'compile.draft-with-check',
+        '--draft-change cannot be used with --check',
+      );
     const draft = await writeDraft(
       config,
       ir,
@@ -185,7 +196,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   const lint = lintRendered(rendered);
   const lintErrors: CompileError[] = lint
     .filter((f) => f.severity === 'error')
-    .map((f) => ({ message: `lint: ${f.message}`, source: f.path }));
+    .map((f) => ({ code: f.code, message: f.message, source: f.path }));
   const warnings = [
     ...(await claudeWarnings(config)),
     ...relationWarnings(ir, registry),
@@ -208,7 +219,10 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     const pending = plan.apply
       ? [
           ...plan.pending,
-          `a proposta ${plan.apply.id} está pronta para ser aplicada; rode \`bun run agentic compile\``,
+          {
+            code: 'compile.proposal-ready' as const,
+            message: `the proposal ${plan.apply.id} is ready to be applied; run \`bun run agentic compile\``,
+          },
         ]
       : plan.pending;
     return {
@@ -226,7 +240,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
 
   const result = await writeOutputs(config, rendered);
   const written = [...result.written];
-  // com erro de lint os artefatos são escritos, mas a proposta continua aberta e o lock não avança
+  // With lint errors the artifacts are written, but the proposal stays open and the lock does not advance
   const commit = lintErrors.length === 0;
   if (commit && plan.apply && plan.archivedPath) {
     await archiveProposal(config, plan.apply, plan.archivedPath);

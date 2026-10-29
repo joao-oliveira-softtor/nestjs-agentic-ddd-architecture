@@ -2,7 +2,7 @@ import { describe, expect, spyOn, test } from 'bun:test';
 import { mcpCommand } from './mcp';
 
 describe('mcpCommand', () => {
-  test('SDK ausente: explica a instalação e sai com 1', async () => {
+  test('missing SDK: explains the install and exits 1', async () => {
     const error = spyOn(console, 'error').mockImplementation(() => {});
     const code = await mcpCommand([], () =>
       Promise.reject(
@@ -18,9 +18,10 @@ describe('mcpCommand', () => {
     error.mockRestore();
     expect(code).toBe(1);
     expect(messages).toContain('@modelcontextprotocol/server@2.3.1');
+    expect(messages).toContain('[cli.mcp-sdk-missing]');
   });
 
-  test('outro erro de carga é relançado', async () => {
+  test('other load errors are rethrown', async () => {
     const failure = await mcpCommand([], () =>
       Promise.reject(new Error('boom')),
     ).catch((e: Error) => e);

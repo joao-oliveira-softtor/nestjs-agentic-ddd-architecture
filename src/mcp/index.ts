@@ -3,7 +3,7 @@ import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { isAbsolute, posix, relative } from 'node:path';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
-import { canonicalPath } from '../contracts/ir';
+import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
 import { checkSnapshot } from '../compiler/snapshot';
 import { changes, element, overview, rulesForPath } from './tools';
 
@@ -12,18 +12,26 @@ type Fresh = Extract<Awaited<ReturnType<typeof checkSnapshot>>, { ok: true }>;
 export function startMcpServer({ root }: { root: string }): {
   close(): Promise<void>;
 } {
-  // Toda chamada revalida o snapshot: nada serve dado desatualizado. Erro
-  // lançado aqui volta ao cliente como resultado com isError (SDK).
+  // Every call revalidates the snapshot: nothing serves stale data. An error
+  // thrown here returns to the client as a result with isError (SDK).
   const guarded =
     <A>(run: (s: Fresh, args: A) => object) =>
     async (args: A) => {
-      const snap = await checkSnapshot(root);
-      if (!snap.ok) throw new Error(snap.reason);
-      return {
-        content: [
-          { type: 'text' as const, text: stableStringify(run(snap, args)) },
-        ],
-      };
+      try {
+        const snap = await checkSnapshot(root);
+        if (!snap.ok) throw new AgenticError(snap.code, snap.reason);
+        return {
+          content: [
+            { type: 'text' as const, text: stableStringify(run(snap, args)) },
+          ],
+        };
+      } catch (error) {
+        if (!(error instanceof AgenticError)) throw error;
+        return {
+          isError: true,
+          content: [{ type: 'text' as const, text: formatCoded(error) }],
+        };
+      }
     };
   const annotations = { readOnlyHint: true, openWorldHint: false };
   return serveStdio(() => {
@@ -31,9 +39,9 @@ export function startMcpServer({ root }: { root: string }): {
     server.registerTool(
       'domain_overview',
       {
-        title: 'Visão geral do domínio',
+        title: 'Domain overview',
         description:
-          'Lista, por módulo, entidades, eventos, use-cases e operators, com id e descrição.',
+          'Lists, per module, entities, events, use-cases and operators, with id and description.',
         inputSchema: z.object({}),
         annotations,
       },
@@ -42,24 +50,24 @@ export function startMcpServer({ root }: { root: string }): {
     server.registerTool(
       'domain_element',
       {
-        title: 'Detalhe de um elemento',
+        title: 'Element detail',
         description:
-          'Devolve um elemento pelo id, com as relações. Prefixos: entity:, method:, invariant:, event:, usecase:, operator: (ids de método e invariante aparecem no detalhe da entidade ou do use-case).',
+          'Returns an element by id, with its relations. Prefixes: entity:, method:, invariant:, event:, usecase:, operator: (method and invariant ids appear in the detail of the entity or use-case).',
         inputSchema: z.object({ id: z.string() }),
         annotations,
       },
       guarded<{ id: string }>((s, { id }) => {
         const r = element(s.lock, id);
-        if (!r.ok) throw new Error(r.error);
+        if (!r.ok) throw new AgenticError(r.code, r.error);
         return r.value;
       }),
     );
     server.registerTool(
       'domain_changes',
       {
-        title: 'Mudanças de regra de negócio',
+        title: 'Business rule changes',
         description:
-          'Lista as mudanças registradas, opcionalmente só as que citam um id.',
+          'Lists the recorded changes, optionally only those that cite an id.',
         inputSchema: z.object({ id: z.string().optional() }),
         annotations,
       },
@@ -68,16 +76,16 @@ export function startMcpServer({ root }: { root: string }): {
     server.registerTool(
       'rules_for_path',
       {
-        title: 'Regras do time para um arquivo',
+        title: 'Team rules for a file',
         description:
-          'Regras que valem para um arquivo. path relativo à raiz do projeto (ex.: examples/orders/a.ts) ou absoluto dentro dela.',
+          'Rules that apply to a file. path is relative to the project root (e.g. examples/orders/a.ts) or absolute inside it.',
         inputSchema: z.object({ path: z.string() }),
         annotations,
       },
       guarded<{ path: string }>((s, { path }) => {
-        // Clientes costumam mandar caminho absoluto; o glob das regras é relativo à raiz.
-        // `\` vira `/` antes da checagem, como rulesForPath faz: `..\x` também é fora da raiz.
-        // normalize resolve `./` e `x/..` internos: `./../a` e `x/../../a` também saem da raiz.
+        // Clients often send absolute paths; the rule globs are relative to the root.
+        // `\` becomes `/` before the check, as rulesForPath does: `..\x` is also outside the root.
+        // normalize resolves inner `./` and `x/..`: `./../a` and `x/../../a` also leave the root.
         const rel = posix.normalize(
           (isAbsolute(path)
             ? relative(s.root, canonicalPath(path))
@@ -85,7 +93,10 @@ export function startMcpServer({ root }: { root: string }): {
           ).replaceAll('\\', '/'),
         );
         if (isAbsolute(rel) || rel === '..' || rel.startsWith('../'))
-          throw new Error(`${path}: fora da raiz do projeto (${s.root})`);
+          throw new AgenticError(
+            'mcp.path-outside-root',
+            `${path}: outside the project root (${s.root})`,
+          );
         return rulesForPath(s.rules, rel);
       }),
     );

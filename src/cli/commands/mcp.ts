@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { formatCoded } from '../../contracts/codes';
 import { parseArgs } from '../args';
 import { USAGE } from '../usage';
 
@@ -31,7 +32,11 @@ export async function mcpCommand(
     )
       throw error;
     console.error(
-      'agentic-ddd: instale @modelcontextprotocol/server@2.3.1 para usar `agentic-ddd mcp`',
+      formatCoded({
+        code: 'cli.mcp-sdk-missing',
+        message:
+          'agentic-ddd: install @modelcontextprotocol/server@2.3.1 to use `agentic-ddd mcp`',
+      }),
     );
     return 1;
   }

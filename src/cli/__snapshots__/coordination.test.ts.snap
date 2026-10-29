@@ -7,28 +7,28 @@ exports[`packet e verify item: hash, corpo, cobertura e typecheck; falha não re
   "gates": [
     {
       "id": "I1",
-      "name": "Dependências",
+      "name": "Dependencies",
       "status": "passed",
       "findings": [],
       "warnings": []
     },
     {
       "id": "I2",
-      "name": "Implementação",
+      "name": "Implementation",
       "status": "passed",
       "findings": [],
       "warnings": []
     },
     {
       "id": "I3",
-      "name": "Especificação",
+      "name": "Specification",
       "status": "passed",
       "findings": [],
       "warnings": []
     },
     {
       "id": "I4",
-      "name": "Obrigações",
+      "name": "Obligations",
       "status": "passed",
       "findings": [],
       "warnings": []
@@ -52,26 +52,27 @@ exports[`packet e verify item: hash, corpo, cobertura e typecheck; falha não re
   "gates": [
     {
       "id": "I1",
-      "name": "Dependências",
+      "name": "Dependencies",
       "status": "passed",
       "findings": [],
       "warnings": []
     },
     {
       "id": "I2",
-      "name": "Implementação",
+      "name": "Implementation",
       "status": "passed",
       "findings": [],
       "warnings": []
     },
     {
       "id": "I3",
-      "name": "Especificação",
+      "name": "Specification",
       "status": "failed",
       "findings": [
         {
-          "message": "specHash diverge da especificação atual",
-          "fix": "restaure a declaração ou peça novo packet entity:Thing",
+          "code": "verify.item-spec-hash-mismatch",
+          "message": "specHash differs from the current specification",
+          "fix": "restore the declaration or request a new packet entity:Thing",
           "source": "app/thing.ts:2"
         }
       ],
@@ -79,7 +80,7 @@ exports[`packet e verify item: hash, corpo, cobertura e typecheck; falha não re
     },
     {
       "id": "I4",
-      "name": "Obrigações",
+      "name": "Obligations",
       "status": "passed",
       "findings": [],
       "warnings": []

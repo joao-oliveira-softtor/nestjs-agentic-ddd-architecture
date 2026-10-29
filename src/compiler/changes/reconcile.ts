@@ -1,7 +1,7 @@
 import { sha256 } from '../canonical';
 import { EMPTY_IR, elementsOf, semanticDiff, type DiffItem } from '../diff';
 import { workItems } from '../graph';
-import type { CompileError, IR } from '../ir';
+import type { Coded, CompileError, IR } from '../ir';
 import type { DomainLock, LockChange } from '../lock';
 import { markApplied, summarize, type Proposal } from './proposal';
 
@@ -17,7 +17,7 @@ export interface ReconcilePlan {
   readonly nextLock: DomainLock | null;
   readonly apply: Proposal | null;
   readonly archivedPath: string | null;
-  readonly pending: string[];
+  readonly pending: Coded[];
   readonly errors: CompileError[];
 }
 
@@ -46,13 +46,13 @@ export function deltaProblems(
       item.classification !== 'docs' &&
       !declared.has(entry(item.kind, item.id))
     ) {
-      problems.push(`mudança no código fora do delta: ${item.kind} ${item.id}`);
+      problems.push(`code change outside the delta: ${item.kind} ${item.id}`);
     }
   }
   for (const declaredEntry of [...declared].sort()) {
     if (!actual.has(declaredEntry))
       problems.push(
-        `ID no delta sem mudança correspondente no código: ${declaredEntry}`,
+        `ID in the delta with no matching code change: ${declaredEntry}`,
       );
   }
   return problems;
@@ -61,19 +61,21 @@ export function deltaProblems(
 export function reconcile(input: ReconcileInput): ReconcilePlan {
   const { lock, proposals } = input;
   const errors: CompileError[] = [];
-  const pending: string[] = [];
+  const pending: Coded[] = [];
   const recorded = lock?.changes ?? [];
 
   for (const change of recorded) {
     const archived = proposals.find((p) => p.archived && p.id === change.id);
     if (!archived) {
       errors.push({
-        message: `a proposta aplicada ${change.id} não está em ${input.changesDir}/archive`,
+        code: 'proposal.applied-not-archived',
+        message: `the applied proposal ${change.id} is not in ${input.changesDir}/archive`,
         source: change.path,
       });
     } else if (sha256(archived.raw) !== change.hash) {
       errors.push({
-        message: `a proposta aplicada ${change.id} foi editada depois de aplicada; propostas arquivadas são imutáveis (restaure-a pelo git e abra uma nova proposta)`,
+        code: 'proposal.applied-edited',
+        message: `the applied proposal ${change.id} was edited after being applied; archived proposals are immutable (restore it from git and open a new proposal)`,
         source: archived.path,
       });
     }
@@ -81,13 +83,15 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
   for (const proposal of proposals) {
     if (proposal.archived && proposal.status !== 'applied') {
       errors.push({
-        message: `proposta em archive com status ${proposal.status}; deveria ser applied`,
+        code: 'proposal.archive-status-wrong',
+        message: `proposal in archive has status ${proposal.status}; it should be applied`,
         source: proposal.path,
       });
     }
     if (!proposal.archived && proposal.status === 'applied') {
       errors.push({
-        message: 'proposta com status applied fora de archive',
+        code: 'proposal.applied-outside-archive',
+        message: 'proposal with status applied is outside archive',
         source: proposal.path,
       });
     }
@@ -96,7 +100,8 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
       !recorded.some((change) => change.id === proposal.id)
     ) {
       errors.push({
-        message: `a proposta arquivada ${proposal.id} não está registrada no lock`,
+        code: 'proposal.archived-not-in-lock',
+        message: `the archived proposal ${proposal.id} is not recorded in the lock`,
         source: proposal.path,
       });
     }
@@ -104,7 +109,8 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
   const open = proposals.filter((p) => !p.archived && p.status === 'proposed');
   if (open.length > 1) {
     errors.push({
-      message: `há ${open.length} propostas abertas (${open.map((p) => p.id).join(', ')}); o v0 aceita uma por vez`,
+      code: 'proposal.multiple-open',
+      message: `there are ${open.length} open proposals (${open.map((p) => p.id).join(', ')}); v0 accepts one at a time`,
       source: null,
     });
   }
@@ -121,7 +127,8 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
       for (const id of criterion.covers) {
         if (!reachable.has(id))
           errors.push({
-            message: `critério ${criterion.id}: covers cita ${id}, que não está na IR nem em delta.added`,
+            code: 'proposal.covers-unknown',
+            message: `criterion ${criterion.id}: covers cites ${id}, which is neither in the IR nor in delta.added`,
             source: proposal.path,
           });
       }
@@ -134,7 +141,8 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
       appliedTexts.set(proposal.id, markApplied(proposal.raw));
     } catch {
       errors.push({
-        message: `não foi possível marcar a proposta ${proposal.id} como aplicada; escreva a linha "status: proposed" literalmente no frontmatter`,
+        code: 'proposal.mark-applied-failed',
+        message: `could not mark the proposal ${proposal.id} as applied; write the line "status: proposed" literally in the frontmatter`,
         source: proposal.path,
       });
     }
@@ -163,9 +171,10 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
 
   if (required.length === 0 && !declaresDocsOnlyChange) {
     if (proposal)
-      pending.push(
-        `a proposta ${proposal.id} está aberta, mas o código ainda não tem as mudanças de domínio do delta`,
-      );
+      pending.push({
+        code: 'proposal.open-without-change',
+        message: `the proposal ${proposal.id} is open, but the code does not have the delta's domain changes yet`,
+      });
     const nextLock =
       lock === null && diff.length === 0
         ? null
@@ -174,20 +183,25 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
   }
 
   if (!proposal) {
-    pending.push(
-      `há ${required.length} mudança(s) de domínio sem proposta; escreva ${input.changesDir}/NNNN-<slug>/proposal.md ou rode \`bun run agentic compile --draft-change <slug>\``,
-    );
+    pending.push({
+      code: 'compile.change-without-proposal',
+      message: `there are ${required.length} domain change(s) without a proposal; write ${input.changesDir}/NNNN-<slug>/proposal.md or run \`bun run agentic compile --draft-change <slug>\``,
+    });
     return unchanged();
   }
 
-  const problems = deltaProblems(proposal, diff);
-  if (proposal.motivo === '') problems.push('a seção ## Motivo está vazia');
-  if (problems.length > 0) {
-    pending.push(
-      ...problems.map((problem) => `proposta ${proposal.id}: ${problem}`),
-    );
-    return unchanged();
-  }
+  pending.push(
+    ...deltaProblems(proposal, diff).map((problem) => ({
+      code: 'proposal.delta-mismatch' as const,
+      message: `proposal ${proposal.id}: ${problem}`,
+    })),
+  );
+  if (proposal.motivo === '')
+    pending.push({
+      code: 'proposal.motivo-empty',
+      message: `proposal ${proposal.id}: the ## Motivo section is empty`,
+    });
+  if (pending.length > 0) return unchanged();
 
   const declared = declaredEntries(proposal);
   const items = diff.filter(

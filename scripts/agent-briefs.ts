@@ -74,7 +74,7 @@ export const ROLE_CORES: Readonly<Record<BriefRole, string>> = {
     '',
     '- Change only the inside of the body given under "Files" and test files. Keep imports, signatures, decorators, schemas, rule IDs, proposals, configuration and generated files.',
     '- Keep the line count of the body (the `source` coordinates go into the generated files). Do not reformat the file.',
-    '- Compose only the dependencies listed in `uses`/`Dependências`; emitted events are the declared ones. Do not change the domain: if a dependency contradicts the contract, return the item.',
+    '- Compose only the dependencies listed in `uses`/`Dependencies`; emitted events are the declared ones. Do not change the domain: if a dependency contradicts the contract, return the item.',
     '- A declarative operator is already implemented: add only tests that exercise its tools and contracts.',
     '- Cover each packet obligation with `covers([...ids], title)` from `@agentic-ddd/testing` in `bun:test` tests.',
     '- Keep identifiers, rule IDs and business text exactly as written; never translate them.',
@@ -130,8 +130,8 @@ export function parsePacket(packet: string): PacketFacts {
     );
   return {
     id,
-    layer: field(packet, 'Camada'),
-    module: field(packet, 'Módulo'),
+    layer: field(packet, 'Layer'),
+    module: field(packet, 'Module'),
     sourcePath: field(packet, 'source').replace(/:\d+$/, ''),
     specHash,
   };

@@ -31,6 +31,15 @@ async function failure(promise: Promise<unknown>): Promise<string> {
   }
 }
 
+async function failureCode(promise: Promise<unknown>): Promise<string> {
+  try {
+    await promise;
+    return '';
+  } catch (error) {
+    return (error as { code?: string }).code ?? '';
+  }
+}
+
 beforeEach(async () => {
   out = await mkdtemp(join(tmpdir(), 'agentic-compile-'));
 });
@@ -98,7 +107,7 @@ describe('compile (exemplo orders)', () => {
     await writeFile(join(out, 'CLAUDE.md'), 'meu arquivo\n');
     const result = await compile({ configPath, outRoot: out, mode: 'write' });
     expect(result.warnings).toContain(
-      'CLAUDE.md existe mas não contém @AGENTS.md',
+      'CLAUDE.md exists but does not contain @AGENTS.md',
     );
   });
 
@@ -110,11 +119,14 @@ describe('compile (exemplo orders)', () => {
   test('sem lock e sem proposta: write segue com pendência; check falha', async () => {
     const write = await compile({ configPath, outRoot: out, mode: 'write' });
     expect(write.ok).toBe(true);
-    expect(write.pending[0]).toContain('mudança(s) de domínio sem proposta');
+    expect(write.pending[0]!.code).toBe('compile.change-without-proposal');
+    expect(write.pending[0]!.message).toContain(
+      'domain change(s) without a proposal',
+    );
     expect((await checkSnapshot(out)).ok).toBe(false);
     const check = await compile({ configPath, outRoot: out, mode: 'check' });
     expect(check.ok).toBe(false);
-    expect(check.pending[0]).toContain('--draft-change');
+    expect(check.pending[0]!.message).toContain('--draft-change');
   });
 
   test('--draft-change cria a proposta; sem Motivo ela não é aplicada', async () => {
@@ -126,7 +138,10 @@ describe('compile (exemplo orders)', () => {
     });
     expect(draft.drafted).toBe('changes/0001-estado-inicial/proposal.md');
     expect(draft.pending).toEqual([
-      'proposta 0001: a seção ## Motivo está vazia',
+      {
+        code: 'proposal.motivo-empty',
+        message: 'proposal 0001: the ## Motivo section is empty',
+      },
     ]);
     expect(draft.applied).toBeNull();
     expect((await checkSnapshot(out)).ok).toBe(false);
@@ -212,16 +227,14 @@ describe('compile (exemplo orders)', () => {
     for (const mode of ['write', 'check'] as const) {
       const result = await compile({ configPath, outRoot: out, mode });
       expect(result.ok).toBe(false);
-      expect(result.errors[0]!.message).toContain(
-        'propostas arquivadas são imutáveis',
-      );
+      expect(result.errors[0]!.code).toBe('proposal.applied-edited');
     }
   });
 
   test('--draft-change sem mudança ou com proposta aberta é recusado', async () => {
     await bootstrapChanges(out);
     expect(
-      await failure(
+      await failureCode(
         compile({
           configPath,
           outRoot: out,
@@ -229,7 +242,7 @@ describe('compile (exemplo orders)', () => {
           draftChange: 'nada',
         }),
       ),
-    ).toContain('não há mudança de domínio para propor');
+    ).toBe('proposal.draft-no-change');
     const otherOut = await mkdtemp(join(tmpdir(), 'agentic-compile-'));
     try {
       await compile({
@@ -239,7 +252,7 @@ describe('compile (exemplo orders)', () => {
         draftChange: 'a',
       });
       expect(
-        await failure(
+        await failureCode(
           compile({
             configPath,
             outRoot: otherOut,
@@ -247,12 +260,12 @@ describe('compile (exemplo orders)', () => {
             draftChange: 'b',
           }),
         ),
-      ).toContain('já existe uma proposta aberta');
+      ).toBe('proposal.open-exists');
     } finally {
       await rm(otherOut, { recursive: true, force: true });
     }
     expect(
-      await failure(
+      await failureCode(
         compile({
           configPath,
           outRoot: out,
@@ -260,7 +273,7 @@ describe('compile (exemplo orders)', () => {
           draftChange: 'Slug Ruim',
         }),
       ),
-    ).toContain('--draft-change: o slug "Slug Ruim" deve ser kebab-case');
+    ).toBe('proposal.slug-invalid');
   });
 
   test('isola o registry entre configurações no mesmo processo', () => {
@@ -283,7 +296,7 @@ describe('compile (exemplo orders)', () => {
       });
       console.log(JSON.stringify({
         first: first.ir?.operators.map((o) => o.id) ?? [],
-        second: second.errors.map((e) => e.message),
+        second: second.errors.map((e) => e.code),
         operators: second.ir?.operators.map((o) => o.id) ?? [],
       }));
     `;
@@ -299,9 +312,7 @@ describe('compile (exemplo orders)', () => {
       operators: string[];
     };
     expect(result.first).toEqual(['operator:long-operator']);
-    expect(result.second).not.toContain(
-      'elemento declarado fora dos módulos de agentic.config.ts',
-    );
+    expect(result.second).not.toContain('ir.outside-modules');
     expect(result.operators).toEqual(['operator:order-operator']);
   });
 });

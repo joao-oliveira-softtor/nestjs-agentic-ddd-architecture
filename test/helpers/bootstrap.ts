@@ -27,6 +27,6 @@ export async function bootstrapChanges(
   const applied = await compile({ configPath, outRoot: out, mode: 'write' });
   if (applied.applied !== '0001')
     throw new Error(
-      `bootstrapChanges: 0001 não foi aplicada (${applied.pending.join('; ')})`,
+      `bootstrapChanges: 0001 não foi aplicada (${applied.pending.map((p) => p.message).join('; ')})`,
     );
 }
