@@ -343,3 +343,104 @@ describe('configuração das convenções', () => {
     ).toBe('config.import-target-invalid');
   });
 });
+
+describe('mcp section', () => {
+  const base = { modules: [{ name: 'x', path: 'x' }] };
+  const mcp = {
+    issuer: 'https://auth.example.com',
+    resource: 'https://orders.example.com/mcp',
+  };
+
+  function withMcp(section: unknown) {
+    return resolveConfig({ ...base, mcp: section } as AgenticConfig, dir);
+  }
+
+  test('resolveConfig leaves mcp undefined when the section is absent', () => {
+    expect(resolveConfig(base, dir).mcp).toBeUndefined();
+  });
+
+  test('resolveConfig keeps issuer, resource and jwksUri as written', () => {
+    const jwksUri = 'https://auth.example.com/.well-known/jwks.json';
+    expect(withMcp({ ...mcp, jwksUri }).mcp).toEqual({ ...mcp, jwksUri });
+    expect(withMcp(mcp).mcp).toEqual(mcp);
+  });
+
+  test('accepts http only on loopback hosts', () => {
+    for (const issuer of [
+      'http://127.0.0.1:9000',
+      'http://localhost:9000',
+      'http://[::1]:9000',
+    ])
+      expect(withMcp({ ...mcp, issuer }).mcp?.issuer).toBe(issuer);
+    expect(
+      codeOf(() => withMcp({ ...mcp, issuer: 'http://auth.example.com' })),
+    ).toBe('config.mcp-url-invalid');
+    expect(
+      codeOf(() =>
+        withMcp({ ...mcp, resource: 'http://orders.example.com/mcp' }),
+      ),
+    ).toBe('config.mcp-url-invalid');
+  });
+
+  test('rejects missing issuer or resource with config.mcp-field-missing', () => {
+    expect(codeOf(() => withMcp({ resource: mcp.resource }))).toBe(
+      'config.mcp-field-missing',
+    );
+    expect(codeOf(() => withMcp({ issuer: mcp.issuer }))).toBe(
+      'config.mcp-field-missing',
+    );
+    expect(codeOf(() => withMcp({}))).toBe('config.mcp-field-missing');
+  });
+
+  test('rejects URLs that are not absolute https (or loopback http)', () => {
+    for (const issuer of [
+      'auth.example.com',
+      '/relative',
+      'ftp://auth.example.com',
+      'not a url',
+    ])
+      expect(codeOf(() => withMcp({ ...mcp, issuer }))).toBe(
+        'config.mcp-url-invalid',
+      );
+  });
+
+  test('rejects a query or fragment on issuer and a fragment on resource', () => {
+    expect(
+      codeOf(() =>
+        withMcp({ ...mcp, issuer: 'https://auth.example.com/?tenant=a' }),
+      ),
+    ).toBe('config.mcp-url-invalid');
+    expect(
+      codeOf(() =>
+        withMcp({ ...mcp, issuer: 'https://auth.example.com/#top' }),
+      ),
+    ).toBe('config.mcp-url-invalid');
+    expect(
+      codeOf(() =>
+        withMcp({ ...mcp, resource: 'https://orders.example.com/mcp#x' }),
+      ),
+    ).toBe('config.mcp-url-invalid');
+  });
+
+  test('rejects a jwksUri that is not an absolute https URL', () => {
+    expect(codeOf(() => withMcp({ ...mcp, jwksUri: 'jwks.json' }))).toBe(
+      'config.mcp-url-invalid',
+    );
+  });
+
+  test('rejects a non-string value with config.not-text', () => {
+    expect(codeOf(() => withMcp({ ...mcp, issuer: 42 }))).toBe(
+      'config.not-text',
+    );
+  });
+
+  test('rejects an unknown key in mcp with config.key-unknown', () => {
+    expect(codeOf(() => withMcp({ ...mcp, audience: 'x' }))).toBe(
+      'config.key-unknown',
+    );
+  });
+
+  test('rejects a non-object mcp with config.not-object', () => {
+    expect(codeOf(() => withMcp('x'))).toBe('config.not-object');
+  });
+});
