@@ -42,10 +42,15 @@ export interface ResourceServer {
 const FETCH_TIMEOUT_MS = 5000;
 const CLOCK_TOLERANCE_S = 5;
 const ALGORITHMS = ['RS256', 'ES256'];
-const DISCOVERY_PATHS = [
-  '/.well-known/oauth-authorization-server',
-  '/.well-known/openid-configuration',
-];
+// RFC 8414 inserts the well-known segment before the issuer path; OIDC appends it.
+function discoveryUrls(issuer: string): string[] {
+  const { origin, pathname } = new URL(issuer);
+  const path = pathname.replace(/\/+$/, '');
+  return [
+    `${origin}/.well-known/oauth-authorization-server${path}`,
+    `${origin}${path}/.well-known/openid-configuration`,
+  ];
+}
 const discoveryDocument = z.object({
   issuer: z.string(),
   jwks_uri: z.string(),
@@ -61,9 +66,9 @@ function authError(
 }
 
 async function discoverJwksUri(issuer: string): Promise<string> {
-  for (const path of DISCOVERY_PATHS) {
+  for (const url of discoveryUrls(issuer)) {
     try {
-      const res = await fetch(issuer.replace(/\/+$/, '') + path, {
+      const res = await fetch(url, {
         redirect: 'error',
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
@@ -124,10 +129,13 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
           }
         }
         // Signature, algorithm, unknown kid, malformed token: one generic answer. Other
-        // failures (JWKS fetch/discovery) propagate and become a bare 500.
+        // failures (JWKS fetch/discovery: timeout, non-200, bad JSON) propagate and become a
+        // bare 500; jose raises those as a plain JOSEError or JWKSInvalid.
         if (
           error instanceof errors.JOSEError &&
-          !(error instanceof errors.JWKSTimeout)
+          error.code !== 'ERR_JOSE_GENERIC' &&
+          !(error instanceof errors.JWKSTimeout) &&
+          !(error instanceof errors.JWKSInvalid)
         ) {
           throw authError(
             'auth.token-invalid',
