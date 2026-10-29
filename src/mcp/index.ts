@@ -8,33 +8,64 @@ import { isAbsolute, posix, relative } from 'node:path';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
+import { moduleAccess, type ModuleAccess } from '../auth/scopes';
 import type { McpConfig } from '../compiler/config';
+import type { DomainLock } from '../compiler/lock';
 import { checkSnapshot } from '../compiler/snapshot';
+import { pathModule, scopeLock } from './scope';
 import { changes, element, overview, rulesForPath } from './tools';
 
 type Fresh = Extract<Awaited<ReturnType<typeof checkSnapshot>>, { ok: true }>;
+// `lock` is already filtered to what the caller may read; `fullLock` is for server-side decisions only.
+type Scoped = Omit<Fresh, 'lock'> & {
+  lock: DomainLock;
+  fullLock: DomainLock;
+  access: ModuleAccess;
+};
 
-// The four read-only tools, shared by the stdio and HTTP transports.
-function createDomainServer(root: string): McpServer {
+// The four read-only tools, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
+function createDomainServer(root: string, remote: boolean): McpServer {
   // Every call revalidates the snapshot: nothing serves stale data. An error
   // thrown here returns to the client as a result with isError (SDK).
   const guarded =
-    <A>(run: (s: Fresh, args: A) => object) =>
-    async (args: A) => {
+    <A>(run: (s: Scoped, args: A) => object) =>
+    async (args: A, ctx?: { http?: { authInfo?: { scopes: string[] } } }) => {
+      const fail = (text: string) => ({
+        isError: true,
+        content: [{ type: 'text' as const, text }],
+      });
       try {
         const snap = await checkSnapshot(root);
-        if (!snap.ok) throw new AgenticError(snap.code, snap.reason);
+        if (!snap.ok) {
+          // The snapshot.missing reason embeds an absolute path: not for remote clients.
+          if (remote && snap.code === 'snapshot.missing')
+            throw new AgenticError(
+              snap.code,
+              'no snapshot on the server; run `bun run agentic compile` at the project root there',
+            );
+          throw new AgenticError(snap.code, snap.reason);
+        }
+        // Fail closed: a remote call without a grant sees nothing.
+        const access: ModuleAccess = remote
+          ? (moduleAccess(ctx?.http?.authInfo?.scopes ?? [], 'domain:read') ??
+            new Set<string>())
+          : 'all';
+        const scoped: Scoped = {
+          ...snap,
+          lock: scopeLock(snap.lock, access),
+          fullLock: snap.lock,
+          access,
+        };
         return {
           content: [
-            { type: 'text' as const, text: stableStringify(run(snap, args)) },
+            { type: 'text' as const, text: stableStringify(run(scoped, args)) },
           ],
         };
       } catch (error) {
-        if (!(error instanceof AgenticError)) throw error;
-        return {
-          isError: true,
-          content: [{ type: 'text' as const, text: formatCoded(error) }],
-        };
+        if (error instanceof AgenticError) return fail(formatCoded(error));
+        // The SDK forwards error.message of anything else to the client: keep internals off the wire.
+        if (remote) return fail('Internal server error');
+        throw error;
       }
     };
   const annotations = { readOnlyHint: true, openWorldHint: false };
@@ -99,8 +130,17 @@ function createDomainServer(root: string): McpServer {
       if (isAbsolute(rel) || rel === '..' || rel.startsWith('../'))
         throw new AgenticError(
           'mcp.path-outside-root',
-          `${path}: outside the project root (${s.root})`,
+          `${path}: outside the project root`,
         );
+      // The path decides which module's files it names, so it is checked against the unfiltered lock.
+      if (s.access !== 'all') {
+        const module = pathModule(s.fullLock, rel);
+        if (module === undefined || !s.access.has(module))
+          throw new AgenticError(
+            'mcp.path-out-of-scope',
+            `${path}: outside the modules this token may read`,
+          );
+      }
       return rulesForPath(s.rules, rel);
     }),
   );
@@ -110,7 +150,7 @@ function createDomainServer(root: string): McpServer {
 export function startMcpServer({ root }: { root: string }): {
   close(): Promise<void>;
 } {
-  return serveStdio(() => createDomainServer(root));
+  return serveStdio(() => createDomainServer(root, false));
 }
 
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -182,7 +222,7 @@ export async function startMcpHttpServer({
     new URL(getOAuthProtectedResourceMetadataUrl(resource)).pathname,
   );
   // Stateless: the tools are read-only, so a fresh server per request is enough.
-  const handler = createMcpHandler(() => createDomainServer(root), {
+  const handler = createMcpHandler(() => createDomainServer(root, true), {
     maxRequestBodySize: MAX_BODY_BYTES,
   });
   let allowed: ReturnType<typeof allowedHostsAndOrigins> | undefined;

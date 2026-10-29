@@ -124,6 +124,8 @@ export const ERROR_CODES = {
   'mcp.element-unknown': 'The requested element id does not exist.',
   'mcp.host-denied': 'The request Host header is not allowed.',
   'mcp.origin-denied': 'The request Origin header is not allowed.',
+  'mcp.path-out-of-scope':
+    'The requested path is outside the modules the token may read.',
   'mcp.path-outside-root': 'The requested path is outside the project root.',
 
   // proposal
