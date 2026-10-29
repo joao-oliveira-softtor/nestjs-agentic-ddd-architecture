@@ -67,7 +67,11 @@ function createDomainServer(root: string, remote: boolean): McpServer {
       } catch (error) {
         if (error instanceof AgenticError) return fail(formatCoded(error));
         // The SDK forwards error.message of anything else to the client: keep internals off the wire.
-        if (remote) return fail('Internal server error');
+        if (remote) {
+          // The client gets a generic message, so the operator must still see the cause.
+          console.error(error);
+          return fail('Internal server error');
+        }
         throw error;
       }
     };

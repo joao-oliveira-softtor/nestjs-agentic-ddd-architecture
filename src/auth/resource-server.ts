@@ -99,13 +99,6 @@ function withCode(error: unknown): unknown {
   if (!(error instanceof OAuthError) || error.message.startsWith('auth.')) {
     return error;
   }
-  if (error.code === OAuthErrorCode.InsufficientScope) {
-    return authError(
-      'auth.scope-missing',
-      'The token lacks a required scope.',
-      OAuthErrorCode.InsufficientScope,
-    );
-  }
   if (error.code !== OAuthErrorCode.InvalidToken) return error;
   return authError(
     'auth.token-invalid',
