@@ -64,12 +64,17 @@ describe('agentic mcp --http', () => {
   };
 
   // Raw Streamable HTTP: the MCP client package is not installed.
-  const rpc = (message: object, token?: string) =>
+  const rpc = (
+    message: object,
+    token?: string,
+    extra: Record<string, string> = {},
+  ) =>
     fetch(`${base}/mcp`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         accept: 'application/json, text/event-stream',
+        ...extra,
         ...(token === undefined ? {} : { authorization: `Bearer ${token}` }),
       },
       body: JSON.stringify({ jsonrpc: '2.0', ...message }),
@@ -194,4 +199,109 @@ describe('agentic mcp --http', () => {
     expect((await fetch(`${base}/`)).status).toBe(404);
     expect((await fetch(`${base}/mcp/extra`)).status).toBe(404);
   });
+
+  describe('Host and Origin validation', () => {
+    const list = { id: 1, method: 'tools/list' };
+
+    test('an allowed Origin reaches the gate', async () => {
+      const origin = { origin: `http://127.0.0.1:${handle.port}` };
+      await expectRefused(
+        await rpc(list, undefined, origin),
+        401,
+        'auth.token-missing',
+      );
+      const ok = await rpc(list, await mint(), origin);
+      expect(ok.status).toBe(200);
+    });
+
+    test('the configured resource origin is allowed', async () => {
+      await expectRefused(
+        await rpc(list, undefined, { origin: 'http://127.0.0.1:3333' }),
+        401,
+        'auth.token-missing',
+      );
+    });
+
+    test('a foreign Origin is refused with 403 before the gate', async () => {
+      const response = await rpc(list, await mint(), {
+        origin: 'http://evil.example',
+      });
+      expect(response.status).toBe(403);
+      const body = await response.text();
+      expect(body).toContain('[mcp.origin-denied]');
+      expect(body).not.toContain('evil.example');
+    });
+
+    test('the same foreign Origin is refused on the metadata path', async () => {
+      const response = await fetch(`${base}${PRM_PATH}`, {
+        headers: { origin: 'http://evil.example' },
+      });
+      expect(response.status).toBe(403);
+      expect(await response.text()).toContain('[mcp.origin-denied]');
+    });
+
+    test('a foreign Host header is refused with 403', async () => {
+      const response = await rpc(list, await mint(), { host: 'evil.example' });
+      expect(response.status).toBe(403);
+      const body = await response.text();
+      expect(body).toContain('[mcp.host-denied]');
+      expect(body).not.toContain('evil.example');
+    });
+
+    test('loopback aliases with the bound port are allowed as Host', async () => {
+      await expectRefused(
+        await rpc(list, undefined, { host: `localhost:${handle.port}` }),
+        401,
+        'auth.token-missing',
+      );
+    });
+  });
+});
+
+describe('agentic mcp --http endpoint path', () => {
+  let root: string;
+  let signer: Signer;
+  let auth: TestAuthServer;
+  const handles: Awaited<ReturnType<typeof startMcpHttpServer>>[] = [];
+
+  beforeAll(async () => {
+    root = await prepareRoot();
+    signer = await makeSigner('RS256', 'k1');
+    auth = startAuthServer('oauth');
+    auth.published.push(signer.jwk);
+  });
+
+  afterAll(async () => {
+    for (const h of handles) await h.close();
+    auth.stop();
+    await rm(root, { recursive: true, force: true });
+  });
+
+  test.each(['http://127.0.0.1:3333/mcp', 'http://127.0.0.1:3333/mcp/'])(
+    'resource %s routes /mcp and /mcp/ to the gate',
+    async (resource) => {
+      const handle = await startMcpHttpServer({
+        root,
+        port: 0,
+        host: '127.0.0.1',
+        mcp: { issuer: auth.issuer, resource },
+      });
+      handles.push(handle);
+      for (const path of ['/mcp', '/mcp/']) {
+        const response = await fetch(`http://127.0.0.1:${handle.port}${path}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: '{}',
+        });
+        expect(response.status).toBe(401);
+      }
+      for (const path of [
+        '/.well-known/oauth-protected-resource/mcp',
+        '/.well-known/oauth-protected-resource/mcp/',
+      ]) {
+        const response = await fetch(`http://127.0.0.1:${handle.port}${path}`);
+        expect(response.status).toBe(200);
+      }
+    },
+  );
 });

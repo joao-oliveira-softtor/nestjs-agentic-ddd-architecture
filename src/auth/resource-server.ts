@@ -7,9 +7,10 @@ import {
   type OAuthTokenVerifier,
   bearerAuthChallengeResponse,
   getOAuthProtectedResourceMetadataUrl,
-  requireBearerAuth,
+  verifyBearerToken,
 } from '@modelcontextprotocol/server';
 import {
+  type JWTPayload,
   type JWTVerifyGetKey,
   createRemoteJWKSet,
   errors,
@@ -65,6 +66,52 @@ function authError(
   return new OAuthError(oauth, `${code}: ${message}`);
 }
 
+// `https://h/mcp` and `https://h/mcp/` are one resource; a bare `/` path has no other form.
+function audiences(resource: string): string[] {
+  if (new URL(resource).pathname === '/') return [resource];
+  const bare = resource.replace(/\/$/, '');
+  return [bare, `${bare}/`];
+}
+
+// Space-separated `scope` plus `scp` (string or array, Azure/Entra/Okta style), deduplicated.
+function tokenScopes(payload: JWTPayload): string[] {
+  const parts = [payload.scope, payload.scp].flatMap((claim) =>
+    Array.isArray(claim) ? claim : [claim],
+  );
+  const scopes = parts.flatMap((part) =>
+    typeof part === 'string' ? part.split(' ').filter(Boolean) : [],
+  );
+  return [...new Set(scopes)];
+}
+
+// The SDK's own refusals carry no code; give each one ours so every answer is coded.
+function withCode(error: unknown): unknown {
+  if (!(error instanceof OAuthError) || error.message.startsWith('auth.')) {
+    return error;
+  }
+  if (error.code === OAuthErrorCode.InsufficientScope) {
+    return authError(
+      'auth.scope-missing',
+      'The token lacks a required scope.',
+      OAuthErrorCode.InsufficientScope,
+    );
+  }
+  if (error.code !== OAuthErrorCode.InvalidToken) return error;
+  if (/resource/i.test(error.message)) {
+    return authError(
+      'auth.audience-mismatch',
+      'The token is not for this resource.',
+    );
+  }
+  if (/expired/i.test(error.message)) {
+    return authError('auth.token-expired', 'The access token has expired.');
+  }
+  return authError(
+    'auth.token-invalid',
+    'The access token failed verification.',
+  );
+}
+
 async function discoverJwksUri(issuer: string): Promise<string> {
   for (const url of discoveryUrls(issuer)) {
     try {
@@ -83,7 +130,8 @@ async function discoverJwksUri(issuer: string): Promise<string> {
 }
 
 function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
-  const { issuer, resource, requiredScopes } = options;
+  const { issuer, resource } = options;
+  const audience = audiences(resource);
   let keys: Promise<JWTVerifyGetKey> | undefined;
   const getKeys = (): Promise<JWTVerifyGetKey> =>
     (keys ??= (async () => {
@@ -104,7 +152,7 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
         ({ payload } = await jwtVerify(token, await getKeys(), {
           algorithms: ALGORITHMS,
           issuer,
-          audience: resource,
+          audience,
           clockTolerance: CLOCK_TOLERANCE_S,
         }));
       } catch (error) {
@@ -144,22 +192,17 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
         }
         throw error;
       }
-      const scopes =
-        typeof payload.scope === 'string'
-          ? payload.scope.split(' ').filter(Boolean)
-          : [];
-      if (!requiredScopes.every((s) => scopes.includes(s))) {
+      if (typeof payload.exp !== 'number') {
         throw authError(
-          'auth.scope-missing',
-          'The token lacks a required scope.',
-          OAuthErrorCode.InsufficientScope,
+          'auth.token-invalid',
+          'The access token has no expiration time.',
         );
       }
       const clientId = payload.client_id ?? payload.azp ?? payload.sub;
       return {
         token,
         clientId: typeof clientId === 'string' ? clientId : '',
-        scopes,
+        scopes: tokenScopes(payload),
         expiresAt: payload.exp,
         resource: new URL(resource),
       };
@@ -175,11 +218,12 @@ export function createResourceServer(
     requiredScopes: [...options.requiredScopes],
     resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resourceUrl),
   };
-  const bearer = requireBearerAuth({
+  // Scopes are checked once, by the SDK, against the verifier's AuthInfo.
+  const verification = {
     verifier: createVerifier(options),
     expectedResource: resourceUrl,
     ...challenge,
-  });
+  };
   const document = {
     resource: options.resource,
     authorization_servers: [options.issuer],
@@ -188,20 +232,23 @@ export function createResourceServer(
   };
 
   return {
-    gate(request) {
-      // The SDK has no code for a missing token, so that case is answered here.
-      if (!/^bearer\s+\S/i.test(request.headers.get('authorization') ?? '')) {
-        return Promise.resolve(
-          bearerAuthChallengeResponse(
-            authError(
-              'auth.token-missing',
-              'A Bearer access token is required.',
-            ),
-            challenge,
-          ),
-        );
+    async gate(request) {
+      // Same cut as the SDK (first comma, single space), so a header it would refuse for
+      // format is answered here with our code.
+      const [header = ''] = (request.headers.get('authorization') ?? '').split(
+        ',',
+      );
+      try {
+        if (!/^bearer [^ ]/i.test(header)) {
+          throw authError(
+            'auth.token-missing',
+            'A Bearer access token is required.',
+          );
+        }
+        return await verifyBearerToken(header, verification);
+      } catch (error) {
+        return bearerAuthChallengeResponse(withCode(error), challenge);
       }
-      return bearer(request);
     },
     metadata(request) {
       if (request.method !== 'GET' && request.method !== 'HEAD') {

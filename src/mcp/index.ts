@@ -8,7 +8,7 @@ import { isAbsolute, posix, relative } from 'node:path';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
-import type { ResolvedMcp } from '../compiler/config';
+import type { McpConfig } from '../compiler/config';
 import { checkSnapshot } from '../compiler/snapshot';
 import { changes, element, overview, rulesForPath } from './tools';
 
@@ -115,6 +115,45 @@ export function startMcpServer({ root }: { root: string }): {
 
 const MAX_BODY_BYTES = 1024 * 1024;
 
+const trimSlash = (path: string) =>
+  path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
+
+const LOOPBACK = ['127.0.0.1', 'localhost', '[::1]'];
+
+// DNS-rebinding defense: exact Host (host:port) and Origin allowlists. The SDK helpers are
+// hostname-only (any port) and cannot carry a stable code, so the check lives here.
+function allowedHostsAndOrigins(host: string, port: number, resource: URL) {
+  const bind = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+  const hosts = new Set([`${bind}:${port}`, resource.host]);
+  if (LOOPBACK.includes(bind.toLowerCase()))
+    for (const name of LOOPBACK) hosts.add(`${name}:${port}`);
+  return {
+    hosts,
+    origins: new Set(
+      [...hosts].map((h) => `http://${h}`).concat(resource.origin),
+    ),
+  };
+}
+
+function rejectHostOrigin(
+  request: Request,
+  { hosts, origins }: ReturnType<typeof allowedHostsAndOrigins>,
+): Response | undefined {
+  const refuse = (
+    code: 'mcp.host-denied' | 'mcp.origin-denied',
+    what: string,
+  ) =>
+    new Response(formatCoded({ code, message: `${what} not allowed` }), {
+      status: 403,
+    });
+  // A missing Origin is a non-browser client: allowed.
+  const origin = request.headers.get('origin');
+  if (!hosts.has((request.headers.get('host') ?? '').toLowerCase()))
+    return refuse('mcp.host-denied', 'Host');
+  if (origin !== null && !origins.has(origin.toLowerCase()))
+    return refuse('mcp.origin-denied', 'Origin');
+}
+
 export async function startMcpHttpServer({
   root,
   port,
@@ -124,7 +163,7 @@ export async function startMcpHttpServer({
   root: string;
   port: number;
   host: string;
-  mcp: ResolvedMcp;
+  mcp: McpConfig;
 }): Promise<{ close(): Promise<void>; port: number }> {
   // Loaded here so the stdio server does not need `jose`.
   const { createResourceServer } = await import('../auth/resource-server');
@@ -135,9 +174,10 @@ export async function startMcpHttpServer({
     requiredScopes: ['domain:read'],
   });
   const resource = new URL(mcp.resource);
-  const mcpPath = resource.pathname;
-  const metadataPath = new URL(getOAuthProtectedResourceMetadataUrl(resource))
-    .pathname;
+  const mcpPath = trimSlash(resource.pathname);
+  const metadataPath = trimSlash(
+    new URL(getOAuthProtectedResourceMetadataUrl(resource)).pathname,
+  );
   // Stateless: the tools are read-only, so a fresh server per request is enough.
   const handler = createMcpHandler(() => createDomainServer(root), {
     maxRequestBodySize: MAX_BODY_BYTES,
@@ -146,11 +186,18 @@ export async function startMcpHttpServer({
     hostname: host,
     port,
     maxRequestBodySize: MAX_BODY_BYTES,
+    // Tool calls revalidate the snapshot on each request, so they can outlast Bun's 10 s default.
+    idleTimeout: 120,
     async fetch(request) {
-      const { pathname } = new URL(request.url);
-      if (pathname === metadataPath) return resourceServer.metadata(request);
-      if (pathname !== mcpPath)
+      const pathname = trimSlash(new URL(request.url).pathname);
+      if (pathname !== metadataPath && pathname !== mcpPath)
         return new Response('Not found', { status: 404 });
+      const denied = rejectHostOrigin(
+        request,
+        allowedHostsAndOrigins(host, server.port as number, resource),
+      );
+      if (denied) return denied;
+      if (pathname === metadataPath) return resourceServer.metadata(request);
       const gated = await resourceServer.gate(request);
       if (gated instanceof Response) return gated;
       return handler.fetch(request, { authInfo: gated });

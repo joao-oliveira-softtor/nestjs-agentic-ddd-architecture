@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { loadConfig, type ResolvedMcp } from '../../compiler/config';
+import { loadConfig, type McpConfig } from '../../compiler/config';
 import { formatCoded } from '../../contracts/codes';
 import { parseArgs } from '../args';
 import { USAGE } from '../usage';
@@ -10,7 +10,7 @@ type Load = () => Promise<{
     root: string;
     port: number;
     host: string;
-    mcp: ResolvedMcp;
+    mcp: McpConfig;
   }): Promise<{ close(): unknown; port: number }>;
 }>;
 

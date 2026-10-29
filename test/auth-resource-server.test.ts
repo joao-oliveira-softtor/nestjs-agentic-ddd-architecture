@@ -15,19 +15,24 @@ const SCOPE = 'domain:read';
 interface Claims {
   iss?: string;
   aud?: string | string[];
-  scope?: string;
-  exp?: number;
+  scope?: string | null; // null omits the claim
+  scp?: string | string[];
+  exp?: number | null; // null omits the claim
 }
 
 async function mint(signer: Signer, issuer: string, claims: Claims = {}) {
   const now = Math.floor(Date.now() / 1000);
-  return new SignJWT({ scope: claims.scope ?? SCOPE, client_id: 'client-1' })
+  const jwt = new SignJWT({
+    client_id: 'client-1',
+    ...(claims.scope !== null && { scope: claims.scope ?? SCOPE }),
+    ...(claims.scp !== undefined && { scp: claims.scp }),
+  })
     .setProtectedHeader({ alg: signer.alg, kid: signer.kid })
     .setIssuer(claims.iss ?? issuer)
     .setAudience(claims.aud ?? RESOURCE)
-    .setIssuedAt(now)
-    .setExpirationTime(claims.exp ?? now + 300)
-    .sign(signer.privateKey);
+    .setIssuedAt(now);
+  if (claims.exp !== null) jwt.setExpirationTime(claims.exp ?? now + 300);
+  return jwt.sign(signer.privateKey);
 }
 
 const bearer = (token?: string) =>
@@ -182,6 +187,94 @@ describe('resource server', () => {
     expect(header).toContain('error="insufficient_scope"');
     expect(header).toContain(`scope="${SCOPE}"`);
     expect(JSON.stringify(body)).not.toContain(auth.issuer);
+  });
+
+  test('a header with two spaces after Bearer is a 401 auth.token-missing', async () => {
+    const request = new Request(RESOURCE, {
+      method: 'POST',
+      headers: { authorization: 'Bearer  tok' },
+    });
+    await expectChallenge(await gate(request), 401, 'auth.token-missing');
+  });
+
+  test('a token without exp is a 401 auth.token-invalid', async () => {
+    const token = await mint(rsa, auth.issuer, { exp: null });
+    await expectChallenge(await gate(bearer(token)), 401, 'auth.token-invalid');
+  });
+
+  describe('scope claims', () => {
+    const scopesOf = async (claims: Claims) =>
+      ((await gate(bearer(await mint(rsa, auth.issuer, claims)))) as AuthInfo)
+        .scopes;
+
+    test('reads the scope string', async () => {
+      expect(await scopesOf({ scope: `${SCOPE} a` })).toEqual([SCOPE, 'a']);
+    });
+
+    test('reads scp as an array and ignores non-string entries', async () => {
+      expect(
+        await scopesOf({
+          scope: null,
+          scp: [SCOPE, 'b', 7 as unknown as string],
+        }),
+      ).toEqual([SCOPE, 'b']);
+    });
+
+    test('reads scp as a space-separated string', async () => {
+      expect(await scopesOf({ scope: null, scp: `${SCOPE} c` })).toEqual([
+        SCOPE,
+        'c',
+      ]);
+    });
+
+    test('unions scope and scp without duplicates', async () => {
+      expect(
+        await scopesOf({ scope: `${SCOPE} a`, scp: [SCOPE, 'b'] }),
+      ).toEqual([SCOPE, 'a', 'b']);
+    });
+
+    test('no scope claims is a 403 auth.scope-missing', async () => {
+      const token = await mint(rsa, auth.issuer, { scope: null });
+      await expectChallenge(
+        await gate(bearer(token)),
+        403,
+        'auth.scope-missing',
+      );
+    });
+  });
+
+  describe('trailing slash on the resource', () => {
+    const make = (resource: string) =>
+      createResourceServer({
+        issuer: auth.issuer,
+        resource,
+        requiredScopes: [SCOPE],
+      });
+
+    test('a configured slash accepts an aud without it', async () => {
+      const server = make(`${RESOURCE}/`);
+      const token = await mint(rsa, auth.issuer, { aud: RESOURCE });
+      expect(await server.gate(bearer(token))).not.toBeInstanceOf(Response);
+    });
+
+    test('a configured resource without slash accepts an aud with it', async () => {
+      const token = await mint(rsa, auth.issuer, { aud: `${RESOURCE}/` });
+      expect(await gate(bearer(token))).not.toBeInstanceOf(Response);
+    });
+
+    test('a different path is still refused', async () => {
+      const server = make(`${RESOURCE}/`);
+      const token = await mint(rsa, auth.issuer, { aud: `${RESOURCE}x` });
+      const response = (await server.gate(bearer(token))) as Response;
+      expect(response.status).toBe(401);
+    });
+
+    test('the metadata document advertises the resource as configured', async () => {
+      const response = make(`${RESOURCE}/`).metadata(new Request(RESOURCE));
+      expect(((await response.json()) as { resource: string }).resource).toBe(
+        `${RESOURCE}/`,
+      );
+    });
   });
 
   test('errors never leak the JWKS url or stack traces', async () => {

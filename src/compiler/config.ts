@@ -46,8 +46,6 @@ export interface McpConfig {
   readonly jwksUri?: string;
 }
 
-export type ResolvedMcp = McpConfig;
-
 export interface AgenticConfig {
   readonly root?: string;
   readonly modules: readonly ModuleConfig[];
@@ -82,7 +80,7 @@ export interface ResolvedConfig {
   // Optional only so tests that build ResolvedConfig by hand keep compiling;
   // resolveConfig always fills it in.
   readonly conventions?: ResolvedConventions;
-  readonly mcp?: ResolvedMcp;
+  readonly mcp?: McpConfig;
 }
 
 const MODULE_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -212,7 +210,7 @@ function mcpUrl(value: unknown, path: string, noQuery = false): string {
   return value;
 }
 
-function resolveMcp(input: unknown): ResolvedMcp {
+function resolveMcp(input: unknown): McpConfig {
   const section = checkKeys(input, 'mcp', MCP_KEYS);
   if (section.issuer === undefined || section.resource === undefined)
     throw new AgenticError(
