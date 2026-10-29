@@ -131,6 +131,26 @@ describe('mcpCommand', () => {
     expect(messages).toContain('http://[::1]:4321/mcp');
   });
 
+  test('--http prints an IPv6 host in brackets exactly once', async () => {
+    for (const [host, shown] of [
+      ['::1', '[::1]'],
+      ['[::1]', '[::1]'],
+      ['127.0.0.1', '127.0.0.1'],
+    ]) {
+      const calls: unknown[] = [];
+      const error = captureErrors();
+      const code = await mcpCommand(
+        ['--http', '--host', host, '--config', await configFile(MCP)],
+        httpLoad(calls),
+      );
+      const messages = error.mock.calls.flat().join('\n');
+      error.mockRestore();
+      expect(code).toBe(0);
+      expect(calls[0]).toMatchObject({ host });
+      expect(messages).toContain(`http://${shown}:4321/mcp`);
+    }
+  });
+
   test('--port or --host without --http is a usage error (exit 2)', async () => {
     const load = mock(() => Promise.reject(new Error('must not load')));
     for (const args of [

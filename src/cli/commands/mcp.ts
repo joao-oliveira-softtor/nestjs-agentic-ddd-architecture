@@ -100,7 +100,9 @@ export async function mcpCommand(
       );
       return 1;
     }
-    const shown = host.includes(':') ? `[${host}]` : host;
+    // Brackets are added only once, whether or not the user typed them.
+    const bare = host.replace(/^\[(.*)\]$/, '$1');
+    const shown = bare.includes(':') ? `[${bare}]` : bare;
     console.error(
       `agentic-ddd mcp listening on http://${shown}:${handle.port}/mcp`,
     );

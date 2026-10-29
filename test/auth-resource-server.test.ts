@@ -18,6 +18,7 @@ interface Claims {
   scope?: string | null; // null omits the claim
   scp?: string | string[];
   exp?: number | null; // null omits the claim
+  nbf?: number;
 }
 
 async function mint(signer: Signer, issuer: string, claims: Claims = {}) {
@@ -32,6 +33,7 @@ async function mint(signer: Signer, issuer: string, claims: Claims = {}) {
     .setAudience(claims.aud ?? RESOURCE)
     .setIssuedAt(now);
   if (claims.exp !== null) jwt.setExpirationTime(claims.exp ?? now + 300);
+  if (claims.nbf !== undefined) jwt.setNotBefore(claims.nbf);
   return jwt.sign(signer.privateKey);
 }
 
@@ -134,6 +136,62 @@ describe('resource server', () => {
     const exp = Math.floor(Date.now() / 1000) - 60;
     const token = await mint(rsa, auth.issuer, { exp });
     await expectChallenge(await gate(bearer(token)), 401, 'auth.token-expired');
+  });
+
+  test('a token that expired one second ago is refused despite the clock tolerance', async () => {
+    const exp = Math.floor(Date.now() / 1000) - 1;
+    const token = await mint(rsa, auth.issuer, { exp });
+    await expectChallenge(await gate(bearer(token)), 401, 'auth.token-expired');
+  });
+
+  test('a token whose nbf is two seconds ahead is accepted within the tolerance', async () => {
+    const nbf = Math.floor(Date.now() / 1000) + 2;
+    const token = await mint(rsa, auth.issuer, { nbf });
+    expect(await gate(bearer(token))).not.toBeInstanceOf(Response);
+  });
+
+  describe('algorithm allowlist', () => {
+    const own = (server: TestAuthServer) =>
+      createResourceServer({
+        issuer: server.issuer,
+        resource: RESOURCE,
+        requiredScopes: [SCOPE],
+      });
+
+    for (const alg of ['PS256', 'ES384', 'EdDSA'] as const) {
+      test(`a valid ${alg} token passes end to end`, async () => {
+        const signer = await makeSigner(alg, `${alg}-1`);
+        const server = startAuthServer('oauth');
+        server.published.push(signer.jwk);
+        try {
+          expect(
+            await own(server).gate(bearer(await mint(signer, server.issuer))),
+          ).not.toBeInstanceOf(Response);
+        } finally {
+          server.stop();
+        }
+      });
+    }
+
+    for (const alg of ['RS384', 'ES512'] as const) {
+      test(`a ${alg} token is auth.token-invalid before any fetch`, async () => {
+        const signer = await makeSigner(alg, `${alg}-1`);
+        const server = startAuthServer('oauth');
+        server.published.push(signer.jwk);
+        try {
+          await expectChallenge(
+            await own(server).gate(
+              bearer(await mint(signer, server.issuer)),
+            ),
+            401,
+            'auth.token-invalid',
+          );
+          expect({ ...server.hits }).toEqual({ discovery: 0, jwks: 0 });
+        } finally {
+          server.stop();
+        }
+      });
+    }
   });
 
   test('an unsigned alg none token is auth.token-invalid', async () => {
@@ -363,6 +421,52 @@ describe('resource server', () => {
       expect(await bearerOidc(bearer(token))).not.toBeInstanceOf(Response);
       expect(await bearerOidc(bearer(token))).not.toBeInstanceOf(Response);
       expect(oidc.hits.discovery).toBe(1);
+    });
+
+    test('a failed discovery is remembered for the window, then retried', async () => {
+      const server = startAuthServer('oauth', { discoveryStatus: 500 });
+      let now = 1_000_000;
+      const down = createResourceServer({
+        issuer: server.issuer,
+        resource: RESOURCE,
+        requiredScopes: [SCOPE],
+        now: () => now,
+      });
+      try {
+        const token = await mint(rsa, server.issuer);
+        expect(((await down.gate(bearer(token))) as Response).status).toBe(500);
+        now += 29_000;
+        expect(((await down.gate(bearer(token))) as Response).status).toBe(500);
+        expect(server.hits.discovery).toBe(1);
+        now += 2_000;
+        expect(((await down.gate(bearer(token))) as Response).status).toBe(500);
+        expect(server.hits.discovery).toBe(2);
+      } finally {
+        server.stop();
+      }
+    });
+
+    test('an unreachable explicit jwks is remembered for the window too', async () => {
+      const server = startAuthServer('oauth', { jwksStatus: 500 });
+      let now = 1_000_000;
+      const down = createResourceServer({
+        issuer: server.issuer,
+        jwksUri: `${server.issuer}/jwks.json`,
+        resource: RESOURCE,
+        requiredScopes: [SCOPE],
+        now: () => now,
+      });
+      try {
+        const token = await mint(rsa, server.issuer);
+        expect(((await down.gate(bearer(token))) as Response).status).toBe(500);
+        expect(((await down.gate(bearer(token))) as Response).status).toBe(500);
+        expect(server.hits.jwks).toBe(1);
+        now += 31_000;
+        await down.gate(bearer(token));
+        expect(server.hits.jwks).toBe(2);
+      } finally {
+        server.stop();
+      }
     });
 
     test('a discovery document for another issuer is rejected without a token verdict', async () => {

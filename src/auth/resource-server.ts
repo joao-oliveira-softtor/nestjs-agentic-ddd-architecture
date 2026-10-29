@@ -32,6 +32,8 @@ export interface ResourceServerOptions {
   readonly requiredScopes: readonly string[];
   /** Minimum delay between JWKS re-fetches on an unknown `kid` (default: jose's 30s). */
   readonly jwksCooldownMs?: number;
+  /** Clock in ms (default `Date.now`); injectable for the failure window. */
+  readonly now?: () => number;
 }
 
 export interface ResourceServer {
@@ -43,7 +45,10 @@ export interface ResourceServer {
 
 const FETCH_TIMEOUT_MS = 5000;
 const CLOCK_TOLERANCE_S = 5;
-const ALGORITHMS = ['RS256', 'ES256'];
+// Stop an unreachable issuer from being refetched on every request.
+const FAILURE_CACHE_MS = 30_000;
+// Asymmetric only: `none` and HS* never verify against a public JWKS.
+const ALGORITHMS = ['RS256', 'PS256', 'ES256', 'ES384', 'EdDSA'];
 // RFC 8414 inserts the well-known segment before the issuer path; OIDC appends it.
 function discoveryUrls(issuer: string): string[] {
   const { origin, pathname } = new URL(issuer);
@@ -148,18 +153,45 @@ async function discoverJwksUri(issuer: string): Promise<string> {
 function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
   const { issuer, resource } = options;
   const audience = audiences(resource);
+  const now = options.now ?? Date.now;
   let keys: Promise<JWTVerifyGetKey> | undefined;
-  const getKeys = (): Promise<JWTVerifyGetKey> =>
-    (keys ??= (async () => {
+  let failedAt: number | undefined;
+  let loaded = false; // once keys were served, jose's own cache and cooldown take over
+  const blocked = (): boolean =>
+    !loaded && failedAt !== undefined && now() - failedAt < FAILURE_CACHE_MS;
+  const unavailable = () => new Error('JWKS unavailable');
+  const getKeys = (): Promise<JWTVerifyGetKey> => {
+    if (!keys && blocked()) return Promise.reject(unavailable());
+    return (keys ??= (async () => {
       const uri = options.jwksUri ?? (await discoverJwksUri(issuer));
-      return createRemoteJWKSet(new URL(uri), {
+      const jwks = createRemoteJWKSet(new URL(uri), {
         timeoutDuration: FETCH_TIMEOUT_MS,
         cooldownDuration: options.jwksCooldownMs,
       });
+      const guarded: JWTVerifyGetKey = async (header, input) => {
+        if (blocked()) throw unavailable();
+        try {
+          const key = await jwks(header, input);
+          loaded = true;
+          return key;
+        } catch (error) {
+          // A token naming no usable key is the token's fault; anything else is the fetch.
+          if (
+            !(error instanceof errors.JWKSNoMatchingKey) &&
+            !(error instanceof errors.JWKSMultipleMatchingKeys)
+          ) {
+            failedAt = now();
+          }
+          throw error;
+        }
+      };
+      return guarded;
     })().catch((error: unknown) => {
-      keys = undefined; // retry discovery on the next request
+      keys = undefined; // retry discovery after the failure window
+      failedAt = now();
       throw error;
     }));
+  };
 
   return {
     async verifyAccessToken(token) {
@@ -169,6 +201,7 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
         const { alg } = decodeProtectedHeader(token);
         if (alg === undefined || !ALGORITHMS.includes(alg))
           throw new errors.JWSInvalid('Unsupported algorithm');
+        // Entra and Auth0 issue `typ: JWT`, so `at+jwt` is not required.
         ({ payload } = await jwtVerify(token, await getKeys(), {
           algorithms: ALGORITHMS,
           issuer,
@@ -217,6 +250,10 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
           'auth.token-invalid',
           'The access token has no expiration time.',
         );
+      }
+      // jose applies clockTolerance to exp too; tolerance is for nbf/iat only, so exp is strict.
+      if (payload.exp <= Date.now() / 1000) {
+        throw authError('auth.token-expired', 'The access token has expired.');
       }
       const clientId = payload.client_id ?? payload.azp ?? payload.sub;
       return {
@@ -277,9 +314,7 @@ export function createResourceServer(
           headers: { Allow: 'GET, HEAD' },
         });
       }
-      return Response.json(document, {
-        headers: { 'Access-Control-Allow-Origin': '*' },
-      });
+      return Response.json(document);
     },
   };
 }

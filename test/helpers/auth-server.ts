@@ -1,7 +1,14 @@
 import { type JWK, type KeyObject, exportJWK, generateKeyPair } from 'jose';
 
 export interface Signer {
-  readonly alg: 'RS256' | 'ES256';
+  readonly alg:
+    | 'RS256'
+    | 'PS256'
+    | 'ES256'
+    | 'ES384'
+    | 'EdDSA'
+    | 'RS384'
+    | 'ES512';
   readonly kid: string;
   readonly privateKey: CryptoKey | KeyObject;
   readonly jwk: JWK;
@@ -32,7 +39,11 @@ export interface TestAuthServer {
 // A local authorization server: discovery document (RFC 8414 or OIDC only) plus the JWKS.
 export function startAuthServer(
   discovery: 'oauth' | 'oidc',
-  options: { jwksUri?: string } = {},
+  options: {
+    jwksUri?: string;
+    discoveryStatus?: number;
+    jwksStatus?: number;
+  } = {},
 ): TestAuthServer {
   const published: JWK[] = [];
   const hits = { discovery: 0, jwks: 0 };
@@ -48,6 +59,8 @@ export function startAuthServer(
       const issuer: string = `http://127.0.0.1:${server.port}`;
       if (pathname === wellKnown) {
         hits.discovery++;
+        if (options.discoveryStatus !== undefined)
+          return new Response('down', { status: options.discoveryStatus });
         return Response.json({
           issuer,
           jwks_uri: options.jwksUri ?? `${issuer}/jwks.json`,
@@ -55,6 +68,8 @@ export function startAuthServer(
       }
       if (pathname === '/jwks.json') {
         hits.jwks++;
+        if (options.jwksStatus !== undefined)
+          return new Response('down', { status: options.jwksStatus });
         return Response.json({ keys: published });
       }
       return new Response('not found', { status: 404 });
