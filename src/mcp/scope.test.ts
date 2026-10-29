@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { DomainLock } from '../compiler/lock';
-import { pathModule, scopeLock } from './scope';
+import type { Rule } from '../compiler/rules';
+import { narrowRulePaths, pathModule, scopeLock } from './scope';
 
 const inv = (id: string, on: string | null = null) => ({
   id,
@@ -182,7 +183,7 @@ describe('scopeLock', () => {
     ]);
   });
 
-  test('keeps an optional list absent when the lock has none', () => {
+  test('keeps an optional list absent when the lock has none, empty when filtered out', () => {
     expect(scoped.ir.valueObjects).toEqual([]);
     expect(scoped.ir.adapters).toEqual([]);
     const { valueObjects: _, ...irWithout } = lock.ir;
@@ -276,5 +277,53 @@ describe('pathModule', () => {
   test('returns undefined outside every module', () => {
     expect(pathModule(lock, 'src/core/a.ts')).toBeUndefined();
     expect(pathModule(lock, '')).toBeUndefined();
+  });
+});
+
+describe('narrowRulePaths', () => {
+  const rule = (key: string, paths: string[] | null): Rule => ({
+    key,
+    file: `.ai/rules/${key}.md`,
+    paths,
+    body: `body of ${key}`,
+  });
+  const file = 'examples/orders/a.ts';
+
+  test('keeps only the globs that match the path', () => {
+    const [r] = narrowRulePaths(
+      [rule('multi', ['examples/orders/**', 'examples/billing/**', '**/*.md'])],
+      file,
+    );
+    expect(r?.paths).toEqual(['examples/orders/**']);
+  });
+
+  test('keeps null paths and a single matching glob as they are', () => {
+    const rules = [rule('all', null), rule('one', ['examples/**'])];
+    expect(narrowRulePaths(rules, file)).toEqual(rules);
+  });
+
+  test('leaves the other fields and the key order intact', () => {
+    const [r] = narrowRulePaths(
+      [rule('multi', ['examples/billing/**', 'examples/orders/**'])],
+      file,
+    );
+    expect(Object.keys(r ?? {})).toEqual(['key', 'file', 'paths', 'body']);
+    expect(r).toEqual({ ...rule('multi', ['examples/orders/**']) });
+  });
+
+  test('does not mutate its input', () => {
+    const input = Object.freeze([
+      Object.freeze(
+        rule(
+          'multi',
+          Object.freeze(['examples/orders/**', 'examples/billing/**']) as never,
+        ),
+      ),
+    ]);
+    narrowRulePaths(input, file);
+    expect(input[0]?.paths).toEqual([
+      'examples/orders/**',
+      'examples/billing/**',
+    ]);
   });
 });

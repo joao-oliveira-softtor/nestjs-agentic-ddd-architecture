@@ -1,5 +1,6 @@
 import type { ModuleAccess } from '../auth/scopes';
 import type { DomainLock } from '../compiler/lock';
+import { rulesFor, type Rule } from '../compiler/rules';
 
 /**
  * The part of `lock` a token with `access` may read: out-of-scope elements are removed and so are
@@ -94,4 +95,19 @@ export function pathModule(
     if (inside && (!best || m.path.length > best.path.length)) best = m;
   }
   return best?.name;
+}
+
+/** Rules already matched for `path`, with `paths` cut to the globs that match it: the others may name hidden modules. */
+export function narrowRulePaths(rules: readonly Rule[], path: string): Rule[] {
+  return rules.map((rule) =>
+    rule.paths === null
+      ? rule
+      : {
+          ...rule,
+          // The glob matcher is rulesFor's: one single-glob rule per glob.
+          paths: rule.paths.filter(
+            (glob) => rulesFor([{ ...rule, paths: [glob] }], [path]).length > 0,
+          ),
+        },
+  );
 }

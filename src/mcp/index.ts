@@ -12,7 +12,7 @@ import { moduleAccess, type ModuleAccess } from '../auth/scopes';
 import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
 import { checkSnapshot } from '../compiler/snapshot';
-import { pathModule, scopeLock } from './scope';
+import { narrowRulePaths, pathModule, scopeLock } from './scope';
 import { changes, element, overview, rulesForPath } from './tools';
 
 type Fresh = Extract<Awaited<ReturnType<typeof checkSnapshot>>, { ok: true }>;
@@ -141,7 +141,11 @@ function createDomainServer(root: string, remote: boolean): McpServer {
             `${path}: outside the modules this token may read`,
           );
       }
-      return rulesForPath(s.rules, rel);
+      const result = rulesForPath(s.rules, rel);
+      // A rule's other globs may name modules the token cannot read.
+      return s.access === 'all'
+        ? result
+        : { ...result, rules: narrowRulePaths(result.rules, result.path) };
     }),
   );
   return server;

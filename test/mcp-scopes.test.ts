@@ -96,6 +96,12 @@ async function prepareRoot(): Promise<string> {
     rulesDir: '.ai/rules',
     rules: [
       { key: 'r', file: '.ai/rules/r.md', paths: ['examples/**'], body: 'R' },
+      {
+        key: 'multi',
+        file: '.ai/rules/multi.md',
+        paths: ['examples/orders/**', 'examples/billing/**'],
+        body: 'M',
+      },
     ],
     modules: lock.ir.modules,
   });
@@ -295,6 +301,22 @@ describe('domain MCP: module scopes, transport parity, no leak', () => {
       expect(ids(byInvoice)).toEqual([]);
       const full = await http('domain:read', 'domain_changes');
       expect(ids(full)).toEqual(['0001', '0002', '0003', '0004']);
+    });
+
+    test('rules_for_path narrows a rule to the globs that match the path', async () => {
+      const globs = async (token: string) =>
+        (
+          (await data(
+            await http(token, 'rules_for_path', {
+              path: 'examples/orders/a.ts',
+            }),
+          )) as { rules: { key: string; paths: string[] }[] }
+        ).rules.find((r) => r.key === 'multi')?.paths;
+      expect(await globs(scope)).toEqual(['examples/orders/**']);
+      expect(await globs('domain:read')).toEqual([
+        'examples/orders/**',
+        'examples/billing/**',
+      ]);
     });
 
     test('rules_for_path refuses paths outside the orders module', async () => {
