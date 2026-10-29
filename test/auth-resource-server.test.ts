@@ -144,6 +144,22 @@ describe('resource server', () => {
     await expectChallenge(await gate(bearer(token)), 401, 'auth.token-expired');
   });
 
+  test('the injected clock decides expiry, not the wall clock', async () => {
+    const exp = Math.floor(Date.now() / 1000) + 300;
+    const token = await mint(rsa, auth.issuer, { exp });
+    const late = createResourceServer({
+      issuer: auth.issuer,
+      resource: RESOURCE,
+      requiredScopes: [SCOPE],
+      now: () => (exp + 60) * 1000,
+    });
+    await expectChallenge(
+      await late.gate(bearer(token)),
+      401,
+      'auth.token-expired',
+    );
+  });
+
   test('a token whose nbf is two seconds ahead is accepted within the tolerance', async () => {
     const nbf = Math.floor(Date.now() / 1000) + 2;
     const token = await mint(rsa, auth.issuer, { nbf });
@@ -180,9 +196,7 @@ describe('resource server', () => {
         server.published.push(signer.jwk);
         try {
           await expectChallenge(
-            await own(server).gate(
-              bearer(await mint(signer, server.issuer)),
-            ),
+            await own(server).gate(bearer(await mint(signer, server.issuer))),
             401,
             'auth.token-invalid',
           );
@@ -320,6 +334,17 @@ describe('resource server', () => {
       expect(await gate(bearer(token))).not.toBeInstanceOf(Response);
     });
 
+    test('a bare-origin resource accepts an aud with or without the slash', async () => {
+      const server = make('https://mcp.example.test');
+      for (const aud of [
+        'https://mcp.example.test',
+        'https://mcp.example.test/',
+      ]) {
+        const token = await mint(rsa, auth.issuer, { aud });
+        expect(await server.gate(bearer(token))).not.toBeInstanceOf(Response);
+      }
+    });
+
     test('a different path is still refused', async () => {
       const server = make(`${RESOURCE}/`);
       const token = await mint(rsa, auth.issuer, { aud: `${RESOURCE}x` });
@@ -383,6 +408,56 @@ describe('resource server', () => {
           401,
           'auth.token-invalid',
         );
+      } finally {
+        server.stop();
+      }
+    });
+
+    test('an unknown kid before any success does not block a later valid token', async () => {
+      const server = startAuthServer('oauth');
+      server.published.push(rsa.jwk);
+      const fresh = createResourceServer({
+        issuer: server.issuer,
+        resource: RESOURCE,
+        requiredScopes: [SCOPE],
+      });
+      try {
+        const ghost = await makeSigner('RS256', 'ghost');
+        await expectChallenge(
+          await fresh.gate(bearer(await mint(ghost, server.issuer))),
+          401,
+          'auth.token-invalid',
+        );
+        expect(
+          await fresh.gate(bearer(await mint(rsa, server.issuer))),
+        ).not.toBeInstanceOf(Response);
+      } finally {
+        server.stop();
+      }
+    });
+
+    test('a token selecting a key jose cannot import does not block a later valid token', async () => {
+      const server = startAuthServer('oauth');
+      server.published.push(rsa.jwk, {
+        kty: 'RSA',
+        kid: 'broken',
+        alg: 'RS256',
+        use: 'sig',
+        e: 'AQAB',
+      });
+      const fresh = createResourceServer({
+        issuer: server.issuer,
+        resource: RESOURCE,
+        requiredScopes: [SCOPE],
+      });
+      try {
+        const broken = await mint({ ...rsa, kid: 'broken' }, server.issuer);
+        expect(((await fresh.gate(bearer(broken))) as Response).status).toBe(
+          500,
+        );
+        expect(
+          await fresh.gate(bearer(await mint(rsa, server.issuer))),
+        ).not.toBeInstanceOf(Response);
       } finally {
         server.stop();
       }
@@ -466,6 +541,38 @@ describe('resource server', () => {
         expect(server.hits.jwks).toBe(2);
       } finally {
         server.stop();
+      }
+    });
+
+    test('an unreachable explicit jwks is not reconnected inside the window', async () => {
+      const closed = startAuthServer('oauth');
+      const issuer = closed.issuer;
+      closed.stop();
+      let now = 1_000_000;
+      const down = createResourceServer({
+        issuer,
+        jwksUri: `${issuer}/jwks.json`,
+        resource: RESOURCE,
+        requiredScopes: [SCOPE],
+        now: () => now,
+      });
+      const connects = spyOn(globalThis, 'fetch');
+      try {
+        const token = await mint(rsa, issuer);
+        const attempts = () =>
+          connects.mock.calls.filter(([input]) =>
+            String(input instanceof Request ? input.url : input).startsWith(
+              issuer,
+            ),
+          ).length;
+        expect(((await down.gate(bearer(token))) as Response).status).toBe(500);
+        expect(((await down.gate(bearer(token))) as Response).status).toBe(500);
+        expect(attempts()).toBe(1);
+        now += 31_000;
+        expect(((await down.gate(bearer(token))) as Response).status).toBe(500);
+        expect(attempts()).toBe(2);
+      } finally {
+        connects.mockRestore();
       }
     });
 

@@ -87,9 +87,9 @@ function authError(
   return new OAuthError(oauth, `${code}: ${message}`);
 }
 
-// `https://h/mcp` and `https://h/mcp/` are one resource; a bare `/` path has no other form.
+// `https://h/mcp` and `https://h/mcp/` are one resource, and so are `https://h` and `https://h/`
+// (the config keeps the text as written, but an issuer may emit either form in `aud`).
 function audiences(resource: string): string[] {
-  if (new URL(resource).pathname === '/') return [resource];
   const bare = resource.replace(/\/$/, '');
   return [bare, `${bare}/`];
 }
@@ -150,6 +150,19 @@ async function discoverJwksUri(issuer: string): Promise<string> {
   throw new Error('JWKS discovery failed');
 }
 
+// Only fetch-side failures mean the issuer is down. A token can provoke any other key error
+// (an unusable key, an unknown kid), and that must not block verification for everyone.
+// A refused or unresolvable connection surfaces as a bare TypeError from fetch; key-import
+// failures are DOMExceptions, so the TypeError test does not catch them.
+function isIssuerFailure(error: unknown): boolean {
+  return (
+    error instanceof errors.JWKSTimeout ||
+    error instanceof errors.JWKSInvalid ||
+    error instanceof TypeError ||
+    (error instanceof errors.JOSEError && error.code === 'ERR_JOSE_GENERIC')
+  );
+}
+
 function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
   const { issuer, resource } = options;
   const audience = audiences(resource);
@@ -175,13 +188,7 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
           loaded = true;
           return key;
         } catch (error) {
-          // A token naming no usable key is the token's fault; anything else is the fetch.
-          if (
-            !(error instanceof errors.JWKSNoMatchingKey) &&
-            !(error instanceof errors.JWKSMultipleMatchingKeys)
-          ) {
-            failedAt = now();
-          }
+          if (isIssuerFailure(error)) failedAt = now();
           throw error;
         }
       };
@@ -207,6 +214,7 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
           issuer,
           audience,
           clockTolerance: CLOCK_TOLERANCE_S,
+          currentDate: new Date(now()),
         }));
       } catch (error) {
         if (error instanceof errors.JWTExpired) {
@@ -232,12 +240,7 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
         // Signature, algorithm, unknown kid, malformed token: one generic answer. Other
         // failures (JWKS fetch/discovery: timeout, non-200, bad JSON) propagate and become a
         // bare 500; jose raises those as a plain JOSEError or JWKSInvalid.
-        if (
-          error instanceof errors.JOSEError &&
-          error.code !== 'ERR_JOSE_GENERIC' &&
-          !(error instanceof errors.JWKSTimeout) &&
-          !(error instanceof errors.JWKSInvalid)
-        ) {
+        if (error instanceof errors.JOSEError && !isIssuerFailure(error)) {
           throw authError(
             'auth.token-invalid',
             'The access token failed verification.',
@@ -252,7 +255,7 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
         );
       }
       // jose applies clockTolerance to exp too; tolerance is for nbf/iat only, so exp is strict.
-      if (payload.exp <= Date.now() / 1000) {
+      if (payload.exp <= now() / 1000) {
         throw authError('auth.token-expired', 'The access token has expired.');
       }
       const clientId = payload.client_id ?? payload.azp ?? payload.sub;
