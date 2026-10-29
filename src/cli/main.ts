@@ -1,4 +1,4 @@
-import { AgenticError } from '../contracts/codes';
+import { AgenticError, formatCoded } from '../contracts/codes';
 import { compileCommand } from './commands/compile';
 import { irCommand } from './commands/ir';
 import { verifyCommand } from './commands/verify';
@@ -35,7 +35,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     return await run(rest);
   } catch (error) {
     console.error(
-      `agentic-ddd: ${(error as Error).message}${error instanceof AgenticError ? ` [${error.code}]` : ''}`,
+      `agentic-ddd: ${error instanceof AgenticError ? formatCoded(error) : (error as Error).message}`,
     );
     return 1;
   }

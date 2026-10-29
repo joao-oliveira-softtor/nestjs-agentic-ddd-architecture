@@ -3,7 +3,7 @@ import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { isAbsolute, posix, relative } from 'node:path';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
-import { AgenticError, canonicalPath } from '../contracts/ir';
+import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
 import { checkSnapshot } from '../compiler/snapshot';
 import { changes, element, overview, rulesForPath } from './tools';
 
@@ -17,14 +17,21 @@ export function startMcpServer({ root }: { root: string }): {
   const guarded =
     <A>(run: (s: Fresh, args: A) => object) =>
     async (args: A) => {
-      const snap = await checkSnapshot(root);
-      if (!snap.ok)
-        throw new AgenticError(snap.code, `${snap.reason} [${snap.code}]`);
-      return {
-        content: [
-          { type: 'text' as const, text: stableStringify(run(snap, args)) },
-        ],
-      };
+      try {
+        const snap = await checkSnapshot(root);
+        if (!snap.ok) throw new AgenticError(snap.code, snap.reason);
+        return {
+          content: [
+            { type: 'text' as const, text: stableStringify(run(snap, args)) },
+          ],
+        };
+      } catch (error) {
+        if (!(error instanceof AgenticError)) throw error;
+        return {
+          isError: true,
+          content: [{ type: 'text' as const, text: formatCoded(error) }],
+        };
+      }
     };
   const annotations = { readOnlyHint: true, openWorldHint: false };
   return serveStdio(() => {
@@ -51,7 +58,7 @@ export function startMcpServer({ root }: { root: string }): {
       },
       guarded<{ id: string }>((s, { id }) => {
         const r = element(s.lock, id);
-        if (!r.ok) throw new AgenticError(r.code, `${r.error} [${r.code}]`);
+        if (!r.ok) throw new AgenticError(r.code, r.error);
         return r.value;
       }),
     );
@@ -88,7 +95,7 @@ export function startMcpServer({ root }: { root: string }): {
         if (isAbsolute(rel) || rel === '..' || rel.startsWith('../'))
           throw new AgenticError(
             'mcp.path-outside-root',
-            `${path}: outside the project root (${s.root}) [mcp.path-outside-root]`,
+            `${path}: outside the project root (${s.root})`,
           );
         return rulesForPath(s.rules, rel);
       }),

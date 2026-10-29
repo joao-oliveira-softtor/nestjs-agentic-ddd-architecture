@@ -2,7 +2,7 @@ import { sha256 } from '../canonical';
 import type { Proposal } from '../changes/proposal';
 import { deltaProblems } from '../changes/reconcile';
 import type { DiffItem } from '../diff';
-import type { ErrorCode } from '../ir';
+import type { Coded, ErrorCode } from '../ir';
 import type { DomainLock } from '../lock';
 import type { TestCaseResult, TestRun } from './test-run';
 
@@ -58,7 +58,7 @@ export interface GateInput {
   readonly lock: DomainLock | null;
   readonly diff: readonly DiffItem[];
   readonly checkOk: boolean;
-  readonly checkProblems: readonly string[];
+  readonly checkProblems: readonly Coded[];
   readonly tests: TestRun;
   readonly commands: readonly CommandResult[];
   readonly knownIds: ReadonlySet<string>;
@@ -116,14 +116,14 @@ export function evaluateGates(input: GateInput): VerifyReport {
     );
     if (!recorded) {
       g1.push({
-        code: 'verify.proposal-not-in-lock',
+        code: 'proposal.archived-not-in-lock',
         message: `the proposal ${proposal.id} is in archive but not in the lock`,
         fix: 'restore the lock from git',
         source: proposal.path,
       });
     } else if (recorded.hash !== sha256(proposal.raw)) {
       g1.push({
-        code: 'verify.proposal-edited',
+        code: 'proposal.applied-edited',
         message: `the proposal ${proposal.id} was edited after being applied`,
         fix: 'restore it from git; archived proposals are immutable',
         source: proposal.path,
@@ -140,7 +140,7 @@ export function evaluateGates(input: GateInput): VerifyReport {
   } else {
     for (const problem of deltaProblems(proposal, input.diff)) {
       g1.push({
-        code: 'verify.delta-mismatch',
+        code: 'proposal.delta-mismatch',
         message: problem,
         fix: 'adjust the proposal delta or the code so they match',
         source: proposal.path,
@@ -152,9 +152,14 @@ export function evaluateGates(input: GateInput): VerifyReport {
     ? []
     : (input.checkProblems.length > 0
         ? input.checkProblems
-        : ['compile --check failed']
-      ).map((message) => ({
-        code: 'verify.docs-outdated' as const,
+        : [
+            {
+              code: 'verify.docs-outdated' as const,
+              message: 'compile --check failed',
+            },
+          ]
+      ).map(({ code, message }) => ({
+        code,
         message,
         fix: 'run `bun run agentic compile` and commit the generated files',
         source: null,

@@ -29,7 +29,7 @@ describe('agentic-ddd verify', () => {
     const invalid = run('verify', 'abc');
     expect(invalid.code).toBe(2);
     expect(invalid.stderr).toContain(
-      'verify: invalid change number "abc" (expected NNNN) [verify.change-format]',
+      'verify: invalid change number "abc" (expected NNNN) [state.change-format]',
     );
     const missing = run('verify', '9999');
     expect(missing.code).toBe(1);
@@ -44,7 +44,7 @@ describe('agentic-ddd verify', () => {
       'test/fixtures/broken/agentic.config.ts',
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('[verify.domain-invalid]');
+    expect(result.stderr).toContain('[state.domain-invalid]');
     expect(result.stderr).toContain('domain/thing.ts:5:');
     expect(result.stderr).not.toContain('[verify.proposal-not-found]');
   });
@@ -57,7 +57,7 @@ describe('agentic-ddd verify', () => {
       'test/fixtures/invalid-proposal/agentic.config.ts',
     );
     expect(result.code).toBe(1);
-    expect(result.stderr).toContain('[verify.proposals-invalid]');
+    expect(result.stderr).toContain('[state.proposals-invalid]');
     expect(result.stderr).toContain('quote the id: id:');
     expect(result.stderr).not.toContain('[verify.proposal-not-found]');
   });

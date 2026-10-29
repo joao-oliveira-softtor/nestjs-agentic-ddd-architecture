@@ -11,7 +11,7 @@ import {
 import type { Stats } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import type { ResolvedConfig } from './config';
-import { toPosix } from './ir';
+import { toPosix, type Coded } from './ir';
 import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
 import type { Rendered } from './render/index';
 
@@ -22,6 +22,11 @@ export interface Drift {
   readonly path: string;
   readonly reason: DriftReason;
 }
+
+export const driftProblem = (d: Drift): Coded => ({
+  code: 'write.outdated',
+  message: `outdated (${d.reason}): ${d.path}`,
+});
 
 export interface WriteResult {
   readonly written: string[];

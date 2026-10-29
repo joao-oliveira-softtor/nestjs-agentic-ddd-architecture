@@ -1,3 +1,5 @@
+import { formatCoded } from '../contracts/codes';
+
 export interface ArgSpec {
   readonly booleans: readonly string[];
   readonly values: readonly string[];
@@ -24,16 +26,25 @@ export function parseArgs(
     } else if (spec.values.includes(arg)) {
       const value = args[++i];
       if (value === undefined || value.startsWith('--'))
-        return `${arg} requires a value [cli.option-value-required]`;
+        return formatCoded({
+          code: 'cli.option-value-required',
+          message: `${arg} requires a value`,
+        });
       values.set(arg, value);
     } else if (arg.startsWith('--')) {
-      return `unknown option: ${arg} [cli.option-unknown]`;
+      return formatCoded({
+        code: 'cli.option-unknown',
+        message: `unknown option: ${arg}`,
+      });
     } else {
       positionals.push(arg);
     }
   }
   if (positionals.length !== spec.positionals) {
-    return `expected ${spec.positionals} argument(s), received ${positionals.length} [cli.argument-count]`;
+    return formatCoded({
+      code: 'cli.argument-count',
+      message: `expected ${spec.positionals} argument(s), received ${positionals.length}`,
+    });
   }
   return { flags, values, positionals };
 }

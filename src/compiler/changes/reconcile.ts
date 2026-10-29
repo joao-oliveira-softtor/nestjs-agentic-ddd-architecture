@@ -1,7 +1,7 @@
 import { sha256 } from '../canonical';
 import { EMPTY_IR, elementsOf, semanticDiff, type DiffItem } from '../diff';
 import { workItems } from '../graph';
-import type { CompileError, IR } from '../ir';
+import type { Coded, CompileError, IR } from '../ir';
 import type { DomainLock, LockChange } from '../lock';
 import { markApplied, summarize, type Proposal } from './proposal';
 
@@ -17,7 +17,7 @@ export interface ReconcilePlan {
   readonly nextLock: DomainLock | null;
   readonly apply: Proposal | null;
   readonly archivedPath: string | null;
-  readonly pending: string[];
+  readonly pending: Coded[];
   readonly errors: CompileError[];
 }
 
@@ -61,7 +61,7 @@ export function deltaProblems(
 export function reconcile(input: ReconcileInput): ReconcilePlan {
   const { lock, proposals } = input;
   const errors: CompileError[] = [];
-  const pending: string[] = [];
+  const pending: Coded[] = [];
   const recorded = lock?.changes ?? [];
 
   for (const change of recorded) {
@@ -171,9 +171,10 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
 
   if (required.length === 0 && !declaresDocsOnlyChange) {
     if (proposal)
-      pending.push(
-        `the proposal ${proposal.id} is open, but the code does not have the delta's domain changes yet`,
-      );
+      pending.push({
+        code: 'proposal.open-without-change',
+        message: `the proposal ${proposal.id} is open, but the code does not have the delta's domain changes yet`,
+      });
     const nextLock =
       lock === null && diff.length === 0
         ? null
@@ -182,20 +183,25 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
   }
 
   if (!proposal) {
-    pending.push(
-      `there are ${required.length} domain change(s) without a proposal; write ${input.changesDir}/NNNN-<slug>/proposal.md or run \`bun run agentic compile --draft-change <slug>\``,
-    );
+    pending.push({
+      code: 'compile.change-without-proposal',
+      message: `there are ${required.length} domain change(s) without a proposal; write ${input.changesDir}/NNNN-<slug>/proposal.md or run \`bun run agentic compile --draft-change <slug>\``,
+    });
     return unchanged();
   }
 
-  const problems = deltaProblems(proposal, diff);
-  if (proposal.motivo === '') problems.push('the ## Motivo section is empty');
-  if (problems.length > 0) {
-    pending.push(
-      ...problems.map((problem) => `proposal ${proposal.id}: ${problem}`),
-    );
-    return unchanged();
-  }
+  pending.push(
+    ...deltaProblems(proposal, diff).map((problem) => ({
+      code: 'proposal.delta-mismatch' as const,
+      message: `proposal ${proposal.id}: ${problem}`,
+    })),
+  );
+  if (proposal.motivo === '')
+    pending.push({
+      code: 'proposal.motivo-empty',
+      message: `proposal ${proposal.id}: the ## Motivo section is empty`,
+    });
+  if (pending.length > 0) return unchanged();
 
   const declared = declaredEntries(proposal);
   const items = diff.filter(

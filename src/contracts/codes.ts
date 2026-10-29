@@ -11,7 +11,11 @@ export const ERROR_CODES = {
   'cli.spec-hash-invalid': 'The --spec-hash value is not a SHA-256 hex digest.',
 
   // compile
+  'compile.change-without-proposal':
+    'The code has domain changes and no proposal describes them.',
   'compile.draft-with-check': '--draft-change was combined with --check.',
+  'compile.proposal-ready':
+    'The open proposal matches the code and is ready to be applied.',
 
   // config
   'config.brief-tokens-invalid':
@@ -120,6 +124,8 @@ export const ERROR_CODES = {
   'proposal.delta-invalid': 'delta is not an object.',
   'proposal.delta-key-unknown':
     'delta has a key other than added, modified or removed.',
+  'proposal.delta-mismatch':
+    'The proposal delta and the code changes do not match.',
   'proposal.draft-no-change':
     '--draft-change was used with no domain change to propose.',
   'proposal.element-id-invalid':
@@ -138,10 +144,13 @@ export const ERROR_CODES = {
     'markApplied found no frontmatter.',
   'proposal.mark-applied-status-missing':
     'markApplied found no "status: proposed" line.',
+  'proposal.motivo-empty': 'The proposal ## Motivo section is empty.',
   'proposal.multiple-open': 'More than one proposal is open.',
   'proposal.number-duplicate': 'Two proposals share the same number.',
   'proposal.open-exists':
     '--draft-change was used while a proposal is already open.',
+  'proposal.open-without-change':
+    'A proposal is open but the code does not have its domain changes yet.',
   'proposal.origin-invalid': 'origin is not proposal-first or code-first.',
   'proposal.slug-invalid': 'The --draft-change slug is not kebab-case.',
   'proposal.status-invalid': 'status is not proposed or applied.',
@@ -180,6 +189,10 @@ export const ERROR_CODES = {
   'state.domain-invalid': 'The domain does not compile.',
   'state.item-not-found': 'The requested work item does not exist.',
   'state.proposals-invalid': 'One or more proposals are invalid.',
+
+  // testing
+  'testing.covers-id-invalid': 'covers() received a malformed element id.',
+  'testing.covers-ids-missing': 'covers() received no ids.',
 
   // validate
   'validate.adapter-duplicate': 'A port already has an adapter.',
@@ -243,7 +256,6 @@ export const ERROR_CODES = {
     'A value object has the name of an entity.',
 
   // verify
-  'verify.change-format': 'The change number is not four digits.',
   'verify.collection-error':
     'The JUnit test collection is missing, invalid or incomplete.',
   'verify.command-failed': 'A configured verify command exited non-zero.',
@@ -251,13 +263,10 @@ export const ERROR_CODES = {
   'verify.criterion-manual-pending':
     'A manual acceptance criterion awaits human validation.',
   'verify.criterion-untested': 'An automatic acceptance criterion has no test.',
-  'verify.delta-mismatch':
-    'The proposal delta and the code changes do not match.',
   'verify.docs-outdated':
-    'Generated files are out of date or compile --check failed.',
+    'compile --check failed without a more specific problem.',
   'verify.domain-changed-after-proposal':
     'The code has a domain change after an archived proposal.',
-  'verify.domain-invalid': 'The domain does not compile.',
   'verify.domain-unanalyzable': 'The domain could not be analyzed.',
   'verify.item-dependency-not-done': 'A work item dependency is not done.',
   'verify.item-not-done': 'A work item touched by the change is not done.',
@@ -267,13 +276,8 @@ export const ERROR_CODES = {
     'The spec hash differs from the current specification.',
   'verify.item-test-unsuccessful': 'A test covering a work item did not pass.',
   'verify.item-typecheck-failed': 'The typecheck command exited non-zero.',
-  'verify.proposal-edited':
-    'An archived proposal was edited after it was applied.',
   'verify.proposal-not-found':
     'The proposal does not exist in changes or archive.',
-  'verify.proposal-not-in-lock':
-    'An archived proposal is missing from the lock.',
-  'verify.proposals-invalid': 'One or more proposals are invalid.',
   'verify.rule-modified-review':
     'A test covers a modified rule and needs review.',
   'verify.rule-untested': 'A rule added or modified by the change has no test.',
@@ -292,9 +296,24 @@ export const ERROR_CODES = {
     'A value object field references an entity.',
   'verify.test-failed': 'A test covering a rule or criterion failed.',
   'verify.test-skipped': 'A test covering a rule or criterion was skipped.',
+
+  // write
+  'write.outdated':
+    'A generated file is missing, changed, extra, mirrored wrongly or in conflict (the message gives the reason).',
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;
+
+export interface Coded {
+  readonly code: ErrorCode;
+  readonly message: string;
+}
+
+// The one place that renders a coded message. The code goes at the end of the first
+// line, so a wrapper error that lists nested problems below it shows its code once, up top.
+export function formatCoded({ code, message }: Coded): string {
+  return message.replace(/(?=\n|$)/, ` [${code}]`);
+}
 
 export class AgenticError extends Error {
   constructor(

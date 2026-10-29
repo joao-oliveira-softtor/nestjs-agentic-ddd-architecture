@@ -75,9 +75,12 @@ describe('reconcile', () => {
     expect(plan.apply).toBeNull();
     expect(plan.errors).toEqual([]);
     expect(plan.pending).toEqual([
-      expect.stringContaining(
-        'there are 10 domain change(s) without a proposal',
-      ),
+      {
+        code: 'compile.change-without-proposal',
+        message: expect.stringContaining(
+          'there are 10 domain change(s) without a proposal',
+        ),
+      },
     ]);
   });
 
@@ -115,9 +118,20 @@ describe('reconcile', () => {
     expect(plan.apply).toBeNull();
     expect(plan.nextLock).toBeNull();
     expect(plan.pending).toEqual([
-      'proposal 0001: code change outside the delta: added entity:Product',
-      'proposal 0001: ID in the delta with no matching code change: added entity:Fantasma',
-      'proposal 0001: the ## Motivo section is empty',
+      {
+        code: 'proposal.delta-mismatch',
+        message:
+          'proposal 0001: code change outside the delta: added entity:Product',
+      },
+      {
+        code: 'proposal.delta-mismatch',
+        message:
+          'proposal 0001: ID in the delta with no matching code change: added entity:Fantasma',
+      },
+      {
+        code: 'proposal.motivo-empty',
+        message: 'proposal 0001: the ## Motivo section is empty',
+      },
     ]);
   });
 
@@ -192,9 +206,12 @@ describe('reconcile', () => {
     expect(plan.errors).toEqual([]);
     expect(plan.apply).toBeNull();
     expect(plan.pending).toEqual([
-      expect.stringContaining(
-        'there are 1 domain change(s) without a proposal',
-      ),
+      {
+        code: 'compile.change-without-proposal',
+        message: expect.stringContaining(
+          'there are 1 domain change(s) without a proposal',
+        ),
+      },
     ]);
     expect(plan.nextLock).toBe(lock);
   });
@@ -226,7 +243,10 @@ describe('reconcile', () => {
     });
     const plan = reconcile(input(lock, [applied, open]));
     expect(plan.pending).toEqual([
-      expect.stringContaining('the proposal 0002 is open'),
+      {
+        code: 'proposal.open-without-change',
+        message: expect.stringContaining('the proposal 0002 is open'),
+      },
     ]);
     expect(plan.nextLock).toEqual(lock);
   });
@@ -464,7 +484,10 @@ describe('reconcile', () => {
       const plan = reconcile(input(lock, [archivedBase(), open], current));
       expect(plan.apply).toBeNull();
       expect(plan.pending).toEqual([
-        expect.stringContaining('the proposal 0002 is open'),
+        {
+          code: 'proposal.open-without-change',
+          message: expect.stringContaining('the proposal 0002 is open'),
+        },
       ]);
       // current behavior: the lock absorbs the docs-only diff and records no change
       expect(plan.nextLock).toEqual({

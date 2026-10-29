@@ -1,3 +1,4 @@
+import { formatCoded } from '../../contracts/codes';
 import { verify } from '../../compiler/verify/index';
 import { verifyItem } from '../../compiler/verify/item';
 import { parseArgs } from '../args';
@@ -17,14 +18,20 @@ export async function verifyCommand(args: readonly string[]): Promise<number> {
   const configPath = parsed.values.get('--config') ?? 'agentic.config.ts';
   if (!itemMode && !/^\d{4}$/.test(parsed.positionals[0]!)) {
     console.error(
-      `verify: invalid change number "${parsed.positionals[0]}" (expected NNNN) [verify.change-format]`,
+      formatCoded({
+        code: 'state.change-format',
+        message: `verify: invalid change number "${parsed.positionals[0]}" (expected NNNN)`,
+      }),
     );
     return 2;
   }
   const specHash = parsed.values.get('--spec-hash');
   if (itemMode && (!specHash || !/^[a-f0-9]{64}$/.test(specHash))) {
     console.error(
-      '--spec-hash requires a hexadecimal SHA-256 [cli.spec-hash-invalid]',
+      formatCoded({
+        code: 'cli.spec-hash-invalid',
+        message: '--spec-hash requires a hexadecimal SHA-256',
+      }),
     );
     return 2;
   }
@@ -40,7 +47,7 @@ export async function verifyCommand(args: readonly string[]): Promise<number> {
     for (const finding of [...gate.findings, ...gate.warnings]) {
       const source = finding.source ? ` (${finding.source})` : '';
       const fix = finding.fix ? ` → ${finding.fix}` : '';
-      console.error(`  - ${finding.message} [${finding.code}]${source}${fix}`);
+      console.error(`  - ${formatCoded(finding)}${source}${fix}`);
     }
   }
   console.error(

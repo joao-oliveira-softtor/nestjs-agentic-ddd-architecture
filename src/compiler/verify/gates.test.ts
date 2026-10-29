@@ -241,7 +241,7 @@ describe('evaluateGates', () => {
     const edited = evaluateGates(
       input({ lock: lock('outro conteúdo') }),
     ).gates.find((g) => g.id === 'G1')!;
-    expect(edited.findings[0]!.code).toBe('verify.proposal-edited');
+    expect(edited.findings[0]!.code).toBe('proposal.applied-edited');
     const later = evaluateGates(
       input({
         diff: [
@@ -271,8 +271,8 @@ describe('evaluateGates', () => {
       input({ proposal: open, lock: null, diff: [] }),
     ).gates.find((g) => g.id === 'G1')!;
     expect(g1.findings.map((f) => f.code)).toEqual([
-      'verify.delta-mismatch',
-      'verify.delta-mismatch',
+      'proposal.delta-mismatch',
+      'proposal.delta-mismatch',
     ]);
     expect(g1.findings[0]!.message).toContain(
       'added invariant:Order/cancelamento-exige-motivo',
@@ -284,7 +284,9 @@ describe('evaluateGates', () => {
     const report = evaluateGates(
       input({
         checkOk: false,
-        checkProblems: ['outdated (changed): AGENTS.md'],
+        checkProblems: [
+          { code: 'write.outdated', message: 'outdated (changed): AGENTS.md' },
+        ],
         commands: [
           { name: 'lint', command: ['bun', 'run', 'lint'], exitCode: 1 },
         ],
@@ -293,7 +295,7 @@ describe('evaluateGates', () => {
     );
     expect(report.status).toBe('failed');
     expect(report.gates.find((g) => g.id === 'G2')!.findings[0]).toEqual({
-      code: 'verify.docs-outdated',
+      code: 'write.outdated',
       message: 'outdated (changed): AGENTS.md',
       fix: 'run `bun run agentic compile` and commit the generated files',
       source: null,

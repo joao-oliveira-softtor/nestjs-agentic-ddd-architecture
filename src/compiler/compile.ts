@@ -8,7 +8,13 @@ import { listProposals } from './changes/proposal';
 import { reconcile } from './changes/reconcile';
 import { loadConfig, type ResolvedConfig } from './config';
 import type { DiffItem } from './diff';
-import { AgenticError, toPosix, type CompileError, type IR } from './ir';
+import {
+  AgenticError,
+  toPosix,
+  type Coded,
+  type CompileError,
+  type IR,
+} from './ir';
 import { lintRendered, type LintFinding } from './lint';
 import { importModules } from './load';
 import { readLock, serializeLock } from './lock';
@@ -40,7 +46,7 @@ export interface CompileResult {
   readonly rendered: Rendered | null;
   readonly config: ResolvedConfig;
   readonly diff: DiffItem[];
-  readonly pending: string[];
+  readonly pending: Coded[];
   readonly applied: string | null;
   readonly drafted: string | null;
 }
@@ -213,7 +219,10 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     const pending = plan.apply
       ? [
           ...plan.pending,
-          `the proposal ${plan.apply.id} is ready to be applied; run \`bun run agentic compile\``,
+          {
+            code: 'compile.proposal-ready' as const,
+            message: `the proposal ${plan.apply.id} is ready to be applied; run \`bun run agentic compile\``,
+          },
         ]
       : plan.pending;
     return {

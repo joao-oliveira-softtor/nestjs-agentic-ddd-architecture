@@ -1,4 +1,5 @@
 import { next, status } from '../../compiler/project-state';
+import { formatCoded } from '../../contracts/codes';
 import { parseArgs } from '../args';
 import { USAGE } from '../usage';
 
@@ -17,7 +18,12 @@ async function query(
   }
   const change = parsed.values.get('--change');
   if (change !== undefined && !/^\d{4}$/.test(change)) {
-    console.error('--change requires NNNN [state.change-format]');
+    console.error(
+      formatCoded({
+        code: 'state.change-format',
+        message: '--change requires NNNN',
+      }),
+    );
     return 2;
   }
   const options = {

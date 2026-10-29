@@ -1,4 +1,6 @@
 import { compile } from '../../compiler/compile';
+import { formatCoded } from '../../contracts/codes';
+import { driftProblem } from '../../compiler/write';
 import { formatReport } from '../../compiler/report';
 import { parseArgs } from '../args';
 import { USAGE } from '../usage';
@@ -23,11 +25,12 @@ export async function compileCommand(args: readonly string[]): Promise<number> {
   if (parsed.flags.has('--report') && result.rendered)
     console.log(formatReport(result.rendered, result.lint));
   for (const error of result.errors)
-    console.error(`${error.source ?? '-'}: ${error.message} [${error.code}]`);
+    console.error(`${error.source ?? '-'}: ${formatCoded(error)}`);
   for (const item of result.drift)
-    console.error(`outdated (${item.reason}): ${item.path}`);
+    console.error(formatCoded(driftProblem(item)));
   for (const warning of result.warnings) console.warn(`warning: ${warning}`);
-  for (const item of result.pending) console.error(`pending: ${item}`);
+  for (const item of result.pending)
+    console.error(`pending: ${formatCoded(item)}`);
   if (result.drafted) {
     console.log(
       `agentic-ddd: proposal created at ${result.drafted}; fill in the ## Motivo (and the acceptance criteria) and run \`bun run agentic compile\``,

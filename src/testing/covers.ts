@@ -1,12 +1,19 @@
+import { AgenticError } from '../contracts/codes';
+
 const ELEMENT_ID =
   /^(entity|invariant|method|event|usecase|operator|criterion|valueobject|port):\S+$/;
 const COVERS_PREFIX = /^\[covers: ([^\]]+)\]/;
 
 export function covers(ids: readonly string[], title: string): string {
-  if (ids.length === 0) throw new Error('covers() requires at least one ID');
+  if (ids.length === 0)
+    throw new AgenticError(
+      'testing.covers-ids-missing',
+      'covers() requires at least one ID',
+    );
   for (const id of ids) {
     if (!ELEMENT_ID.test(id))
-      throw new Error(
+      throw new AgenticError(
+        'testing.covers-id-invalid',
         `invalid ID in covers(): ${id} (expected type:path, e.g. method:Order.confirm)`,
       );
   }

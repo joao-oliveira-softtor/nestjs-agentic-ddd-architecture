@@ -3,7 +3,13 @@ import { listProposals } from '../changes/proposal';
 import { compile } from '../compile';
 import { workItems } from '../graph';
 import { EMPTY_IR, elementsOf, semanticDiff } from '../diff';
-import { AgenticError, type CompileError } from '../ir';
+import {
+  AgenticError,
+  formatCoded,
+  type Coded,
+  type CompileError,
+} from '../ir';
+import { driftProblem } from '../write';
 import { readLock } from '../lock';
 import { statusFromEvidence } from '../project-state';
 import { workItemFindings } from './work-items';
@@ -16,14 +22,12 @@ export interface VerifyOptions {
 }
 
 const formatErrors = (errors: readonly CompileError[]): string =>
-  errors
-    .map((e) => `- ${e.source ?? '-'}: ${e.message} [${e.code}]`)
-    .join('\n');
+  errors.map((e) => `- ${e.source ?? '-'}: ${formatCoded(e)}`).join('\n');
 
 export async function verify(options: VerifyOptions): Promise<VerifyReport> {
   if (!/^\d{4}$/.test(options.change))
     throw new AgenticError(
-      'verify.change-format',
+      'state.change-format',
       `verify: invalid change number "${options.change}" (expected NNNN)`,
     );
   const check = await compile({
@@ -46,13 +50,13 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
   );
   if (proposalErrors.length > 0)
     throw new AgenticError(
-      'verify.proposals-invalid',
+      'state.proposals-invalid',
       `verify: invalid proposals in ${config.changesDir}/:\n${formatErrors(proposalErrors)}`,
     );
   const domainErrors = check.errors.filter((e) => !e.code.startsWith('lint.'));
   if (domainErrors.length > 0)
     throw new AgenticError(
-      'verify.domain-invalid',
+      'state.domain-invalid',
       `verify: the domain does not compile:\n${formatErrors(domainErrors)}`,
     );
   const proposal = proposals.find((p) => p.id === options.change);
@@ -73,9 +77,12 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
     });
     commands.push({ name, command, exitCode: await proc.exited });
   }
-  const checkProblems = [
-    ...check.errors.map((e) => `${e.source ?? '-'}: ${e.message}`),
-    ...check.drift.map((d) => `outdated (${d.reason}): ${d.path}`),
+  const checkProblems: Coded[] = [
+    ...check.errors.map((e) => ({
+      code: e.code,
+      message: `${e.source ?? '-'}: ${e.message}`,
+    })),
+    ...check.drift.map(driftProblem),
     ...check.pending,
   ];
   const knownIds = new Set([

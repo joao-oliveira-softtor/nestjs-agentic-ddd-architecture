@@ -119,11 +119,14 @@ describe('compile (exemplo orders)', () => {
   test('sem lock e sem proposta: write segue com pendência; check falha', async () => {
     const write = await compile({ configPath, outRoot: out, mode: 'write' });
     expect(write.ok).toBe(true);
-    expect(write.pending[0]).toContain('domain change(s) without a proposal');
+    expect(write.pending[0]!.code).toBe('compile.change-without-proposal');
+    expect(write.pending[0]!.message).toContain(
+      'domain change(s) without a proposal',
+    );
     expect((await checkSnapshot(out)).ok).toBe(false);
     const check = await compile({ configPath, outRoot: out, mode: 'check' });
     expect(check.ok).toBe(false);
-    expect(check.pending[0]).toContain('--draft-change');
+    expect(check.pending[0]!.message).toContain('--draft-change');
   });
 
   test('--draft-change cria a proposta; sem Motivo ela não é aplicada', async () => {
@@ -135,7 +138,10 @@ describe('compile (exemplo orders)', () => {
     });
     expect(draft.drafted).toBe('changes/0001-estado-inicial/proposal.md');
     expect(draft.pending).toEqual([
-      'proposal 0001: the ## Motivo section is empty',
+      {
+        code: 'proposal.motivo-empty',
+        message: 'proposal 0001: the ## Motivo section is empty',
+      },
     ]);
     expect(draft.applied).toBeNull();
     expect((await checkSnapshot(out)).ok).toBe(false);

@@ -37,6 +37,8 @@ export {
   buildIR,
   irHash,
   AgenticError,
+  formatCoded,
+  type Coded,
   ERROR_CODES,
   type CompileError,
   type ErrorCode,

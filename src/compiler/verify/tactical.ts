@@ -3,8 +3,7 @@ import ts from 'typescript';
 import type { EntityRecord } from '@agentic-ddd/decorators';
 import { findDecoratedClass } from '../ast';
 import { aggregateRoots } from '../graph';
-import { sourceOf, type IR } from '../ir';
-import type { ErrorCode } from '../ir';
+import { sourceOf, type ErrorCode, type IR } from '../ir';
 import type { Finding } from './gates';
 
 export interface TacticalFinding {

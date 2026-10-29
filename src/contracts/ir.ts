@@ -9,7 +9,13 @@ import {
 import { byId, sha256, stableStringify } from './canonical';
 import type { ErrorCode } from './codes';
 
-export { AgenticError, ERROR_CODES, type ErrorCode } from './codes';
+export {
+  AgenticError,
+  ERROR_CODES,
+  formatCoded,
+  type Coded,
+  type ErrorCode,
+} from './codes';
 
 export type JsonSchema = Record<string, unknown>;
 

@@ -95,6 +95,7 @@ describe('agentic-ddd compile (CLI)', () => {
     const check = run('compile', '--check', '--out-root', out);
     expect(check.code).toBe(1);
     expect(check.stderr).toContain('pending: there are ');
+    expect(check.stderr).toContain('[compile.change-without-proposal]');
     expect(check.stderr).toContain('--draft-change <slug>');
   });
 
@@ -111,7 +112,7 @@ describe('agentic-ddd compile (CLI)', () => {
       'proposal created at changes/0001-estado-inicial/proposal.md',
     );
     expect(result.stderr).toContain(
-      'pending: proposal 0001: the ## Motivo section is empty',
+      'pending: proposal 0001: the ## Motivo section is empty [proposal.motivo-empty]',
     );
   });
 

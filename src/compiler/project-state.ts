@@ -3,7 +3,7 @@ import type { Proposal } from './changes/proposal';
 import { listProposals } from './changes/proposal';
 import { analyzeProject, type ProjectAnalysis } from './compile';
 import { implementation } from './implementation';
-import { AgenticError } from './ir';
+import { AgenticError, formatCoded } from './ir';
 import {
   evaluateStatus,
   selectChange,
@@ -29,7 +29,7 @@ export async function stateContext(configPath: string): Promise<StateContext> {
   if (project.errors.length)
     throw new AgenticError(
       'state.domain-invalid',
-      `the domain does not compile:\n${project.errors.map((e) => `${e.source ?? '-'}: ${e.message} [${e.code}]`).join('\n')}`,
+      `the domain does not compile:\n${project.errors.map((e) => `${e.source ?? '-'}: ${formatCoded(e)}`).join('\n')}`,
     );
   const listed = await listProposals(
     join(project.config.outRoot, project.config.changesDir),
@@ -38,7 +38,7 @@ export async function stateContext(configPath: string): Promise<StateContext> {
   if (listed.errors.length)
     throw new AgenticError(
       'state.proposals-invalid',
-      `invalid proposals:\n${listed.errors.map((e) => `${e.source}: ${e.message} [${e.code}]`).join('\n')}`,
+      `invalid proposals:\n${listed.errors.map((e) => `${e.source}: ${formatCoded(e)}`).join('\n')}`,
     );
   return { project, proposals: listed.proposals };
 }
