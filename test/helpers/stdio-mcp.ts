@@ -6,18 +6,31 @@ export interface StdioMcp {
 }
 
 // A minimal newline-delimited JSON-RPC client over the real `agentic mcp` subprocess.
-export async function startStdioMcp(root: string): Promise<StdioMcp> {
-  const proc = Bun.spawn(
-    [
-      'bun',
-      resolve(import.meta.dir, '../../src/cli/main.ts'),
-      'mcp',
-      '--root',
-      root,
-    ],
-    { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' },
-  );
-  const waiting = new Map<number, (message: any) => void>();
+// `command` replaces the server command (only to test the failure paths of this helper).
+export async function startStdioMcp(
+  root: string,
+  command: string[] = [
+    'bun',
+    resolve(import.meta.dir, '../../src/cli/main.ts'),
+    'mcp',
+    '--root',
+    root,
+  ],
+): Promise<StdioMcp> {
+  const proc = Bun.spawn(command, {
+    stdin: 'pipe',
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+  void new Response(proc.stderr).text(); // drained so a chatty child cannot block on a full pipe
+  const waiting = new Map<
+    number,
+    { done: (message: any) => void; fail: (error: Error) => void }
+  >();
+  const failAll = (error: Error) => {
+    for (const w of waiting.values()) w.fail(error);
+    waiting.clear();
+  };
   const reader = (async () => {
     let buffer = '';
     const decoder = new TextDecoder();
@@ -28,11 +41,22 @@ export async function startStdioMcp(root: string): Promise<StdioMcp> {
         const line = buffer.slice(0, nl).trim();
         buffer = buffer.slice(nl + 1);
         if (!line) continue;
-        const message = JSON.parse(line);
-        waiting.get(message.id)?.(message);
+        let message: any;
+        try {
+          message = JSON.parse(line);
+        } catch {
+          failAll(
+            new Error(`stdio: non-JSON line on stdout: ${line.slice(0, 80)}`),
+          );
+          continue;
+        }
+        waiting.get(message.id)?.done(message);
       }
     }
-  })();
+  })().catch((error) => failAll(error as Error));
+  void proc.exited.then((code) =>
+    failAll(new Error(`stdio: server exited with code ${code}`)),
+  );
   const send = (message: object) =>
     void proc.stdin.write(
       `${JSON.stringify({ jsonrpc: '2.0', ...message })}\n`,
@@ -45,30 +69,47 @@ export async function startStdioMcp(root: string): Promise<StdioMcp> {
         () => fail(new Error(`stdio timeout in ${method}`)),
         15000,
       );
-      waiting.set(id, (message) => {
-        clearTimeout(timer);
-        done(message);
+      waiting.set(id, {
+        done: (message) => {
+          clearTimeout(timer);
+          waiting.delete(id);
+          done(message);
+        },
+        fail: (error) => {
+          clearTimeout(timer);
+          fail(error);
+        },
       });
       send({ id, method, params });
     });
   };
-  await request('initialize', {
-    protocolVersion: '2025-11-25',
-    capabilities: {},
-    clientInfo: { name: 't', version: '1' },
-  });
+  const stop = async () => {
+    void proc.stdin.end();
+    const timer = setTimeout(() => proc.kill(), 5000);
+    try {
+      await proc.exited;
+    } finally {
+      clearTimeout(timer);
+    }
+    await reader;
+  };
+  try {
+    await request('initialize', {
+      protocolVersion: '2025-11-25',
+      capabilities: {},
+      clientInfo: { name: 't', version: '1' },
+    });
+  } catch (error) {
+    // A failed start-up must not leave a live child that keeps the runner alive.
+    proc.kill();
+    await stop().catch(() => undefined);
+    throw error;
+  }
   send({ method: 'notifications/initialized' });
   return {
     async call(name, args = {}) {
       return (await request('tools/call', { name, arguments: args })).result;
     },
-    async close() {
-      void proc.stdin.end();
-      await Promise.race([
-        proc.exited,
-        Bun.sleep(5000).then(() => proc.kill()),
-      ]);
-      await reader.catch(() => undefined);
-    },
+    close: stop,
   };
 }

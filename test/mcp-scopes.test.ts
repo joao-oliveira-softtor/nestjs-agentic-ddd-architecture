@@ -23,6 +23,10 @@ const LOCK = '.agentic/domain.lock.json';
 // The port is never contacted: the server binds port 0 and routes on the path only.
 const RESOURCE = 'http://127.0.0.1:3333/mcp';
 
+// Synthetic change ids: far from the sequential ids `compile` hands out to the repo lock.
+const CROSS = '0900';
+const BILLING_ONLY = '0901';
+
 type Result = { isError?: boolean; content: { text: string }[] };
 
 // The repo lock has only `orders`: `billing` is a renamed copy, linked to orders in both directions.
@@ -59,7 +63,7 @@ function twoModuleLock(orders: DomainLock): DomainLock {
   lock.changes.push(
     {
       ...ordersOnly,
-      id: '0003',
+      id: CROSS,
       title: 'Invoice rules and order totals',
       summary: 'Touches billing and orders together.',
       items: [
@@ -69,7 +73,7 @@ function twoModuleLock(orders: DomainLock): DomainLock {
     },
     {
       ...ordersOnly,
-      id: '0004',
+      id: BILLING_ONLY,
       title: 'Invoice only',
       summary: 'Billing only.',
       items: [item(billing.entities[0].id, 'billing')],
@@ -78,7 +82,7 @@ function twoModuleLock(orders: DomainLock): DomainLock {
   return lock;
 }
 
-async function prepareRoot(): Promise<string> {
+async function prepareRoot(): Promise<{ tmp: string; repoChanges: string[] }> {
   const tmp = await mkdtemp(join(tmpdir(), 'agentic-mcp-scopes-'));
   const repoLock = parseLock(await readFile(join(REPO, LOCK), 'utf8'), LOCK);
   const lock = twoModuleLock(repoLock);
@@ -105,7 +109,7 @@ async function prepareRoot(): Promise<string> {
     ],
     modules: lock.ir.modules,
   });
-  return tmp;
+  return { tmp, repoChanges: repoLock.changes.map((c) => c.id) };
 }
 
 const ELEMENTS = [
@@ -133,6 +137,7 @@ describe('domain MCP: module scopes, transport parity, no leak', () => {
   let auth: TestAuthServer;
   let handle: Awaited<ReturnType<typeof startMcpHttpServer>>;
   let stdio: StdioMcp;
+  let repoChanges: string[]; // the repo's own changes: all orders-only
   const seen: string[] = []; // every HTTP tool text, scanned for leaks at the end
 
   const mint = (scope: string): Promise<string> => {
@@ -180,7 +185,7 @@ describe('domain MCP: module scopes, transport parity, no leak', () => {
     data(r).modules.map((m: any) => m.name);
 
   beforeAll(async () => {
-    root = await prepareRoot();
+    ({ tmp: root, repoChanges } = await prepareRoot());
     signer = await makeSigner('RS256', 'k1');
     auth = startAuthServer('oauth');
     auth.published.push(signer.jwk);
@@ -194,26 +199,44 @@ describe('domain MCP: module scopes, transport parity, no leak', () => {
   }, 60000);
 
   afterAll(async () => {
-    await stdio?.close();
-    await handle?.close();
+    // Independent cleanups: one failing must not skip the others.
+    await Promise.allSettled([
+      stdio?.close(),
+      handle?.close(),
+      rm(root, { recursive: true, force: true }),
+    ]);
     auth?.stop();
-    await rm(root, { recursive: true, force: true });
   });
 
   test('stdio and HTTP with domain:read return identical results', async () => {
-    const calls: [string, object][] = [
-      ['domain_overview', {}],
-      ...ELEMENTS.map((id): [string, object] => ['domain_element', { id }]),
-      ['domain_changes', {}],
-      ['domain_changes', { id: 'entity:Order' }],
-      ['rules_for_path', { path: 'examples/orders/a.ts' }],
-      ['rules_for_path', { path: 'examples/billing/a.ts' }],
-      ['domain_element', { id: 'entity:Nope' }],
-      ['rules_for_path', { path: '../x' }],
+    const calls: [string, object, boolean][] = [
+      ['domain_overview', {}, false],
+      ...ELEMENTS.map((id): [string, object, boolean] => [
+        'domain_element',
+        { id },
+        false,
+      ]),
+      ['domain_changes', {}, false],
+      ['domain_changes', { id: 'entity:Order' }, false],
+      ['rules_for_path', { path: 'examples/orders/a.ts' }, false],
+      ['rules_for_path', { path: 'examples/billing/a.ts' }, false],
+      ['domain_element', { id: 'entity:Nope' }, true],
+      ['rules_for_path', { path: '../x' }, true],
     ];
-    for (const [name, args] of calls) {
+    for (const [name, args, expectError] of calls) {
       const remote = await http('domain:read', name, args);
       const local = (await stdio.call(name, args)) as Result;
+      // Both sides must also be the intended kind of answer, not the same wrong error.
+      expect({ name, args, error: Boolean(remote.isError) }).toEqual({
+        name,
+        args,
+        error: expectError,
+      });
+      expect({ name, args, error: Boolean(local.isError) }).toEqual({
+        name,
+        args,
+        error: expectError,
+      });
       expect({
         name,
         args,
@@ -281,26 +304,23 @@ describe('domain MCP: module scopes, transport parity, no leak', () => {
     });
 
     test('changes: only changes wholly inside orders are visible', async () => {
-      expect(ids(await http(scope, 'domain_changes'))).toEqual([
-        '0001',
-        '0002',
-      ]);
+      expect(ids(await http(scope, 'domain_changes'))).toEqual(repoChanges);
       const byOrder = await http(scope, 'domain_changes', {
         id: 'entity:Order',
       });
-      expect(ids(byOrder)).toContain('0001');
-      expect(ids(byOrder)).not.toContain('0003');
+      expect(ids(byOrder)).toContain(repoChanges[0]!);
+      expect(ids(byOrder)).not.toContain(CROSS);
       expect(
         ids(
           await http('domain:read', 'domain_changes', { id: 'entity:Order' }),
         ),
-      ).toContain('0003');
+      ).toContain(CROSS);
       const byInvoice = await http(scope, 'domain_changes', {
         id: 'entity:Invoice',
       });
       expect(ids(byInvoice)).toEqual([]);
       const full = await http('domain:read', 'domain_changes');
-      expect(ids(full)).toEqual(['0001', '0002', '0003', '0004']);
+      expect(ids(full)).toEqual([...repoChanges, CROSS, BILLING_ONLY]);
     });
 
     test('rules_for_path narrows a rule to the globs that match the path', async () => {
@@ -352,10 +372,9 @@ describe('domain MCP: module scopes, transport parity, no leak', () => {
       const overview = await http(both, 'domain_overview');
       expect(names(overview).sort()).toEqual(['billing', 'orders']);
       expect(ids(await http(both, 'domain_changes'))).toEqual([
-        '0001',
-        '0002',
-        '0003',
-        '0004',
+        ...repoChanges,
+        CROSS,
+        BILLING_ONLY,
       ]);
     });
 
@@ -435,6 +454,7 @@ describe('domain MCP: module scopes, transport parity, no leak', () => {
         await http(scope, 'domain_changes');
         for (const path of paths) await http(scope, 'rules_for_path', { path });
       }
+      // Depends on the tests above having filled `seen`: a guard against scanning nothing.
       expect(seen.length).toBeGreaterThan(50);
       const forms = [
         root,
