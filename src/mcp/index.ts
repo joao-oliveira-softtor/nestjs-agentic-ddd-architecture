@@ -123,9 +123,11 @@ const LOOPBACK = ['127.0.0.1', 'localhost', '[::1]'];
 // DNS-rebinding defense: exact Host (host:port) and Origin allowlists. The SDK helpers are
 // hostname-only (any port) and cannot carry a stable code, so the check lives here.
 function allowedHostsAndOrigins(host: string, port: number, resource: URL) {
-  const bind = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+  const lower = host.toLowerCase(); // the Host header is compared lowercased
+  const bind =
+    lower.includes(':') && !lower.startsWith('[') ? `[${lower}]` : lower;
   const hosts = new Set([`${bind}:${port}`, resource.host]);
-  if (LOOPBACK.includes(bind.toLowerCase()))
+  if (LOOPBACK.includes(bind))
     for (const name of LOOPBACK) hosts.add(`${name}:${port}`);
   return {
     hosts,
@@ -182,6 +184,7 @@ export async function startMcpHttpServer({
   const handler = createMcpHandler(() => createDomainServer(root), {
     maxRequestBodySize: MAX_BODY_BYTES,
   });
+  let allowed: ReturnType<typeof allowedHostsAndOrigins> | undefined;
   const server = Bun.serve({
     hostname: host,
     port,
@@ -192,10 +195,9 @@ export async function startMcpHttpServer({
       const pathname = trimSlash(new URL(request.url).pathname);
       if (pathname !== metadataPath && pathname !== mcpPath)
         return new Response('Not found', { status: 404 });
-      const denied = rejectHostOrigin(
-        request,
-        allowedHostsAndOrigins(host, server.port as number, resource),
-      );
+      // Built once: the effective port is only known after the server is listening.
+      allowed ??= allowedHostsAndOrigins(host, server.port as number, resource);
+      const denied = rejectHostOrigin(request, allowed);
       if (denied) return denied;
       if (pathname === metadataPath) return resourceServer.metadata(request);
       const gated = await resourceServer.gate(request);

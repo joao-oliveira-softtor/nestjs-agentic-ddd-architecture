@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { afterAll, beforeAll, describe, expect, spyOn, test } from 'bun:test';
 import { SignJWT } from 'jose';
 import type { AuthInfo } from '../src/auth/resource-server';
 import { createResourceServer } from '../src/auth/resource-server';
@@ -380,6 +380,47 @@ describe('resource server', () => {
         expect((result as Response).status).toBe(500);
         expect(server.hits.jwks).toBe(0);
       } finally {
+        server.stop();
+      }
+    });
+
+    test('a discovered jwks_uri over plain http off loopback is refused before any fetch', async () => {
+      const server = startAuthServer('oauth', {
+        jwksUri: 'http://example.com/jwks',
+      });
+      const urlOf = (input: RequestInfo | URL) =>
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      const realFetch = globalThis.fetch;
+      const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(((
+        input: RequestInfo | URL,
+        init?: RequestInit,
+      ) => {
+        if (urlOf(input).includes('example.com'))
+          return Promise.reject(new Error('blocked by test'));
+        return realFetch(input, init);
+      }) as typeof fetch);
+      try {
+        const hostile = createResourceServer({
+          issuer: server.issuer,
+          resource: RESOURCE,
+          requiredScopes: [SCOPE],
+        });
+        const result = await hostile.gate(
+          bearer(await mint(rsa, server.issuer)),
+        );
+        expect((result as Response).status).toBe(500);
+        expect(
+          fetchSpy.mock.calls.some(([input]) =>
+            urlOf(input).includes('example.com'),
+          ),
+        ).toBe(false);
+        expect(server.hits.jwks).toBe(0);
+      } finally {
+        fetchSpy.mockRestore();
         server.stop();
       }
     });

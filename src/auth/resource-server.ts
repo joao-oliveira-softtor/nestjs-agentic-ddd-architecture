@@ -13,6 +13,7 @@ import {
   type JWTPayload,
   type JWTVerifyGetKey,
   createRemoteJWKSet,
+  decodeProtectedHeader,
   errors,
   jwtVerify,
 } from 'jose';
@@ -52,9 +53,24 @@ function discoveryUrls(issuer: string): string[] {
     `${origin}${path}/.well-known/openid-configuration`,
   ];
 }
+// Mirrors the config validator (src/compiler/config.ts mcpUrl): https, or http on loopback only.
+const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '[::1]'];
+function allowedJwksUri(value: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return false;
+  }
+  return (
+    url.protocol === 'https:' ||
+    (url.protocol === 'http:' && LOOPBACK_HOSTS.includes(url.hostname))
+  );
+}
+// A discovered jwks_uri that breaks the rule fails the document, so discovery moves on.
 const discoveryDocument = z.object({
   issuer: z.string(),
-  jwks_uri: z.string(),
+  jwks_uri: z.string().refine(allowedJwksUri),
 });
 
 // The code goes in error_description; messages stay generic (no URLs, keys or stacks).
@@ -149,6 +165,10 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
     async verifyAccessToken(token) {
       let payload;
       try {
+        // Refuse unusable tokens before any discovery/JWKS fetch: garbage must not cost outbound I/O.
+        const { alg } = decodeProtectedHeader(token);
+        if (alg === undefined || !ALGORITHMS.includes(alg))
+          throw new errors.JWSInvalid('Unsupported algorithm');
         ({ payload } = await jwtVerify(token, await getKeys(), {
           algorithms: ALGORITHMS,
           issuer,

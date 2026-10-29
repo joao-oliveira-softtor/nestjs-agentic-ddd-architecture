@@ -64,7 +64,7 @@ export async function mcpCommand(
   }
   if (http) {
     const config = await loadConfig(
-      parsed.values.get('--config') ?? 'agentic.config.ts',
+      parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts'),
     );
     if (config.mcp === undefined) {
       console.error(

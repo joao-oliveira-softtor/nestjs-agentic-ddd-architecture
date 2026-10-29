@@ -30,7 +30,10 @@ export interface TestAuthServer {
 }
 
 // A local authorization server: discovery document (RFC 8414 or OIDC only) plus the JWKS.
-export function startAuthServer(discovery: 'oauth' | 'oidc'): TestAuthServer {
+export function startAuthServer(
+  discovery: 'oauth' | 'oidc',
+  options: { jwksUri?: string } = {},
+): TestAuthServer {
   const published: JWK[] = [];
   const hits = { discovery: 0, jwks: 0 };
   const wellKnown =
@@ -45,7 +48,10 @@ export function startAuthServer(discovery: 'oauth' | 'oidc'): TestAuthServer {
       const issuer: string = `http://127.0.0.1:${server.port}`;
       if (pathname === wellKnown) {
         hits.discovery++;
-        return Response.json({ issuer, jwks_uri: `${issuer}/jwks.json` });
+        return Response.json({
+          issuer,
+          jwks_uri: options.jwksUri ?? `${issuer}/jwks.json`,
+        });
       }
       if (pathname === '/jwks.json') {
         hits.jwks++;
