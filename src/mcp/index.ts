@@ -118,7 +118,7 @@ const MAX_BODY_BYTES = 1024 * 1024;
 const trimSlash = (path: string) =>
   path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
 
-const LOOPBACK = ['127.0.0.1', 'localhost', '[::1]'];
+const LOOPBACK_ALIASES = ['127.0.0.1', 'localhost', '[::1]'];
 
 // DNS-rebinding defense: exact Host (host:port) and Origin allowlists. The SDK helpers are
 // hostname-only (any port) and cannot carry a stable code, so the check lives here.
@@ -127,8 +127,9 @@ function allowedHostsAndOrigins(host: string, port: number, resource: URL) {
   const bind =
     lower.includes(':') && !lower.startsWith('[') ? `[${lower}]` : lower;
   const hosts = new Set([`${bind}:${port}`, resource.host]);
-  if (LOOPBACK.includes(bind))
-    for (const name of LOOPBACK) hosts.add(`${name}:${port}`);
+  // Only the three names that can stand for the same listener; another 127.x bind keeps its own host.
+  if (LOOPBACK_ALIASES.includes(bind))
+    for (const name of LOOPBACK_ALIASES) hosts.add(`${name}:${port}`);
   return {
     hosts,
     origins: new Set(

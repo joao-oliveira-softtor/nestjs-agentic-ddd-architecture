@@ -368,6 +368,7 @@ describe('mcp section', () => {
   test('accepts http only on loopback hosts', () => {
     for (const issuer of [
       'http://127.0.0.1:9000',
+      'http://127.5.6.7:9000',
       'http://localhost:9000',
       'http://[::1]:9000',
     ])

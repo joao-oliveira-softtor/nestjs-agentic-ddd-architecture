@@ -19,6 +19,7 @@ import {
 } from 'jose';
 import { z } from 'zod';
 import type { ErrorCode } from '../contracts/codes';
+import { isSecureOrLoopbackUrl } from '../contracts/url';
 
 export type { AuthInfo };
 
@@ -58,24 +59,10 @@ function discoveryUrls(issuer: string): string[] {
     `${origin}${path}/.well-known/openid-configuration`,
   ];
 }
-// Mirrors the config validator (src/compiler/config.ts mcpUrl): https, or http on loopback only.
-const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '[::1]'];
-function allowedJwksUri(value: string): boolean {
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    return false;
-  }
-  return (
-    url.protocol === 'https:' ||
-    (url.protocol === 'http:' && LOOPBACK_HOSTS.includes(url.hostname))
-  );
-}
 // A discovered jwks_uri that breaks the rule fails the document, so discovery moves on.
 const discoveryDocument = z.object({
   issuer: z.string(),
-  jwks_uri: z.string().refine(allowedJwksUri),
+  jwks_uri: z.string().refine(isSecureOrLoopbackUrl),
 });
 
 // The code goes in error_description; messages stay generic (no URLs, keys or stacks).
@@ -118,15 +105,6 @@ function withCode(error: unknown): unknown {
     );
   }
   if (error.code !== OAuthErrorCode.InvalidToken) return error;
-  if (/resource/i.test(error.message)) {
-    return authError(
-      'auth.audience-mismatch',
-      'The token is not for this resource.',
-    );
-  }
-  if (/expired/i.test(error.message)) {
-    return authError('auth.token-expired', 'The access token has expired.');
-  }
   return authError(
     'auth.token-invalid',
     'The access token failed verification.',

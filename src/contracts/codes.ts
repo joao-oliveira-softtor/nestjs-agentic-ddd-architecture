@@ -23,6 +23,8 @@ export const ERROR_CODES = {
   'cli.option-unknown': 'An unknown command-line option was passed.',
   'cli.option-value-required':
     'An option that takes a value was passed without one.',
+  'cli.port-in-use':
+    'The --port (or the default 3333) is already in use on the bind address.',
   'cli.port-invalid': '--port is not an integer between 0 and 65535.',
   'cli.spec-hash-invalid': 'The --spec-hash value is not a SHA-256 hex digest.',
 
