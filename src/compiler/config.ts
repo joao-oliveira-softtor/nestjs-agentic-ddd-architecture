@@ -1,6 +1,7 @@
 import { stat } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isSecureOrLoopbackUrl } from '../contracts/url';
 import {
   DEFAULT_CONVENTIONS,
   type ConventionLayer,
@@ -8,7 +9,6 @@ import {
   type ImportTarget,
   type ResolvedConventions,
 } from './conventions';
-import { isSecureOrLoopbackUrl } from '../contracts/url';
 import { AgenticError, canonicalPath, toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
 

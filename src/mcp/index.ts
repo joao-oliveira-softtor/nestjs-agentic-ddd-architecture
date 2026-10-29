@@ -8,7 +8,6 @@ import { isAbsolute, posix, relative } from 'node:path';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
-import { isLoopbackHost } from '../contracts/url';
 import type { McpConfig } from '../compiler/config';
 import { checkSnapshot } from '../compiler/snapshot';
 import { changes, element, overview, rulesForPath } from './tools';
@@ -128,7 +127,8 @@ function allowedHostsAndOrigins(host: string, port: number, resource: URL) {
   const bind =
     lower.includes(':') && !lower.startsWith('[') ? `[${lower}]` : lower;
   const hosts = new Set([`${bind}:${port}`, resource.host]);
-  if (isLoopbackHost(bind))
+  // Only the three names that can stand for the same listener; another 127.x bind keeps its own host.
+  if (LOOPBACK_ALIASES.includes(bind))
     for (const name of LOOPBACK_ALIASES) hosts.add(`${name}:${port}`);
   return {
     hosts,
