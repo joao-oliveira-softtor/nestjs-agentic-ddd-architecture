@@ -151,7 +151,7 @@ Each ID below needs at least one test named with \`covers([...ids], title)\` fro
 | Use-case | \`src/compiler/__fixtures__/application/<name>.ts\` | \`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entity>.<method>'], emits? })\` |
 | Operator | \`src/compiler/__fixtures__/operators/<name>.operator.ts\` | \`@Operator({ name, description, instructions, useCases, requiresApproval? })\` |
 
-A declared body that is not yet implemented uses \`notImplemented()\` from \`@agentic-ddd/core\`.
+A declared body that is not implemented yet uses \`notImplemented()\` from \`@agentic-ddd/core\`.
 
 ## Team rules
 
@@ -252,7 +252,7 @@ Each ID below needs at least one test named with \`covers([...ids], title)\` fro
 | Use-case | \`src/shop/core/application/<name>.ts\` | \`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entity>.<method>'], emits? })\` |
 | Operator | \`src/shop/core/operators/<name>.operator.ts\` | \`@Operator({ name, description, instructions, useCases, requiresApproval? })\` |
 
-A declared body that is not yet implemented uses \`notImplemented()\` from \`@agentic-ddd/core\`.
+A declared body that is not implemented yet uses \`notImplemented()\` from \`@agentic-ddd/core\`.
 
 ## References
 

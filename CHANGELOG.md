@@ -2,7 +2,7 @@
 
 ## [Não lançado]
 
-- **Mudança de compatibilidade (#109, ADR-0007 D13):** o texto que o `compile` gera passa a sair só em inglês, sem opção de idioma: as skills de dev (`<módulo>-dev`), as skills de runtime dos operators, as referências `history.md` e `state-machine.md`, o bloco do `AGENTS.md` e o cabeçalho de arquivo gerado. As regras do núcleo (`core/...`) também foram traduzidas, mas as chaves e os marcadores `{{…}}` não mudaram, então uma regra do time que substitui uma delas continua valendo. O texto de negócio (descrições, `text` das invariantes, `instructions` e propostas) continua no idioma do autor. Rodar `bun run agentic compile` regenera tudo; o `compile --check` acusa os gerados antigos até isso. Os packets e as mensagens da CLI ficam para o #111.
+- **Breaking change (#109, ADR-0007 D13):** the text `compile` generates is now English only, with no language option: the dev skills (`<module>-dev`), the operators' runtime skills, the `history.md` and `state-machine.md` references, the `AGENTS.md` block and the generated-file header. The operator runtime's tool descriptions also switch to `When to use:` / `When not to use:`. The core rules (`core/...`) were translated too, but their keys and `{{…}}` markers did not change, so a team rule that overrides one still applies. The proposal section keeps its name, `## Motivo`, and so does the matching history column. Business text (descriptions, invariant `text`, `instructions` and proposals) stays in the author's language. Running `bun run agentic compile` regenerates everything; until then, `compile --check` reports the old generated files. Packets and CLI messages follow in #111.
 
 - **Windows nativo (#128):** o framework passa a funcionar no Windows sem WSL, e o CI ganha o job `ci-windows`, com o mesmo gate do `ci` em `windows-latest`.
   - O `compile` falhava em qualquer projeto: `parseFrame` só reconhecia caminhos POSIX, e todo decorator ficava com origem `<desconhecido>`. Agora ele aceita letra de unidade, UNC e `file:///C:/`.
@@ -121,8 +121,6 @@ Primeira release de código-fonte do `@agentic-ddd`, publicando os quatro planos
 Veja [demonstração e validação](docs/releases/0.1.0.md) e [roadmap](docs/ROADMAP.md).
 
 [0.1.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.1.0
-
 [0.3.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.3.0
-
 [0.4.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.4.0
 [0.5.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.5.0

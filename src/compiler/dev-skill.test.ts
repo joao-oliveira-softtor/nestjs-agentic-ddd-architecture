@@ -118,7 +118,7 @@ describe('renderDevSkill', () => {
     expect(description.length).toBeLessThanOrEqual(1024);
 
     // Must use count form: should contain "60 use-cases"
-    expect(description).toContain('60 use-cases');
+    expect(description).toContain('1 entity, 60 use-cases');
 
     // Normal shop should still use names form
     const normalDesc = skill

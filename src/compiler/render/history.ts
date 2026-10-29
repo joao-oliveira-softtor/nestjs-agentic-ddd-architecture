@@ -5,7 +5,8 @@ import type { LockChange } from '../lock';
 import { GENERATED_HEADER } from './frontmatter';
 import { code, table } from './markdown';
 
-const HEADERS = ['Change', 'Title', 'Changes', 'Reason'];
+// "Motivo" matches the `## Motivo` section the proposal parser requires.
+const HEADERS = ['Change', 'Title', 'Changes', 'Motivo'];
 
 function entityOf(id: string): string | null {
   // dono snake_case = use-case (validate.ts garante PascalCase em entidade), vale também para item já removido

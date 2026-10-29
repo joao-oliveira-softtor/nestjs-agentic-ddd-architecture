@@ -55,10 +55,10 @@ export function renderDevSkill(
   if (descriptionWithNames.length > 1024) {
     // Use count-based form
     const parts = [
-      entities.length > 0 ? `${entities.length} entities` : null,
-      valueObjects.length > 0 ? `${valueObjects.length} value objects` : null,
-      useCases.length > 0 ? `${useCases.length} use-cases` : null,
-      operators.length > 0 ? `${operators.length} operators` : null,
+      counted(entities.length, 'entity', 'entities'),
+      counted(valueObjects.length, 'value object', 'value objects'),
+      counted(useCases.length, 'use-case', 'use-cases'),
+      counted(operators.length, 'operator', 'operators'),
     ]
       .filter((part): part is string => part !== null)
       .join(', ');
@@ -274,7 +274,7 @@ export function renderDevSkill(
       ],
     ),
     '',
-    'A declared body that is not yet implemented uses `notImplemented()` from `@agentic-ddd/core`.',
+    'A declared body that is not implemented yet uses `notImplemented()` from `@agentic-ddd/core`.',
     '',
     ...rulesSection,
     '## References',
@@ -304,4 +304,8 @@ export function renderDevSkill(
     ['references/schemas.json', stableStringify(schemas)],
     ['references/state-machine.md', renderStateMachine(entities, module.path)],
   ]);
+}
+
+function counted(n: number, one: string, many: string): string | null {
+  return n === 0 ? null : `${n} ${n === 1 ? one : many}`;
 }

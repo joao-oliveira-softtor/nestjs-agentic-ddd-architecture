@@ -90,7 +90,7 @@ Each ID below needs at least one test named with `covers([...ids], title)` from 
 | Use-case | `examples/orders/application/<name>.ts` | `@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entity>.<method>'], emits? })` |
 | Operator | `examples/orders/operators/<name>.operator.ts` | `@Operator({ name, description, instructions, useCases, requiresApproval? })` |
 
-A declared body that is not yet implemented uses `notImplemented()` from `@agentic-ddd/core`.
+A declared body that is not implemented yet uses `notImplemented()` from `@agentic-ddd/core`.
 
 ## References
 
