@@ -329,7 +329,13 @@ describe('mcpCommand', () => {
           '--config',
           await configFile(MCP),
         ],
-        { stdout: 'ignore', stderr: 'pipe' },
+        // The spawn timeout kills a bind that unexpectedly succeeds, so `exited` always settles.
+        {
+          stdout: 'ignore',
+          stderr: 'pipe',
+          timeout: 10_000,
+          killSignal: 'SIGKILL',
+        },
       );
       try {
         const [stderr, exitCode] = await Promise.all([
@@ -339,7 +345,7 @@ describe('mcpCommand', () => {
         expect(exitCode).toBe(1);
         expect(stderr).toContain('[cli.host-unavailable]');
       } finally {
-        // A bind that unexpectedly succeeds would otherwise keep the child alive.
+        // Belt and braces: the spawn timeout normally has already ended the child.
         proc.kill();
       }
     },
