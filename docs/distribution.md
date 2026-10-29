@@ -59,10 +59,12 @@ Na aplicação consumidora, instale o peer opcional e inicie o servidor:
 
 ```bash
 npm install @modelcontextprotocol/server@2.3.1
-./node_modules/.bin/agentic-ddd mcp [--root <dir>]
+./node_modules/.bin/agentic-ddd mcp [--root <dir>] [--config <file>] [--http [--port <n>] [--host <addr>]]
 ```
 
 Sem `--root`, o servidor usa a pasta atual. Sem o peer, o comando encerra com código 1 e uma mensagem pedindo a instalação.
+
+Com `--http`, o servidor fala Streamable HTTP (porta 3333 por padrão) como resource server OAuth: lê a seção `mcp` (`issuer`, `resource`, `jwksUri` opcional) do `agentic.config.ts`, publica o Protected Resource Metadata (RFC 9728) e exige um token Bearer JWT com `aud` igual a `resource` e o escopo `domain:read` em todas as ferramentas. O servidor de autorização é externo; este pacote só valida os tokens. Além do peer do SDK, exige o pacote `jose` instalado (`cli.jose-missing` se faltar). Por padrão escuta só em `127.0.0.1`; `--host` muda isso, e não há validação de `Host` nem de `Origin`.
 
 A partir deste checkout, o instalador grava a configuração do servidor para cada agente. É opt-in e só vale com `--scope project`:
 

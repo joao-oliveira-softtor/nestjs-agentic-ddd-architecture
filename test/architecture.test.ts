@@ -112,12 +112,12 @@ describe('arquitetura', () => {
     ).toEqual([]);
   });
 
-  test('só src/mcp importa o SDK do MCP e só ele', () => {
+  test('só src/mcp e src/auth importam o SDK do MCP', () => {
     const sdk = (s: string) => s.startsWith('@modelcontextprotocol/');
     expect(
       offenders(
         filesIn('src', { includeTests: true }).filter(
-          (f) => !f.startsWith('src/mcp/'),
+          (f) => !f.startsWith('src/mcp/') && !f.startsWith('src/auth/'),
         ),
         (_f, s) => !sdk(s),
       ),
@@ -130,7 +130,8 @@ describe('arquitetura', () => {
       s.startsWith('node:') ||
       s.startsWith('@modelcontextprotocol/') ||
       resolvesInto(f, s, 'src/mcp') ||
-      /^\.\.\/compiler\/(lock|canonical|rules|snapshot|ir)$/.test(s) ||
+      /^\.\.\/compiler\/(lock|canonical|rules|snapshot|ir|config)$/.test(s) ||
+      s === '../auth/resource-server' ||
       s.startsWith('../contracts/');
     expect(offenders(filesIn('src/mcp'), allowed)).toEqual([]);
   });

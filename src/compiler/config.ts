@@ -38,6 +38,16 @@ export interface RulesConfig {
   readonly briefMaxTokens?: number;
 }
 
+export interface McpConfig {
+  /** Authorization server issuer; tokens must carry exactly this `iss`. */
+  readonly issuer: string;
+  /** Resource identifier (RFC 8707) that tokens must carry in `aud`. */
+  readonly resource: string;
+  readonly jwksUri?: string;
+}
+
+export type ResolvedMcp = McpConfig;
+
 export interface AgenticConfig {
   readonly root?: string;
   readonly modules: readonly ModuleConfig[];
@@ -47,6 +57,7 @@ export interface AgenticConfig {
   readonly verify?: VerifyConfig;
   readonly rules?: RulesConfig;
   readonly conventions?: ConventionsConfig;
+  readonly mcp?: McpConfig;
 }
 
 export interface ResolvedConfig {
@@ -71,6 +82,7 @@ export interface ResolvedConfig {
   // Optional only so tests that build ResolvedConfig by hand keep compiling;
   // resolveConfig always fills it in.
   readonly conventions?: ResolvedConventions;
+  readonly mcp?: ResolvedMcp;
 }
 
 const MODULE_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -164,6 +176,57 @@ function importTargets(value: unknown, path: string): ImportTarget[] {
       );
     return target as ImportTarget;
   });
+}
+
+const MCP_KEYS = ['issuer', 'resource', 'jwksUri'];
+const LOOPBACK_HOSTS = ['127.0.0.1', 'localhost', '[::1]'];
+
+// Returns the value as written: URL.href would add a trailing slash to a bare origin,
+// and the issuer must match the token's iss exactly.
+function mcpUrl(value: unknown, path: string, noQuery = false): string {
+  if (typeof value !== 'string')
+    throw new AgenticError(
+      'config.not-text',
+      `agentic.config.ts: ${path} must be a string`,
+    );
+  const fail = (rule: string) =>
+    new AgenticError(
+      'config.mcp-url-invalid',
+      `agentic.config.ts: ${path} "${value}" ${rule}`,
+    );
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw fail('must be an absolute https: URL');
+  }
+  // Plain http is accepted only on loopback so a local issuer can run without TLS.
+  const local =
+    url.protocol === 'http:' && LOOPBACK_HOSTS.includes(url.hostname);
+  if (url.protocol !== 'https:' && !local)
+    throw fail(
+      'must be an absolute https: URL (http: only for 127.0.0.1, localhost or [::1])',
+    );
+  if (url.hash !== '') throw fail('must not have a fragment');
+  if (noQuery && url.search !== '') throw fail('must not have a query');
+  return value;
+}
+
+function resolveMcp(input: unknown): ResolvedMcp {
+  const section = checkKeys(input, 'mcp', MCP_KEYS);
+  if (section.issuer === undefined || section.resource === undefined)
+    throw new AgenticError(
+      'config.mcp-field-missing',
+      'agentic.config.ts: mcp is configured without issuer or resource; set both',
+    );
+  return {
+    issuer: mcpUrl(section.issuer, 'mcp.issuer', true),
+    resource: mcpUrl(section.resource, 'mcp.resource'),
+    jwksUri:
+      section.jwksUri === undefined
+        ? undefined
+        : mcpUrl(section.jwksUri, 'mcp.jwksUri'),
+  };
 }
 
 function resolveConventions(input: unknown): ResolvedConventions {
@@ -374,6 +437,7 @@ export function resolveConfig(
         .map(([name, command]) => ({ name, command: [...command] })),
     },
     conventions: resolveConventions(config.conventions),
+    mcp: config.mcp === undefined ? undefined : resolveMcp(config.mcp),
   };
 }
 

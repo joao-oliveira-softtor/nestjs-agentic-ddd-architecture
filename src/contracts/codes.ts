@@ -1,13 +1,29 @@
 // Stable error codes for CLI, compile, verify and MCP output. Codes are part of the public
 // surface: tests and tooling match on them, so reword messages freely but never rename a code.
 export const ERROR_CODES = {
+  // auth
+  'auth.audience-mismatch':
+    'The token audience does not include this resource.',
+  'auth.issuer-mismatch': 'The token issuer is not the configured issuer.',
+  'auth.scope-missing': 'The token lacks a scope this resource requires.',
+  'auth.token-expired': 'The access token has expired.',
+  'auth.token-invalid':
+    'The access token is malformed, unsigned or fails verification.',
+  'auth.token-missing': 'The request carries no Bearer access token.',
+
   // cli
   'cli.argument-count':
     'The command received the wrong number of positional arguments.',
+  'cli.http-option-requires-http':
+    'A --port or --host option was passed without --http.',
+  'cli.jose-missing': 'The jose package is not installed.',
+  'cli.mcp-config-missing':
+    '--http was used but the config has no mcp section.',
   'cli.mcp-sdk-missing': 'The MCP SDK package is not installed.',
   'cli.option-unknown': 'An unknown command-line option was passed.',
   'cli.option-value-required':
     'An option that takes a value was passed without one.',
+  'cli.port-invalid': '--port is not an integer between 0 and 65535.',
   'cli.spec-hash-invalid': 'The --spec-hash value is not a SHA-256 hex digest.',
 
   // compile
@@ -31,6 +47,9 @@ export const ERROR_CODES = {
   'config.key-invalid':
     'A config key is known but not valid there (the message gives the hint).',
   'config.key-unknown': 'A config key does not exist in this section.',
+  'config.mcp-field-missing': 'mcp is configured without issuer or resource.',
+  'config.mcp-url-invalid':
+    'An mcp issuer, resource or jwksUri is not an acceptable absolute URL.',
   'config.module-duplicate': 'Two modules have the same name.',
   'config.module-name-invalid': 'A module name is not kebab-case.',
   'config.module-outside': 'A module path points outside the project root.',
