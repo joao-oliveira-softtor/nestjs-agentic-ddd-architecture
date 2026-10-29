@@ -14,6 +14,30 @@ type Load = () => Promise<{
   }): Promise<{ close(): unknown; port: number }>;
 }>;
 
+// Bind failures from the listen call, each with the stable code and its message.
+const BIND_ERRORS: Readonly<
+  Record<
+    string,
+    {
+      code: 'cli.host-unavailable' | 'cli.port-denied' | 'cli.port-in-use';
+      message(host: string, port: string): string;
+    }
+  >
+> = {
+  EADDRINUSE: {
+    code: 'cli.port-in-use',
+    message: (host, port) => `port ${port} is already in use on ${host}`,
+  },
+  EACCES: {
+    code: 'cli.port-denied',
+    message: (host, port) => `permission denied to bind ${host}:${port}`,
+  },
+  EADDRNOTAVAIL: {
+    code: 'cli.host-unavailable',
+    message: (host) => `${host} is not an address of this machine`,
+  },
+};
+
 export async function mcpCommand(
   args: readonly string[],
   load: Load = () => import('../../mcp/index'),
@@ -85,11 +109,12 @@ export async function mcpCommand(
       });
     } catch (error) {
       const { code, message } = error as { code?: string; message?: string };
-      if (code === 'EADDRINUSE') {
+      if (code !== undefined && Object.hasOwn(BIND_ERRORS, code)) {
+        const bind = BIND_ERRORS[code];
         console.error(
           formatCoded({
-            code: 'cli.port-in-use',
-            message: `port ${port} is already in use on ${host}`,
+            code: bind.code,
+            message: bind.message(host, port),
           }),
         );
         return 1;

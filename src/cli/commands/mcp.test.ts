@@ -264,4 +264,79 @@ describe('mcpCommand', () => {
       await server.stop(true);
     }
   });
+
+  // Injects a bind failure with the given error code; the command must map it, not rethrow.
+  function failingBind(error: Record<string, unknown>) {
+    return () =>
+      Promise.resolve({
+        startMcpServer: () => ({ close: () => {} }),
+        startMcpHttpServer: () => Promise.reject(error),
+      });
+  }
+
+  test('--http on a privileged port exits 1 with cli.port-denied', async () => {
+    const error = captureErrors();
+    const code = await mcpCommand(
+      ['--http', '--port', '80', '--config', await configFile(MCP)],
+      failingBind({ code: 'EACCES', message: 'x' }),
+    );
+    const messages = error.mock.calls.flat().join('\n');
+    error.mockRestore();
+    expect(code).toBe(1);
+    expect(messages).toContain('[cli.port-denied]');
+    expect(messages).toContain('permission denied to bind 127.0.0.1:80');
+  });
+
+  test('--http on an address this machine lacks exits 1 with cli.host-unavailable', async () => {
+    const error = captureErrors();
+    const code = await mcpCommand(
+      ['--http', '--host', '203.0.113.1', '--config', await configFile(MCP)],
+      failingBind({ code: 'EADDRNOTAVAIL', message: 'x' }),
+    );
+    const messages = error.mock.calls.flat().join('\n');
+    error.mockRestore();
+    expect(code).toBe(1);
+    expect(messages).toContain('[cli.host-unavailable]');
+    expect(messages).toContain('203.0.113.1 is not an address of this machine');
+  });
+
+  test('--http rethrows a bind error it does not map', async () => {
+    const failure = await mcpCommand(
+      ['--http', '--config', await configFile(MCP)],
+      failingBind({ code: 'ECONNRESET', message: 'x' }),
+    ).catch((e: unknown) => e);
+    expect(failure).toEqual({ code: 'ECONNRESET', message: 'x' });
+  });
+
+  // Binds TEST-NET-3 (203.0.113.1), which is never local, so no privileges are needed.
+  // Skipped on Windows: Bun 1.4.4 reports EADDRINUSE for every failed bind there.
+  test.skipIf(process.platform === 'win32')(
+    '--http on a non-local address exits 1 with cli.host-unavailable (real bind)',
+    async () => {
+      const main = join(import.meta.dir, '..', 'main.ts');
+      const proc = Bun.spawn(
+        [
+          process.execPath,
+          main,
+          'mcp',
+          '--http',
+          '--host',
+          '203.0.113.1',
+          '--port',
+          '0',
+          '--root',
+          dir,
+          '--config',
+          await configFile(MCP),
+        ],
+        { stdout: 'pipe', stderr: 'pipe' },
+      );
+      const [stderr, exitCode] = await Promise.all([
+        new Response(proc.stderr).text(),
+        proc.exited,
+      ]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('[cli.host-unavailable]');
+    },
+  );
 });
