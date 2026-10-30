@@ -85,6 +85,8 @@ export type Delta = z.infer<typeof deltaSchema>;
 // Same patterns as validate.ts, plus camelCase for methods, params and fields.
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SNAKE = /^[a-z][a-z0-9_]{0,63}$/;
+// Stricter than SNAKE: no leading, trailing or doubled underscore, which would give `foo-.ts` and class clashes.
+const USE_CASE = /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/;
 const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
 const CAMEL = /^[a-z][A-Za-z0-9]*$/;
 const FIELD = /^[a-z][A-Za-z0-9_]*$/;
@@ -272,6 +274,11 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
       claim(seen, id, `${path}[${i}].name`);
     });
   };
+  const noDuplicates = (path: string, list: readonly string[] | undefined) =>
+    list?.forEach((v, i) => {
+      if (list.indexOf(v) !== i)
+        add('delta.name-collision', `${path}[${i}]`, `${v} is listed twice`);
+    });
   const checkEmits = (path: string, list: readonly string[] | undefined) =>
     list?.forEach((ev, i) => {
       if (!eventNames.has(ev) && !baseEvents.has(ev))
@@ -287,6 +294,7 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
     ident(`${ep}.name`, entity.name, PASCAL, 'PascalCase entity name');
     claim(types, entity.name, `${ep}.name`, `entity:${entity.name}`);
     const states = new Set(entity.states ?? []);
+    noDuplicates(`${ep}.states`, entity.states);
     const invariants = new Set<string>();
     const checkInvariants = (
       path: string,
@@ -310,7 +318,9 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
       checkFields(`${mp}.params`, m.params, CAMEL, 'camelCase parameter name');
       if (m.returns !== 'void') checkType(`${mp}.returns`, m.returns);
       checkEmits(`${mp}.emits`, m.emits);
+      noDuplicates(`${mp}.emits`, m.emits);
       if (m.transition) {
+        noDuplicates(`${mp}.transition.from`, m.transition.from);
         for (const [i, s] of m.transition.from.entries())
           if (!states.has(s))
             add(
@@ -387,14 +397,32 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
   const useCases = new Set<string>();
   delta.useCases.forEach((uc, i) => {
     const p = `useCases[${i}]`;
-    ident(`${p}.name`, uc.name, SNAKE, 'snake_case use-case name');
+    ident(`${p}.name`, uc.name, USE_CASE, 'snake_case use-case name');
     claim(useCases, uc.name, `${p}.name`, `usecase:${uc.name}`);
-    if (SNAKE.test(uc.name) && typeNames.has(pascalOfSnake(uc.name)))
-      add(
-        'delta.name-collision',
-        `${p}.name`,
-        `class ${pascalOfSnake(uc.name)} collides with a declared type`,
-      );
+    if (USE_CASE.test(uc.name) && SNAKE.test(uc.name)) {
+      const cls = pascalOfSnake(uc.name);
+      // The class is declared next to what the file imports, so it must not shadow any of it.
+      if (RESERVED.has(cls))
+        add(
+          'delta.invalid-identifier',
+          `${p}.name`,
+          `class ${cls} would shadow a name the generated file uses`,
+        );
+      else if (
+        typeNames.has(cls) ||
+        eventNames.has(cls) ||
+        baseEvents.has(cls) ||
+        portNames.has(cls)
+      )
+        add(
+          'delta.name-collision',
+          `${p}.name`,
+          `class ${cls} collides with a declared type, event or port`,
+        );
+    }
+    noDuplicates(`${p}.uses`, uc.uses);
+    noDuplicates(`${p}.emits`, uc.emits);
+    noDuplicates(`${p}.ports`, uc.ports);
     checkFields(`${p}.input`, uc.input, FIELD, 'field name');
     checkFields(`${p}.output`, uc.output, FIELD, 'field name');
     uc.uses.forEach((u, ui) => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { ERROR_CODES } from '../../contracts/codes';
-import type { IR } from '../ir';
+import type { ErrorCode, IR } from '../ir';
 import { parseType, validateDelta, type Delta } from './schema';
 import { sampleDelta } from './sample';
 
@@ -169,6 +169,48 @@ describe('validateDelta', () => {
     expect(e.message).toContain(
       'additions to existing items are not supported yet',
     );
+  });
+
+  test.each<[string, (d: Delta) => void, ErrorCode]>([
+    [
+      'use_case',
+      (d) => (d.useCases[0]!.name = 'use_case'),
+      'delta.invalid-identifier',
+    ],
+    [
+      'promise',
+      (d) => (d.useCases[0]!.name = 'promise'),
+      'delta.invalid-identifier',
+    ],
+    [
+      'trailing underscore',
+      (d) => (d.useCases[0]!.name = 'foo_'),
+      'delta.invalid-identifier',
+    ],
+    [
+      'double underscore',
+      (d) => (d.useCases[0]!.name = 'foo__bar'),
+      'delta.invalid-identifier',
+    ],
+    [
+      'class equal to an event',
+      (d) => (d.useCases[0]!.name = 'product_published'),
+      'delta.name-collision',
+    ],
+    [
+      'repeated emits',
+      (d) => d.useCases[0]!.emits.push('ProductPublished'),
+      'delta.name-collision',
+    ],
+    [
+      'repeated state',
+      (d) => d.entities[0]!.states!.push('draft'),
+      'delta.name-collision',
+    ],
+  ])('%s is refused before rendering', (_label, mutate, code) => {
+    const d = sampleDelta();
+    mutate(d);
+    expect(errorsOf(d).map((e) => e.code)).toContain(code);
   });
 
   test('the delta codes are registered', () => {

@@ -54,6 +54,9 @@ export function literal(s: string): string {
     } else if (
       c < 0x20 ||
       (c >= 0x7f && c <= 0x9f) ||
+      c === 0xad ||
+      c === 0x61c ||
+      c === 0x180e ||
       (c >= 0xdc00 && c <= 0xdfff) ||
       (c >= 0x200b && c <= 0x200f) ||
       (c >= 0x2028 && c <= 0x202e) ||
