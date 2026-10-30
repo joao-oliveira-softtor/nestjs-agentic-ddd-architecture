@@ -1,7 +1,6 @@
 import { open } from 'node:fs/promises';
 import { sha256, stableStringify } from './canonical';
 import {
-  DEFAULT_CONVENTIONS,
   isResolvedConventions,
   type ResolvedConventions,
 } from './conventions';
@@ -51,7 +50,7 @@ export function createPublishedLock(
   version: string,
   lock: DomainLock,
   rules: Rule[],
-  conventions: ResolvedConventions = DEFAULT_CONVENTIONS,
+  conventions: ResolvedConventions,
 ): PublishedLock {
   checkVersion(version, 'published lock');
   return {

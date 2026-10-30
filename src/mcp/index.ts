@@ -18,13 +18,14 @@ import type { ResolvedConventions } from '../compiler/conventions';
 import type { PublishedLock } from '../compiler/published';
 import type { Rule } from '../compiler/rules';
 import { checkSnapshot } from '../compiler/snapshot';
-import { narrowRulePaths, pathModule, scopeLock } from './scope';
+import { narrowRuleGlobs, pathModule, scopeLock } from './scope';
 import {
+  authoringCatalogue,
+  authoringLoader,
   catalogue,
   findDoc,
   index,
   LANGUAGE_RULE,
-  loadAuthoringDocs,
   type SkillDoc,
 } from './skills';
 import { changes, element, overview, rulesForPath } from './tools';
@@ -61,6 +62,16 @@ export function createDomainServer(
   remote: boolean,
   authoringDir = AUTHORING_DIR,
 ): McpServer {
+  // The skill comes from the installed package, not from the project: read once per server, in both modes.
+  const authoringDocs = authoringLoader(authoringDir);
+  // Fail closed: a remote call without a grant sees nothing.
+  const accessOf = (ctx: Ctx | undefined, capability: string): ModuleAccess =>
+    remote
+      ? (moduleAccess(ctx?.http?.authInfo?.scopes ?? [], capability) ??
+        new Set<string>())
+      : 'all';
+  const noGrant = (access: ModuleAccess) =>
+    access !== 'all' && access.size === 0;
   // Every call revalidates the snapshot: nothing serves stale data.
   const scopedFor = async (
     ctx: Ctx | undefined,
@@ -86,11 +97,7 @@ export function createDomainServer(
       }
       base = snap;
     }
-    // Fail closed: a remote call without a grant sees nothing.
-    const access: ModuleAccess = remote
-      ? (moduleAccess(ctx?.http?.authInfo?.scopes ?? [], capability) ??
-        new Set<string>())
-      : 'all';
+    const access = accessOf(ctx, capability);
     return {
       lock: scopeLock(base.lock, access),
       fullLock: base.lock,
@@ -101,64 +108,79 @@ export function createDomainServer(
     };
   };
   // The documents the caller may read, from the same source for the tool and the resources.
+  // The authoring skill does not need the snapshot; the dev skills and rules do, and `unavailable` says why they are missing.
   const docsOf = async (
-    s: Scoped,
-  ): Promise<{ docs: SkillDoc[]; authoring: boolean }> => {
-    // Without the authoring skill the dev skills and rules are still served.
-    const authoring = await loadAuthoringDocs(authoringDir).catch((error) => {
-      if (
-        error instanceof AgenticError &&
-        error.code === 'mcp.skills-unavailable'
-      )
-        return null;
-      throw error;
-    });
-    const docs = catalogue({
-      authoring: authoring ?? [],
-      lock: s.fullLock,
-      fullLock: s.fullLock,
-      rules: s.rules,
-      skillAccess: s.access,
-      conventions: s.conventions,
-    });
-    return { docs, authoring: authoring !== null };
+    ctx: Ctx | undefined,
+  ): Promise<{
+    docs: SkillDoc[];
+    authoring: boolean;
+    unavailable?: AgenticError;
+  }> => {
+    const authoring = await authoringDocs();
+    const available = authoring !== null;
+    if (noGrant(accessOf(ctx, SKILL_CAPABILITY)))
+      return { docs: [], authoring: available };
+    try {
+      const s = await scopedFor(ctx, SKILL_CAPABILITY);
+      return {
+        docs: catalogue({
+          authoring: authoring ?? [],
+          fullLock: s.fullLock,
+          rules: s.rules,
+          skillAccess: s.access,
+          conventions: s.conventions,
+        }),
+        authoring: available,
+      };
+    } catch (error) {
+      if (!(error instanceof AgenticError)) throw error;
+      return {
+        docs: authoringCatalogue(authoring ?? []),
+        authoring: available,
+        unavailable: error,
+      };
+    }
   };
   // An error thrown here returns to the client as a result with isError (SDK). A string result is sent verbatim.
+  const respond = async (
+    work: () => object | string | Promise<object | string>,
+  ) => {
+    const fail = (text: string) => ({
+      isError: true,
+      content: [{ type: 'text' as const, text }],
+    });
+    try {
+      const out = await work();
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: typeof out === 'string' ? out : stableStringify(out),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof AgenticError) return fail(formatCoded(error));
+      // The SDK forwards error.message of anything else to the client: keep internals off the wire.
+      if (remote) {
+        // The client gets a generic message, so the operator must still see the cause.
+        console.error(error);
+        return fail('Internal server error');
+      }
+      throw error;
+    }
+  };
   const guarded =
     <A>(
       run: (s: Scoped, args: A) => object | string | Promise<object | string>,
       capability = CAPABILITY,
     ) =>
-    async (args: A, ctx?: Ctx) => {
-      const fail = (text: string) => ({
-        isError: true,
-        content: [{ type: 'text' as const, text }],
-      });
-      try {
-        const out = await run(await scopedFor(ctx, capability), args);
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: typeof out === 'string' ? out : stableStringify(out),
-            },
-          ],
-        };
-      } catch (error) {
-        if (error instanceof AgenticError) return fail(formatCoded(error));
-        // The SDK forwards error.message of anything else to the client: keep internals off the wire.
-        if (remote) {
-          // The client gets a generic message, so the operator must still see the cause.
-          console.error(error);
-          return fail('Internal server error');
-        }
-        throw error;
-      }
-    };
+    (args: A, ctx?: Ctx) =>
+      respond(async () => run(await scopedFor(ctx, capability), args));
   // Resource callbacks: the SDK sends error.message to the client, so a remote caller gets only coded ones.
   const docsFor = async (ctx: Ctx): Promise<SkillDoc[]> => {
     try {
-      return (await docsOf(await scopedFor(ctx, SKILL_CAPABILITY))).docs;
+      return (await docsOf(ctx)).docs;
     } catch (error) {
       if (error instanceof AgenticError) throw new Error(formatCoded(error));
       if (!remote) throw error;
@@ -279,7 +301,10 @@ export function createDomainServer(
       // A rule's other globs may name modules the token cannot read.
       return s.access === 'all'
         ? result
-        : { ...result, rules: narrowRulePaths(result.rules, result.path) };
+        : {
+            ...result,
+            rules: narrowRuleGlobs(result.rules, s.fullLock, s.access),
+          };
     }),
   );
   server.registerTool(
@@ -290,18 +315,33 @@ export function createDomainServer(
       inputSchema: z.object({ doc: z.string().optional() }),
       annotations: { ...annotations, destructiveHint: false },
     },
-    guarded<{ doc?: string }>(async (s, { doc }) => {
-      const { docs, authoring } = await docsOf(s);
-      if (doc === undefined) return index(docs, authoring);
-      // A hidden document is not in `docs`: it answers exactly like an unknown one.
-      const found = findDoc(docs, doc);
-      if (!found)
-        throw new AgenticError(
-          'mcp.doc-unknown',
-          'no such document; call authoring_guide without doc for the index',
-        );
-      return found.content;
-    }, SKILL_CAPABILITY),
+    ({ doc }: { doc?: string }, ctx?: Ctx) =>
+      respond(async () => {
+        // Not the snapshot-bound `guarded`: the authoring skill is served without one.
+        if (noGrant(accessOf(ctx, SKILL_CAPABILITY)))
+          throw new AgenticError(
+            'auth.scope-missing',
+            `the ${SKILL_CAPABILITY} scope is needed to read skill documents`,
+          );
+        const { docs, authoring, unavailable } = await docsOf(ctx);
+        if (doc === undefined)
+          return index(
+            docs,
+            authoring,
+            unavailable &&
+              `Dev skills and team rules are unavailable (${unavailable.code}): run \`bun run agentic compile\` at the project root.`,
+          );
+        // A hidden document is not in `docs`: it answers exactly like an unknown one.
+        const found = findDoc(docs, doc);
+        if (!found) {
+          if (unavailable) throw unavailable;
+          throw new AgenticError(
+            'mcp.doc-unknown',
+            'no such document; call authoring_guide without doc for the index',
+          );
+        }
+        return found.content;
+      }),
   );
   server.registerResource(
     'skill',

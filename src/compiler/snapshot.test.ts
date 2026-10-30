@@ -47,6 +47,7 @@ async function setup(sub = '') {
     config: sub === '' ? 'agentic.config.ts' : `${sub}/agentic.config.ts`,
     lock: '.agentic/domain.lock.json',
     rulesDir: '.ai/rules',
+    conventions: DEFAULT_CONVENTIONS,
     rules: [],
     modules: [{ path: 'mod' }],
   });
@@ -112,6 +113,7 @@ describe('snapshot do MCP', () => {
       config: '../proj/agentic.config.ts',
       lock: '.agentic/domain.lock.json',
       rulesDir: '.ai/rules',
+      conventions: DEFAULT_CONVENTIONS,
       rules: [],
       modules: [{ path: 'mod' }],
     });
@@ -126,6 +128,7 @@ describe('snapshot do MCP', () => {
       root: '.',
       config: 'agentic.config.ts',
       rulesDir: '.ai/rules',
+      conventions: DEFAULT_CONVENTIONS,
     };
     const sources = await sourceLines(dir, place, [{ path: 'mod' }]);
     await writeFile(join(proj, 'mod/a.ts'), 'export const a = 2;\n');
@@ -134,6 +137,7 @@ describe('snapshot do MCP', () => {
       {
         ...place,
         lock: '.agentic/domain.lock.json',
+        conventions: DEFAULT_CONVENTIONS,
         rules: [],
         modules: [{ path: 'mod' }],
       },
@@ -150,6 +154,7 @@ describe('snapshot do MCP', () => {
       config: 'agentic.config.ts',
       lock: '.agentic/domain.lock.json',
       rulesDir: '.ai/rules',
+      conventions: DEFAULT_CONVENTIONS,
       rules: [],
       modules: [{ path: 'mod' }],
     });

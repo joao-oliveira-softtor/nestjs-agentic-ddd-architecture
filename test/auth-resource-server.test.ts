@@ -709,6 +709,19 @@ describe('resource server', () => {
       );
     });
 
+    test('an empty list is no constraint', async () => {
+      const server = createResourceServer({
+        issuer: auth.issuer,
+        resource: RESOURCE,
+        requiredScopes: [],
+        anyOfScopes: [],
+      });
+      const result = await server.gate(
+        bearer(await mint(rsa, auth.issuer, { scope: 'other' })),
+      );
+      expect(result).not.toBeInstanceOf(Response);
+    });
+
     test('requiredScopes still all apply and the metadata lists the union', async () => {
       const server = createResourceServer({
         issuer: auth.issuer,

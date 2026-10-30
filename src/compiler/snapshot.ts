@@ -2,7 +2,6 @@ import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { sha256, stableStringify } from './canonical';
 import {
-  DEFAULT_CONVENTIONS,
   isResolvedConventions,
   type ResolvedConventions,
 } from './conventions';
@@ -77,12 +76,11 @@ export async function writeSnapshot(
   fields: Locations & {
     rules: Rule[];
     modules: readonly { path: string }[];
-    // Absent means the framework defaults, as in renderAll.
-    conventions?: ResolvedConventions;
+    conventions: ResolvedConventions;
   },
   sources?: readonly string[],
 ): Promise<void> {
-  const { modules, conventions = DEFAULT_CONVENTIONS, ...saved } = fields;
+  const { modules, conventions, ...saved } = fields;
   const lines = sources ?? (await sourceLines(outRoot, saved, modules));
   const snapshot: McpSnapshot = {
     snapshotVersion: 1,

@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { resolve } from 'node:path';
+import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import {
   DEFAULT_CONVENTIONS,
   type ResolvedConventions,
@@ -11,6 +13,7 @@ import {
   catalogue,
   findDoc,
   index,
+  authoringLoader,
   loadAuthoringDocs,
   type SkillDoc,
 } from './skills';
@@ -59,6 +62,9 @@ const rules: Rule[] = [
   rule('mixed', ['examples/orders/**', 'examples/billing/**']),
   rule('billing-only', ['examples/billing/**']),
   rule('braced', ['examples/{orders,billing}/**']),
+  rule('tests', ['test/**']),
+  rule('infra', ['examples/orders/infrastructure/**']),
+  rule('exts', ['examples/orders/**/*.{ts,tsx}']),
   rule('braced-only', ['examples/{orders,billing}/**', 'examples/orders/**']),
   rule('wild', ['**/*.ts', 'examples/*/domain/**']),
 ];
@@ -66,7 +72,6 @@ const rules: Rule[] = [
 const build = (skillAccess: 'all' | ReadonlySet<string>) =>
   catalogue({
     authoring,
-    lock,
     fullLock: lock,
     rules,
     skillAccess,
@@ -88,6 +93,26 @@ describe('loadAuthoringDocs', () => {
     expect(paths).toContain('SKILL.md');
     expect(paths).toContain('references/authoring.md');
     expect(paths.some((p) => p.startsWith('assets'))).toBe(false);
+  });
+});
+
+describe('authoringLoader', () => {
+  test('reads the directory once and reuses the result', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'agentic-once-'));
+    try {
+      await cp(resolve(root, 'skills/agentic-ddd'), tmp, { recursive: true });
+      const load = authoringLoader(tmp);
+      const first = await load();
+      await rm(tmp, { recursive: true, force: true });
+      expect(await load()).toBe(first);
+      expect(first?.map((a) => a.path)).toContain('SKILL.md');
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
+
+  test('a missing directory is null, not an error, and carries no path', async () => {
+    expect(await authoringLoader(resolve(root, 'no-such-dir'))()).toBeNull();
   });
 });
 
@@ -116,7 +141,15 @@ describe('catalogue', () => {
     const mixed = docs.find((d) => d.uri.endsWith('/rules/mixed.md'))!;
     expect(mixed.content).toContain('examples/orders/**');
     expect(mixed.content).not.toContain('billing');
-    expect(all).not.toContain('skill://agentic-ddd/rules/braced.md');
+    // The brace glob keeps its readable alternative only.
+    const braced = docs.find((d) => d.uri.endsWith('/rules/braced.md'))!;
+    expect(braced.content).toContain('examples/orders/**');
+    // Rules for tests, infrastructure and extension braces stay visible.
+    expect(all).toContain('skill://agentic-ddd/rules/tests.md');
+    expect(all).toContain('skill://agentic-ddd/rules/infra.md');
+    const exts = docs.find((d) => d.uri.endsWith('/rules/exts.md'))!;
+    expect(exts.content).toContain('examples/orders/**/*.ts');
+    expect(exts.content).toContain('examples/orders/**/*.tsx');
     expect(all).toContain('skill://agentic-ddd/rules/braced-only.md');
     expect(all).toContain('skill://agentic-ddd/rules/wild.md');
     for (const d of [...docs, { content: index(docs) }]) {
@@ -132,7 +165,6 @@ describe('catalogue', () => {
   test("'all' equals the generated orders dev skill", async () => {
     const docs = catalogue({
       authoring,
-      lock: fullLock,
       fullLock,
       rules: [],
       skillAccess: 'all',
@@ -157,7 +189,6 @@ describe('catalogue', () => {
     }).files.get(`${DEFAULT_OUT.devSkills}/orders-dev/SKILL.md`)!;
     const docs = catalogue({
       authoring,
-      lock: fullLock,
       fullLock,
       rules: [],
       skillAccess: 'all',
@@ -189,7 +220,6 @@ describe('rule URIs', () => {
   test('a key with a space or an accent is percent-encoded, so it equals the URL href', () => {
     const docs = catalogue({
       authoring,
-      lock,
       fullLock: lock,
       rules: [rule('my rule/é', null)],
       skillAccess: 'all',
@@ -241,7 +271,6 @@ describe('multi-line frontmatter', () => {
             '---\nname: x\ndescription: >-\n  first line\n  second | line\n---\n\n# X\n',
         },
       ],
-      lock,
       fullLock: lock,
       rules: [],
       skillAccess: 'all',
@@ -265,7 +294,6 @@ describe('multi-line frontmatter', () => {
           content: '---\nname: x\ndescription: |\n  a\n  b\n---\n# X\n',
         },
       ],
-      lock,
       fullLock: lock,
       rules: [],
       skillAccess: 'all',

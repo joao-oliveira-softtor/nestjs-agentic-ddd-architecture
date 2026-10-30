@@ -24,7 +24,12 @@ const repoLock = parseLock(
 const rules: Rule[] = [
   { key: 'open', file: 'rules/open.md', paths: null, body: '- open rule' },
 ];
-const published = createPublishedLock('1', twoModuleLock(repoLock), rules);
+const published = createPublishedLock(
+  '1',
+  twoModuleLock(repoLock),
+  rules,
+  DEFAULT_CONVENTIONS,
+);
 const LANGUAGE =
   "Reply to the user in the user's language. Never translate identifiers, invariant ids or business text.";
 
@@ -135,9 +140,44 @@ describe('dev skills use the project conventions', () => {
   });
 });
 
+describe('without a snapshot', () => {
+  for (const isRemote of [false, true]) {
+    test(`the authoring skill is still served, dev skills need the snapshot (${isRemote ? 'remote' : 'local'})`, async () => {
+      const tmp = await mkdtemp(join(tmpdir(), 'agentic-nosnap-'));
+      try {
+        const h = createMcpHandler(() =>
+          createDomainServer({ root: tmp }, isRemote),
+        );
+        const scopes = isRemote ? ['skill:read'] : undefined;
+        const uris = await listed(h, scopes);
+        expect(uris).toContain('skill://agentic-ddd/SKILL.md');
+        expect(uris.some((u) => u.includes('-dev/'))).toBe(false);
+        const index = (await guide(h, scopes)).result.content[0].text as string;
+        expect(index).toContain('skill://agentic-ddd/SKILL.md');
+        expect(index).toContain('snapshot.missing');
+        const read = await guide(h, scopes, 'SKILL.md');
+        expect(read.result.isError).toBeUndefined();
+        const dev = await guide(h, scopes, 'orders-dev');
+        expect(dev.result.isError).toBe(true);
+        expect(dev.result.content[0].text).toContain('snapshot.missing');
+        // The local refusal of a dev skill is the snapshot's own message; only the index is path-free there.
+        expect(index).not.toContain(tmp);
+        if (isRemote) expect(JSON.stringify(dev)).not.toContain(tmp);
+      } finally {
+        await rm(tmp, { recursive: true, force: true });
+      }
+    });
+  }
+});
+
 describe('without the authoring skill on disk', () => {
   const missing = join(tmpdir(), 'agentic-no-such-skill-dir');
-  const rulesPublished = createPublishedLock('1', repoLock, rules);
+  const rulesPublished = createPublishedLock(
+    '1',
+    repoLock,
+    rules,
+    DEFAULT_CONVENTIONS,
+  );
   for (const isRemote of [false, true]) {
     test(`dev skills and rules are still served (${isRemote ? 'remote' : 'local'})`, async () => {
       const h = createMcpHandler(() =>
@@ -225,12 +265,16 @@ describe('authoring_guide over the Domain MCP', () => {
     );
   });
 
-  test('a remote caller with no skill grant sees nothing', async () => {
+  test('a remote caller with no skill grant sees nothing and is told which scope is needed', async () => {
     for (const scopes of [undefined, [], ['domain:read']]) {
       expect(await listed(remote, scopes)).toEqual([]);
-      const out = (await guide(remote, scopes, 'SKILL.md')).result;
-      expect(out.isError).toBe(true);
-      expect(out.content[0].text).toContain('mcp.doc-unknown');
+      for (const doc of [undefined, 'SKILL.md']) {
+        const out = (await guide(remote, scopes, doc)).result;
+        expect(out.isError).toBe(true);
+        expect(out.content[0].text).toContain('auth.scope-missing');
+        expect(out.content[0].text).toContain('skill:read');
+        expect(out.content[0].text).not.toContain('Order');
+      }
       const read = await rpc(
         remote,
         'resources/read',

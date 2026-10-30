@@ -14,6 +14,7 @@ import {
   startAuthServer,
 } from './helpers/auth-server';
 import { type StdioMcp, startStdioMcp } from './helpers/stdio-mcp';
+import { DEFAULT_CONVENTIONS } from '../src/compiler/conventions';
 
 const REPO = resolve(import.meta.dir, '..');
 const LOCK = '.agentic/domain.lock.json';
@@ -38,6 +39,7 @@ async function prepareRoot(): Promise<{ tmp: string; repoChanges: string[] }> {
     config: 'agentic.config.ts',
     lock: LOCK,
     rulesDir: '.ai/rules',
+    conventions: DEFAULT_CONVENTIONS,
     rules: [
       { key: 'r', file: '.ai/rules/r.md', paths: ['examples/**'], body: 'R' },
       {

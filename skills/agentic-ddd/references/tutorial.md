@@ -5,8 +5,8 @@ Prerequisites: Bun and a permanent checkout of the framework. The install uses t
 ```bash
 # In the framework checkout:
 bun install --frozen-lockfile
-bun run skills:example --root ./scratch/agentic-tasks
-cd ./scratch/agentic-tasks
+bun run skills:example --root ../agentic-tasks
+cd ../agentic-tasks
 bun run typecheck
 bun run agentic compile
 bun run agentic status --json

@@ -7,6 +7,7 @@ import { writeDraft } from './changes/draft';
 import { listProposals } from './changes/proposal';
 import { reconcile } from './changes/reconcile';
 import { loadConfig, type ResolvedConfig } from './config';
+import { DEFAULT_CONVENTIONS } from './conventions';
 import type { DiffItem } from './diff';
 import {
   AgenticError,
@@ -263,7 +264,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
         ...snapshotPlace(config, options.configPath),
         lock: config.out.lock,
         modules: ir.modules,
-        conventions: config.conventions,
+        conventions: config.conventions ?? DEFAULT_CONVENTIONS,
         rules: rules.map((r) =>
           r.file === null
             ? {

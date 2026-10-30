@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parseLock } from '../src/compiler/lock';
 import { SNAPSHOT_PATH, writeSnapshot } from '../src/compiler/snapshot';
+import { DEFAULT_CONVENTIONS } from '../src/compiler/conventions';
 
 const REPO = resolve(import.meta.dir, '..');
 const LOCK = '.agentic/domain.lock.json';
@@ -24,6 +25,7 @@ describe('agentic mcp (subprocesso)', () => {
         config: 'agentic.config.ts',
         lock: LOCK,
         rulesDir: '.ai/rules',
+        conventions: DEFAULT_CONVENTIONS,
         rules: [
           {
             key: 'r',

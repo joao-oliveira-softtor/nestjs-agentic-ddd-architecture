@@ -1,7 +1,7 @@
 import type { ModuleAccess } from '../auth/scopes';
 import type { DomainLock } from '../compiler/lock';
 import { moduleOfPath } from '../contracts/module-path';
-import { rulesFor, type Rule } from '../compiler/rules';
+import type { Rule } from '../compiler/rules';
 
 /**
  * The part of `lock` a token with `access` may read: out-of-scope elements are removed and so are
@@ -93,17 +93,55 @@ export function pathModule(
   return moduleOfPath(lock.ir.modules, relPath)?.name;
 }
 
-/** Rules already matched for `path`, with `paths` cut to the globs that match it: the others may name hidden modules. */
-export function narrowRulePaths(rules: readonly Rule[], path: string): Rule[] {
-  return rules.map((rule) =>
-    rule.paths === null
-      ? rule
-      : {
-          ...rule,
-          // The glob matcher is rulesFor's: one single-glob rule per glob.
-          paths: rule.paths.filter(
-            (glob) => rulesFor([{ ...rule, paths: [glob] }], [path]).length > 0,
-          ),
-        },
-  );
+// More alternatives than any real glob needs: past this the glob is dropped rather than expanded.
+const MAX_ALTERNATIVES = 64;
+
+/** `a/{b,c}/d` as `a/b/d` and `a/c/d`; undefined past MAX_ALTERNATIVES. An unbalanced `{` stays literal. */
+function expandBraces(glob: string): string[] | undefined {
+  const open = glob.indexOf('{');
+  if (open === -1) return [glob];
+  let depth = 0;
+  let close = -1;
+  const commas: number[] = [];
+  for (let i = open; i < glob.length && close === -1; i++) {
+    if (glob[i] === '{') depth++;
+    else if (glob[i] === '}') {
+      if (--depth === 0) close = i;
+    } else if (glob[i] === ',' && depth === 1) commas.push(i);
+  }
+  if (close === -1) return [glob];
+  const head = glob.slice(0, open);
+  const tail = glob.slice(close + 1);
+  const out: string[] = [];
+  let from = open + 1;
+  for (const end of [...commas, close]) {
+    const rest = expandBraces(head + glob.slice(from, end) + tail);
+    if (!rest || out.push(...rest) > MAX_ALTERNATIVES) return undefined;
+    from = end + 1;
+  }
+  return out;
+}
+
+/**
+ * The rules a token with `access` may be shown, with `paths` cut to the globs that name no module it
+ * cannot read: each glob is brace-expanded and an alternative is dropped when it contains the name or
+ * the path of a hidden module (a plain substring, so it may drop a glob that only looks similar).
+ * A glob that names no module (`**\/*.ts`, `test/**`) stays. A rule left with no glob is dropped.
+ */
+export function narrowRuleGlobs(
+  rules: readonly Rule[],
+  fullLock: DomainLock,
+  access: ModuleAccess,
+): Rule[] {
+  if (access === 'all') return [...rules];
+  const hidden = fullLock.ir.modules
+    .filter((m) => !access.has(m.name))
+    .flatMap((m) => [m.name, m.path]);
+  return rules.flatMap((rule) => {
+    if (rule.paths === null) return [rule];
+    const paths = rule.paths
+      .flatMap((glob) => expandBraces(glob) ?? [])
+      .filter((glob) => !hidden.some((name) => glob.includes(name)));
+    return paths.length > 0 ? [{ ...rule, paths }] : [];
+  });
 }

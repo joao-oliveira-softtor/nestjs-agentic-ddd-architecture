@@ -6,13 +6,12 @@ import {
   parseFrontmatterData,
 } from '../compiler/changes/proposal';
 import type { ResolvedConventions } from '../compiler/conventions';
-import { workItems } from '../compiler/graph';
 import { irHash } from '../compiler/ir';
 import type { DomainLock } from '../compiler/lock';
 import { renderDevSkill } from '../compiler/render/dev-skill';
 import { AgenticError } from '../compiler/ir';
-import { rulesFor, type Rule } from '../compiler/rules';
-import { scopeLock } from './scope';
+import type { Rule } from '../compiler/rules';
+import { narrowRuleGlobs, scopeLock } from './scope';
 
 export interface SkillDoc {
   readonly uri: string;
@@ -55,6 +54,22 @@ export async function loadAuthoringDocs(dir: string): Promise<AuthoringDoc[]> {
   }
 }
 
+/** `loadAuthoringDocs` once, on first use: the skill comes from the installed package and does not change. `null` when it is not shipped. */
+export function authoringLoader(
+  dir: string,
+): () => Promise<AuthoringDoc[] | null> {
+  let loaded: Promise<AuthoringDoc[] | null> | undefined;
+  return () =>
+    (loaded ??= loadAuthoringDocs(dir).catch((error) => {
+      if (
+        error instanceof AgenticError &&
+        error.code === 'mcp.skills-unavailable'
+      )
+        return null;
+      throw error;
+    }));
+}
+
 function describeDoc(
   path: string,
   content: string,
@@ -93,44 +108,37 @@ const doc = (uri: string, path: string, content: string): SkillDoc => ({
   content,
 });
 
+/** The authoring skill's documents: they never depend on the domain, so a missing snapshot does not hide them. */
+export function authoringCatalogue(
+  authoring: readonly AuthoringDoc[],
+): SkillDoc[] {
+  return authoring.map((a) =>
+    doc(`skill://${AUTHORING}/${a.path}`, a.path, a.content),
+  );
+}
+
 /**
  * Every document `skillAccess` may read: the authoring skill, the dev skill of each readable module
  * (rendered from the scoped IR, so it equals the generated one for `'all'`) and the team rules.
  */
 export function catalogue(input: {
   authoring: readonly AuthoringDoc[];
-  lock: DomainLock;
   fullLock: DomainLock;
   rules: readonly Rule[];
   skillAccess: ModuleAccess;
   conventions: ResolvedConventions;
 }): SkillDoc[] {
-  const { authoring, lock, fullLock, rules, skillAccess, conventions } = input;
+  const { authoring, fullLock, rules, skillAccess, conventions } = input;
   if (skillAccess !== 'all' && skillAccess.size === 0) return [];
-  const scoped = scopeLock(lock, skillAccess);
-  const docs = authoring.map((a) =>
-    doc(`skill://${AUTHORING}/${a.path}`, a.path, a.content),
-  );
+  const scoped = scopeLock(fullLock, skillAccess);
+  const docs = authoringCatalogue(authoring);
 
-  // Only rules with a file are team rules; path-bound ones need a glob that hits a readable source,
-  // and their globs are cut to those hits (the others may name hidden modules).
-  const sources = workItems(scoped.ir).map((i) =>
-    i.source.replace(/:\d+$/, ''),
+  // Only rules with a file are team rules; a scoped token sees their globs cut to those naming no hidden module.
+  const visible = narrowRuleGlobs(
+    rules.filter((r) => r.file !== null),
+    fullLock,
+    skillAccess,
   );
-  const visible: Rule[] = [];
-  for (const rule of rules) {
-    if (rule.file === null) continue;
-    if (rule.paths === null || skillAccess === 'all') visible.push(rule);
-    else {
-      // A brace glob can name a hidden module next to a visible one, so it is dropped.
-      const paths = rule.paths.filter(
-        (glob) =>
-          !glob.includes('{') &&
-          rulesFor([{ ...rule, paths: [glob] }], sources).length > 0,
-      );
-      if (paths.length > 0) visible.push({ ...rule, paths });
-    }
-  }
 
   const hash = irHash(fullLock.ir);
   for (const module of scoped.ir.modules) {
@@ -150,7 +158,12 @@ export function catalogue(input: {
       doc(
         `skill://${AUTHORING}/rules/${rule.key.split('/').map(encodeURIComponent).join('/')}.md`,
         `rules/${rule.key}.md`,
-        `# Rule ${rule.key}\n\nApplies to: ${rule.paths === null ? 'all files' : rule.paths.join(', ')}\n\n${rule.body}\n`,
+        `# Rule ${rule.key}
+
+Applies to: ${rule.paths === null ? 'all files' : rule.paths.join(', ')}
+
+${rule.body}
+`,
       ),
     );
   return docs;
@@ -189,6 +202,7 @@ const cell = (text: string) => text.replace(/\s+/g, ' ').replaceAll('|', '\\|');
 export function index(
   docs: readonly SkillDoc[],
   authoringAvailable = true,
+  notice?: string,
 ): string {
   const rows = docs.map(
     (d) =>
@@ -203,6 +217,7 @@ export function index(
     '',
     LANGUAGE_RULE,
     '',
+    ...(notice ? [notice, ''] : []),
     authoringAvailable
       ? 'Read order: `SKILL.md` (the authoring skill; a dev skill is its `<module>-dev` name), then `references/authoring.md`, then the dev skill (`<module>-dev`) of the module being changed.'
       : 'Read the dev skill (`<module>-dev`) of the module being changed.',

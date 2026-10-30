@@ -285,7 +285,7 @@ export function createResourceServer(
         const info = await verifyBearerToken(header, verification);
         if (
           !options.requiredScopes.every((c) => grants(info.scopes, c)) ||
-          (options.anyOfScopes &&
+          (options.anyOfScopes?.length &&
             !options.anyOfScopes.some((c) => grants(info.scopes, c)))
         ) {
           throw authError(
