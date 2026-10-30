@@ -145,9 +145,47 @@ describe('published lock', () => {
     ).toBe('published.malformed');
   });
 
-  test('a bad embedded lock surfaces a lock code', () => {
+  test('a tampered version fails with digest-mismatch', () => {
+    const bad = edit((o) => (o.version = 'v2'));
+    expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
+      'published.digest-mismatch',
+    );
+  });
+
+  test('a missing or non-object lock fails with malformed', () => {
+    for (const value of [undefined, null, 1, []]) {
+      const bad = edit((o) => (o.lock = value));
+      expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
+        'published.malformed',
+      );
+    }
+  });
+
+  test('a rule that is not an object fails with malformed even with a valid digest', () => {
+    for (const badRules of [[null], [1], [[]], [{ ...rules[0], key: 1 }]]) {
+      const forged = createPublishedLock(
+        'v1',
+        lock,
+        badRules as unknown as Rule[],
+      );
+      expect(
+        codeOf(() => parsePublishedLock(serializePublishedLock(forged), PATH)),
+      ).toBe('published.malformed');
+    }
+  });
+
+  test('an invalid embedded lock is reported as malformed with the inner code', () => {
     const bad = edit((o) => (o.lock = { lockVersion: 1 }));
-    expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe('lock.incomplete');
+    let message = '';
+    try {
+      parsePublishedLock(bad, PATH);
+    } catch (error) {
+      message = (error as Error).message;
+      expect((error as { code?: string }).code).toBe('published.malformed');
+    }
+    expect(message).toContain('lock.incomplete');
+    expect(message).toContain('agentic-ddd publish-lock');
+    expect(message).not.toContain('git');
   });
 
   test('a missing file is unreadable and does not leak the absolute path', async () => {

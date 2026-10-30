@@ -17,8 +17,8 @@ export interface PublishedLock {
   readonly rules: Rule[];
 }
 
-function digestOf(lock: DomainLock, rules: Rule[]): string {
-  return sha256(stableStringify({ lock, rules }));
+function digestOf(version: string, lock: DomainLock, rules: Rule[]): string {
+  return sha256(stableStringify({ version, lock, rules }));
 }
 
 function checkVersion(version: string, displayPath: string): void {
@@ -43,7 +43,7 @@ export function createPublishedLock(
   return {
     publishedLockVersion: PUBLISHED_LOCK_VERSION,
     version,
-    digest: digestOf(lock, rules),
+    digest: digestOf(version, lock, rules),
     lock,
     rules,
   };
@@ -61,7 +61,7 @@ export function parsePublishedLock(
   const malformed = (why: string): AgenticError =>
     new AgenticError(
       'published.malformed',
-      `${displayPath}: invalid published lock (${why}); republish it with \`agentic publish\``,
+      `${displayPath}: invalid published lock (${why}); republish it with \`agentic-ddd publish-lock\``,
     );
   let data: unknown;
   try {
@@ -84,9 +84,35 @@ export function parsePublishedLock(
   if (typeof obj.digest !== 'string' || !/^[0-9a-f]{64}$/.test(obj.digest))
     throw malformed('digest is not 64 lowercase hex characters');
   if (!Array.isArray(obj.rules)) throw malformed('rules is not a list');
-  const lock = parseLock(JSON.stringify(obj.lock), displayPath);
+  if (
+    obj.lock === null ||
+    typeof obj.lock !== 'object' ||
+    Array.isArray(obj.lock)
+  ) {
+    throw malformed('the artifact has no lock');
+  }
+  for (const rule of obj.rules) {
+    if (
+      rule === null ||
+      typeof rule !== 'object' ||
+      Array.isArray(rule) ||
+      typeof (rule as Record<string, unknown>).key !== 'string' ||
+      typeof (rule as Record<string, unknown>).body !== 'string'
+    )
+      throw malformed('a rule is not an object with a string key and body');
+  }
+  let lock: DomainLock;
+  try {
+    lock = parseLock(JSON.stringify(obj.lock), displayPath);
+  } catch (error) {
+    if (!(error instanceof AgenticError)) throw error;
+    throw new AgenticError(
+      'published.malformed',
+      `${displayPath}: the embedded lock is invalid (${error.code}); regenerate the artifact with \`agentic-ddd publish-lock\``,
+    );
+  }
   const rules = obj.rules as Rule[];
-  if (digestOf(lock, rules) !== obj.digest) {
+  if (digestOf(obj.version, lock, rules) !== obj.digest) {
     throw new AgenticError(
       'published.digest-mismatch',
       `${displayPath}: content does not match its embedded digest (edited or corrupted); republish it or restore it from its source`,

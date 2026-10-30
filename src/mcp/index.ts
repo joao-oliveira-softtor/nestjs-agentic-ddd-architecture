@@ -100,15 +100,23 @@ function createDomainServer(source: Source, remote: boolean): McpServer {
       inputSchema: z.object({}),
       annotations,
     },
-    guarded(() =>
-      'published' in source
-        ? {
-            mode: 'published',
-            version: source.published.version,
-            digest: source.published.digest,
-          }
-        : { mode: 'working-copy' },
-    ),
+    // Constant per server: deliberately not guarded, so it answers even when the snapshot is stale or missing.
+    async () => ({
+      content: [
+        {
+          type: 'text' as const,
+          text: stableStringify(
+            'published' in source
+              ? {
+                  mode: 'published',
+                  version: source.published.version,
+                  digest: source.published.digest,
+                }
+              : { mode: 'working-copy' },
+          ),
+        },
+      ],
+    }),
   );
   server.registerTool(
     'domain_overview',

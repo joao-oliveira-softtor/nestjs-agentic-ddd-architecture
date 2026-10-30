@@ -204,6 +204,24 @@ describe('domain MCP: published lock source', () => {
     expect(response.status).toBe(401);
   });
 
+  test('domain_source refuses a token without domain:read', async () => {
+    const response = await fetch(`http://127.0.0.1:${pub.port}/mcp`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json, text/event-stream',
+        authorization: `Bearer ${await mint('other:scope')}`,
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'domain_source', arguments: {} },
+      }),
+    });
+    expect(response.status).toBe(403);
+  });
+
   test('an absolute path is refused without echoing it', async () => {
     for (const path of [join(root, 'examples', 'orders', 'a.ts'), '/etc/x']) {
       const r = await call(pub, 'domain:read', 'rules_for_path', { path });
@@ -236,5 +254,14 @@ describe('domain MCP: published lock source', () => {
     const stale = await call(live, 'domain:read', 'domain_overview');
     expect(stale.isError).toBe(true);
     expect(text(stale)).toContain('snapshot.missing');
+  });
+
+  test('working-copy domain_source answers even without a snapshot', async () => {
+    await rm(join(root, '.agentic', 'mcp'), { recursive: true, force: true });
+    const overview = await call(live, 'domain:read', 'domain_overview');
+    expect(overview.isError).toBe(true);
+    const r = await call(live, 'domain:read', 'domain_source');
+    expect(r.isError).toBeFalsy();
+    expect(JSON.parse(text(r))).toEqual({ mode: 'working-copy' });
   });
 });
