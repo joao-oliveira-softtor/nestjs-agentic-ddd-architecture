@@ -123,8 +123,12 @@ export const ERROR_CODES = {
   'lock.version-unsupported': 'The lock file has an unsupported lockVersion.',
 
   // mcp
+  'mcp.doc-unknown':
+    'The requested document does not exist or is not readable by this token.',
   'mcp.element-unknown': 'The requested element id does not exist.',
   'mcp.host-denied': 'The request Host header is not allowed.',
+  'mcp.skills-unavailable':
+    'The authoring skill directory is not available on this server.',
   'mcp.origin-denied': 'The request Origin header is not allowed.',
   'mcp.path-out-of-scope':
     'The requested path is outside the modules the token may read.',

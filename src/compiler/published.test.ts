@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DEFAULT_CONVENTIONS, type ResolvedConventions } from './conventions';
 import { EMPTY_IR } from './diff';
 import type { DomainLock } from './lock';
 import {
@@ -52,7 +53,7 @@ afterEach(async () => {
 });
 
 describe('published lock', () => {
-  const published = createPublishedLock('v1', lock, rules);
+  const published = createPublishedLock('v1', lock, rules, DEFAULT_CONVENTIONS);
   const text = serializePublishedLock(published);
   const edit = (change: (o: Record<string, unknown>) => void): string => {
     const o = JSON.parse(text) as Record<string, unknown>;
@@ -80,6 +81,31 @@ describe('published lock', () => {
     expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
       'published.digest-mismatch',
     );
+  });
+
+  test('conventions round trip and are covered by the digest', () => {
+    const custom: ResolvedConventions = {
+      ...DEFAULT_CONVENTIONS,
+      layers: { domain: 'core', application: 'app', operators: 'ops' },
+    };
+    const other = createPublishedLock('v1', lock, rules, custom);
+    expect(other.digest).not.toBe(published.digest);
+    expect(parsePublishedLock(serializePublishedLock(other), PATH)).toEqual(
+      other,
+    );
+    const bad = edit((o) => (o.conventions = custom));
+    expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
+      'published.digest-mismatch',
+    );
+  });
+
+  test('missing or malformed conventions fail with malformed', () => {
+    for (const value of [undefined, null, 'x', { layers: {} }]) {
+      const bad = edit((o) => (o.conventions = value));
+      expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
+        'published.malformed',
+      );
+    }
   });
 
   test('a tampered digest field fails with digest-mismatch', () => {
@@ -118,9 +144,11 @@ describe('published lock', () => {
 
   test('an invalid version label fails on create and on parse', () => {
     for (const version of ['', 'x'.repeat(65), 'a\nb']) {
-      expect(codeOf(() => createPublishedLock(version, lock, rules))).toBe(
-        'published.version-invalid',
-      );
+      expect(
+        codeOf(() =>
+          createPublishedLock(version, lock, rules, DEFAULT_CONVENTIONS),
+        ),
+      ).toBe('published.version-invalid');
       const bad = edit((o) => (o.version = version));
       expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
         'published.version-invalid',
@@ -167,6 +195,7 @@ describe('published lock', () => {
         'v1',
         lock,
         badRules as unknown as Rule[],
+        DEFAULT_CONVENTIONS,
       );
       expect(
         codeOf(() => parsePublishedLock(serializePublishedLock(forged), PATH)),
@@ -182,7 +211,12 @@ describe('published lock', () => {
       [{ ...rules[0], file: 1 }, 'rules[0].file'],
     ];
     for (const [rule, field] of cases) {
-      const forged = createPublishedLock('v1', lock, [rule as Rule]);
+      const forged = createPublishedLock(
+        'v1',
+        lock,
+        [rule as Rule],
+        DEFAULT_CONVENTIONS,
+      );
       const run = () =>
         parsePublishedLock(serializePublishedLock(forged), PATH);
       expect(codeOf(run)).toBe('published.malformed');
@@ -204,7 +238,12 @@ describe('published lock', () => {
       [withIr({ operators: [1] }), 'operators[0]'],
     ];
     for (const [badLock, field] of cases) {
-      const forged = createPublishedLock('v1', badLock, rules);
+      const forged = createPublishedLock(
+        'v1',
+        badLock,
+        rules,
+        DEFAULT_CONVENTIONS,
+      );
       const run = () =>
         parsePublishedLock(serializePublishedLock(forged), PATH);
       expect(codeOf(run)).toBe('published.malformed');
@@ -215,9 +254,11 @@ describe('published lock', () => {
   test('version labels with C1 or bidi characters are rejected', () => {
     for (const c of ['\u0085', '‮', '⁦', '‏', '؜']) {
       const version = `v${c}1`;
-      expect(codeOf(() => createPublishedLock(version, lock, rules))).toBe(
-        'published.version-invalid',
-      );
+      expect(
+        codeOf(() =>
+          createPublishedLock(version, lock, rules, DEFAULT_CONVENTIONS),
+        ),
+      ).toBe('published.version-invalid');
       const bad = edit((o) => (o.version = version));
       expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
         'published.version-invalid',

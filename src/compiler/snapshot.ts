@@ -1,6 +1,10 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { sha256, stableStringify } from './canonical';
+import {
+  isResolvedConventions,
+  type ResolvedConventions,
+} from './conventions';
 import { moduleFiles } from './load';
 import { parseLock, type DomainLock } from './lock';
 import { ruleFiles, type Rule } from './rules';
@@ -16,6 +20,7 @@ export interface McpSnapshot {
   rulesDir: string;
   inputsHash: string;
   rules: Rule[];
+  conventions: ResolvedConventions;
 }
 
 type Locations = Pick<McpSnapshot, 'root' | 'config' | 'lock' | 'rulesDir'>;
@@ -68,14 +73,19 @@ async function inputsHash(
 
 export async function writeSnapshot(
   outRoot: string,
-  fields: Locations & { rules: Rule[]; modules: readonly { path: string }[] },
+  fields: Locations & {
+    rules: Rule[];
+    modules: readonly { path: string }[];
+    conventions: ResolvedConventions;
+  },
   sources?: readonly string[],
 ): Promise<void> {
-  const { modules, ...saved } = fields;
+  const { modules, conventions, ...saved } = fields;
   const lines = sources ?? (await sourceLines(outRoot, saved, modules));
   const snapshot: McpSnapshot = {
     snapshotVersion: 1,
     ...saved,
+    conventions,
     inputsHash: await inputsHash(outRoot, saved, lines, saved.rules),
   };
   const file = join(outRoot, SNAPSHOT_PATH);
@@ -88,10 +98,14 @@ export async function removeSnapshot(outRoot: string): Promise<void> {
   await rm(join(outRoot, SNAPSHOT_PATH), { force: true });
 }
 
-export async function checkSnapshot(
-  given: string,
-): Promise<
-  | { ok: true; lock: DomainLock; rules: Rule[]; root: string }
+export async function checkSnapshot(given: string): Promise<
+  | {
+      ok: true;
+      lock: DomainLock;
+      rules: Rule[];
+      conventions: ResolvedConventions;
+      root: string;
+    }
   | { ok: false; code: ErrorCode; reason: string }
 > {
   // With root 8.3 the realpath of the rules would leave the root and the hash would diverge.
@@ -107,7 +121,8 @@ export async function checkSnapshot(
     };
   try {
     const s = JSON.parse(text) as McpSnapshot;
-    if (s.snapshotVersion !== 1)
+    // A snapshot from before conventions were saved is stale: defaults could differ from the generated skills.
+    if (s.snapshotVersion !== 1 || !isResolvedConventions(s.conventions))
       return { ok: false, code: 'snapshot.stale', reason: STALE };
     const lock = parseLock(
       await readFile(join(outRoot, s.lock), 'utf8'),
@@ -116,7 +131,13 @@ export async function checkSnapshot(
     const sources = await sourceLines(outRoot, s, lock.ir.modules);
     if ((await inputsHash(outRoot, s, sources, s.rules)) !== s.inputsHash)
       return { ok: false, code: 'snapshot.stale', reason: STALE };
-    return { ok: true, lock, rules: s.rules, root: resolve(outRoot, s.root) };
+    return {
+      ok: true,
+      lock,
+      rules: s.rules,
+      conventions: s.conventions,
+      root: resolve(outRoot, s.root),
+    };
   } catch {
     return { ok: false, code: 'snapshot.stale', reason: STALE };
   }

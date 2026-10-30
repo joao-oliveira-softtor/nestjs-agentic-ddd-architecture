@@ -34,7 +34,12 @@ export async function publishLockCommand(
     console.error(formatCoded({ code: snap.code, message: snap.reason }));
     return 1;
   }
-  const published = createPublishedLock(version, snap.lock, snap.rules);
+  const published = createPublishedLock(
+    version,
+    snap.lock,
+    snap.rules,
+    snap.conventions,
+  );
   const file = resolve(out);
   await mkdir(dirname(file), { recursive: true });
   await writeFile(file, serializePublishedLock(published));

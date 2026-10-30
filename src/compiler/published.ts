@@ -1,5 +1,9 @@
 import { open } from 'node:fs/promises';
 import { sha256, stableStringify } from './canonical';
+import {
+  isResolvedConventions,
+  type ResolvedConventions,
+} from './conventions';
 import { AgenticError } from './ir';
 import { parseLock, type DomainLock } from './lock';
 import type { Rule } from './rules';
@@ -15,10 +19,16 @@ export interface PublishedLock {
   readonly digest: string;
   readonly lock: DomainLock;
   readonly rules: Rule[];
+  readonly conventions: ResolvedConventions;
 }
 
-function digestOf(version: string, lock: DomainLock, rules: Rule[]): string {
-  return sha256(stableStringify({ version, lock, rules }));
+function digestOf(
+  version: string,
+  lock: DomainLock,
+  rules: Rule[],
+  conventions: ResolvedConventions,
+): string {
+  return sha256(stableStringify({ version, lock, rules, conventions }));
 }
 
 function checkVersion(version: string, displayPath: string): void {
@@ -40,14 +50,16 @@ export function createPublishedLock(
   version: string,
   lock: DomainLock,
   rules: Rule[],
+  conventions: ResolvedConventions,
 ): PublishedLock {
   checkVersion(version, 'published lock');
   return {
     publishedLockVersion: PUBLISHED_LOCK_VERSION,
     version,
-    digest: digestOf(version, lock, rules),
+    digest: digestOf(version, lock, rules, conventions),
     lock,
     rules,
+    conventions,
   };
 }
 
@@ -86,6 +98,8 @@ export function parsePublishedLock(
   if (typeof obj.digest !== 'string' || !/^[0-9a-f]{64}$/.test(obj.digest))
     throw malformed('digest is not 64 lowercase hex characters');
   if (!Array.isArray(obj.rules)) throw malformed('rules is not a list');
+  if (!isResolvedConventions(obj.conventions))
+    throw malformed('conventions is missing or malformed');
   if (
     obj.lock === null ||
     typeof obj.lock !== 'object' ||
@@ -135,7 +149,8 @@ export function parsePublishedLock(
     });
   }
   const rules = obj.rules as Rule[];
-  if (digestOf(obj.version, lock, rules) !== obj.digest) {
+  const conventions = obj.conventions;
+  if (digestOf(obj.version, lock, rules, conventions) !== obj.digest) {
     throw new AgenticError(
       'published.digest-mismatch',
       `${displayPath}: content does not match its embedded digest (edited or corrupted); republish it or restore it from its source`,
@@ -153,6 +168,7 @@ export function parsePublishedLock(
     digest: obj.digest,
     lock,
     rules,
+    conventions,
   };
 }
 

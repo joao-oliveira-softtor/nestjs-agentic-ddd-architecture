@@ -16,6 +16,7 @@ import {
   serializePublishedLock,
 } from '../../compiler/published';
 import { mcpCommand } from './mcp';
+import { DEFAULT_CONVENTIONS } from '../../compiler/conventions';
 
 let dir: string;
 
@@ -360,7 +361,7 @@ describe('mcpCommand', () => {
 
 describe('mcpCommand --published', () => {
   const lock = { lockVersion: 1 as const, ir: EMPTY_IR, changes: [] };
-  const published = createPublishedLock('v9', lock, []);
+  const published = createPublishedLock('v9', lock, [], DEFAULT_CONVENTIONS);
   const file = () => join(dir, 'published.json');
   const idle = () => ({ close: () => {} });
   const starts: unknown[] = [];

@@ -1,24 +1,44 @@
 import {
   McpServer,
+  ResourceNotFoundError,
+  ResourceTemplate,
   createMcpHandler,
   getOAuthProtectedResourceMetadataUrl,
 } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import { isAbsolute, posix, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
 import { moduleAccess, type ModuleAccess } from '../auth/scopes';
 import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
+import type { ResolvedConventions } from '../compiler/conventions';
 import type { PublishedLock } from '../compiler/published';
 import type { Rule } from '../compiler/rules';
 import { checkSnapshot } from '../compiler/snapshot';
-import { narrowRulePaths, pathModule, scopeLock } from './scope';
+import { narrowRuleGlobs, pathModule, scopeLock } from './scope';
+import {
+  authoringCatalogue,
+  authoringLoader,
+  catalogue,
+  findDoc,
+  index,
+  LANGUAGE_RULE,
+  type SkillDoc,
+} from './skills';
 import { changes, element, overview, rulesForPath } from './tools';
 
-// The one scope the gate requires and the per-module filter narrows.
+// The scopes the per-module filter narrows: `domain:read` for the domain tools, `skill:read` for the skill documents.
 const CAPABILITY = 'domain:read';
+const SKILL_CAPABILITY = 'skill:read';
+
+// The authoring skill ships next to `src` and `dist`: the same relative path resolves from both.
+const AUTHORING_DIR = fileURLToPath(
+  new URL('../../skills/agentic-ddd', import.meta.url),
+);
+const INSTRUCTIONS = `${LANGUAGE_RULE} This server serves a domain contract. Before proposing a change, call authoring_guide (or read the skill:// resources): it explains how to write the proposal and the dev skill of each module.`;
 
 // Where the answers come from: the compiled working copy (revalidated per call) or a published lock (fixed).
 type Source = { root: string } | { published: PublishedLock };
@@ -30,66 +50,149 @@ type Scoped = {
   fullLock: DomainLock;
   access: ModuleAccess;
   rules: Rule[];
+  conventions: ResolvedConventions;
   root?: string;
 };
 
-// The read-only tools, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
-function createDomainServer(source: Source, remote: boolean): McpServer {
-  // Every call revalidates the snapshot: nothing serves stale data. An error
-  // thrown here returns to the client as a result with isError (SDK).
-  const guarded =
-    <A>(run: (s: Scoped, args: A) => object) =>
-    async (args: A, ctx?: { http?: { authInfo?: { scopes: string[] } } }) => {
-      const fail = (text: string) => ({
-        isError: true,
-        content: [{ type: 'text' as const, text }],
-      });
-      try {
-        let base: { lock: DomainLock; rules: Rule[]; root?: string };
-        if ('published' in source) base = source.published;
-        else {
-          const snap = await checkSnapshot(source.root);
-          if (!snap.ok) {
-            // The snapshot.missing reason embeds an absolute path: not for remote clients.
-            if (remote && snap.code === 'snapshot.missing')
-              throw new AgenticError(
-                snap.code,
-                'no snapshot on the server; run `bun run agentic compile` at the project root there',
-              );
-            throw new AgenticError(snap.code, snap.reason);
-          }
-          base = snap;
-        }
-        // Fail closed: a remote call without a grant sees nothing.
-        const access: ModuleAccess = remote
-          ? (moduleAccess(ctx?.http?.authInfo?.scopes ?? [], CAPABILITY) ??
-            new Set<string>())
-          : 'all';
-        const scoped: Scoped = {
-          lock: scopeLock(base.lock, access),
-          fullLock: base.lock,
-          access,
-          rules: base.rules,
-          root: base.root,
-        };
-        return {
-          content: [
-            { type: 'text' as const, text: stableStringify(run(scoped, args)) },
-          ],
-        };
-      } catch (error) {
-        if (error instanceof AgenticError) return fail(formatCoded(error));
-        // The SDK forwards error.message of anything else to the client: keep internals off the wire.
-        if (remote) {
-          // The client gets a generic message, so the operator must still see the cause.
-          console.error(error);
-          return fail('Internal server error');
-        }
-        throw error;
-      }
+type Ctx = { http?: { authInfo?: { scopes: string[] } } };
+
+// The read-only tools and skill documents, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
+export function createDomainServer(
+  source: Source,
+  remote: boolean,
+  authoringDir = AUTHORING_DIR,
+): McpServer {
+  // The skill comes from the installed package, not from the project: read once per server, in both modes.
+  const authoringDocs = authoringLoader(authoringDir);
+  // Fail closed: a remote call without a grant sees nothing.
+  const accessOf = (ctx: Ctx | undefined, capability: string): ModuleAccess =>
+    remote
+      ? (moduleAccess(ctx?.http?.authInfo?.scopes ?? [], capability) ??
+        new Set<string>())
+      : 'all';
+  const noGrant = (access: ModuleAccess) =>
+    access !== 'all' && access.size === 0;
+  // Every call revalidates the snapshot: nothing serves stale data.
+  const scopedFor = async (
+    ctx: Ctx | undefined,
+    capability: string,
+  ): Promise<Scoped> => {
+    let base: {
+      lock: DomainLock;
+      rules: Rule[];
+      conventions: ResolvedConventions;
+      root?: string;
     };
+    if ('published' in source) base = source.published;
+    else {
+      const snap = await checkSnapshot(source.root);
+      if (!snap.ok) {
+        // The snapshot.missing reason embeds an absolute path: not for remote clients.
+        if (remote && snap.code === 'snapshot.missing')
+          throw new AgenticError(
+            snap.code,
+            'no snapshot on the server; run `bun run agentic compile` at the project root there',
+          );
+        throw new AgenticError(snap.code, snap.reason);
+      }
+      base = snap;
+    }
+    const access = accessOf(ctx, capability);
+    return {
+      lock: scopeLock(base.lock, access),
+      fullLock: base.lock,
+      access,
+      rules: base.rules,
+      conventions: base.conventions,
+      root: base.root,
+    };
+  };
+  // The documents the caller may read, from the same source for the tool and the resources.
+  // The authoring skill does not need the snapshot; the dev skills and rules do, and `unavailable` says why they are missing.
+  const docsOf = async (
+    ctx: Ctx | undefined,
+  ): Promise<{
+    docs: SkillDoc[];
+    authoring: boolean;
+    unavailable?: AgenticError;
+  }> => {
+    const authoring = await authoringDocs();
+    const available = authoring !== null;
+    if (noGrant(accessOf(ctx, SKILL_CAPABILITY)))
+      return { docs: [], authoring: available };
+    try {
+      const s = await scopedFor(ctx, SKILL_CAPABILITY);
+      return {
+        docs: catalogue({
+          authoring: authoring ?? [],
+          fullLock: s.fullLock,
+          rules: s.rules,
+          skillAccess: s.access,
+          conventions: s.conventions,
+        }),
+        authoring: available,
+      };
+    } catch (error) {
+      if (!(error instanceof AgenticError)) throw error;
+      return {
+        docs: authoringCatalogue(authoring ?? []),
+        authoring: available,
+        unavailable: error,
+      };
+    }
+  };
+  // An error thrown here returns to the client as a result with isError (SDK). A string result is sent verbatim.
+  const respond = async (
+    work: () => object | string | Promise<object | string>,
+  ) => {
+    const fail = (text: string) => ({
+      isError: true,
+      content: [{ type: 'text' as const, text }],
+    });
+    try {
+      const out = await work();
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text: typeof out === 'string' ? out : stableStringify(out),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof AgenticError) return fail(formatCoded(error));
+      // The SDK forwards error.message of anything else to the client: keep internals off the wire.
+      if (remote) {
+        // The client gets a generic message, so the operator must still see the cause.
+        console.error(error);
+        return fail('Internal server error');
+      }
+      throw error;
+    }
+  };
+  const guarded =
+    <A>(
+      run: (s: Scoped, args: A) => object | string | Promise<object | string>,
+      capability = CAPABILITY,
+    ) =>
+    (args: A, ctx?: Ctx) =>
+      respond(async () => run(await scopedFor(ctx, capability), args));
+  // Resource callbacks: the SDK sends error.message to the client, so a remote caller gets only coded ones.
+  const docsFor = async (ctx: Ctx): Promise<SkillDoc[]> => {
+    try {
+      return (await docsOf(ctx)).docs;
+    } catch (error) {
+      if (error instanceof AgenticError) throw new Error(formatCoded(error));
+      if (!remote) throw error;
+      console.error(error);
+      throw new Error('Internal server error');
+    }
+  };
   const annotations = { readOnlyHint: true, openWorldHint: false };
-  const server = new McpServer({ name: 'agentic-ddd', version: '0.5.0' });
+  const server = new McpServer(
+    { name: 'agentic-ddd', version: '0.5.0' },
+    { instructions: INSTRUCTIONS },
+  );
 
   server.registerTool(
     'domain_source',
@@ -198,8 +301,72 @@ function createDomainServer(source: Source, remote: boolean): McpServer {
       // A rule's other globs may name modules the token cannot read.
       return s.access === 'all'
         ? result
-        : { ...result, rules: narrowRulePaths(result.rules, result.path) };
+        : {
+            ...result,
+            rules: narrowRuleGlobs(result.rules, s.fullLock, s.access),
+          };
     }),
+  );
+  server.registerTool(
+    'authoring_guide',
+    {
+      title: 'Authoring guide',
+      description: `${LANGUAGE_RULE} Call this before proposing a change: without doc it returns the index of the authoring skill, the dev skill of each readable module and the team rules; with doc (a skill:// URI or a short name such as orders-dev) it returns that document.`,
+      inputSchema: z.object({ doc: z.string().optional() }),
+      annotations: { ...annotations, destructiveHint: false },
+    },
+    ({ doc }: { doc?: string }, ctx?: Ctx) =>
+      respond(async () => {
+        // Not the snapshot-bound `guarded`: the authoring skill is served without one.
+        if (noGrant(accessOf(ctx, SKILL_CAPABILITY)))
+          throw new AgenticError(
+            'auth.scope-missing',
+            `the ${SKILL_CAPABILITY} scope is needed to read skill documents`,
+          );
+        const { docs, authoring, unavailable } = await docsOf(ctx);
+        if (doc === undefined)
+          return index(
+            docs,
+            authoring,
+            unavailable &&
+              `Dev skills and team rules are unavailable (${unavailable.code}): run \`bun run agentic compile\` at the project root.`,
+          );
+        // A hidden document is not in `docs`: it answers exactly like an unknown one.
+        const found = findDoc(docs, doc);
+        if (!found) {
+          if (unavailable) throw unavailable;
+          throw new AgenticError(
+            'mcp.doc-unknown',
+            'no such document; call authoring_guide without doc for the index',
+          );
+        }
+        return found.content;
+      }),
+  );
+  server.registerResource(
+    'skill',
+    new ResourceTemplate('skill://{+path}', {
+      list: async (ctx) => ({
+        resources: (await docsFor(ctx)).map((d) => ({
+          uri: d.uri,
+          name: d.uri.slice('skill://'.length),
+          title: d.title,
+          description: d.purpose,
+          mimeType: 'text/markdown',
+        })),
+      }),
+    }),
+    { mimeType: 'text/markdown' },
+    async (uri, _variables, ctx) => {
+      // Exact URI only (no short names), and only what this caller may list.
+      const found = (await docsFor(ctx)).find((d) => d.uri === uri.href);
+      if (!found) throw new ResourceNotFoundError(uri.href);
+      return {
+        contents: [
+          { uri: found.uri, mimeType: 'text/markdown', text: found.content },
+        ],
+      };
+    },
   );
   return server;
 }
@@ -283,7 +450,8 @@ export async function startMcpHttpServer({
     issuer: mcp.issuer,
     resource: mcp.resource,
     jwksUri: mcp.jwksUri,
-    requiredScopes: [CAPABILITY],
+    requiredScopes: [],
+    anyOfScopes: [CAPABILITY, SKILL_CAPABILITY],
   });
   const resource = new URL(mcp.resource);
   const mcpPath = trimSlash(resource.pathname);

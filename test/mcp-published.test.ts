@@ -20,6 +20,7 @@ import {
 } from './helpers/auth-server';
 import { type StdioMcp, startStdioMcp } from './helpers/stdio-mcp';
 import { twoModuleLock } from './helpers/two-module-lock';
+import { DEFAULT_CONVENTIONS } from '../src/compiler/conventions';
 
 const REPO = resolve(import.meta.dir, '..');
 const LOCK = '.agentic/domain.lock.json';
@@ -90,6 +91,7 @@ describe('domain MCP: published lock source', () => {
       config: 'agentic.config.ts',
       lock: LOCK,
       rulesDir: '.ai/rules',
+      conventions: DEFAULT_CONVENTIONS,
       rules: [
         { key: 'r', file: '.ai/rules/r.md', paths: ['examples/**'], body: 'R' },
         {
@@ -103,7 +105,12 @@ describe('domain MCP: published lock source', () => {
     });
     const snap = await checkSnapshot(root);
     if (!snap.ok) throw new Error(snap.reason);
-    published = createPublishedLock('v1.2.3', snap.lock, snap.rules);
+    published = createPublishedLock(
+      'v1.2.3',
+      snap.lock,
+      snap.rules,
+      DEFAULT_CONVENTIONS,
+    );
     publishedFile = join(root, 'published.json');
     await writeFile(publishedFile, serializePublishedLock(published));
 

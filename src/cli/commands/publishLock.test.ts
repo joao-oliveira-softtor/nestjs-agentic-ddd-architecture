@@ -7,6 +7,7 @@ import { serializeLock } from '../../compiler/lock';
 import { parsePublishedLock } from '../../compiler/published';
 import { writeSnapshot } from '../../compiler/snapshot';
 import { publishLockCommand } from './publishLock';
+import { DEFAULT_CONVENTIONS } from '../../compiler/conventions';
 
 let dir: string;
 
@@ -30,6 +31,7 @@ const snapshot = () =>
     config: 'agentic.config.ts',
     lock: '.agentic/domain.lock.json',
     rulesDir: '.ai/rules',
+    conventions: DEFAULT_CONVENTIONS,
     rules: [],
     modules: [],
   });

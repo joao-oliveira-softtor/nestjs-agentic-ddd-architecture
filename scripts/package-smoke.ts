@@ -26,11 +26,20 @@ async function run(command: string[], cwd = consumer): Promise<string> {
     );
   return stdout;
 }
-// Reads newline-delimited JSON-RPC from stdout until the reply with `id` arrives.
-async function readReply(
+type Reply = {
+  result?: {
+    isError?: boolean;
+    content?: { text: string }[];
+    contents?: { text: string }[];
+  };
+};
+// Reads newline-delimited JSON-RPC from stdout until the replies with `ids` have arrived (one pass: a
+// second read of the stream would lose what the first buffered).
+async function readReplies(
   stdout: ReadableStream<Uint8Array>,
-  id: number,
-): Promise<{ result?: { isError?: boolean } }> {
+  ids: number[],
+): Promise<Map<number, Reply>> {
+  const replies = new Map<number, Reply>();
   const decoder = new TextDecoder();
   let buffer = '';
   for await (const chunk of stdout as unknown as AsyncIterable<Uint8Array>) {
@@ -41,10 +50,11 @@ async function readReply(
       buffer = buffer.slice(nl + 1);
       if (!line) continue;
       const msg = JSON.parse(line);
-      if (msg.id === id) return msg;
+      if (ids.includes(msg.id)) replies.set(msg.id, msg);
+      if (replies.size === ids.length) return replies;
     }
   }
-  throw new Error(`stdout closed before reply ${id}`);
+  throw new Error(`stdout closed before replies ${ids.join(', ')}`);
 }
 try {
   console.log('Packing and auditing the actual npm tarball...');
@@ -143,14 +153,39 @@ try {
         method: 'tools/call',
         params: { name: 'domain_overview', arguments: {} },
       },
+      {
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'tools/call',
+        params: { name: 'authoring_guide', arguments: {} },
+      },
+      {
+        jsonrpc: '2.0',
+        id: 4,
+        method: 'resources/read',
+        params: { uri: 'skill://agentic-ddd/SKILL.md' },
+      },
     ]
       .map((m) => `${JSON.stringify(m)}\n`)
       .join(''),
   );
-  const reply = await readReply(mcp.stdout, 2);
+  const replies = await readReplies(mcp.stdout, [2, 3, 4]);
+  const reply = replies.get(2)!;
   assert(
     reply.result && reply.result.isError !== true,
     `domain_overview failed over stdio: ${JSON.stringify(reply).slice(0, 500)}`,
+  );
+  // Both come from skills/agentic-ddd inside the tarball, so this also proves the dist/mcp path.
+  const guide = replies.get(3)!.result;
+  assert(
+    guide?.isError !== true &&
+      guide?.content?.[0]?.text.includes('skill://agentic-ddd/SKILL.md'),
+    `authoring_guide failed over stdio: ${JSON.stringify(replies.get(3)).slice(0, 500)}`,
+  );
+  const skill = replies.get(4)!.result?.contents?.[0]?.text;
+  assert(
+    skill?.includes('agentic-ddd'),
+    `resources/read failed over stdio: ${JSON.stringify(replies.get(4)).slice(0, 500)}`,
   );
   void mcp.stdin.end();
   assert.equal(

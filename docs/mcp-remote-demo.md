@@ -1,6 +1,6 @@
 # Domain MCP: published lock and remote demo
 
-The Domain MCP answers questions about the domain (`domain_overview`, `domain_element`, `domain_changes`, `rules_for_path`). This page covers where those answers come from: the compiled working copy, or a **published lock**, a fixed snapshot of the domain that you can serve, pin and hand to a remote client.
+The Domain MCP answers questions about the domain (`domain_source`, `domain_overview`, `domain_element`, `domain_changes`, `rules_for_path`). The server also serves the authoring skill, the dev skills and the team rules (tool `authoring_guide`, resources `skill://…`), behind `skill:read[:<module>]`; see `docs/distribution.md`. This page covers where those answers come from: the compiled working copy, or a **published lock**, a fixed snapshot of the domain that you can serve, pin and hand to a remote client.
 
 ## What a published lock is
 
@@ -12,14 +12,15 @@ A published lock is one JSON file made from the compiled working copy:
   "version": "v0.5.0",
   "digest": "<64 lowercase hex characters>",
   "lock": {},
-  "rules": []
+  "rules": [],
+  "conventions": {}
 }
 ```
 
-The example is abridged: `lock` is the whole domain lock as compile writes it and `rules` is the list of team rules that apply to paths; both are shown empty here.
+The example is abridged: `lock` is the whole domain lock as compile writes it, `rules` is the list of team rules that apply to paths and `conventions` is the project's resolved layout conventions (folder names, event and operator suffixes, forbidden imports); all three are shown empty here.
 
 - `version` is a label you choose: 1 to 64 characters, no control characters.
-- `digest` is the SHA-256 of the canonical JSON of `{ version, lock, rules }`. When the file is read, the server recomputes it and refuses the file if the content does not match (`published.digest-mismatch`). This only detects corruption; it does not stop tampering (see Security: only `--expect-digest` does).
+- `digest` is the SHA-256 of the canonical JSON of `{ version, lock, rules, conventions }`. When the file is read, the server recomputes it and refuses the file if the content does not match (`published.digest-mismatch`). This only detects corruption; it does not stop tampering (see Security: only `--expect-digest` does). A file without `conventions` is refused as `published.malformed`.
 - The file is limited to 32 MiB. A `publishedLockVersion` the installed package does not know is refused (`published.version-unsupported`).
 
 ## Creating it: `publish-lock`
@@ -67,7 +68,7 @@ and, with `--http`, the listening address as well.
 
 Module scoping works the same way in both: a `domain:read:<module>` token sees the same subset, and the answers of a module-scoped token are byte-identical between the two sources for the same content.
 
-`domain_source` is read-only and needs the same `domain:read` grant as the other tools. It is the way a client learns which version it is talking to. It never returns a path.
+`domain_source` is read-only and unguarded by design: over HTTP any token the gate accepts (`domain:read` or `skill:read`) can call it, and it returns only mode, version and digest. It is the way a client learns which version it is talking to. It never returns a path.
 
 ## Local demo
 
@@ -140,5 +141,5 @@ Access tokens expire, so a real client must obtain and refresh them through the 
 - **Bind address.** The default is `127.0.0.1`. Nothing is reachable from another machine unless the operator passes `--host`.
 - **Exposing it.** Before you bind to a public or shared address, put TLS in front of it with a reverse proxy or load balancer. The server speaks plain HTTP and does not terminate TLS, and the bearer tokens must not travel in clear text.
 - **Host and Origin.** Requests are checked against an allowlist before authentication: `Host` must be the bind address or the `resource` host (plus the loopback aliases on a loopback bind), and an `Origin`, when present, must be the matching origin. Anything else gets 403 (`mcp.host-denied`, `mcp.origin-denied`). A request without `Origin` is a non-browser client and passes; this is a DNS-rebinding defense, not an authentication step.
-- **Digest.** The load-time digest check only catches corruption: a changed or truncated file is detected. It is not a defense against tampering, because anyone who can edit the file can recompute a matching digest (it covers `version`, `lock` and `rules`, all of which they control). The only defense is `--expect-digest`, an out-of-band pin: take the expected digest from a channel you trust (for example the release notes or a signed tag) and pass it, so that a swapped file is refused. Signing the artifact is deferred together with fetching it from a URL or package; until then, serve published locks only from a file you place yourself.
+- **Digest.** The load-time digest check only catches corruption: a changed or truncated file is detected. It is not a defense against tampering, because anyone who can edit the file can recompute a matching digest (it covers `version`, `lock`, `rules` and `conventions`, all of which they control). The only defense is `--expect-digest`, an out-of-band pin: take the expected digest from a channel you trust (for example the release notes or a signed tag) and pass it, so that a swapped file is refused. Signing the artifact is deferred together with fetching it from a URL or package; until then, serve published locks only from a file you place yourself.
 - **Errors.** Errors sent to a remote client never carry absolute paths: a missing snapshot gets a generic message, a path outside the project is refused without echoing the absolute path, and unexpected failures answer `Internal server error` (the operator sees the cause in the server log). The codes are listed in `src/contracts/codes.ts`.

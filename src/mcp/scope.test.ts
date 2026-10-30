@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { DomainLock } from '../compiler/lock';
 import type { Rule } from '../compiler/rules';
-import { narrowRulePaths, pathModule, scopeLock } from './scope';
+import { narrowRuleGlobs, pathModule, scopeLock } from './scope';
 
 const inv = (id: string, on: string | null = null) => ({
   id,
@@ -280,35 +280,79 @@ describe('pathModule', () => {
   });
 });
 
-describe('narrowRulePaths', () => {
+describe('narrowRuleGlobs', () => {
   const rule = (key: string, paths: string[] | null): Rule => ({
     key,
     file: `.ai/rules/${key}.md`,
     paths,
     body: `body of ${key}`,
   });
-  const file = 'examples/orders/a.ts';
+  const orders = new Set(['orders']);
+  const globsOf = (paths: string[]) =>
+    narrowRuleGlobs([rule('r', paths)], lock, orders)[0]?.paths;
 
-  test('keeps only the globs that match the path', () => {
-    const [r] = narrowRulePaths(
-      [rule('multi', ['examples/orders/**', 'examples/billing/**', '**/*.md'])],
-      file,
-    );
-    expect(r?.paths).toEqual(['examples/orders/**']);
+  test('returns the rules untouched for full access', () => {
+    const rules = [rule('a', ['examples/billing/**']), rule('b', null)];
+    expect(narrowRuleGlobs(rules, lock, 'all')).toEqual(rules);
   });
 
-  test('keeps null paths and a single matching glob as they are', () => {
-    const rules = [rule('all', null), rule('one', ['examples/**'])];
-    expect(narrowRulePaths(rules, file)).toEqual(rules);
+  test('keeps null-path rules and globs that name no hidden module', () => {
+    expect(narrowRuleGlobs([rule('all', null)], lock, orders)).toEqual([
+      rule('all', null),
+    ]);
+    expect(
+      globsOf([
+        'test/**',
+        'examples/orders/infrastructure/**',
+        '**/*.md',
+        'examples/*/domain/**',
+      ]),
+    ).toEqual([
+      'test/**',
+      'examples/orders/infrastructure/**',
+      '**/*.md',
+      'examples/*/domain/**',
+    ]);
+  });
+
+  test('expands braces and drops the alternatives that name a hidden module', () => {
+    expect(globsOf(['examples/{orders,billing}/**'])).toEqual([
+      'examples/orders/**',
+    ]);
+    expect(globsOf(['{orders,billing}'])).toEqual(['orders']);
+    expect(globsOf(['examples/orders/**/*.{ts,tsx}'])).toEqual([
+      'examples/orders/**/*.ts',
+      'examples/orders/**/*.tsx',
+    ]);
+    expect(globsOf(['*.{ts,tsx}'])).toEqual(['*.ts', '*.tsx']);
+    expect(globsOf(['examples/{orders/{a,b},billing/{c,d}}/**'])).toEqual([
+      'examples/orders/a/**',
+      'examples/orders/b/**',
+    ]);
+  });
+
+  test('drops a rule left with no glob, and a glob under a hidden nested module', () => {
+    expect(
+      narrowRuleGlobs([rule('hid', ['examples/billing/**'])], lock, orders),
+    ).toEqual([]);
+    expect(
+      globsOf(['examples/orders/deep/**', 'examples/orders/a/**']),
+    ).toEqual(['examples/orders/a/**']);
+  });
+
+  test('drops a glob whose braces are too many to expand', () => {
+    const many = Array.from({ length: 10 }, () => '{a,b,c}').join('/');
+    expect(globsOf([many, 'test/**'])).toEqual(['test/**']);
   });
 
   test('leaves the other fields and the key order intact', () => {
-    const [r] = narrowRulePaths(
+    const [r] = narrowRuleGlobs(
       [rule('multi', ['examples/billing/**', 'examples/orders/**'])],
-      file,
+      lock,
+      orders,
     );
     expect(Object.keys(r ?? {})).toEqual(['key', 'file', 'paths', 'body']);
-    expect(r).toEqual({ ...rule('multi', ['examples/orders/**']) });
+    expect(r).toEqual(rule('multi', ['examples/orders/**']));
   });
 
   test('does not mutate its input', () => {
@@ -320,7 +364,7 @@ describe('narrowRulePaths', () => {
         ),
       ),
     ]);
-    narrowRulePaths(input, file);
+    narrowRuleGlobs(input, lock, orders);
     expect(input[0]?.paths).toEqual([
       'examples/orders/**',
       'examples/billing/**',
