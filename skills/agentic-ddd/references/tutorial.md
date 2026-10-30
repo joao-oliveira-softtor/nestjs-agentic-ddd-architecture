@@ -5,13 +5,13 @@ Prerequisites: Bun and a permanent checkout of the framework. The install uses t
 ```bash
 # In the framework checkout:
 bun install --frozen-lockfile
-bun run skills:example --root /tmp/agentic-tasks
-cd /tmp/agentic-tasks
+bun run skills:example --root ./scratch/agentic-tasks
+cd ./scratch/agentic-tasks
 bun run typecheck
 bun run agentic compile
 bun run agentic status --json
 bun run agentic next --change 0001 --json
-bun run agentic packet entity:Task > /tmp/task-packet.md
+bun run agentic packet entity:Task > ../task-packet.md
 ```
 
 Pick a destination that does not exist: the generator refuses existing folders, even empty ones. It writes the proposal before the declarations and prepares imports/infra/config, bodies with `notImplemented()` and no tests. Compile applies and archives the proposal into `changes/archive/0001-tasks/proposal.md` before the bodies are implemented: check the criteria there. Do not edit the archived file. The workspace also has the team rule `.ai/rules/testes.md`: after compile it appears in the per-path index of the AGENTS.md block, in the `tasks-dev` skill and in the briefs of the items under `app/`.

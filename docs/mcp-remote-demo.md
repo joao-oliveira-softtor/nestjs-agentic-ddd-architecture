@@ -1,6 +1,6 @@
 # Domain MCP: published lock and remote demo
 
-The Domain MCP answers questions about the domain (`domain_overview`, `domain_element`, `domain_changes`, `rules_for_path`). This page covers where those answers come from: the compiled working copy, or a **published lock**, a fixed snapshot of the domain that you can serve, pin and hand to a remote client.
+The Domain MCP answers questions about the domain (`domain_overview`, `domain_element`, `domain_changes`, `rules_for_path`). The server also serves the authoring skill, the dev skills and the team rules (tool `authoring_guide`, resources `skill://…`), behind `skill:read[:<module>]`; see `docs/distribution.md`. This page covers where those answers come from: the compiled working copy, or a **published lock**, a fixed snapshot of the domain that you can serve, pin and hand to a remote client.
 
 ## What a published lock is
 

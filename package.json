@@ -107,7 +107,9 @@
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
-    "docs/distribution.md"
+    "docs/distribution.md",
+    "skills/agentic-ddd/SKILL.md",
+    "skills/agentic-ddd/references"
   ],
   "engines": {
     "bun": ">=1.4.2"
