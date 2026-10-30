@@ -1,8 +1,16 @@
 import { describe, expect, test } from 'bun:test';
-import { resolve } from 'node:path';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { createMcpHandler } from '@modelcontextprotocol/server';
+import {
+  DEFAULT_CONVENTIONS,
+  type ResolvedConventions,
+} from '../compiler/conventions';
+import { parseLock, serializeLock } from '../compiler/lock';
 import { createPublishedLock } from '../compiler/published';
-import { parseLock } from '../compiler/lock';
+import { DEFAULT_OUT, renderAll } from '../compiler/render';
+import { writeSnapshot } from '../compiler/snapshot';
 import type { Rule } from '../compiler/rules';
 import { parseSseData } from '../../scripts/sse-data';
 import { twoModuleLock } from '../../test/helpers/two-module-lock';
@@ -69,6 +77,63 @@ const listed = async (h: typeof local, scopes?: string[]) =>
       uri: string;
     }[]
   ).map((r) => r.uri);
+
+const custom: ResolvedConventions = {
+  ...DEFAULT_CONVENTIONS,
+  layers: { domain: 'core', application: 'app', operators: 'ops' },
+  suffixes: { events: '.evt.ts', operator: '.op.ts' },
+};
+const generated = renderAll(repoLock.ir, DEFAULT_OUT, {
+  conventions: custom,
+  history: repoLock.changes,
+}).files.get(`${DEFAULT_OUT.devSkills}/orders-dev/SKILL.md`)!;
+
+describe('dev skills use the project conventions', () => {
+  test('a published lock renders them from its own conventions', async () => {
+    const h = createMcpHandler(() =>
+      createDomainServer(
+        { published: createPublishedLock('1', repoLock, [], custom) },
+        false,
+      ),
+    );
+    const out = await guide(h, undefined, 'orders-dev');
+    expect(out.result.content[0].text).toBe(generated);
+    const read = await rpc(h, 'resources/read', {
+      uri: 'skill://orders-dev/SKILL.md',
+    });
+    expect(read.result.contents[0].text).toBe(generated);
+  });
+
+  test('the working copy renders them from the snapshot', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'agentic-conv-'));
+    try {
+      await mkdir(join(tmp, '.agentic'), { recursive: true });
+      await mkdir(join(tmp, 'examples/orders'), { recursive: true });
+      await writeFile(
+        join(tmp, '.agentic/domain.lock.json'),
+        serializeLock(repoLock),
+      );
+      await writeFile(join(tmp, 'agentic.config.ts'), 'config\n');
+      await writeFile(join(tmp, 'examples/orders/a.ts'), 'a\n');
+      await writeSnapshot(tmp, {
+        root: '.',
+        config: 'agentic.config.ts',
+        lock: '.agentic/domain.lock.json',
+        rulesDir: '.ai/rules',
+        rules: [],
+        modules: repoLock.ir.modules,
+        conventions: custom,
+      });
+      const h = createMcpHandler(() =>
+        createDomainServer({ root: tmp }, false),
+      );
+      const out = await guide(h, undefined, 'orders-dev');
+      expect(out.result.content[0].text).toBe(generated);
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
+});
 
 describe('authoring_guide over the Domain MCP', () => {
   test('the index lists every document and a read of each resource equals the tool output', async () => {

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DEFAULT_CONVENTIONS, type ResolvedConventions } from './conventions';
 import { EMPTY_IR } from './diff';
 import type { DomainLock } from './lock';
 import {
@@ -80,6 +81,31 @@ describe('published lock', () => {
     expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
       'published.digest-mismatch',
     );
+  });
+
+  test('conventions round trip and are covered by the digest', () => {
+    const custom: ResolvedConventions = {
+      ...DEFAULT_CONVENTIONS,
+      layers: { domain: 'core', application: 'app', operators: 'ops' },
+    };
+    const other = createPublishedLock('v1', lock, rules, custom);
+    expect(other.digest).not.toBe(published.digest);
+    expect(parsePublishedLock(serializePublishedLock(other), PATH)).toEqual(
+      other,
+    );
+    const bad = edit((o) => (o.conventions = custom));
+    expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
+      'published.digest-mismatch',
+    );
+  });
+
+  test('missing or malformed conventions fail with malformed', () => {
+    for (const value of [undefined, null, 'x', { layers: {} }]) {
+      const bad = edit((o) => (o.conventions = value));
+      expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
+        'published.malformed',
+      );
+    }
   });
 
   test('a tampered digest field fails with digest-mismatch', () => {

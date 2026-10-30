@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
+import {
+  DEFAULT_CONVENTIONS,
+  type ResolvedConventions,
+} from '../compiler/conventions';
 import { type DomainLock, parseLock } from '../compiler/lock';
+import { DEFAULT_OUT, renderAll } from '../compiler/render';
 import type { Rule } from '../compiler/rules';
 import {
   catalogue,
@@ -59,7 +64,14 @@ const rules: Rule[] = [
 ];
 
 const build = (skillAccess: 'all' | ReadonlySet<string>) =>
-  catalogue({ authoring, lock, fullLock: lock, rules, skillAccess });
+  catalogue({
+    authoring,
+    lock,
+    fullLock: lock,
+    rules,
+    skillAccess,
+    conventions: DEFAULT_CONVENTIONS,
+  });
 const uris = (docs: SkillDoc[]) => docs.map((d) => d.uri);
 
 describe('loadAuthoringDocs', () => {
@@ -117,6 +129,7 @@ describe('catalogue', () => {
       fullLock,
       rules: [],
       skillAccess: 'all',
+      conventions: DEFAULT_CONVENTIONS,
     });
     const generated = await Bun.file(
       resolve(root, '.agents/skills/orders-dev/SKILL.md'),
@@ -124,6 +137,28 @@ describe('catalogue', () => {
     expect(
       docs.find((d) => d.uri === 'skill://orders-dev/SKILL.md')!.content,
     ).toBe(generated);
+  });
+
+  test('renders the dev skill with the given conventions, like compile does', () => {
+    const conventions: ResolvedConventions = {
+      ...DEFAULT_CONVENTIONS,
+      layers: { domain: 'core', application: 'app', operators: 'ops' },
+      suffixes: { events: '.evt.ts', operator: '.op.ts' },
+    };
+    const generated = renderAll(fullLock.ir, DEFAULT_OUT, {
+      conventions,
+    }).files.get(`${DEFAULT_OUT.devSkills}/orders-dev/SKILL.md`)!;
+    const docs = catalogue({
+      authoring,
+      lock: fullLock,
+      fullLock,
+      rules: [],
+      skillAccess: 'all',
+      conventions,
+    });
+    const served = docs.find((d) => d.uri === 'skill://orders-dev/SKILL.md')!;
+    expect(served.content).toBe(generated);
+    expect(served.content).toContain('/core/');
   });
 
   test('no document carries an absolute path', () => {
@@ -151,6 +186,7 @@ describe('rule URIs', () => {
       fullLock: lock,
       rules: [rule('my rule/é', null)],
       skillAccess: 'all',
+      conventions: DEFAULT_CONVENTIONS,
     });
     const uri = 'skill://agentic-ddd/rules/my%20rule/%C3%A9.md';
     expect(uris(docs)).toContain(uri);
@@ -202,6 +238,7 @@ describe('multi-line frontmatter', () => {
       fullLock: lock,
       rules: [],
       skillAccess: 'all',
+      conventions: DEFAULT_CONVENTIONS,
     });
     const x = docs.find((d) => d.uri === 'skill://agentic-ddd/SKILL.md')!;
     expect(x.purpose).toBe('first line second | line');
@@ -225,6 +262,7 @@ describe('multi-line frontmatter', () => {
       fullLock: lock,
       rules: [],
       skillAccess: 'all',
+      conventions: DEFAULT_CONVENTIONS,
     });
     expect(d!.purpose).toBe('a b');
   });

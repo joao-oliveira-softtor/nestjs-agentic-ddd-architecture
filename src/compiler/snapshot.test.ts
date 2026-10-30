@@ -9,6 +9,7 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
+import { DEFAULT_CONVENTIONS, type ResolvedConventions } from './conventions';
 import {
   checkSnapshot,
   SNAPSHOT_PATH,
@@ -63,6 +64,37 @@ describe('snapshot do MCP', () => {
     expect(await Bun.file(join(dir, '.agentic/mcp/.gitignore')).text()).toBe(
       '*\n',
     );
+  });
+
+  test('conventions written by compile come back from the check', async () => {
+    await setup();
+    const conventions: ResolvedConventions = {
+      ...DEFAULT_CONVENTIONS,
+      layers: { domain: 'core', application: 'app', operators: 'ops' },
+    };
+    await writeSnapshot(dir, {
+      root: '.',
+      config: 'agentic.config.ts',
+      lock: '.agentic/domain.lock.json',
+      rulesDir: '.ai/rules',
+      rules: [],
+      modules: [{ path: 'mod' }],
+      conventions,
+    });
+    const snap = await checkSnapshot(dir);
+    if (!snap.ok) throw new Error(snap.reason);
+    expect(snap.conventions).toEqual(conventions);
+  });
+
+  test('a snapshot without conventions is stale, not served with defaults', async () => {
+    await setup();
+    const file = join(dir, SNAPSHOT_PATH);
+    const old = JSON.parse(await readFile(file, 'utf8'));
+    delete old.conventions;
+    await writeFile(file, JSON.stringify(old));
+    const snap = await checkSnapshot(dir);
+    expect(snap.ok).toBe(false);
+    if (!snap.ok) expect(snap.code).toBe('snapshot.stale');
   });
 
   test('root diferente do outRoot (caminho com ..)', async () => {

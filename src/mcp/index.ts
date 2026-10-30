@@ -14,6 +14,7 @@ import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
 import { moduleAccess, type ModuleAccess } from '../auth/scopes';
 import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
+import type { ResolvedConventions } from '../compiler/conventions';
 import type { PublishedLock } from '../compiler/published';
 import type { Rule } from '../compiler/rules';
 import { checkSnapshot } from '../compiler/snapshot';
@@ -48,6 +49,7 @@ type Scoped = {
   fullLock: DomainLock;
   access: ModuleAccess;
   rules: Rule[];
+  conventions: ResolvedConventions;
   root?: string;
 };
 
@@ -60,7 +62,12 @@ export function createDomainServer(source: Source, remote: boolean): McpServer {
     ctx: Ctx | undefined,
     capability: string,
   ): Promise<Scoped> => {
-    let base: { lock: DomainLock; rules: Rule[]; root?: string };
+    let base: {
+      lock: DomainLock;
+      rules: Rule[];
+      conventions: ResolvedConventions;
+      root?: string;
+    };
     if ('published' in source) base = source.published;
     else {
       const snap = await checkSnapshot(source.root);
@@ -85,6 +92,7 @@ export function createDomainServer(source: Source, remote: boolean): McpServer {
       fullLock: base.lock,
       access,
       rules: base.rules,
+      conventions: base.conventions,
       root: base.root,
     };
   };
@@ -96,6 +104,7 @@ export function createDomainServer(source: Source, remote: boolean): McpServer {
       fullLock: s.fullLock,
       rules: s.rules,
       skillAccess: s.access,
+      conventions: s.conventions,
     });
   // An error thrown here returns to the client as a result with isError (SDK). A string result is sent verbatim.
   const guarded =

@@ -5,7 +5,7 @@ import {
   FRONTMATTER,
   parseFrontmatterData,
 } from '../compiler/changes/proposal';
-import { DEFAULT_CONVENTIONS } from '../compiler/conventions';
+import type { ResolvedConventions } from '../compiler/conventions';
 import { workItems } from '../compiler/graph';
 import { irHash } from '../compiler/ir';
 import type { DomainLock } from '../compiler/lock';
@@ -92,8 +92,9 @@ export function catalogue(input: {
   fullLock: DomainLock;
   rules: readonly Rule[];
   skillAccess: ModuleAccess;
+  conventions: ResolvedConventions;
 }): SkillDoc[] {
-  const { authoring, lock, fullLock, rules, skillAccess } = input;
+  const { authoring, lock, fullLock, rules, skillAccess, conventions } = input;
   if (skillAccess !== 'all' && skillAccess.size === 0) return [];
   const scoped = scopeLock(lock, skillAccess);
   const docs = authoring.map((a) =>
@@ -125,7 +126,7 @@ export function catalogue(input: {
     const files = renderDevSkill(scoped.ir, module, hash, {
       history: scoped.changes,
       rules: visible,
-      conventions: DEFAULT_CONVENTIONS,
+      conventions,
     });
     for (const [path, content] of files)
       if (path.endsWith('.md'))

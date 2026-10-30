@@ -263,6 +263,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
         ...snapshotPlace(config, options.configPath),
         lock: config.out.lock,
         modules: ir.modules,
+        conventions: config.conventions,
         rules: rules.map((r) =>
           r.file === null
             ? {
