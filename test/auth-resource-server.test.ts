@@ -679,4 +679,54 @@ describe('resource server', () => {
       });
     });
   });
+
+  describe('anyOfScopes', () => {
+    const either = () =>
+      createResourceServer({
+        issuer: auth.issuer,
+        resource: RESOURCE,
+        requiredScopes: [],
+        anyOfScopes: [SCOPE, 'skill:read'],
+      });
+
+    test.each([SCOPE, 'skill:read', 'skill:read:orders', `${SCOPE}:orders`])(
+      'a token granting %p passes',
+      async (scope) => {
+        const result = await either().gate(
+          bearer(await mint(rsa, auth.issuer, { scope })),
+        );
+        expect(result).not.toBeInstanceOf(Response);
+      },
+    );
+
+    test('a token granting neither is a 403 auth.scope-missing', async () => {
+      await expectChallenge(
+        await either().gate(
+          bearer(await mint(rsa, auth.issuer, { scope: 'other' })),
+        ),
+        403,
+        'auth.scope-missing',
+      );
+    });
+
+    test('requiredScopes still all apply and the metadata lists the union', async () => {
+      const server = createResourceServer({
+        issuer: auth.issuer,
+        resource: RESOURCE,
+        requiredScopes: ['base'],
+        anyOfScopes: [SCOPE, 'skill:read'],
+      });
+      await expectChallenge(
+        await server.gate(
+          bearer(await mint(rsa, auth.issuer, { scope: 'skill:read' })),
+        ),
+        403,
+        'auth.scope-missing',
+      );
+      const document = (await server
+        .metadata(new Request(RESOURCE))
+        .json()) as { scopes_supported: string[] };
+      expect(document.scopes_supported).toEqual(['base', SCOPE, 'skill:read']);
+    });
+  });
 });

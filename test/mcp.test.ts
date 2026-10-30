@@ -101,6 +101,7 @@ describe('agentic mcp (subprocesso)', () => {
         annotations: { readOnlyHint: boolean };
       }[];
       expect(tools.map((t) => t.name).sort()).toEqual([
+        'authoring_guide',
         'domain_changes',
         'domain_element',
         'domain_overview',

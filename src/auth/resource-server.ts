@@ -33,6 +33,8 @@ export interface ResourceServerOptions {
   readonly jwksUri?: string;
   /** Capabilities, each met by itself or by any `<capability>:<module>` scope (see `scopes.ts`). */
   readonly requiredScopes: readonly string[];
+  /** When set, the token must also grant at least one of these (same grammar as `requiredScopes`). */
+  readonly anyOfScopes?: readonly string[];
   /** Minimum delay between JWKS re-fetches on an unknown `kid` (default: jose's 30s). */
   readonly jwksCooldownMs?: number;
   /** Clock in ms (default `Date.now`); injectable for the failure window. */
@@ -248,7 +250,7 @@ export function createResourceServer(
 ): ResourceServer {
   const resourceUrl = new URL(options.resource);
   const challenge = {
-    requiredScopes: [...options.requiredScopes],
+    requiredScopes: [...options.requiredScopes, ...(options.anyOfScopes ?? [])],
     resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resourceUrl),
   };
   // The SDK would demand each scope verbatim, so it gets none and the capabilities are checked below.
@@ -280,7 +282,11 @@ export function createResourceServer(
           );
         }
         const info = await verifyBearerToken(header, verification);
-        if (!options.requiredScopes.every((c) => grants(info.scopes, c))) {
+        if (
+          !options.requiredScopes.every((c) => grants(info.scopes, c)) ||
+          (options.anyOfScopes &&
+            !options.anyOfScopes.some((c) => grants(info.scopes, c)))
+        ) {
           throw authError(
             'auth.scope-missing',
             'The token lacks a required scope.',
