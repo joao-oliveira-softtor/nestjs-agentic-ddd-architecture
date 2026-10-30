@@ -67,8 +67,11 @@ function describeDoc(
   const purpose =
     path === 'SKILL.md' && typeof data.description === 'string'
       ? data.description
-      : paragraph.replace(/\s*\n\s*/g, ' ');
-  return { title, purpose: purpose.slice(0, PURPOSE_MAX) };
+      : paragraph;
+  return {
+    title,
+    purpose: purpose.replace(/\s+/g, ' ').trim().slice(0, PURPOSE_MAX),
+  };
 }
 
 const doc = (uri: string, path: string, content: string): SkillDoc => ({
@@ -159,7 +162,7 @@ export function findDoc(
   return matches.length === 1 ? matches[0] : undefined;
 }
 
-const cell = (text: string) => text.replaceAll('|', '\\|');
+const cell = (text: string) => text.replace(/\s+/g, ' ').replaceAll('|', '\\|');
 
 /** Markdown index of `docs`: what to read and in which order. */
 export function index(docs: readonly SkillDoc[]): string {

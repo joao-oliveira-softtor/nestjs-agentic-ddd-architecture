@@ -172,3 +172,45 @@ describe('index', () => {
     for (const d of docs) expect(text).toContain(`| ${d.uri} |`);
   });
 });
+
+describe('multi-line frontmatter', () => {
+  test('a folded description with a pipe stays one index row', () => {
+    const docs = catalogue({
+      authoring: [
+        {
+          path: 'SKILL.md',
+          content:
+            '---\nname: x\ndescription: >-\n  first line\n  second | line\n---\n\n# X\n',
+        },
+      ],
+      lock,
+      fullLock: lock,
+      rules: [],
+      skillAccess: 'all',
+    });
+    const x = docs.find((d) => d.uri === 'skill://agentic-ddd/SKILL.md')!;
+    expect(x.purpose).toBe('first line second | line');
+    const row = index([x])
+      .split('\n')
+      .filter((l) => l.includes(x.uri));
+    expect(row).toEqual([
+      `| ${x.uri} | X | first line second \\| line | ${Buffer.byteLength(x.content)} |`,
+    ]);
+  });
+
+  test('a literal block description is collapsed too', () => {
+    const [d] = catalogue({
+      authoring: [
+        {
+          path: 'SKILL.md',
+          content: '---\nname: x\ndescription: |\n  a\n  b\n---\n# X\n',
+        },
+      ],
+      lock,
+      fullLock: lock,
+      rules: [],
+      skillAccess: 'all',
+    });
+    expect(d!.purpose).toBe('a b');
+  });
+});
