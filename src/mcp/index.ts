@@ -22,6 +22,7 @@ import {
   catalogue,
   findDoc,
   index,
+  LANGUAGE_RULE,
   loadAuthoringDocs,
   type SkillDoc,
 } from './skills';
@@ -35,8 +36,6 @@ const SKILL_CAPABILITY = 'skill:read';
 const AUTHORING_DIR = fileURLToPath(
   new URL('../../skills/agentic-ddd', import.meta.url),
 );
-const LANGUAGE_RULE =
-  "Reply to the user in the user's language. Never translate identifiers, invariant ids or business text.";
 const INSTRUCTIONS = `${LANGUAGE_RULE} This server serves a domain contract. Before proposing a change, call authoring_guide (or read the skill:// resources): it explains how to write the proposal and the dev skill of each module.`;
 
 // Where the answers come from: the compiled working copy (revalidated per call) or a published lock (fixed).

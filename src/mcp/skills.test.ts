@@ -143,6 +143,21 @@ describe('catalogue', () => {
   });
 });
 
+describe('rule URIs', () => {
+  test('a key with a space or an accent is percent-encoded, so it equals the URL href', () => {
+    const docs = catalogue({
+      authoring,
+      lock,
+      fullLock: lock,
+      rules: [rule('my rule/é', null)],
+      skillAccess: 'all',
+    });
+    const uri = 'skill://agentic-ddd/rules/my%20rule/%C3%A9.md';
+    expect(uris(docs)).toContain(uri);
+    expect(new URL(uri).href).toBe(uri);
+  });
+});
+
 describe('findDoc', () => {
   const docs = build('all');
   test('accepts the full URI and short names', () => {

@@ -26,6 +26,8 @@ export interface AuthoringDoc {
 }
 
 const AUTHORING = 'agentic-ddd';
+export const LANGUAGE_RULE =
+  "Reply to the user in the user's language. Never translate identifiers, invariant ids or business text.";
 const PURPOSE_MAX = 160;
 
 /** `SKILL.md` and `references/*.md` of the authoring skill directory (never `assets/`), sorted by path. */
@@ -130,10 +132,11 @@ export function catalogue(input: {
         docs.push(doc(`skill://${module.name}-dev/${path}`, path, content));
   }
 
+  // The key is a file path (spaces, accents): encode it so the URI equals the `href` the SDK hands the resource callback.
   for (const rule of visible)
     docs.push(
       doc(
-        `skill://${AUTHORING}/rules/${rule.key}.md`,
+        `skill://${AUTHORING}/rules/${rule.key.split('/').map(encodeURIComponent).join('/')}.md`,
         `rules/${rule.key}.md`,
         `# Rule ${rule.key}\n\nApplies to: ${rule.paths === null ? 'all files' : rule.paths.join(', ')}\n\n${rule.body}\n`,
       ),
@@ -179,7 +182,7 @@ export function index(docs: readonly SkillDoc[]): string {
     '',
     'This is the authoring skill of the agentic-ddd framework: how to declare a domain and write a change proposal. Read it before any proposal.',
     '',
-    "Reply to the user in the user's language. Never translate identifiers, invariant ids or business text.",
+    LANGUAGE_RULE,
     '',
     'Read order: `SKILL.md` (the authoring skill; a dev skill is its `<module>-dev` name), then `references/authoring.md`, then the dev skill (`<module>-dev`) of the module being changed.',
     '',
