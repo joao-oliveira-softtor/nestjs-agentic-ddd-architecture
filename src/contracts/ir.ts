@@ -8,6 +8,7 @@ import {
 } from '@agentic-ddd/decorators';
 import { byId, sha256, stableStringify } from './canonical';
 import type { ErrorCode } from './codes';
+import { moduleOfPath } from './module-path';
 
 export {
   AgenticError,
@@ -175,17 +176,12 @@ export function buildIR(
   options: IRBuildOptions,
 ): IRBuildResult {
   const errors: CompileError[] = [];
-  const modules = [...options.modules].sort(
-    (a, b) => b.path.length - a.path.length,
-  );
   const root = canonicalPath(options.root);
   const loc = (s: SourceLoc): string => sourceOf(root, s);
 
   const moduleOf = (s: SourceLoc): string => {
     const file = toPosix(relative(root, s.file));
-    const found = modules.find(
-      (m) => file === m.path || file.startsWith(`${m.path}/`),
-    );
+    const found = moduleOfPath(options.modules, file);
     if (found) return found.name;
     errors.push({
       code: 'ir.outside-modules',

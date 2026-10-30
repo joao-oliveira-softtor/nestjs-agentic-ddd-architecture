@@ -261,6 +261,27 @@ describe('resource server', () => {
     expect(JSON.stringify(body)).not.toContain(auth.issuer);
   });
 
+  test('a module-suffixed scope passes the gate and keeps the raw scope', async () => {
+    const token = await mint(rsa, auth.issuer, { scope: `${SCOPE}:orders` });
+    const result = await gate(bearer(token));
+    expect(result).not.toBeInstanceOf(Response);
+    expect((result as AuthInfo).scopes).toEqual([`${SCOPE}:orders`]);
+  });
+
+  test.each([`${SCOPE}x`, `${SCOPE}:`, `other:${SCOPE}`])(
+    'the near-miss scope %p is a 403 auth.scope-missing',
+    async (scope) => {
+      const token = await mint(rsa, auth.issuer, { scope });
+      const { header } = await expectChallenge(
+        await gate(bearer(token)),
+        403,
+        'auth.scope-missing',
+      );
+      expect(header).toContain('error="insufficient_scope"');
+      expect(header).toContain(`scope="${SCOPE}"`);
+    },
+  );
+
   test('a header with two spaces after Bearer is a 401 auth.token-missing', async () => {
     const request = new Request(RESOURCE, {
       method: 'POST',

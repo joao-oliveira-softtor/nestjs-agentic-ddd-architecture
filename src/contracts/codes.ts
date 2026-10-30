@@ -14,6 +14,7 @@ export const ERROR_CODES = {
   // cli
   'cli.argument-count':
     'The command received the wrong number of positional arguments.',
+  'cli.host-unavailable': 'The --host address does not belong to this machine.',
   'cli.http-option-requires-http':
     'A --port or --host option was passed without --http.',
   'cli.jose-missing': 'The jose package is not installed.',
@@ -23,6 +24,8 @@ export const ERROR_CODES = {
   'cli.option-unknown': 'An unknown command-line option was passed.',
   'cli.option-value-required':
     'An option that takes a value was passed without one.',
+  'cli.port-denied':
+    'The --port may not be opened by this user (privileged or reserved port).',
   'cli.port-in-use':
     'The --port (or the default 3333) is already in use on the bind address.',
   'cli.port-invalid': '--port is not an integer between 0 and 65535.',
@@ -121,6 +124,8 @@ export const ERROR_CODES = {
   'mcp.element-unknown': 'The requested element id does not exist.',
   'mcp.host-denied': 'The request Host header is not allowed.',
   'mcp.origin-denied': 'The request Origin header is not allowed.',
+  'mcp.path-out-of-scope':
+    'The requested path is outside the modules the token may read.',
   'mcp.path-outside-root': 'The requested path is outside the project root.',
 
   // proposal

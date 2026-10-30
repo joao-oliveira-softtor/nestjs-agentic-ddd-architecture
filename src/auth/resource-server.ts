@@ -20,6 +20,7 @@ import {
 import { z } from 'zod';
 import type { ErrorCode } from '../contracts/codes';
 import { isSecureOrLoopbackUrl } from '../contracts/url';
+import { grants } from './scopes';
 
 export type { AuthInfo };
 
@@ -30,6 +31,7 @@ export interface ResourceServerOptions {
   readonly resource: string;
   /** Skips discovery when set. */
   readonly jwksUri?: string;
+  /** Capabilities, each met by itself or by any `<capability>:<module>` scope (see `scopes.ts`). */
   readonly requiredScopes: readonly string[];
   /** Minimum delay between JWKS re-fetches on an unknown `kid` (default: jose's 30s). */
   readonly jwksCooldownMs?: number;
@@ -96,13 +98,6 @@ function tokenScopes(payload: JWTPayload): string[] {
 function withCode(error: unknown): unknown {
   if (!(error instanceof OAuthError) || error.message.startsWith('auth.')) {
     return error;
-  }
-  if (error.code === OAuthErrorCode.InsufficientScope) {
-    return authError(
-      'auth.scope-missing',
-      'The token lacks a required scope.',
-      OAuthErrorCode.InsufficientScope,
-    );
   }
   if (error.code !== OAuthErrorCode.InvalidToken) return error;
   return authError(
@@ -256,11 +251,12 @@ export function createResourceServer(
     requiredScopes: [...options.requiredScopes],
     resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resourceUrl),
   };
-  // Scopes are checked once, by the SDK, against the verifier's AuthInfo.
+  // The SDK would demand each scope verbatim, so it gets none and the capabilities are checked below.
   const verification = {
     verifier: createVerifier(options),
     expectedResource: resourceUrl,
-    ...challenge,
+    requiredScopes: [],
+    resourceMetadataUrl: challenge.resourceMetadataUrl,
   };
   const document = {
     resource: options.resource,
@@ -283,7 +279,15 @@ export function createResourceServer(
             'A Bearer access token is required.',
           );
         }
-        return await verifyBearerToken(header, verification);
+        const info = await verifyBearerToken(header, verification);
+        if (!options.requiredScopes.every((c) => grants(info.scopes, c))) {
+          throw authError(
+            'auth.scope-missing',
+            'The token lacks a required scope.',
+            OAuthErrorCode.InsufficientScope,
+          );
+        }
+        return info;
       } catch (error) {
         return bearerAuthChallengeResponse(withCode(error), challenge);
       }

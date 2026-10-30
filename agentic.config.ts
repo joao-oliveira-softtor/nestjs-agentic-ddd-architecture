@@ -19,6 +19,7 @@ export default defineConfig({
       './test/evals.test.ts',
       './test/executor-roles.test.ts',
       './test/mcp-http.test.ts',
+      './test/mcp-scopes.test.ts',
       './test/mcp.test.ts',
       './test/orchestrate.test.ts',
       './test/package-audit.test.ts',

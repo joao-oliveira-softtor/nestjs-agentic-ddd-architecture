@@ -34,6 +34,10 @@ _Avoid_: Flavor, backend
 The MCP server that serves domain queries, the authoring skill and proposals, outside the running application.
 _Avoid_: Docs server, remote MCP
 
+**Module scope**:
+A scope `domain:read:<module>` that limits the Domain MCP's read access to one module; the bare `domain:read` covers every module.
+_Avoid_: Permission, role
+
 **Runtime MCP**:
 The MCP server inside the running application that exposes operators as tools.
 _Avoid_: Operator API, HTTP channel
