@@ -53,6 +53,9 @@ const rules: Rule[] = [
   rule('open', null),
   rule('mixed', ['examples/orders/**', 'examples/billing/**']),
   rule('billing-only', ['examples/billing/**']),
+  rule('braced', ['examples/{orders,billing}/**']),
+  rule('braced-only', ['examples/{orders,billing}/**', 'examples/orders/**']),
+  rule('wild', ['**/*.ts', 'examples/*/domain/**']),
 ];
 
 const build = (skillAccess: 'all' | ReadonlySet<string>) =>
@@ -94,7 +97,13 @@ describe('catalogue', () => {
     const mixed = docs.find((d) => d.uri.endsWith('/rules/mixed.md'))!;
     expect(mixed.content).toContain('examples/orders/**');
     expect(mixed.content).not.toContain('billing');
-    expect(docs.every((d) => !d.content.includes('Invoice'))).toBe(true);
+    expect(all).not.toContain('skill://agentic-ddd/rules/braced.md');
+    expect(all).toContain('skill://agentic-ddd/rules/braced-only.md');
+    expect(all).toContain('skill://agentic-ddd/rules/wild.md');
+    for (const d of [...docs, { content: index(docs) }]) {
+      expect(d.content).not.toContain('billing');
+      expect(d.content).not.toContain('Invoice');
+    }
   });
 
   test('runtime skills are never listed', () => {

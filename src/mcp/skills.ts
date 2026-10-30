@@ -105,8 +105,11 @@ export function catalogue(input: {
     if (rule.file === null) continue;
     if (rule.paths === null || skillAccess === 'all') visible.push(rule);
     else {
+      // A brace glob can name a hidden module next to a visible one, so it is dropped.
       const paths = rule.paths.filter(
-        (glob) => rulesFor([{ ...rule, paths: [glob] }], sources).length > 0,
+        (glob) =>
+          !glob.includes('{') &&
+          rulesFor([{ ...rule, paths: [glob] }], sources).length > 0,
       );
       if (paths.length > 0) visible.push({ ...rule, paths });
     }
