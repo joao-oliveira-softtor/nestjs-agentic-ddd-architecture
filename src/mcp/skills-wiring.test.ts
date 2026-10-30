@@ -187,7 +187,7 @@ describe('authoring_guide over the Domain MCP', () => {
       'skill://agentic-ddd/../orders-dev/SKILL.md',
       'skill://agentic-ddd/%2e%2e/orders-dev/SKILL.md',
       'skill://agentic-ddd/references%2f..%2f..%2forders-dev/SKILL.md',
-      'skill://agentic-ddd/..\orders-dev/SKILL.md',
+      'skill://agentic-ddd/..\\orders-dev/SKILL.md',
     ]) {
       const out = await rpc(remote, 'resources/read', { uri }, ['skill:read']);
       expect(out.result).toBeUndefined();
