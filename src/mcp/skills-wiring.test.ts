@@ -150,14 +150,49 @@ describe('authoring_guide over the Domain MCP', () => {
     }
   });
 
-  test('a skill:read token sees no domain data', async () => {
-    const out = await rpc(
+  test('a skill:read token sees no domain data from any domain tool', async () => {
+    const calls = [
+      ['domain_source', {}],
+      ['domain_overview', {}],
+      ['domain_element', { id: 'entity:Order' }],
+      ['domain_changes', {}],
+      ['rules_for_path', { path: 'examples/orders/a.ts' }],
+    ] as const;
+    for (const [name, args] of calls) {
+      const out = await rpc(remote, 'tools/call', { name, arguments: args }, [
+        'skill:read',
+      ]);
+      // The caller's own id may be echoed in a refusal; anything else would be data.
+      const text = JSON.stringify(out.result.content).replaceAll(
+        'entity:Order',
+        '',
+      );
+      expect(text).not.toContain('Order');
+      expect(text).not.toContain('billing');
+      // domain_source is unguarded by design; the others see an empty scope.
+      if (name !== 'domain_source') expect(text).not.toContain('open rule');
+    }
+  });
+
+  test('crafted resource URIs are refused like an unknown document', async () => {
+    const unknown = await rpc(
       remote,
-      'tools/call',
-      { name: 'domain_overview', arguments: {} },
+      'resources/read',
+      {
+        uri: 'skill://nothing-dev/SKILL.md',
+      },
       ['skill:read'],
     );
-    expect(out.result.content[0].text).not.toContain('Order');
+    for (const uri of [
+      'skill://agentic-ddd/../orders-dev/SKILL.md',
+      'skill://agentic-ddd/%2e%2e/orders-dev/SKILL.md',
+      'skill://agentic-ddd/references%2f..%2f..%2forders-dev/SKILL.md',
+      'skill://agentic-ddd/..\orders-dev/SKILL.md',
+    ]) {
+      const out = await rpc(remote, 'resources/read', { uri }, ['skill:read']);
+      expect(out.result).toBeUndefined();
+      expect(out.error.code).toBe(unknown.error.code);
+    }
   });
 
   test('descriptions and instructions carry the language rule', async () => {

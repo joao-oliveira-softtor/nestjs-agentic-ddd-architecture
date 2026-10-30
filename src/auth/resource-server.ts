@@ -249,6 +249,7 @@ export function createResourceServer(
   options: ResourceServerOptions,
 ): ResourceServer {
   const resourceUrl = new URL(options.resource);
+  // The 403 hint lists the union: the token needs all of requiredScopes plus at least one of anyOfScopes.
   const challenge = {
     requiredScopes: [...options.requiredScopes, ...(options.anyOfScopes ?? [])],
     resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resourceUrl),

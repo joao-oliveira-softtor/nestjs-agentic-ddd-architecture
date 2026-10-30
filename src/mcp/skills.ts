@@ -146,7 +146,11 @@ export function findDoc(
   docs: readonly SkillDoc[],
   ref: string,
 ): SkillDoc | undefined {
-  const exact = docs.find((d) => d.uri === ref);
+  // The bare `SKILL.md` would match every dev skill too: it means the authoring skill.
+  const exact = docs.find(
+    (d) =>
+      d.uri === (ref === 'SKILL.md' ? `skill://${AUTHORING}/SKILL.md` : ref),
+  );
   if (exact) return exact;
   const matches = docs.filter((d) => {
     const [skill, ...rest] = d.uri.slice('skill://'.length).split('/');
@@ -177,7 +181,7 @@ export function index(docs: readonly SkillDoc[]): string {
     '',
     "Reply to the user in the user's language. Never translate identifiers, invariant ids or business text.",
     '',
-    'Read order: `SKILL.md`, then `references/authoring.md`, then the dev skill (`<module>-dev`) of the module being changed.',
+    'Read order: `SKILL.md` (the authoring skill; a dev skill is its `<module>-dev` name), then `references/authoring.md`, then the dev skill (`<module>-dev`) of the module being changed.',
     '',
     '| uri | title | purpose | bytes |',
     '| --- | --- | --- | --- |',

@@ -157,9 +157,9 @@ describe('findDoc', () => {
     );
   });
 
-  test('returns undefined for unknown and ambiguous names', () => {
+  test('returns undefined for unknown names, and SKILL.md means the authoring skill', () => {
     expect(findDoc(docs, 'nope')).toBeUndefined();
-    expect(findDoc(docs, 'SKILL.md')).toBeUndefined();
+    expect(findDoc(docs, 'SKILL.md')?.uri).toBe('skill://agentic-ddd/SKILL.md');
   });
 });
 
