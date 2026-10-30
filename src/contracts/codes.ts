@@ -77,6 +77,18 @@ export const ERROR_CODES = {
   'config.suffix-test-file':
     'A suffix ends in .test.ts, .spec.ts or .d.ts, or has an empty segment.',
 
+  // delta
+  'delta.invalid-identifier':
+    'A Delta name or id is not an allowed identifier (wrong pattern or a reserved word).',
+  'delta.name-collision':
+    'A Delta name or id repeats inside the Delta or already exists in the base.',
+  'delta.reference-unknown':
+    'A Delta uses, emits, ports, owner, state or type reference points to something not declared.',
+  'delta.schema-invalid':
+    'The Delta does not match the schema (wrong shape, missing field or unknown key).',
+  'delta.type-invalid':
+    'A Delta type is outside the allowed grammar (string, number, boolean, Date, a declared name, or T[]).',
+
   // ir
   'ir.emits-target-missing': 'emits points to a class without @AgentEvent.',
   'ir.implements-not-class':
