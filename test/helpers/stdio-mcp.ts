@@ -6,14 +6,16 @@ export interface StdioMcp {
 }
 
 // A minimal newline-delimited JSON-RPC client over the real `agentic mcp` subprocess.
-export async function startStdioMcp(root: string): Promise<StdioMcp> {
+export async function startStdioMcp(
+  root: string,
+  args: string[] = ['--root', root],
+): Promise<StdioMcp> {
   const proc = Bun.spawn(
     [
       process.execPath,
       resolve(import.meta.dir, '../../src/cli/main.ts'),
       'mcp',
-      '--root',
-      root,
+      ...args,
     ],
     { stdin: 'pipe', stdout: 'pipe', stderr: 'pipe' },
   );

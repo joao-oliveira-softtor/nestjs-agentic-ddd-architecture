@@ -59,12 +59,15 @@ Na aplicação consumidora, instale o peer opcional e inicie o servidor:
 
 ```bash
 npm install @modelcontextprotocol/server@2.3.1
-./node_modules/.bin/agentic-ddd mcp [--root <dir>] [--config <file>] [--http [--port <n>] [--host <addr>]]
+./node_modules/.bin/agentic-ddd mcp [--root <dir>] [--config <file>] [--published <file> [--expect-digest <sha256>]] [--http [--port <n>] [--host <addr>]]
+./node_modules/.bin/agentic-ddd publish-lock --version <v> --out <file> [--root <dir>]
 ```
 
 Sem `--root`, o servidor usa a pasta atual. Sem o peer, o comando encerra com código 1 e uma mensagem pedindo a instalação.
 
 Com `--http`, o servidor fala Streamable HTTP (porta 3333 por padrão) como resource server OAuth: lê a seção `mcp` (`issuer`, `resource`, `jwksUri` opcional) do `agentic.config.ts`, publica o Protected Resource Metadata (RFC 9728) e exige um token Bearer JWT com `aud` igual a `resource` e o escopo `domain:read` (todos os módulos) ou `domain:read:<módulo>` (só o módulo indicado, podendo repetir o escopo para vários módulos), sem o qual a requisição recebe 403 `auth.scope-missing`. Um token só com escopos de módulo lê apenas esses módulos. O servidor de autorização é externo; este pacote só valida os tokens. Além do peer do SDK, exige o pacote `jose` instalado (`cli.jose-missing` se faltar). Por padrão escuta só em `127.0.0.1`; `--host` muda isso. Antes da autenticação, `Host` e `Origin` são validados (defesa contra DNS rebinding): `Host` deve ser `host:porta` do bind ou do `resource` (e, em bind de loopback, `localhost`, `127.0.0.1` ou `[::1]` com a porta efetiva); `Origin`, quando presente, deve ser a origem do bind ou do `resource` (ou o equivalente loopback). Sem `Origin` (cliente não navegador) a requisição passa; valores fora da lista recebem 403 com `mcp.host-denied` ou `mcp.origin-denied`. O endpoint e o metadata aceitam o caminho com ou sem barra final.
+
+Com `--published <file>` (e `--expect-digest <sha256>` para fixar o digest), o servidor responde a partir de um lock publicado antes com `agentic-ddd publish-lock --version <v> --out <file>`, em vez da cópia de trabalho. Esse lock é imutável e não toca o disco, então serve uma versão fixa do domínio; o funcionamento, os limites de segurança e a demo local estão em [`docs/mcp-remote-demo.md`](mcp-remote-demo.md).
 
 A partir deste checkout, o instalador grava a configuração do servidor para cada agente. É opt-in e só vale com `--scope project`:
 

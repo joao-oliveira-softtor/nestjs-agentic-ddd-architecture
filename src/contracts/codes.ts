@@ -14,6 +14,8 @@ export const ERROR_CODES = {
   // cli
   'cli.argument-count':
     'The command received the wrong number of positional arguments.',
+  'cli.expect-digest-requires-published':
+    '--expect-digest was passed without --published.',
   'cli.host-unavailable': 'The --host address does not belong to this machine.',
   'cli.http-option-requires-http':
     'A --port or --host option was passed without --http.',
@@ -183,6 +185,18 @@ export const ERROR_CODES = {
   'proposal.slug-invalid': 'The --draft-change slug is not kebab-case.',
   'proposal.status-invalid': 'status is not proposed or applied.',
   'proposal.title-missing': 'The proposal has no title.',
+
+  // published
+  'published.digest-mismatch':
+    'The published lock content does not match its embedded digest.',
+  'published.digest-unexpected':
+    'The published lock digest differs from the expected one.',
+  'published.malformed': 'The published lock is not a valid artifact.',
+  'published.unreadable': 'The published lock file cannot be read.',
+  'published.version-invalid':
+    'The published lock version label is empty, too long or has control characters.',
+  'published.version-unsupported':
+    'The published lock has an unsupported publishedLockVersion.',
 
   // rules
   'rules.body-empty': 'A rule body is empty.',

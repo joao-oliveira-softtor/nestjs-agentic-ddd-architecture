@@ -10,6 +10,11 @@ import {
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { EMPTY_IR } from '../../compiler/diff';
+import {
+  createPublishedLock,
+  serializePublishedLock,
+} from '../../compiler/published';
 import { mcpCommand } from './mcp';
 
 let dir: string;
@@ -164,7 +169,7 @@ describe('mcpCommand', () => {
       expect(code).toBe(2);
       expect(messages).toContain('[cli.http-option-requires-http]');
       expect(messages).toContain(
-        'agentic-ddd mcp [--root <dir>] [--config <file>] [--http',
+        'agentic-ddd mcp [--root <dir>] [--config <file>] [--published',
       );
     }
     expect(load).not.toHaveBeenCalled();
@@ -351,4 +356,75 @@ describe('mcpCommand', () => {
     },
     15_000,
   );
+});
+
+describe('mcpCommand --published', () => {
+  const lock = { lockVersion: 1 as const, ir: EMPTY_IR, changes: [] };
+  const published = createPublishedLock('v9', lock, []);
+  const file = () => join(dir, 'published.json');
+  const idle = () => ({ close: () => {} });
+  const starts: unknown[] = [];
+  const load = () =>
+    Promise.resolve({
+      startMcpServer: (options: unknown) => {
+        starts.push(options);
+        return idle();
+      },
+      startMcpHttpServer: () => Promise.resolve({ ...idle(), port: 1 }),
+    });
+
+  beforeEach(async () => {
+    starts.length = 0;
+    await writeFile(file(), serializePublishedLock(published));
+  });
+
+  test('--expect-digest without --published is a usage error (exit 2)', async () => {
+    const error = captureErrors();
+    const code = await mcpCommand(['--expect-digest', 'a'.repeat(64)], load);
+    const messages = error.mock.calls.flat().join('\n');
+    error.mockRestore();
+    expect(code).toBe(2);
+    expect(messages).toContain('[cli.expect-digest-requires-published]');
+  });
+
+  test('a digest other than the pinned one exits 1 before serving', async () => {
+    const error = captureErrors();
+    const code = await mcpCommand(
+      ['--published', file(), '--expect-digest', 'b'.repeat(64)],
+      load,
+    );
+    const messages = error.mock.calls.flat().join('\n');
+    error.mockRestore();
+    expect(code).toBe(1);
+    expect(messages).toContain('[published.digest-unexpected]');
+    expect(starts).toEqual([]);
+  });
+
+  test('an unreadable file exits 1 with a coded error', async () => {
+    const error = captureErrors();
+    const code = await mcpCommand(['--published', join(dir, 'nope')], load);
+    const messages = error.mock.calls.flat().join('\n');
+    error.mockRestore();
+    expect(code).toBe(1);
+    expect(messages).toContain('[published.unreadable]');
+  });
+
+  test('a matching digest serves the lock and says which one', async () => {
+    const error = captureErrors();
+    // stdin already ended in the test runner or not: close it out the same way the real command waits.
+    const code = await Promise.race([
+      mcpCommand(
+        ['--published', file(), '--expect-digest', published.digest],
+        load,
+      ),
+      new Promise<number>((done) => setTimeout(() => done(-1), 3000)),
+    ]);
+    const messages = error.mock.calls.flat().join('\n');
+    error.mockRestore();
+    expect(code === 0 || code === -1).toBe(true);
+    expect(starts[0]).toMatchObject({ published });
+    expect(messages).toContain(
+      `agentic-ddd serving published lock v9 (digest ${published.digest.slice(0, 12)})`,
+    );
+  });
 });

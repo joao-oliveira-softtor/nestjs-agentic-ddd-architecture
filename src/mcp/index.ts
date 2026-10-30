@@ -11,6 +11,8 @@ import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
 import { moduleAccess, type ModuleAccess } from '../auth/scopes';
 import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
+import type { PublishedLock } from '../compiler/published';
+import type { Rule } from '../compiler/rules';
 import { checkSnapshot } from '../compiler/snapshot';
 import { narrowRulePaths, pathModule, scopeLock } from './scope';
 import { changes, element, overview, rulesForPath } from './tools';
@@ -18,16 +20,21 @@ import { changes, element, overview, rulesForPath } from './tools';
 // The one scope the gate requires and the per-module filter narrows.
 const CAPABILITY = 'domain:read';
 
-type Fresh = Extract<Awaited<ReturnType<typeof checkSnapshot>>, { ok: true }>;
+// Where the answers come from: the compiled working copy (revalidated per call) or a published lock (fixed).
+type Source = { root: string } | { published: PublishedLock };
+
 // `lock` is already filtered to what the caller may read; `fullLock` is for server-side decisions only.
-type Scoped = Omit<Fresh, 'lock'> & {
+// `root` is absent for a published lock: it has no filesystem.
+type Scoped = {
   lock: DomainLock;
   fullLock: DomainLock;
   access: ModuleAccess;
+  rules: Rule[];
+  root?: string;
 };
 
-// The four read-only tools, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
-function createDomainServer(root: string, remote: boolean): McpServer {
+// The read-only tools, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
+function createDomainServer(source: Source, remote: boolean): McpServer {
   // Every call revalidates the snapshot: nothing serves stale data. An error
   // thrown here returns to the client as a result with isError (SDK).
   const guarded =
@@ -38,15 +45,20 @@ function createDomainServer(root: string, remote: boolean): McpServer {
         content: [{ type: 'text' as const, text }],
       });
       try {
-        const snap = await checkSnapshot(root);
-        if (!snap.ok) {
-          // The snapshot.missing reason embeds an absolute path: not for remote clients.
-          if (remote && snap.code === 'snapshot.missing')
-            throw new AgenticError(
-              snap.code,
-              'no snapshot on the server; run `bun run agentic compile` at the project root there',
-            );
-          throw new AgenticError(snap.code, snap.reason);
+        let base: { lock: DomainLock; rules: Rule[]; root?: string };
+        if ('published' in source) base = source.published;
+        else {
+          const snap = await checkSnapshot(source.root);
+          if (!snap.ok) {
+            // The snapshot.missing reason embeds an absolute path: not for remote clients.
+            if (remote && snap.code === 'snapshot.missing')
+              throw new AgenticError(
+                snap.code,
+                'no snapshot on the server; run `bun run agentic compile` at the project root there',
+              );
+            throw new AgenticError(snap.code, snap.reason);
+          }
+          base = snap;
         }
         // Fail closed: a remote call without a grant sees nothing.
         const access: ModuleAccess = remote
@@ -54,10 +66,11 @@ function createDomainServer(root: string, remote: boolean): McpServer {
             new Set<string>())
           : 'all';
         const scoped: Scoped = {
-          ...snap,
-          lock: scopeLock(snap.lock, access),
-          fullLock: snap.lock,
+          lock: scopeLock(base.lock, access),
+          fullLock: base.lock,
           access,
+          rules: base.rules,
+          root: base.root,
         };
         return {
           content: [
@@ -78,6 +91,25 @@ function createDomainServer(root: string, remote: boolean): McpServer {
   const annotations = { readOnlyHint: true, openWorldHint: false };
   const server = new McpServer({ name: 'agentic-ddd', version: '0.5.0' });
 
+  server.registerTool(
+    'domain_source',
+    {
+      title: 'Domain source',
+      description:
+        'Tells whether the answers come from a published lock (with its version and digest) or from the working copy of the project.',
+      inputSchema: z.object({}),
+      annotations,
+    },
+    guarded(() =>
+      'published' in source
+        ? {
+            mode: 'published',
+            version: source.published.version,
+            digest: source.published.digest,
+          }
+        : { mode: 'working-copy' },
+    ),
+  );
   server.registerTool(
     'domain_overview',
     {
@@ -128,9 +160,15 @@ function createDomainServer(root: string, remote: boolean): McpServer {
       // Clients often send absolute paths; the rule globs are relative to the root.
       // `\` becomes `/` before the check, as rulesForPath does: `..\x` is also outside the root.
       // normalize resolves inner `./` and `x/..`: `./../a` and `x/../../a` also leave the root.
+      // A published lock has no root to resolve against: an absolute path is outside it (and not echoed).
+      if (isAbsolute(path) && s.root === undefined)
+        throw new AgenticError(
+          'mcp.path-outside-root',
+          'absolute paths are not accepted by a published lock; send a path relative to the project root',
+        );
       const rel = posix.normalize(
         (isAbsolute(path)
-          ? relative(s.root, canonicalPath(path))
+          ? relative(s.root as string, canonicalPath(path))
           : path
         ).replaceAll('\\', '/'),
       );
@@ -158,10 +196,20 @@ function createDomainServer(root: string, remote: boolean): McpServer {
   return server;
 }
 
-export function startMcpServer({ root }: { root: string }): {
+// `published`, when given, replaces the working copy: `root` is then unused.
+const sourceOf = (root: string, published?: PublishedLock): Source =>
+  published ? { published } : { root };
+
+export function startMcpServer({
+  root,
+  published,
+}: {
+  root: string;
+  published?: PublishedLock;
+}): {
   close(): Promise<void>;
 } {
-  return serveStdio(() => createDomainServer(root, false));
+  return serveStdio(() => createDomainServer(sourceOf(root, published), false));
 }
 
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -210,11 +258,13 @@ function rejectHostOrigin(
 
 export async function startMcpHttpServer({
   root,
+  published,
   port,
   host,
   mcp,
 }: {
   root: string;
+  published?: PublishedLock;
   port: number;
   host: string;
   mcp: McpConfig;
@@ -233,9 +283,12 @@ export async function startMcpHttpServer({
     new URL(getOAuthProtectedResourceMetadataUrl(resource)).pathname,
   );
   // Stateless: the tools are read-only, so a fresh server per request is enough.
-  const handler = createMcpHandler(() => createDomainServer(root, true), {
-    maxRequestBodySize: MAX_BODY_BYTES,
-  });
+  const handler = createMcpHandler(
+    () => createDomainServer(sourceOf(root, published), true),
+    {
+      maxRequestBodySize: MAX_BODY_BYTES,
+    },
+  );
   let allowed: ReturnType<typeof allowedHostsAndOrigins> | undefined;
   const server = Bun.serve({
     hostname: host,

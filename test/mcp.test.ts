@@ -104,6 +104,7 @@ describe('agentic mcp (subprocesso)', () => {
         'domain_changes',
         'domain_element',
         'domain_overview',
+        'domain_source',
         'rules_for_path',
       ]);
       for (const t of tools) expect(t.annotations.readOnlyHint).toBe(true);

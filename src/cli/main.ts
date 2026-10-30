@@ -6,6 +6,7 @@ import { USAGE } from './usage';
 import { statusCommand, nextCommand } from './commands/state';
 import { packetCommand } from './commands/packet';
 import { mcpCommand } from './commands/mcp';
+import { publishLockCommand } from './commands/publishLock';
 
 export { USAGE };
 
@@ -19,6 +20,7 @@ const COMMANDS: Readonly<
   next: nextCommand,
   packet: packetCommand,
   mcp: (args) => mcpCommand(args),
+  'publish-lock': publishLockCommand,
 };
 
 export async function main(argv: readonly string[]): Promise<number> {
