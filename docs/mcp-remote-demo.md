@@ -1,6 +1,6 @@
 # Domain MCP: published lock and remote demo
 
-The Domain MCP answers questions about the domain (`domain_overview`, `domain_element`, `domain_changes`, `rules_for_path`). The server also serves the authoring skill, the dev skills and the team rules (tool `authoring_guide`, resources `skill://…`), behind `skill:read[:<module>]`; see `docs/distribution.md`. This page covers where those answers come from: the compiled working copy, or a **published lock**, a fixed snapshot of the domain that you can serve, pin and hand to a remote client.
+The Domain MCP answers questions about the domain (`domain_source`, `domain_overview`, `domain_element`, `domain_changes`, `rules_for_path`). The server also serves the authoring skill, the dev skills and the team rules (tool `authoring_guide`, resources `skill://…`), behind `skill:read[:<module>]`; see `docs/distribution.md`. This page covers where those answers come from: the compiled working copy, or a **published lock**, a fixed snapshot of the domain that you can serve, pin and hand to a remote client.
 
 ## What a published lock is
 
@@ -67,7 +67,7 @@ and, with `--http`, the listening address as well.
 
 Module scoping works the same way in both: a `domain:read:<module>` token sees the same subset, and the answers of a module-scoped token are byte-identical between the two sources for the same content.
 
-`domain_source` is read-only and needs the same `domain:read` grant as the other tools. It is the way a client learns which version it is talking to. It never returns a path.
+`domain_source` is read-only and unguarded by design: over HTTP any token the gate accepts (`domain:read` or `skill:read`) can call it, and it returns only mode, version and digest. It is the way a client learns which version it is talking to. It never returns a path.
 
 ## Local demo
 
