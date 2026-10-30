@@ -7,5 +7,6 @@ export const USAGE = [
   '  agentic-ddd packet <item> [--static] [--config <file>]',
   '  agentic-ddd verify --item <item> --spec-hash <hash> [--json] [--config <file>]',
   '  agentic-ddd verify <NNNN> [--json] [--config <file>]',
-  '  agentic-ddd mcp [--root <dir>] [--config <file>] [--http [--port <n>] [--host <addr>]]',
+  '  agentic-ddd mcp [--root <dir>] [--config <file>] [--published <file> [--expect-digest <sha256>]] [--http [--port <n>] [--host <addr>]]',
+  '  agentic-ddd publish-lock --version <v> --out <file> [--root <dir>]',
 ].join('\n');

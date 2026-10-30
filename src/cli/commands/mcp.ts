@@ -1,13 +1,24 @@
 import { resolve } from 'node:path';
-import { loadConfig, type McpConfig } from '../../compiler/config';
-import { formatCoded } from '../../contracts/codes';
+import {
+  loadConfig,
+  loadMcpConfig,
+  type McpConfig,
+} from '../../compiler/config';
+import {
+  readPublishedLock,
+  type PublishedLock,
+} from '../../compiler/published';
+import { AgenticError, formatCoded } from '../../contracts/codes';
 import { parseArgs } from '../args';
 import { USAGE } from '../usage';
 
 type Load = () => Promise<{
-  startMcpServer(options: { root: string }): { close(): unknown };
+  startMcpServer(options: { root: string; published?: PublishedLock }): {
+    close(): unknown;
+  };
   startMcpHttpServer(options: {
     root: string;
+    published?: PublishedLock;
     port: number;
     host: string;
     mcp: McpConfig;
@@ -44,7 +55,14 @@ export async function mcpCommand(
 ): Promise<number> {
   const parsed = parseArgs(args, {
     booleans: ['--http'],
-    values: ['--root', '--config', '--port', '--host'],
+    values: [
+      '--root',
+      '--config',
+      '--port',
+      '--host',
+      '--published',
+      '--expect-digest',
+    ],
     positionals: 0,
   });
   if (typeof parsed === 'string') {
@@ -57,6 +75,15 @@ export async function mcpCommand(
   if (!http && (parsed.values.has('--port') || parsed.values.has('--host'))) {
     console.error(
       `${formatCoded({ code: 'cli.http-option-requires-http', message: '--port or --host was passed without --http.' })}\n${USAGE}`,
+    );
+    return 2;
+  }
+  if (
+    parsed.values.has('--expect-digest') &&
+    !parsed.values.has('--published')
+  ) {
+    console.error(
+      `${formatCoded({ code: 'cli.expect-digest-requires-published', message: '--expect-digest was passed without --published.' })}\n${USAGE}`,
     );
     return 2;
   }
@@ -86,11 +113,37 @@ export async function mcpCommand(
     );
     return 1;
   }
+  let published: PublishedLock | undefined;
+  const publishedArg = parsed.values.get('--published');
+  if (publishedArg !== undefined) {
+    try {
+      published = await readPublishedLock(
+        resolve(publishedArg),
+        publishedArg,
+        parsed.values.get('--expect-digest'),
+      );
+    } catch (error) {
+      if (!(error instanceof AgenticError)) throw error;
+      console.error(formatCoded(error));
+      return 1;
+    }
+  }
+  // Printed only once the server is up, never before a failure.
+  const announce = () => {
+    if (published !== undefined)
+      console.error(
+        `agentic-ddd serving published lock ${published.version} (digest ${published.digest.slice(0, 12)})`,
+      );
+  };
   if (http) {
-    const config = await loadConfig(
-      parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts'),
-    );
-    if (config.mcp === undefined) {
+    const configPath =
+      parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts');
+    // A published host may have no module sources, so skip the module-path checks.
+    const mcp =
+      published === undefined
+        ? (await loadConfig(configPath)).mcp
+        : await loadMcpConfig(configPath);
+    if (mcp === undefined) {
       console.error(
         formatCoded({
           code: 'cli.mcp-config-missing',
@@ -103,9 +156,10 @@ export async function mcpCommand(
     try {
       handle = await mod.startMcpHttpServer({
         root,
+        published,
         port: Number(port),
         host,
-        mcp: config.mcp,
+        mcp,
       });
     } catch (error) {
       const { code, message } = error as { code?: string; message?: string };
@@ -134,6 +188,7 @@ export async function mcpCommand(
       );
       return 1;
     }
+    announce();
     // Brackets are added only once, whether or not the user typed them.
     const bare = host.replace(/^\[(.*)\]$/, '$1');
     const shown = bare.includes(':') ? `[${bare}]` : bare;
@@ -147,12 +202,18 @@ export async function mcpCommand(
     await handle.close();
     return 0;
   }
-  const handle = mod.startMcpServer({ root });
+  const handle = mod.startMcpServer({ root, published });
+  announce();
   const { stdin } = process;
   if (!stdin.readableEnded && !stdin.destroyed)
     await new Promise<void>((done) => {
-      stdin.once('end', done);
-      stdin.once('close', done);
+      const finish = () => {
+        stdin.off('end', finish);
+        stdin.off('close', finish);
+        done();
+      };
+      stdin.on('end', finish);
+      stdin.on('close', finish);
     });
   await handle.close();
   return 0;

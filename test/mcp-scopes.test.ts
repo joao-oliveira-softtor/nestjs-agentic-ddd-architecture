@@ -3,13 +3,10 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { SignJWT } from 'jose';
-import {
-  type DomainLock,
-  parseLock,
-  serializeLock,
-} from '../src/compiler/lock';
+import { parseLock, serializeLock } from '../src/compiler/lock';
 import { SNAPSHOT_PATH, writeSnapshot } from '../src/compiler/snapshot';
 import { startMcpHttpServer } from '../src/mcp/index';
+import { BILLING_ONLY, CROSS, twoModuleLock } from './helpers/two-module-lock';
 import {
   type Signer,
   type TestAuthServer,
@@ -23,64 +20,7 @@ const LOCK = '.agentic/domain.lock.json';
 // The port is never contacted: the server binds port 0 and routes on the path only.
 const RESOURCE = 'http://127.0.0.1:3333/mcp';
 
-// Synthetic change ids: far from the sequential ids `compile` hands out to the repo lock.
-const CROSS = '0900';
-const BILLING_ONLY = '0901';
-
 type Result = { isError?: boolean; content: { text: string }[] };
-
-// The repo lock has only `orders`: `billing` is a renamed copy, linked to orders in both directions.
-function twoModuleLock(orders: DomainLock): DomainLock {
-  const copy = (xs: unknown[]): any[] =>
-    JSON.parse(
-      JSON.stringify(xs)
-        .replaceAll('examples/orders', 'examples/billing')
-        .replaceAll('"module":"orders"', '"module":"billing"')
-        .replace(/Order/g, 'Invoice')
-        .replace(/order/g, 'invoice'),
-    );
-  const lock = structuredClone(orders) as any;
-  const ir = lock.ir;
-  const billing = {
-    entities: copy(ir.entities),
-    events: copy(ir.events),
-    useCases: copy(ir.useCases),
-    operators: copy(ir.operators),
-  };
-  // billing -> orders (a use-case uses an orders method), orders -> billing (a reference).
-  billing.useCases[0].uses.push(ir.entities[0].methods[0].id);
-  ir.entities[0].references = [billing.entities[0].id];
-  ir.modules.push({ name: 'billing', path: 'examples/billing' });
-  for (const key of ['entities', 'events', 'useCases', 'operators'] as const)
-    ir[key].push(...billing[key]);
-  const [ordersOnly] = lock.changes;
-  const item = (id: string, module: string) => ({
-    classification: 'behavioral',
-    id,
-    kind: 'changed',
-    module,
-  });
-  lock.changes.push(
-    {
-      ...ordersOnly,
-      id: CROSS,
-      title: 'Invoice rules and order totals',
-      summary: 'Touches billing and orders together.',
-      items: [
-        item(ir.entities[0].id, 'orders'),
-        item(billing.entities[0].id, 'billing'),
-      ],
-    },
-    {
-      ...ordersOnly,
-      id: BILLING_ONLY,
-      title: 'Invoice only',
-      summary: 'Billing only.',
-      items: [item(billing.entities[0].id, 'billing')],
-    },
-  );
-  return lock;
-}
 
 async function prepareRoot(): Promise<{ tmp: string; repoChanges: string[] }> {
   const tmp = await mkdtemp(join(tmpdir(), 'agentic-mcp-scopes-'));
