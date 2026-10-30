@@ -11,6 +11,7 @@ import {
 } from '../src/compiler/published';
 import { checkSnapshot, writeSnapshot } from '../src/compiler/snapshot';
 import { startMcpHttpServer } from '../src/mcp/index';
+import { parseSseData } from '../scripts/sse-data';
 import {
   type Signer,
   type TestAuthServer,
@@ -69,8 +70,7 @@ describe('domain MCP: published lock source', () => {
     });
     expect(response.status).toBe(200);
     const body = await response.text();
-    const line = body.split('\n').find((l) => l.startsWith('data:'));
-    return JSON.parse(line ? line.slice(5) : body).result as Result;
+    return parseSseData(body).result as Result;
   };
   const text = (r: Result) => r.content[0]!.text;
 

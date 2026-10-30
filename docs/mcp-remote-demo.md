@@ -11,13 +11,15 @@ A published lock is one JSON file made from the compiled working copy:
   "publishedLockVersion": 1,
   "version": "v0.5.0",
   "digest": "<64 lowercase hex characters>",
-  "lock": { "...": "the domain lock, as compile writes it" },
-  "rules": [ "...": "the team rules that apply to paths" ]
+  "lock": {},
+  "rules": []
 }
 ```
 
+The example is abridged: `lock` is the whole domain lock as compile writes it and `rules` is the list of team rules that apply to paths; both are shown empty here.
+
 - `version` is a label you choose: 1 to 64 characters, no control characters.
-- `digest` is the SHA-256 of the canonical JSON of `{ version, lock, rules }`. When the file is read, the server recomputes it and refuses the file if the content does not match (`published.digest-mismatch`), so an edited or corrupted file cannot pass as a valid one.
+- `digest` is the SHA-256 of the canonical JSON of `{ version, lock, rules }`. When the file is read, the server recomputes it and refuses the file if the content does not match (`published.digest-mismatch`). This only detects corruption; it does not stop tampering (see Security: only `--expect-digest` does).
 - The file is limited to 32 MiB. A `publishedLockVersion` the installed package does not know is refused (`published.version-unsupported`).
 
 ## Creating it: `publish-lock`
@@ -55,13 +57,13 @@ and, with `--http`, the listening address as well.
 
 ## Working copy versus published lock
 
-| | Working copy (default) | Published lock (`--published`) |
-|---|---|---|
-| Source | `.agentic/domain.lock.json` and the snapshot in the project | the one file, parsed and verified once at startup |
-| Freshness | every call rechecks the snapshot; stale code, rules, config or lock is refused until `compile` runs | immutable: the same answers until the process restarts with another file |
-| Disk access | reads the project files on each call | none after startup |
-| `rules_for_path` with an absolute path | accepted if inside the project root | refused (`mcp.path-outside-root`): there is no root to resolve it against |
-| `domain_source` | `{"mode":"working-copy"}` | `{"mode":"published","version":...,"digest":...}` |
+|                                        | Working copy (default)                                                                              | Published lock (`--published`)                                            |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Source                                 | `.agentic/domain.lock.json` and the snapshot in the project                                         | the one file, parsed and verified once at startup                         |
+| Freshness                              | every call rechecks the snapshot; stale code, rules, config or lock is refused until `compile` runs | immutable: the same answers until the process restarts with another file  |
+| Disk access                            | reads the project files on each call                                                                | none after startup                                                        |
+| `rules_for_path` with an absolute path | accepted if inside the project root                                                                 | refused (`mcp.path-outside-root`): there is no root to resolve it against |
+| `domain_source`                        | `{"mode":"working-copy"}`                                                                           | `{"mode":"published","version":...,"digest":...}`                         |
 
 Module scoping works the same way in both: a `domain:read:<module>` token sees the same subset, and the answers of a module-scoped token are byte-identical between the two sources for the same content.
 
@@ -93,7 +95,17 @@ domain_source            -> {"digest":"04f7cdb6...","mode":"published","version"
 stopped
 ```
 
-The script exits 0 only if each step returns what is expected. It proves that the gate refuses an anonymous call, that a module-scoped and a bare token both pass it, and that the answers come from the published lock. It does not prove anything about a real authorization server: the issuer there is a stand-in.
+The script exits 0 only if each step returns what is expected (see `--keep-alive` below to keep it running). It proves that the gate refuses an anonymous call, that a module-scoped and a bare token both pass it, and that the answers come from the published lock. It does not prove anything about a real authorization server: the issuer there is a stand-in.
+
+### Connect a real MCP client to the demo server
+
+Run `bun run mcp:demo -- --keep-alive`. After the automated checks the script keeps both servers running, prints the loopback MCP URL and a token with `domain:read` that is valid for 10 minutes, and stops cleanly on Ctrl+C (SIGINT/SIGTERM). Only `127.0.0.1` URLs are printed. Then, with Claude Code:
+
+```bash
+claude mcp add --transport http agentic-demo http://127.0.0.1:<port>/mcp --header "Authorization: Bearer <token>"
+```
+
+That is the Claude Code syntax. Other clients take the URL plus a bearer header in the same way, but I have not verified any of them. The token expires after 10 minutes; rerun the demo for a new one.
 
 ## Connecting a real remote client
 

@@ -436,6 +436,24 @@ export function resolveConfig(
   };
 }
 
+// Reads only the mcp section: no module paths are checked, so a host with just the published lock can serve it.
+export async function loadMcpConfig(
+  configPath: string,
+): Promise<McpConfig | undefined> {
+  const absolute = canonicalPath(resolve(configPath));
+  const loaded = (await import(pathToFileURL(absolute).href)) as {
+    default?: AgenticConfig;
+  };
+  if (!loaded.default)
+    throw new AgenticError(
+      'config.default-export-missing',
+      `${configPath}: expected export default defineConfig({ modules: [...] })`,
+    );
+  return loaded.default.mcp === undefined
+    ? undefined
+    : resolveMcp(loaded.default.mcp);
+}
+
 export async function loadConfig(
   configPath: string,
   overrides: { outRoot?: string } = {},

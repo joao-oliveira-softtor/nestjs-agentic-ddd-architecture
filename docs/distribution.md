@@ -24,15 +24,15 @@ npm install ../framework/nestjs-agentic-ddd-architecture-0.5.0.tgz @nestjs/commo
 
 Não adicione paths de `@agentic-ddd/*` ao tsconfig do consumidor. Esses aliases são exclusivamente do desenvolvimento deste checkout.
 
-| Import público | Conteúdo |
-| --- | --- |
-| `nestjs-agentic-ddd-architecture/core` | Building blocks DDD; a raiz também exporta apenas core |
-| `nestjs-agentic-ddd-architecture/decorators` | Declarações e registry compartilhado |
-| `nestjs-agentic-ddd-architecture/compiler` | Configuração, IR, geração, verificação e coordenação |
-| `nestjs-agentic-ddd-architecture/runtime` | OperatorRuntime, ports, tipos e event bus |
-| `nestjs-agentic-ddd-architecture/nestjs` | AgenticModule e tokens de DI |
-| `nestjs-agentic-ddd-architecture/testing` | covers, context e fakes; não exige bun:test |
-| `nestjs-agentic-ddd-architecture/mcp` | Servidor MCP local (stdio), somente leitura; requer o peer opcional @modelcontextprotocol/server 2.3.1 |
+| Import público                               | Conteúdo                                                                                               |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `nestjs-agentic-ddd-architecture/core`       | Building blocks DDD; a raiz também exporta apenas core                                                 |
+| `nestjs-agentic-ddd-architecture/decorators` | Declarações e registry compartilhado                                                                   |
+| `nestjs-agentic-ddd-architecture/compiler`   | Configuração, IR, geração, verificação e coordenação                                                   |
+| `nestjs-agentic-ddd-architecture/runtime`    | OperatorRuntime, ports, tipos e event bus                                                              |
+| `nestjs-agentic-ddd-architecture/nestjs`     | AgenticModule e tokens de DI                                                                           |
+| `nestjs-agentic-ddd-architecture/testing`    | covers, context e fakes; não exige bun:test                                                            |
+| `nestjs-agentic-ddd-architecture/mcp`        | Servidor MCP local (stdio), somente leitura; requer o peer opcional @modelcontextprotocol/server 2.3.1 |
 
 A aplicação fornece agentic.config.ts com defineConfig do export compiler, decorators nas classes e imports de AgenticModule.forRoot/forFeature. O exemplo isolado completo está em test/fixtures/package-consumer.
 
@@ -46,12 +46,13 @@ CLI e compilador interpretam os caminhos a partir do config do consumidor. As in
 
 ## Servidor MCP local
 
-MCP é o protocolo que deixa um agente chamar ferramentas externas. O servidor local deste pacote roda por stdio (o cliente o inicia como processo e conversa pela entrada e saída padrão) e expõe quatro ferramentas de leitura sobre o domínio compilado:
+MCP é o protocolo que deixa um agente chamar ferramentas externas. O servidor local deste pacote roda por stdio (o cliente o inicia como processo e conversa pela entrada e saída padrão) e expõe cinco ferramentas de leitura sobre o domínio compilado:
 
 - `domain_overview`: lista módulos, entidades, use-cases e operators.
 - `domain_element`: devolve o contrato de um elemento pelo id.
 - `domain_changes`: lista as mudanças de regra de negócio, ou só as de um id.
 - `rules_for_path`: lista as regras do time que valem para um arquivo (caminho relativo à raiz do projeto, ou absoluto dentro dela). Uma token restrita a módulos só recebe resposta para caminhos dentro de um módulo permitido; fora deles, `mcp.path-out-of-scope`.
+- `domain_source`: informa `{mode, version?, digest?}`, isto é, a versão e o digest do lock publicado, ou `working-copy`. De propósito não passa pela checagem de frescor do snapshot; por HTTP continua atrás da permissão `domain:read`.
 
 O servidor não executa código do projeto e não escreve arquivos. Ele lê `.agentic/domain.lock.json` e o snapshot `.agentic/mcp/snapshot.json`, que o `compile` grava quando termina bem (a pasta do snapshot ignora a si mesma no git). Cada chamada revalida o snapshot: se código, regras, config ou lock mudaram desde o último `compile` bem-sucedido, o servidor recusa responder e pede para rodar `compile` de novo. Sem snapshot na pasta do servidor, a recusa mostra onde ele procurou: abra o agente na raiz do projeto ou passe `--root`. Limite: arquivos importados de fora das pastas dos módulos não entram nessa checagem.
 

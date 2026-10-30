@@ -174,6 +174,63 @@ describe('published lock', () => {
     }
   });
 
+  test('rule fields that consumers dereference are validated, naming the field', () => {
+    const cases: [unknown, string][] = [
+      [{ ...rules[0], paths: 'src/**' }, 'rules[0].paths'],
+      [{ ...rules[0], paths: ['a', 1] }, 'rules[0].paths'],
+      [{ ...rules[0], paths: undefined }, 'rules[0].paths'],
+      [{ ...rules[0], file: 1 }, 'rules[0].file'],
+    ];
+    for (const [rule, field] of cases) {
+      const forged = createPublishedLock('v1', lock, [rule as Rule]);
+      const run = () =>
+        parsePublishedLock(serializePublishedLock(forged), PATH);
+      expect(codeOf(run)).toBe('published.malformed');
+      expect(() => run()).toThrow(field);
+    }
+  });
+
+  test('lock elements that consumers dereference are validated even with a valid digest', () => {
+    const withIr = (patch: Record<string, unknown>): DomainLock => ({
+      ...lock,
+      ir: { ...lock.ir, ...patch } as DomainLock['ir'],
+    });
+    const cases: [DomainLock, string][] = [
+      [withIr({ modules: [{ name: 'orders' }] }), 'modules[0].path'],
+      [withIr({ modules: [null] }), 'modules[0]'],
+      [withIr({ entities: [{ id: 'e' }] }), 'entities[0].module'],
+      [withIr({ events: [null] }), 'events[0]'],
+      [withIr({ useCases: [{ module: 'm' }] }), 'useCases[0].id'],
+      [withIr({ operators: [1] }), 'operators[0]'],
+    ];
+    for (const [badLock, field] of cases) {
+      const forged = createPublishedLock('v1', badLock, rules);
+      const run = () =>
+        parsePublishedLock(serializePublishedLock(forged), PATH);
+      expect(codeOf(run)).toBe('published.malformed');
+      expect(() => run()).toThrow(field);
+    }
+  });
+
+  test('version labels with C1 or bidi characters are rejected', () => {
+    for (const c of ['\u0085', '‮', '⁦', '‏', '؜']) {
+      const version = `v${c}1`;
+      expect(codeOf(() => createPublishedLock(version, lock, rules))).toBe(
+        'published.version-invalid',
+      );
+      const bad = edit((o) => (o.version = version));
+      expect(codeOf(() => parsePublishedLock(bad, PATH))).toBe(
+        'published.version-invalid',
+      );
+    }
+  });
+
+  test('a directory is refused as malformed', async () => {
+    expect((await asyncCodeOf(() => readPublishedLock(dir, PATH))).code).toBe(
+      'published.malformed',
+    );
+  });
+
   test('an invalid embedded lock is reported as malformed with the inner code', () => {
     const bad = edit((o) => (o.lock = { lockVersion: 1 }));
     let message = '';

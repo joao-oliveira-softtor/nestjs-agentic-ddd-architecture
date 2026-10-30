@@ -1,4 +1,4 @@
-import { readFile, stat } from 'node:fs/promises';
+import { open } from 'node:fs/promises';
 import { sha256, stableStringify } from './canonical';
 import { AgenticError } from './ir';
 import { parseLock, type DomainLock } from './lock';
@@ -25,7 +25,9 @@ function checkVersion(version: string, displayPath: string): void {
   if (
     version.length === 0 ||
     version.length > MAX_VERSION_LENGTH ||
-    Array.from(version).some((c) => c < ' ' || c === '\u007f')
+    // Controls (C0, DEL, C1) and bidi marks/overrides/isolates spoof a label in logs and UIs.
+    // oxlint-disable-next-line no-control-regex
+    /[\u0000-\u001f\u007f-\u009f؜‎‏‪-‮⁦-⁩]/.test(version)
   ) {
     throw new AgenticError(
       'published.version-invalid',
@@ -91,16 +93,20 @@ export function parsePublishedLock(
   ) {
     throw malformed('the artifact has no lock');
   }
-  for (const rule of obj.rules) {
+  obj.rules.forEach((rule, i) => {
+    const r = rule as Record<string, unknown> | null;
+    if (r === null || typeof r !== 'object' || Array.isArray(r))
+      throw malformed(`rules[${i}] is not an object`);
+    if (typeof r.key !== 'string') throw malformed(`rules[${i}].key`);
+    if (typeof r.body !== 'string') throw malformed(`rules[${i}].body`);
+    if (r.file !== null && typeof r.file !== 'string')
+      throw malformed(`rules[${i}].file`);
     if (
-      rule === null ||
-      typeof rule !== 'object' ||
-      Array.isArray(rule) ||
-      typeof (rule as Record<string, unknown>).key !== 'string' ||
-      typeof (rule as Record<string, unknown>).body !== 'string'
+      r.paths !== null &&
+      !(Array.isArray(r.paths) && r.paths.every((g) => typeof g === 'string'))
     )
-      throw malformed('a rule is not an object with a string key and body');
-  }
+      throw malformed(`rules[${i}].paths`);
+  });
   let lock: DomainLock;
   try {
     lock = parseLock(JSON.stringify(obj.lock), displayPath);
@@ -110,6 +116,23 @@ export function parsePublishedLock(
       'published.malformed',
       `${displayPath}: the embedded lock is invalid (${error.code}); regenerate the artifact with \`agentic-ddd publish-lock\``,
     );
+  }
+  const ir = lock.ir as unknown as Record<string, unknown[]>;
+  const shapes: [string, string[]][] = [
+    ['modules', ['name', 'path']],
+    ['entities', ['id', 'module']],
+    ['events', ['id', 'module']],
+    ['useCases', ['id', 'module']],
+    ['operators', ['id', 'module']],
+  ];
+  for (const [list, fields] of shapes) {
+    ir[list]!.forEach((el, i) => {
+      const e = el as Record<string, unknown> | null;
+      if (e === null || typeof e !== 'object' || Array.isArray(e))
+        throw malformed(`${list}[${i}] is not an object`);
+      for (const f of fields)
+        if (typeof e[f] !== 'string') throw malformed(`${list}[${i}].${f}`);
+    });
   }
   const rules = obj.rules as Rule[];
   if (digestOf(obj.version, lock, rules) !== obj.digest) {
@@ -133,6 +156,12 @@ export function parsePublishedLock(
   };
 }
 
+const tooBig = (displayPath: string): AgenticError =>
+  new AgenticError(
+    'published.malformed',
+    `${displayPath}: not a regular file or larger than ${MAX_BYTES / 1024 / 1024} MiB; republish it`,
+  );
+
 export async function readPublishedLock(
   absolutePath: string,
   displayPath: string,
@@ -140,14 +169,28 @@ export async function readPublishedLock(
 ): Promise<PublishedLock> {
   let text: string;
   try {
-    const info = await stat(absolutePath);
-    if (!info.isFile() || info.size > MAX_BYTES) {
-      throw new AgenticError(
-        'published.malformed',
-        `${displayPath}: not a regular file or larger than ${MAX_BYTES / 1024 / 1024} MiB; republish it`,
-      );
+    const handle = await open(absolutePath, 'r');
+    try {
+      // One handle for stat and read: the file cannot change type between the check and the read.
+      const info = await handle.stat();
+      if (!info.isFile() || info.size > MAX_BYTES) throw tooBig(displayPath);
+      const buffer = Buffer.alloc(MAX_BYTES + 1);
+      let length = 0;
+      for (;;) {
+        const { bytesRead } = await handle.read(
+          buffer,
+          length,
+          buffer.length - length,
+          null,
+        );
+        if (bytesRead === 0) break;
+        length += bytesRead;
+      }
+      if (length > MAX_BYTES) throw tooBig(displayPath);
+      text = buffer.toString('utf8', 0, length);
+    } finally {
+      await handle.close();
     }
-    text = await readFile(absolutePath, 'utf8');
   } catch (error) {
     if (error instanceof AgenticError) throw error;
     throw new AgenticError(

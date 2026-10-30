@@ -1,9 +1,12 @@
 // Local demo of the Domain MCP serving a published lock. Everything runs in this process on 127.0.0.1.
-import { resolve } from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
-import { createPublishedLock } from '../src/compiler/published';
-import { checkSnapshot } from '../src/compiler/snapshot';
+import { publishLockCommand } from '../src/cli/commands/publishLock';
+import { readPublishedLock } from '../src/compiler/published';
 import { startMcpHttpServer } from '../src/mcp/index';
+import { parseSseData } from './sse-data';
 
 const ROOT = resolve(import.meta.dir, '..');
 const LOOPBACK = '127.0.0.1';
@@ -14,27 +17,33 @@ const must = (ok: boolean, what: string): void => {
 
 // The MCP's resource URL must carry its port before the server starts, so a probe picks a free one.
 // shortcut: the probed port can be taken between the probe and the bind, fine for a local demo.
-const freePort = (): number => {
+const freePort = async (): Promise<number> => {
   const probe = Bun.serve({
     port: 0,
     hostname: LOOPBACK,
     fetch: () => new Response(''),
   });
   const port = probe.port as number;
-  void probe.stop(true);
+  await probe.stop(true);
   return port;
 };
 
-const snap = await checkSnapshot(ROOT);
-if (!snap.ok) {
-  console.error(
-    snap.code === 'snapshot.missing'
-      ? 'No compiled snapshot: run `bun run agentic compile` first.'
-      : snap.reason,
-  );
-  process.exit(1);
-}
-const published = createPublishedLock('demo', snap.lock, snap.rules);
+const keepAlive = process.argv.includes('--keep-alive');
+
+// Reuse the real `publish-lock` command (it reports a missing or stale snapshot) and read the artifact back.
+const artifactDir = await mkdtemp(join(tmpdir(), 'mcp-demo-'));
+const artifact = join(artifactDir, 'domain.published.json');
+const code = await publishLockCommand([
+  '--version',
+  'demo',
+  '--out',
+  artifact,
+  '--root',
+  ROOT,
+]);
+if (code !== 0) process.exit(code);
+const published = await readPublishedLock(artifact, artifact);
+await rm(artifactDir, { recursive: true, force: true });
 
 const { privateKey, publicKey } = await generateKeyPair('ES256', {
   extractable: true,
@@ -53,7 +62,7 @@ const issuerServer = Bun.serve({
   },
 });
 const issuer = `http://${LOOPBACK}:${issuerServer.port}`;
-const mcpPort = freePort();
+const mcpPort = await freePort();
 const mcpUrl = `http://${LOOPBACK}:${mcpPort}/mcp`;
 
 const mcp = await startMcpHttpServer({
@@ -84,20 +93,16 @@ async function rpc(
   });
   const body = await response.text();
   if (response.status !== 200) return { status: response.status, body };
-  const line = body.split('\n').find((l) => l.startsWith('data:'));
-  return {
-    status: 200,
-    result: JSON.parse(line ? line.slice(5) : body).result,
-  };
+  return { status: 200, result: parseSseData(body).result };
 }
 
-const mint = (scope: string): Promise<string> =>
+const mint = (scope: string, expiresIn = '5m'): Promise<string> =>
   new SignJWT({ scope, client_id: 'demo-client' })
     .setProtectedHeader({ alg: 'ES256', kid })
     .setIssuer(issuer)
     .setAudience(mcpUrl)
     .setIssuedAt()
-    .setExpirationTime('5m')
+    .setExpirationTime(expiresIn)
     .sign(privateKey);
 
 const tool = (token: string | undefined, name: string) =>
@@ -105,7 +110,6 @@ const tool = (token: string | undefined, name: string) =>
 const textOf = (reply: Reply) => JSON.parse(reply.result.content[0].text);
 
 try {
-  console.log(`published lock ${published.version} digest ${published.digest}`);
   console.log(`issuer ${issuer}  mcp ${mcpUrl}`);
 
   const init = await rpc(await mint('domain:read'), 'initialize', {
@@ -143,6 +147,18 @@ try {
     'domain_source disagrees with the lock',
   );
   console.log(`domain_source            -> ${JSON.stringify(info)}`);
+
+  if (keepAlive) {
+    console.log(`
+keep-alive: MCP ${mcpUrl}`);
+    console.log('token (domain:read, valid 10 minutes):');
+    console.log(await mint('domain:read', '10m'));
+    console.log('Press Ctrl+C to stop.');
+    await new Promise<void>((done) => {
+      process.once('SIGINT', done);
+      process.once('SIGTERM', done);
+    });
+  }
 } finally {
   await mcp.close();
   await issuerServer.stop(true);
