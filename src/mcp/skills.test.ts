@@ -75,6 +75,13 @@ const build = (skillAccess: 'all' | ReadonlySet<string>) =>
 const uris = (docs: SkillDoc[]) => docs.map((d) => d.uri);
 
 describe('loadAuthoringDocs', () => {
+  test('a missing directory is a coded error without the path', async () => {
+    const dir = resolve(root, 'no-such-skill-dir');
+    const error = await loadAuthoringDocs(dir).catch((e) => e);
+    expect(error.code).toBe('mcp.skills-unavailable');
+    expect(error.message).not.toContain('no-such-skill-dir');
+  });
+
   test('reads SKILL.md and references/*.md sorted, without assets', () => {
     const paths = authoring.map((a) => a.path);
     expect(paths).toEqual([...paths].sort());

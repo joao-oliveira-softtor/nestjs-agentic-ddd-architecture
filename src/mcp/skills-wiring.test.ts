@@ -135,6 +135,32 @@ describe('dev skills use the project conventions', () => {
   });
 });
 
+describe('without the authoring skill on disk', () => {
+  const missing = join(tmpdir(), 'agentic-no-such-skill-dir');
+  const rulesPublished = createPublishedLock('1', repoLock, rules);
+  for (const isRemote of [false, true]) {
+    test(`dev skills and rules are still served (${isRemote ? 'remote' : 'local'})`, async () => {
+      const h = createMcpHandler(() =>
+        createDomainServer({ published: rulesPublished }, isRemote, missing),
+      );
+      const scopes = isRemote ? ['skill:read'] : undefined;
+      const uris = await listed(h, scopes);
+      expect(uris).toContain('skill://orders-dev/SKILL.md');
+      expect(uris).toContain('skill://agentic-ddd/rules/open.md');
+      expect(uris).not.toContain('skill://agentic-ddd/SKILL.md');
+      const index = (await guide(h, scopes)).result.content[0].text as string;
+      expect(index).toContain('authoring skill is unavailable on this server');
+      expect(index).toContain('skill://orders-dev/SKILL.md');
+      const dev = await guide(h, scopes, 'orders-dev');
+      expect(dev.result.isError).toBeUndefined();
+      const asked = await guide(h, scopes, 'SKILL.md');
+      expect(asked.result.isError).toBe(true);
+      for (const text of [index, JSON.stringify(asked)])
+        expect(text).not.toContain('agentic-no-such-skill-dir');
+    });
+  }
+});
+
 describe('authoring_guide over the Domain MCP', () => {
   test('the index lists every document and a read of each resource equals the tool output', async () => {
     const index = (await guide(local)).result.content[0].text as string;

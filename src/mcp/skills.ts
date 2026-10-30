@@ -10,6 +10,7 @@ import { workItems } from '../compiler/graph';
 import { irHash } from '../compiler/ir';
 import type { DomainLock } from '../compiler/lock';
 import { renderDevSkill } from '../compiler/render/dev-skill';
+import { AgenticError } from '../compiler/ir';
 import { rulesFor, type Rule } from '../compiler/rules';
 import { scopeLock } from './scope';
 
@@ -32,16 +33,26 @@ const PURPOSE_MAX = 160;
 
 /** `SKILL.md` and `references/*.md` of the authoring skill directory (never `assets/`), sorted by path. */
 export async function loadAuthoringDocs(dir: string): Promise<AuthoringDoc[]> {
-  const paths = ['SKILL.md'];
-  for (const name of await readdir(join(dir, 'references')))
-    if (name.endsWith('.md')) paths.push(`references/${name}`);
-  paths.sort();
-  return Promise.all(
-    paths.map(async (path) => ({
-      path,
-      content: await Bun.file(join(dir, path)).text(),
-    })),
-  );
+  try {
+    const paths = ['SKILL.md'];
+    for (const name of await readdir(join(dir, 'references')))
+      if (name.endsWith('.md')) paths.push(`references/${name}`);
+    paths.sort();
+    return await Promise.all(
+      paths.map(async (path) => ({
+        path,
+        content: await Bun.file(join(dir, path)).text(),
+      })),
+    );
+  } catch (error) {
+    // A bundled app may not ship the skill. The message carries no path: it can reach a remote client.
+    if ((error as { code?: string }).code === 'ENOENT')
+      throw new AgenticError(
+        'mcp.skills-unavailable',
+        'the authoring skill is not available on this server',
+      );
+    throw error;
+  }
 }
 
 function describeDoc(
@@ -156,6 +167,8 @@ export function findDoc(
       d.uri === (ref === 'SKILL.md' ? `skill://${AUTHORING}/SKILL.md` : ref),
   );
   if (exact) return exact;
+  // Bare `SKILL.md` is the authoring skill only: never a lone dev skill when that one is absent.
+  if (ref === 'SKILL.md') return undefined;
   const matches = docs.filter((d) => {
     const [skill, ...rest] = d.uri.slice('skill://'.length).split('/');
     const path = rest.join('/');
@@ -173,7 +186,10 @@ export function findDoc(
 const cell = (text: string) => text.replace(/\s+/g, ' ').replaceAll('|', '\\|');
 
 /** Markdown index of `docs`: what to read and in which order. */
-export function index(docs: readonly SkillDoc[]): string {
+export function index(
+  docs: readonly SkillDoc[],
+  authoringAvailable = true,
+): string {
   const rows = docs.map(
     (d) =>
       `| ${d.uri} | ${cell(d.title)} | ${cell(d.purpose)} | ${Buffer.byteLength(d.content)} |`,
@@ -181,11 +197,15 @@ export function index(docs: readonly SkillDoc[]): string {
   return [
     '# agentic-ddd authoring guide',
     '',
-    'This is the authoring skill of the agentic-ddd framework: how to declare a domain and write a change proposal. Read it before any proposal.',
+    authoringAvailable
+      ? 'This is the authoring skill of the agentic-ddd framework: how to declare a domain and write a change proposal. Read it before any proposal.'
+      : 'The authoring skill is unavailable on this server: only the dev skills and team rules below are served.',
     '',
     LANGUAGE_RULE,
     '',
-    'Read order: `SKILL.md` (the authoring skill; a dev skill is its `<module>-dev` name), then `references/authoring.md`, then the dev skill (`<module>-dev`) of the module being changed.',
+    authoringAvailable
+      ? 'Read order: `SKILL.md` (the authoring skill; a dev skill is its `<module>-dev` name), then `references/authoring.md`, then the dev skill (`<module>-dev`) of the module being changed.'
+      : 'Read the dev skill (`<module>-dev`) of the module being changed.',
     '',
     '| uri | title | purpose | bytes |',
     '| --- | --- | --- | --- |',

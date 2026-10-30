@@ -56,7 +56,11 @@ type Scoped = {
 type Ctx = { http?: { authInfo?: { scopes: string[] } } };
 
 // The read-only tools and skill documents, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
-export function createDomainServer(source: Source, remote: boolean): McpServer {
+export function createDomainServer(
+  source: Source,
+  remote: boolean,
+  authoringDir = AUTHORING_DIR,
+): McpServer {
   // Every call revalidates the snapshot: nothing serves stale data.
   const scopedFor = async (
     ctx: Ctx | undefined,
@@ -97,15 +101,28 @@ export function createDomainServer(source: Source, remote: boolean): McpServer {
     };
   };
   // The documents the caller may read, from the same source for the tool and the resources.
-  const docsOf = async (s: Scoped): Promise<SkillDoc[]> =>
-    catalogue({
-      authoring: await loadAuthoringDocs(AUTHORING_DIR),
+  const docsOf = async (
+    s: Scoped,
+  ): Promise<{ docs: SkillDoc[]; authoring: boolean }> => {
+    // Without the authoring skill the dev skills and rules are still served.
+    const authoring = await loadAuthoringDocs(authoringDir).catch((error) => {
+      if (
+        error instanceof AgenticError &&
+        error.code === 'mcp.skills-unavailable'
+      )
+        return null;
+      throw error;
+    });
+    const docs = catalogue({
+      authoring: authoring ?? [],
       lock: s.fullLock,
       fullLock: s.fullLock,
       rules: s.rules,
       skillAccess: s.access,
       conventions: s.conventions,
     });
+    return { docs, authoring: authoring !== null };
+  };
   // An error thrown here returns to the client as a result with isError (SDK). A string result is sent verbatim.
   const guarded =
     <A>(
@@ -141,7 +158,7 @@ export function createDomainServer(source: Source, remote: boolean): McpServer {
   // Resource callbacks: the SDK sends error.message to the client, so a remote caller gets only coded ones.
   const docsFor = async (ctx: Ctx): Promise<SkillDoc[]> => {
     try {
-      return await docsOf(await scopedFor(ctx, SKILL_CAPABILITY));
+      return (await docsOf(await scopedFor(ctx, SKILL_CAPABILITY))).docs;
     } catch (error) {
       if (error instanceof AgenticError) throw new Error(formatCoded(error));
       if (!remote) throw error;
@@ -274,8 +291,8 @@ export function createDomainServer(source: Source, remote: boolean): McpServer {
       annotations: { ...annotations, destructiveHint: false },
     },
     guarded<{ doc?: string }>(async (s, { doc }) => {
-      const docs = await docsOf(s);
-      if (doc === undefined) return index(docs);
+      const { docs, authoring } = await docsOf(s);
+      if (doc === undefined) return index(docs, authoring);
       // A hidden document is not in `docs`: it answers exactly like an unknown one.
       const found = findDoc(docs, doc);
       if (!found)
