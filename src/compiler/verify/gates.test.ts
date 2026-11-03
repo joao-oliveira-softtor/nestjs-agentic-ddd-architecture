@@ -323,6 +323,33 @@ describe('evaluateGates', () => {
     expect(finding.message).toContain('and 2 more');
   });
 
+  test('G5: the named failing tests do not depend on the runner order', () => {
+    const failing = [50, 10, 40, 20, 30].map((line) =>
+      testCase([], 'failed', line),
+    );
+    const message = (cases: TestCaseResult[]) =>
+      evaluateGates(input({ tests: { exitCode: 1, cases } }))
+        .gates.find((g) => g.id === 'G5')!
+        .findings.find((f) => f.code === 'verify.suite-failed')!.message;
+    expect(message(failing)).toBe(message([...failing].reverse()));
+    expect(message(failing)).toContain(':10 ');
+    expect(message(failing)).not.toContain(':50 ');
+  });
+
+  test('G5: a multi-line test title stays on one line of the message', () => {
+    const multiline = {
+      ...testCase([], 'failed', 5),
+      name: 'first line\n  second\tline',
+    };
+    const message = evaluateGates(
+      input({ tests: { exitCode: 1, cases: [multiline] } }),
+    )
+      .gates.find((g) => g.id === 'G5')!
+      .findings.find((f) => f.code === 'verify.suite-failed')!.message;
+    expect(message).toContain(`${multiline.file}:5 first line second line`);
+    expect(message).not.toMatch(/\n/);
+  });
+
   test('G4: findings of tests with unknown covers come out in stable order (file, line, name)', () => {
     const cases = [
       {

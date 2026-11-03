@@ -30,21 +30,22 @@ export async function verifyItem(
     stderr: 'ignore',
   });
   let report;
+  let item;
+  let exitCode;
   try {
     report = await collectStatus(context);
-  } catch (error) {
-    proc.kill();
-    throw error;
+    item = report.items.find((i) => i.id === options.item);
+    if (!item) {
+      throw new AgenticError(
+        'state.item-not-found',
+        `work item ${options.item} not found`,
+      );
+    }
+    exitCode = await proc.exited;
+  } finally {
+    // shortcut: kill() reaches only the direct child; on Windows a `bun run` wrapper may leave its tsc grandchild running, upgrade by spawning tsc directly if that proves costly
+    if (proc.exitCode === null) proc.kill();
   }
-  const item = report.items.find((i) => i.id === options.item);
-  if (!item) {
-    proc.kill();
-    throw new AgenticError(
-      'state.item-not-found',
-      `work item ${options.item} not found`,
-    );
-  }
-  const exitCode = await proc.exited;
   const findings = (
     code: ErrorCode,
     messages: string[],

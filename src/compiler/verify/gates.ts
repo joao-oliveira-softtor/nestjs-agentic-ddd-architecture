@@ -237,10 +237,10 @@ export function evaluateGates(input: GateInput): VerifyReport {
     });
   }
   if (input.tests.exitCode !== 0) {
-    const failing = input.tests.cases.filter((c) => c.status === 'failed');
+    const failing = sortedCases.filter((c) => c.status === 'failed');
     const named = failing
       .slice(0, MAX_FAILING_NAMED)
-      .map((c) => `${c.file}:${c.line} ${c.name}`);
+      .map((c) => `${c.file}:${c.line} ${c.name.replace(/\s+/g, ' ')}`);
     const more = failing.length - named.length;
     g5.push({
       code: 'verify.suite-failed',
