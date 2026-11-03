@@ -6,6 +6,8 @@ import { parseLock } from '../src/compiler/lock';
 import { SNAPSHOT_PATH, writeSnapshot } from '../src/compiler/snapshot';
 import { DEFAULT_CONVENTIONS } from '../src/compiler/conventions';
 import { additionDelta } from '../src/compiler/delta/additions-fixture';
+import { compileBundle } from '../src/compiler/bundle';
+import { withProposeSlot } from '../src/mcp';
 import { startStdioMcp } from './helpers/stdio-mcp';
 import { leftovers, shopRepo } from './helpers/shop-repo';
 
@@ -205,4 +207,39 @@ describe('agentic mcp (stdio) propose_change', () => {
       await rm(repo.root, { recursive: true, force: true });
     }
   }, 180_000);
+});
+
+describe('propose_change concurrency', () => {
+  test('a second call is refused while one is in flight; the slot frees after success, error and timeout', async () => {
+    const repo = await shopRepo();
+    try {
+      await mkdir(repo.work, { recursive: true });
+      const slow = join(repo.work, 'slow-cli.ts');
+      await writeFile(slow, 'await Bun.sleep(60_000);\n');
+      const input = {
+        delta: additionDelta(),
+        baseRoot: repo.root,
+        baseRef: 'HEAD',
+      };
+      // The first call hangs in the child until the 1 s timeout, so the second arrives mid-flight.
+      const first = withProposeSlot(() =>
+        compileBundle({ ...input, cliEntry: slow, timeoutMs: 1000 }),
+      ).catch((e: { code: string }) => e.code);
+      const second = await withProposeSlot(async () => 'ran').catch(
+        (e: { code: string }) => e.code,
+      );
+      expect(second).toBe('mcp.propose-busy');
+      expect(await first).toBe('bundle.compile-timeout');
+      // Timeout released it; so do a failure and a success.
+      expect(
+        await withProposeSlot(async () => {
+          throw new Error('boom');
+        }).catch((e: Error) => e.message),
+      ).toBe('boom');
+      expect(await withProposeSlot(async () => 'ok')).toBe('ok');
+      expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
+    } finally {
+      await rm(repo.root, { recursive: true, force: true });
+    }
+  }, 60_000);
 });

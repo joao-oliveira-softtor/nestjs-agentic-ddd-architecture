@@ -78,7 +78,7 @@ export function renderBundleMd(m: BundleManifest): string {
     '',
     '## Apply the bundle',
     '',
-    'Run from the base checkout, at the base ref above. It refuses on a base mismatch, writes the skeleton and runs `compile`.',
+    'Run from the base checkout, at the base ref above. It refuses on a base mismatch, writes the skeleton and runs `compile`. (requires `agentic apply`, issue #120: it does not exist yet)',
     '',
     '```bash',
     'bun run agentic apply <path-to-this-bundle>',
@@ -86,7 +86,7 @@ export function renderBundleMd(m: BundleManifest): string {
     '',
     '## Items in wave order',
     '',
-    'Finish every item of a wave before the next. A task is complete only when `verify` returns `done`. The reviewer brief is not bundled: it is generated at review time from the diff and the gate results (`bun run agent-briefs` or orchestrate).',
+    'Finish every item of a wave before the next. A task is complete only when `verify` returns `done`. The reviewer brief is not bundled: it is generated at review time from the diff and the gate results (`bun scripts/orchestrate.ts` renders it in the review step).',
     ...waves.flatMap((wave, i) => [
       '',
       `### Wave ${i + 1}`,

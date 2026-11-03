@@ -105,7 +105,7 @@ const FORBIDDEN = [
 
 function field(packet: string, label: string): string {
   const match = new RegExp(`^- ${label}: \`?([^\`\\n]+)\`?$`, 'm').exec(packet);
-  if (!match) throw new Error(`packet sem o campo "${label}"`);
+  if (!match) throw new Error(`packet is missing the field "${label}"`);
   return match[1]!.trim();
 }
 
@@ -114,10 +114,10 @@ export function parsePacket(packet: string): PacketFacts {
   const specHash = field(packet, 'specHash');
   const command = /--item (\S+) --spec-hash ([a-f0-9]{64})/.exec(packet);
   if (!command)
-    throw new Error('packet sem o comando de verificação com --spec-hash');
+    throw new Error('packet is missing the verification command with --spec-hash');
   if (command[2] !== specHash || command[1]!.replaceAll("'", '') !== id)
     throw new Error(
-      'packet inconsistente: o comando de verificação não bate com o ID/specHash',
+      'inconsistent packet: the verification command does not match the ID/specHash',
     );
   return {
     id,
@@ -157,7 +157,7 @@ const CLASS_LINES = [
 function classScopeCore(core: string): string {
   return BODY_LINES.reduce((text, line, i) => {
     if (!text.includes(line))
-      throw new Error('núcleo de domínio sem a linha de corpo esperada');
+      throw new Error('domain core is missing the expected body line');
     return text.replace(line, CLASS_LINES[i]!);
   }, core);
 }
@@ -191,7 +191,7 @@ export function rulesSection(
   const tokens = approxTokens(content);
   if (tokens > maxTokens)
     throw new Error(
-      `regras do time excedem o orçamento: ~${tokens} > ${maxTokens} tokens (${listRules(rules)})`,
+      `team rules exceed the budget: ~${tokens} > ${maxTokens} tokens (${listRules(rules)})`,
     );
   return [{ title: 'Team rules', content }];
 }
@@ -204,7 +204,7 @@ export function checkBudget(
   const tokens = approxTokens(brief);
   if (tokens > maxTokens)
     throw new Error(
-      `brief excede o orçamento: ~${tokens} > ${maxTokens} tokens${rules.length ? ` (regras do time: ${listRules(rules)})` : ''}`,
+      `brief exceeds the budget: ~${tokens} > ${maxTokens} tokens${rules.length ? ` (team rules: ${listRules(rules)})` : ''}`,
     );
   return brief;
 }

@@ -1111,7 +1111,7 @@ export default defineConfig({
     expect(
       await main(['--static', '--config', `${rel}/agentic.config.ts`]),
     ).toBe(1);
-    expect(errors.join('\n')).toContain('regras do time excedem o orçamento');
+    expect(errors.join('\n')).toContain('team rules exceed the budget');
   } finally {
     process.chdir(cwd);
     console.log = log;
@@ -1173,7 +1173,7 @@ test('planRun com revisor reprova a soma das regras antes de qualquer invocaçã
   expect(await plan(false)).toHaveLength(2);
   expect(await plan(true).catch((e: unknown) => e)).toBeInstanceOf(Error);
   expect(String(await plan(true).catch((e: unknown) => e))).toMatch(
-    /regras do time excedem o orçamento/,
+    /team rules exceed the budget/,
   );
 });
 
