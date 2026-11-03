@@ -23,7 +23,21 @@ import {
 
 const ROOT = resolve(import.meta.dir, '..');
 const packets = new Map<string, string>();
-// Fetch the packets the tests use once, in parallel, so no test pays for the spawns.
+// One async spawn per item; a failing packet fails with its stderr.
+async function fetchPacket(item: string): Promise<string> {
+  const proc = Bun.spawn(
+    ['bun', 'src/cli/main.ts', 'packet', item, '--static'],
+    { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' },
+  );
+  const [text, stderr] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+  ]);
+  const code = await proc.exited;
+  if (code !== 0) throw new Error(`packet ${item} exited ${code}: ${stderr}`);
+  return text;
+}
+// Prefetch in parallel so no test pays for the spawns.
 beforeAll(async () => {
   await Promise.all(
     [
@@ -31,27 +45,13 @@ beforeAll(async () => {
       'method:Order.cancel',
       'usecase:create_order',
       'operator:order-operator',
-    ].map(async (item) => {
-      const proc = Bun.spawn(
-        ['bun', 'src/cli/main.ts', 'packet', item, '--static'],
-        { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' },
-      );
-      const text = await new Response(proc.stdout).text();
-      if ((await proc.exited) === 0) packets.set(item, text);
-    }),
+    ].map(async (item) => packets.set(item, await fetchPacket(item))),
   );
   // shortcut: 30 s covers four parallel CLI spawns on a loaded machine; raise only if measured slower.
 }, 30_000);
 function packet(item: string): string {
-  const cached = packets.get(item);
-  if (cached) return cached;
-  const run = Bun.spawnSync(
-    ['bun', 'src/cli/main.ts', 'packet', item, '--static'],
-    { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' },
-  );
-  expect(run.exitCode).toBe(0);
-  const text = run.stdout.toString();
-  packets.set(item, text);
+  const text = packets.get(item);
+  if (text === undefined) throw new Error(`packet ${item} was not prefetched`);
   return text;
 }
 const dirs: string[] = [];

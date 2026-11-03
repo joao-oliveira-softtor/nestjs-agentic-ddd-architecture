@@ -19,33 +19,13 @@ export async function verifyItem(
   options: ItemVerifyOptions,
 ): Promise<ItemVerifyReport> {
   const context = await stateContext(options.configPath);
-  const command = context.project.config.verify.commands.find(
-    (c) => c.name === 'typecheck',
-  )?.command ?? ['bun', 'run', 'typecheck'];
-  // Typecheck and the test run are independent: start both, then await both.
-  const proc = Bun.spawn([...command], {
-    cwd: context.project.config.root,
-    env: { ...process.env, [VERIFY_ENV]: '1' },
-    stdout: 'ignore',
-    stderr: 'ignore',
-  });
-  let report;
-  let item;
-  let exitCode;
-  try {
-    report = await collectStatus(context);
-    item = report.items.find((i) => i.id === options.item);
-    if (!item) {
-      throw new AgenticError(
-        'state.item-not-found',
-        `work item ${options.item} not found`,
-      );
-    }
-    exitCode = await proc.exited;
-  } finally {
-    // shortcut: kill() reaches only the direct child; on Windows a `bun run` wrapper may leave its tsc grandchild running, upgrade by spawning tsc directly if that proves costly
-    if (proc.exitCode === null) proc.kill();
-  }
+  const report = await collectStatus(context);
+  const item = report.items.find((i) => i.id === options.item);
+  if (!item)
+    throw new AgenticError(
+      'state.item-not-found',
+      `work item ${options.item} not found`,
+    );
   const findings = (
     code: ErrorCode,
     messages: string[],
@@ -65,6 +45,16 @@ export async function verifyItem(
     findings,
     warnings: [],
   });
+  const command = context.project.config.verify.commands.find(
+    (c) => c.name === 'typecheck',
+  )?.command ?? ['bun', 'run', 'typecheck'];
+  const proc = Bun.spawn([...command], {
+    cwd: context.project.config.root,
+    env: { ...process.env, [VERIFY_ENV]: '1' },
+    stdout: 'ignore',
+    stderr: 'ignore',
+  });
+  const exitCode = await proc.exited;
   const gates = [
     gate(
       'I1',

@@ -104,7 +104,7 @@ test('new commands reject invalid usage with 2', async () => {
 test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relacionada é ignorada', async () => {
   const { dir, run } = await queryFixture();
   try {
-    const packet = run('packet', 'entity:Thing', '--static');
+    const packet = run('packet', 'entity:Thing');
     expect(packet.code).toBe(0);
     const hash = /specHash: `([a-f0-9]{64})`/.exec(packet.stdout)![1]!;
     const passingTests = await readFile(join(dir, 'app.test.ts'), 'utf8');
