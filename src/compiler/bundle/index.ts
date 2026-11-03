@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { renderBrief } from '../briefs';
 import { sha256, stableStringify } from '../canonical';
 import { loadConfig } from '../config';
 import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../conventions';
@@ -60,8 +61,6 @@ export interface BundleInput {
   readonly cliEntry?: string;
   /** Overrides the conventions of the base config. */
   readonly conventions?: ResolvedConventions;
-  /** An executor brief for a packet; omitted, the bundle carries no briefs. */
-  readonly renderBrief?: (packet: string) => string;
 }
 
 export interface Bundle {
@@ -120,8 +119,8 @@ async function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
 
 /**
  * Renders the Delta onto a detached worktree of the base commit, compiles that candidate tree and
- * returns a hashed, stateless bundle: nothing is kept after the call, on any path. Briefs are
- * injected (`renderBrief`) because their generator lives in `scripts/`, outside the package.
+ * returns a hashed, stateless bundle: nothing is kept after the call, on any path. Each item
+ * carries its executor brief; the reviewer brief is generated later, from the diff and gates.
  */
 export async function compileBundle(input: BundleInput): Promise<Bundle> {
   const proposal = input.proposal;
@@ -269,8 +268,7 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
           );
           const name = fileName(id);
           add(`target/packets/${name}`, text);
-          const brief = input.renderBrief?.(text) ?? null;
-          if (brief !== null) add(`target/briefs/${name}`, brief);
+          add(`target/briefs/${name}`, renderBrief({ packet: text }));
           return {
             id,
             layer: item.layer,
@@ -278,7 +276,7 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
             state: item.baseState,
             specHash: item.specHash,
             packet: `target/packets/${name}`,
-            brief: brief === null ? null : `target/briefs/${name}`,
+            brief: `target/briefs/${name}`,
           };
         }),
       );

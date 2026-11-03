@@ -8,7 +8,7 @@ A skeleton, per-item packets and the module skill for one proposed change, compi
 - Bundle version: 1
 - Base ref: \`<baseRef>\`
 - Base lock hash: \`99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc\`
-- Bundle hash: \`787a1bf76a6fe8f7b523ab25c609a8c0d9900ab801566f24ddcb444a09ba0101\`
+- Bundle hash: \`8e233e1a8a3335ab82e6bd1195ebbcc125b463c418cf31514745fc7c1a1b8b4c\`
 
 ## Apply the bundle
 
@@ -20,11 +20,11 @@ bun run agentic apply <path-to-this-bundle>
 
 ## Items in wave order
 
-Finish every item of a wave before the next. A task is complete only when \`verify\` returns \`done\`.
+Finish every item of a wave before the next. A task is complete only when \`verify\` returns \`done\`. The reviewer brief is not bundled: it is generated at review time from the diff and the gate results (\`bun run agent-briefs\` or orchestrate).
 
 ### Wave 1
 
-- \`entity:Order\` (domain)
+- \`entity:Order\` (domain), executor brief: \`target/briefs/entity-Order.md\`
   \`\`\`bash
   bun run agentic packet entity:Order
   bun run agentic verify --item entity:Order --spec-hash 01bdc3919c88391c3c4ad85cb2c535b85451fe80d21d9e5e84ffb74cf8ca7c8b
@@ -32,7 +32,7 @@ Finish every item of a wave before the next. A task is complete only when \`veri
 
 ### Wave 2
 
-- \`method:Order.refund\` (domain)
+- \`method:Order.refund\` (domain), executor brief: \`target/briefs/method-Order-refund.md\`
   \`\`\`bash
   bun run agentic packet method:Order.refund
   bun run agentic verify --item method:Order.refund --spec-hash c8617ba562d330858286b3b8f67784c89b3b4e4f5beff617c4d5773da30c0b63
@@ -40,7 +40,7 @@ Finish every item of a wave before the next. A task is complete only when \`veri
 
 ### Wave 3
 
-- \`usecase:pay_order\` (application)
+- \`usecase:pay_order\` (application), executor brief: \`target/briefs/usecase-pay_order.md\`
   \`\`\`bash
   bun run agentic packet usecase:pay_order
   bun run agentic verify --item usecase:pay_order --spec-hash 69a43b679712547c5929ccd839be47bdf2d900fc05862f35f5106c65fc4a2d6f
@@ -67,6 +67,18 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
     },
   ],
   "files": [
+    {
+      "path": "target/briefs/entity-Order.md",
+      "sha256": "a51be333db93eca74237aa054aeed896a99aa7c31135cf64fac975e2b25a8496",
+    },
+    {
+      "path": "target/briefs/method-Order-refund.md",
+      "sha256": "e403c74a1092fd2ceaad34177a53a319735f310e49c54c8edf93d94f683c8a5c",
+    },
+    {
+      "path": "target/briefs/usecase-pay_order.md",
+      "sha256": "fab5300c930008138006f07493d68d2905c256c51451f9ca1f7ac6ffce6e4d50",
+    },
     {
       "path": "target/dev-skill/SKILL.md",
       "sha256": "9a47ae2bb0ec2bdbaf71ae07ebafe4561be10eedf2db6f8de8a0393f2b5342cc",
@@ -108,12 +120,12 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "3b9e9284f7c4b4076ec457d52e840e0d24800d99192d2edae572764b8a6c83a8",
     },
   ],
-  "hash": "787a1bf76a6fe8f7b523ab25c609a8c0d9900ab801566f24ddcb444a09ba0101",
+  "hash": "8e233e1a8a3335ab82e6bd1195ebbcc125b463c418cf31514745fc7c1a1b8b4c",
   "layers": {
     "target": {
       "items": [
         {
-          "brief": null,
+          "brief": "target/briefs/entity-Order.md",
           "id": "entity:Order",
           "layer": "domain",
           "packet": "target/packets/entity-Order.md",
@@ -122,7 +134,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
           "wave": 1,
         },
         {
-          "brief": null,
+          "brief": "target/briefs/method-Order-refund.md",
           "id": "method:Order.refund",
           "layer": "domain",
           "packet": "target/packets/method-Order-refund.md",
@@ -131,7 +143,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
           "wave": 2,
         },
         {
-          "brief": null,
+          "brief": "target/briefs/usecase-pay_order.md",
           "id": "usecase:pay_order",
           "layer": "application",
           "packet": "target/packets/usecase-pay_order.md",
@@ -167,6 +179,9 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
 [
   "BUNDLE.md",
   "bundle.json",
+  "target/briefs/entity-Order.md",
+  "target/briefs/method-Order-refund.md",
+  "target/briefs/usecase-pay_order.md",
   "target/dev-skill/SKILL.md",
   "target/dev-skill/references/history.md",
   "target/dev-skill/references/schemas.json",

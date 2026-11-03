@@ -18,7 +18,7 @@ export interface TargetItem {
   readonly state: string;
   readonly specHash: string;
   readonly packet: string;
-  readonly brief: string | null;
+  readonly brief: string;
 }
 
 export interface TargetLayer {
@@ -86,7 +86,7 @@ export function renderBundleMd(m: BundleManifest): string {
     '',
     '## Items in wave order',
     '',
-    'Finish every item of a wave before the next. A task is complete only when `verify` returns `done`.',
+    'Finish every item of a wave before the next. A task is complete only when `verify` returns `done`. The reviewer brief is not bundled: it is generated at review time from the diff and the gate results (`bun run agent-briefs` or orchestrate).',
     ...waves.flatMap((wave, i) => [
       '',
       `### Wave ${i + 1}`,
@@ -94,7 +94,7 @@ export function renderBundleMd(m: BundleManifest): string {
         const item = byId.get(id)!;
         return [
           '',
-          `- \`${id}\` (${item.layer})`,
+          `- \`${id}\` (${item.layer}), executor brief: \`${item.brief}\``,
           '  ```bash',
           `  bun run agentic packet ${shellQuote(id)}`,
           `  bun run agentic verify --item ${shellQuote(id)} --spec-hash ${item.specHash}`,
