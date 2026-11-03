@@ -3,23 +3,19 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { renderBrief } from '../briefs';
 import { sha256, stableStringify } from '../canonical';
 import { loadConfig } from '../config';
-import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../conventions';
-import { semanticDiff } from '../diff';
-import { itemSpecification } from '../item-spec';
+import { DEFAULT_CONVENTIONS } from '../conventions';
 import { AgenticError, toPosix } from '../ir';
 import { parseLock } from '../lock';
-import { renderPacket } from '../packet';
-import { collectStatus, stateContext } from '../project-state';
-import { changeOwners, waves } from '../state';
 import { renderDelta } from '../delta/render';
-import type { Delta } from '../delta/schema';
+import { validateDelta } from '../delta/schema';
 import { splice } from '../delta/splice';
+import { analysisSchema } from './analysis';
 import {
   DEFAULT_TIMEOUT_MS,
   defaultCliEntry,
   quote,
   resolveBase,
-  runCompile,
+  runCandidateCli,
   withWorktree,
 } from './candidate';
 import {
@@ -40,27 +36,24 @@ export {
 } from './manifest';
 
 export interface BundleInput {
-  readonly delta: Delta;
+  /** The Delta as received: validated here, against the base commit's lock. */
+  readonly delta: unknown;
   /** The base git repository (a checkout with its `node_modules`). */
   readonly baseRoot: string;
   /** Any ref that resolves to a commit; the bundle records the full commit id. */
   readonly baseRef: string;
-  /** Config path relative to the repository root. */
-  readonly configPath?: string;
-  /** `proposal.md` of the change, written to `changes/<id>-<slug>/` of the candidate and bundled. */
+  /**
+   * `proposal.md` of the change, written to `changes/<id>-<slug>/` of the candidate and bundled. The
+   * number is not the caller's: it is one past the highest of the base lock and the base `changes/`.
+   */
   readonly proposal?: {
-    readonly id: string;
     readonly slug: string;
     readonly markdown: string;
   };
-  /** Where the temporary worktree lives. Default: `<baseRoot>/.tmp`. */
-  readonly workRoot?: string;
-  /** Limit for the candidate compile (the child process is killed). Default 120 s. */
+  /** Limit for the whole call: candidate compile and analysis share it (children are killed). Default 120 s. */
   readonly timeoutMs?: number;
-  /** The CLI entry that runs `compile`; default is this package's own. */
+  /** TEST-ONLY: replaces the CLI entry the children run, to simulate slow or failing candidates. */
   readonly cliEntry?: string;
-  /** Overrides the conventions of the base config. */
-  readonly conventions?: ResolvedConventions;
 }
 
 export interface Bundle {
@@ -69,6 +62,8 @@ export interface Bundle {
   /** Every file, including `BUNDLE.md` and `bundle.json`; sorted by path. */
   readonly files: readonly BundleFile[];
 }
+
+const CONFIG = 'agentic.config.ts';
 
 const byPath = (a: { path: string }, b: { path: string }): number =>
   a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
@@ -96,27 +91,6 @@ async function filesUnder(dir: string): Promise<string[]> {
     .sort();
 }
 
-async function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const limit = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () =>
-        reject(
-          new AgenticError(
-            'bundle.compile-timeout',
-            `analysis of the candidate tree exceeded ${ms} ms`,
-          ),
-        ),
-      ms,
-    );
-  });
-  try {
-    return await Promise.race([work, limit]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 /**
  * Renders the Delta onto a detached worktree of the base commit, compiles that candidate tree and
  * returns a hashed, stateless bundle: nothing is kept after the call, on any path. Each item
@@ -124,40 +98,35 @@ async function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
  */
 export async function compileBundle(input: BundleInput): Promise<Bundle> {
   const proposal = input.proposal;
-  if (
-    proposal &&
-    !(
-      /^\d{4}$/.test(proposal.id) &&
-      /^[a-z0-9]+(-[a-z0-9]+)*$/.test(proposal.slug)
-    )
-  )
+  if (proposal && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(proposal.slug))
     throw new AgenticError(
       'bundle.proposal-invalid',
-      `proposal id ${quote(proposal.id)} or slug ${quote(proposal.slug)} is not NNNN and kebab-case`,
+      `proposal slug ${quote(proposal.slug)} is not kebab-case`,
     );
   const sha = await resolveBase(input.baseRoot, input.baseRef);
-  const configRel = toPosix(input.configPath ?? 'agentic.config.ts');
   const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const deadline = Date.now() + timeoutMs;
+  const remaining = () => Math.max(1, deadline - Date.now());
+  const cliEntry = input.cliEntry ?? defaultCliEntry();
   return withWorktree(
     input.baseRoot,
-    input.workRoot ?? join(input.baseRoot, '.tmp'),
+    join(input.baseRoot, '.tmp'),
     sha,
+    2 * timeoutMs,
     async (dir) => {
-      const configPath = join(dir, configRel);
-      const config = await loadConfig(configPath);
-      const module = config.modules.find((m) => m.name === input.delta.module);
+      const config = await loadConfig(join(dir, CONFIG));
+      const wanted = (input.delta as { module?: unknown } | null)?.module;
+      const module = config.modules.find((m) => m.name === wanted);
       if (!module)
         throw new AgenticError(
           'bundle.module-unknown',
-          `module ${quote(input.delta.module)} is not configured in the base project`,
+          `module ${quote(String(wanted))} is not configured in the base project`,
         );
       const moduleRoot = resolve(config.root, module.path);
       // EOL rule: every text that feeds a hash is LF (`toLf`). A checkout may be CRLF
       // (core.autocrlf), but the committed bytes, which `apply` recomputes from, are LF.
-      const lockText = await readFile(
-        join(config.outRoot, config.out.lock),
-        'utf8',
-      )
+      const lockPath = join(config.outRoot, config.out.lock);
+      const lockText = await readFile(lockPath, 'utf8')
         .then(toLf)
         .catch(() => null);
       if (lockText === null)
@@ -167,9 +136,18 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
         );
       const lock = parseLock(lockText, config.out.lock);
 
-      const rendered = renderDelta(input.delta, {
-        conventions:
-          input.conventions ?? config.conventions ?? DEFAULT_CONVENTIONS,
+      // One source of truth: the base commit (lock, conventions, `changes/`), never the working copy.
+      const checked = validateDelta(input.delta, { base: lock.ir });
+      if (!checked.ok)
+        throw new AgenticError(
+          checked.errors[0]!.code,
+          checked.errors
+            .slice(0, 10)
+            .map((e) => `${e.path}: ${e.message}`)
+            .join('; '),
+        );
+      const rendered = renderDelta(checked.delta, {
+        conventions: config.conventions ?? DEFAULT_CONVENTIONS,
         base: lock.ir,
         existingFiles: await filesUnder(moduleRoot),
       });
@@ -197,20 +175,52 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
           throw new AgenticError(spliced.error.code, spliced.error.message);
         await writeFile(target, spliced.source);
       }
-      if (proposal) {
+      const changesDir = join(config.outRoot, config.changesDir);
+      const numbered = proposal && {
+        ...proposal,
+        id: String(
+          1 +
+            Math.max(
+              0,
+              ...[
+                ...lock.changes.map((c) => c.id),
+                ...(await readdir(changesDir).catch(() => [])),
+              ].flatMap((n) => {
+                const id = /^(\d{4})(-|$)/.exec(n)?.[1];
+                return id ? [Number(id)] : [];
+              }),
+            ),
+        ).padStart(4, '0'),
+      };
+      if (numbered) {
         const target = inside(
-          join(config.outRoot, config.changesDir),
-          `${proposal.id}-${proposal.slug}/proposal.md`,
+          changesDir,
+          `${numbered.id}-${numbered.slug}/proposal.md`,
         );
         await mkdir(dirname(target), { recursive: true });
-        await writeFile(target, proposal.markdown);
+        await writeFile(target, numbered.markdown);
       }
 
-      await runCompile(
+      // Candidate code runs only in these children (killable, no network, scrubbed env).
+      await runCandidateCli(
         dir,
-        configPath,
-        input.cliEntry ?? defaultCliEntry(),
-        timeoutMs,
+        cliEntry,
+        ['compile', '--config', CONFIG],
+        remaining(),
+        'compile',
+      );
+      const baseLock = join(dir, '.bundle-base-lock.json');
+      await writeFile(baseLock, lockText);
+      const analysis = analysisSchema.parse(
+        JSON.parse(
+          await runCandidateCli(
+            dir,
+            cliEntry,
+            ['bundle-analysis', '--config', CONFIG, '--base-lock', baseLock],
+            remaining(),
+            'analysis',
+          ),
+        ),
       );
 
       const files: BundleFile[] = [];
@@ -230,10 +240,10 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
         skeleton.push(repoPath);
         add(`target/skeleton/${repoPath}`, await read(join(moduleRoot, rel)));
       }
-      if (proposal)
+      if (numbered)
         add(
-          `target/changes/${proposal.id}-${proposal.slug}/proposal.md`,
-          proposal.markdown,
+          `target/changes/${numbered.id}-${numbered.slug}/proposal.md`,
+          numbered.markdown,
         );
       const skillDir = join(
         config.outRoot,
@@ -243,50 +253,35 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
       for (const rel of await filesUnder(skillDir))
         add(`target/dev-skill/${rel}`, await read(join(skillDir, rel)));
 
-      const analysis = await withDeadline(
-        (async () => {
-          const context = await stateContext(configPath);
-          const report = await collectStatus(context, true);
-          return { context, report };
-        })(),
-        timeoutMs,
+      const waveOf = new Map(
+        analysis.waves.flatMap((wave, w) => wave.map((id) => [id, w + 1])),
       );
-      const { ir } = analysis.context.project;
-      const owners = new Set(
-        semanticDiff(lock.ir, ir).flatMap((d) => changeOwners(ir, d.id)),
-      );
-      const selected = analysis.report.items.filter((i) => owners.has(i.id));
-      const order = waves({ ...analysis.report, items: selected }).waves;
-      const items: TargetItem[] = order.flatMap((wave, w) =>
-        wave.map((id): TargetItem => {
-          const item = selected.find((i) => i.id === id)!;
-          const text = renderPacket(
-            item,
-            itemSpecification(ir, item, analysis.context.proposals),
-            configRel,
-            'static',
-          );
-          const name = fileName(id);
-          add(`target/packets/${name}`, text);
-          add(`target/briefs/${name}`, renderBrief({ packet: text }));
-          return {
-            id,
-            layer: item.layer,
-            wave: w + 1,
-            state: item.baseState,
-            specHash: item.specHash,
-            packet: `target/packets/${name}`,
-            brief: `target/briefs/${name}`,
-          };
-        }),
-      );
+      const items: TargetItem[] = analysis.items.map((item) => {
+        const name = fileName(item.id);
+        add(`target/packets/${name}`, item.packet);
+        add(`target/briefs/${name}`, renderBrief({ packet: item.packet }));
+        return {
+          id: item.id,
+          layer: item.layer,
+          wave: waveOf.get(item.id)!,
+          state: item.state,
+          specHash: item.specHash,
+          packet: `target/packets/${name}`,
+          brief: `target/briefs/${name}`,
+        };
+      });
 
       const manifest = buildManifest(
         {
           baseRef: sha,
           baseLockHash: sha256(lockText),
           layers: {
-            target: { name: 'nestjs-ts', waves: order, items, skeleton },
+            target: {
+              name: 'nestjs-ts',
+              waves: analysis.waves,
+              items,
+              skeleton,
+            },
           },
           examples: rendered.examples,
         },

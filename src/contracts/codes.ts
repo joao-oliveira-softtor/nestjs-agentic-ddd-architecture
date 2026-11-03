@@ -166,6 +166,8 @@ export const ERROR_CODES = {
   'mcp.skills-unavailable':
     'The authoring skill directory is not available on this server.',
   'mcp.origin-denied': 'The request Origin header is not allowed.',
+  'mcp.propose-busy':
+    'Another propose_change is running on this server; retry shortly.',
   'mcp.propose-unavailable':
     'propose_change needs a working copy with a git history; this server serves a published lock.',
   'mcp.path-out-of-scope':

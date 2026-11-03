@@ -97,8 +97,8 @@ test('o specHash do packet é preservado e divergência falha', () => {
         .replaceAll(specHash, '0'.repeat(64))
         .replace(/^- specHash.*$/m, `- specHash: \`${specHash}\``),
     ),
-  ).toThrow('packet inconsistente');
-  expect(() => parsePacket('sem campos')).toThrow('packet sem o campo');
+  ).toThrow('inconsistent packet');
+  expect(() => parsePacket('sem campos')).toThrow('packet is missing the field');
 });
 
 test('conteúdo fora do packet fica em seção própria com hash próprio', () => {
@@ -130,7 +130,7 @@ test('orçamento de tokens: núcleos curtos e brief acima do limite falha', () =
     );
   expect(() =>
     renderBrief({ packet: packet('entity:Order'), maxTokens: 100 }),
-  ).toThrow('brief excede o orçamento');
+  ).toThrow('brief exceeds the budget');
 });
 
 test('brief de revisor: packets mais diff e gates em seções com hash próprio', () => {
@@ -271,7 +271,7 @@ test('estouro do sub-orçamento e do teto com regras lista as regras', () => {
   expect(() =>
     renderBrief({ packet: text, rules, rulesMaxTokens: 50 }),
   ).toThrow(
-    /regras do time excedem o orçamento: ~\d+ > 50 tokens \(grande ~\d+, pequena ~\d+\)/,
+    /team rules exceed the budget: ~\d+ > 50 tokens \(grande ~\d+, pequena ~\d+\)/,
   );
   expect(() =>
     renderReviewerBrief({
@@ -281,10 +281,10 @@ test('estouro do sub-orçamento e do teto com regras lista as regras', () => {
       rules,
       rulesMaxTokens: 50,
     }),
-  ).toThrow('regras do time excedem o orçamento');
+  ).toThrow('team rules exceed the budget');
   expect(() =>
     renderBrief({ packet: text, rules, maxTokens: 1000, rulesMaxTokens: 5000 }),
-  ).toThrow(/brief excede o orçamento: .*grande ~\d+, pequena ~\d+/);
+  ).toThrow(/brief exceeds the budget: .*grande ~\d+, pequena ~\d+/);
 });
 
 test('CLI com agentic.config.ts e .ai/rules grava as regras aplicáveis e respeita rules.briefMaxTokens', async () => {
@@ -322,7 +322,7 @@ test('CLI com agentic.config.ts e .ai/rules grava as regras aplicáveis e respei
     expect(brief).toContain('- REGRA-DOMINIO');
     expect(brief).not.toContain('REGRA-FORA');
     expect(await main([...args, '--config', 'pequeno.config.ts'])).toBe(1);
-    expect(errors.join('\n')).toContain('regras do time excedem o orçamento');
+    expect(errors.join('\n')).toContain('team rules exceed the budget');
   } finally {
     process.chdir(cwd);
     console.error = error;

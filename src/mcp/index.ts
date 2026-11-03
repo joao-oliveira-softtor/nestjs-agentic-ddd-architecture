@@ -12,7 +12,6 @@ import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
 import { compileBundle } from '../compiler/bundle/index';
-import { validateDelta } from '../compiler/delta/schema';
 import { moduleAccess, type ModuleAccess } from '../auth/scopes';
 import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
@@ -38,6 +37,22 @@ const SKILL_CAPABILITY = 'skill:read';
 const PROPOSE_CAPABILITY = 'change:propose';
 // Room for a large Delta plus its proposal.md; anything bigger is refused before any work.
 const MAX_PROPOSE_BYTES = 256 * 1024;
+
+// One compile per server process: each is a git checkout plus two child processes. Fail fast, no queue.
+let proposing = false;
+export async function withProposeSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (proposing)
+    throw new AgenticError(
+      'mcp.propose-busy',
+      'another propose_change is running on this server; retry shortly',
+    );
+  proposing = true;
+  try {
+    return await work();
+  } finally {
+    proposing = false;
+  }
+}
 
 // The authoring skill ships next to `src` and `dist`: the same relative path resolves from both.
 const AUTHORING_DIR = fileURLToPath(
@@ -359,7 +374,7 @@ export function createDomainServer(
           .strictObject({ slug: z.string(), markdown: z.string() })
           .optional(),
       }),
-      // Stateless: the temporary worktree is gone when the call returns.
+      // readOnlyHint stays true: no client-visible state changes; the temp worktree is server-internal and gone on return.
       annotations: { ...annotations, idempotentHint: true },
     },
     (
@@ -386,38 +401,21 @@ export function createDomainServer(
             'mcp.input-too-large',
             `the input exceeds ${MAX_PROPOSE_BYTES} bytes`,
           );
-        const s = await scopedFor(ctx, PROPOSE_CAPABILITY);
-        if (s.root === undefined)
+        if ('published' in source)
           throw new AgenticError(
             'mcp.propose-unavailable',
             'this server serves a published lock; propose_change needs a working copy',
           );
-        const checked = validateDelta(args.delta, { base: s.fullLock.ir });
-        if (!checked.ok)
-          throw new AgenticError(
-            checked.errors[0]!.code,
-            checked.errors
-              .slice(0, 10)
-              .map((e) => `${e.path}: ${e.message}`)
-              .join('; '),
-          );
-        // The server, not the client, owns the numbering: the next change number of the base lock.
-        const last = Math.max(
-          0,
-          ...s.fullLock.changes
-            .map((c) => Number(c.id))
-            .filter(Number.isInteger),
+        // The base is the HEAD commit (lock, conventions, `changes/`): compileBundle validates,
+        // numbers and renders against it, never against the served working copy.
+        return withProposeSlot(() =>
+          compileBundle({
+            delta: args.delta,
+            baseRoot: source.root,
+            baseRef: 'HEAD',
+            proposal: args.proposal,
+          }),
         );
-        return compileBundle({
-          delta: checked.delta,
-          baseRoot: s.root,
-          baseRef: 'HEAD',
-          conventions: s.conventions,
-          proposal: args.proposal && {
-            ...args.proposal,
-            id: String(last + 1).padStart(4, '0'),
-          },
-        });
       }),
   );
   server.registerResource(
