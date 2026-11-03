@@ -19,6 +19,7 @@ export interface PublishedChange {
   readonly url: string;
 }
 
+/** Files are created or replaced as regular files (mode 100644); executables and symlinks at those paths become regular files. */
 export interface ChangeSink {
   publish(change: PublishableChange): Promise<PublishedChange>;
 }

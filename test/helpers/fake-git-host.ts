@@ -10,7 +10,6 @@ export interface FakeGitHost {
     { message: string; tree: string; parents: string[] }
   >;
   readonly trees: Map<string, unknown>;
-  readonly blobs: Map<string, string>;
   /** Every Authorization header seen. */
   readonly auth: string[];
   /** Answers with this status to any request whose "METHOD path" ends with `match`. */
@@ -43,7 +42,6 @@ export function createFakeGitHost(opts: {
     pulls: [],
     commits: new Map(),
     trees: new Map(),
-    blobs: new Map(),
     auth: [],
     failWith: undefined,
     fetch: (async (
@@ -78,11 +76,6 @@ export function createFakeGitHost(opts: {
       const commit = /^\/git\/commits\/(.+)$/.exec(path);
       if (method === 'GET' && commit)
         return json(200, { tree: { sha: `tree-of-${commit[1]}` } });
-      if (method === 'POST' && path === '/git/blobs') {
-        const s = sha();
-        host.blobs.set(s, body.content);
-        return json(201, { sha: s });
-      }
       if (method === 'POST' && path === '/git/trees') {
         const s = sha();
         host.trees.set(s, body);

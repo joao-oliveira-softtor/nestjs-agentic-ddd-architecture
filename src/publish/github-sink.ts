@@ -13,6 +13,8 @@ export interface GitHubSinkOptions {
   /** POSIX prefixes a published file may live under, e.g. `changes/` or a module path. */
   readonly allowedPrefixes: readonly string[];
   readonly fetch?: typeof fetch;
+  /** Per-request timeout in milliseconds (default 30 000). */
+  readonly timeoutMs?: number;
 }
 
 const API = 'https://api.github.com';
@@ -20,7 +22,7 @@ const NUMBER = /^\d{4}$/;
 // Same slug shape as the `changes/NNNN-<slug>/` proposal folders (src/compiler/changes/proposal.ts).
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const NAME = /^[A-Za-z0-9_.-]+$/;
-const PROTECTED = new Set(['main', 'master']);
+const TIMEOUT_MS = 30_000;
 const MAX_TITLE = 256;
 const MAX_BODY = 60_000;
 const MAX_FILES = 500;
@@ -69,7 +71,8 @@ function pathError(path: string, prefixes: readonly string[]): string | null {
   if (
     folded(path)
       .split('/')
-      .some((s) => GIT_SEGMENTS.has(s))
+      // Windows drops trailing dots and spaces, so ".git." is ".git" there.
+      .some((s) => GIT_SEGMENTS.has(s.replace(/[. ]+$/, '')))
   )
     return 'git metadata or CI path';
   if (!prefixes.some((p) => path.startsWith(p)))
@@ -120,6 +123,12 @@ export class GitHubChangeSink implements ChangeSink {
         'publish.path-invalid',
         `a change carries between 1 and ${MAX_FILES} files`,
       );
+    const title = capTitle(change.title);
+    if (title === '')
+      throw new AgenticError(
+        'publish.change-invalid',
+        'the change title is empty',
+      );
     const seen = new Set<string>();
     let total = 0;
     for (const f of change.files) {
@@ -150,11 +159,6 @@ export class GitHubChangeSink implements ChangeSink {
     const { default_branch: base } = await this.#call<{
       default_branch: string;
     }>('GET', repo, undefined, 'repository');
-    if (PROTECTED.has(branch) || branch === base)
-      throw new AgenticError(
-        'publish.branch-protected',
-        'refusing to target the default branch',
-      );
     const head = await this.#call<{ object: { sha: string } }>(
       'GET',
       `${repo}/git/ref/heads/${base}`,
@@ -172,24 +176,19 @@ export class GitHubChangeSink implements ChangeSink {
       undefined,
       'base commit',
     );
-    const tree: { path: string; mode: string; type: string; sha: string }[] =
-      [];
-    for (const f of change.files) {
-      const blob = await this.#call<{ sha: string }>(
-        'POST',
-        `${repo}/git/blobs`,
-        { content: f.content, encoding: 'utf-8' },
-        'blob',
-      );
-      tree.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
-    }
+    // Contents go inline: one request instead of one blob per file. Mode 100644 makes every file regular.
+    const tree = change.files.map((f) => ({
+      path: f.path,
+      mode: '100644',
+      type: 'blob',
+      content: f.content,
+    }));
     const newTree = await this.#call<{ sha: string }>(
       'POST',
       `${repo}/git/trees`,
       { base_tree: baseCommit.tree.sha, tree },
       'tree',
     );
-    const title = capTitle(change.title);
     const commit = await this.#call<{ sha: string }>(
       'POST',
       `${repo}/git/commits`,
@@ -296,6 +295,7 @@ export class GitHubChangeSink implements ChangeSink {
           'user-agent': 'agentic-ddd',
         },
         body: body === undefined ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(this.#opts.timeoutMs ?? TIMEOUT_MS),
       });
     } catch {
       // The cause is dropped on purpose: it could echo request details.

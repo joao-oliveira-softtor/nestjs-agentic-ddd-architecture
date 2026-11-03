@@ -63,7 +63,6 @@ describe('GitHubChangeSink', () => {
     ]);
     expect(fake.refs.has('heads/changes/0007-refund-window')).toBe(true);
     expect(fake.refs.get('heads/trunk')).toBe('sha-base');
-    expect([...fake.blobs.values()]).toEqual(['# hi']);
   });
 
   test('issues a deterministic request sequence', async () => {
@@ -75,13 +74,42 @@ describe('GitHubChangeSink', () => {
       `GET ${r}/git/ref/heads/main`,
       `GET ${r}/git/ref/heads/changes/0007-refund-window`,
       `GET ${r}/git/commits/sha-base`,
-      `POST ${r}/git/blobs`,
       `POST ${r}/git/trees`,
       `POST ${r}/git/commits`,
       `POST ${r}/git/refs`,
       `POST ${r}/pulls`,
     ]);
   });
+
+  test('sends file contents inline in the tree and never calls the blobs endpoint', async () => {
+    const { fake, sink } = setup();
+    await sink.publish(change);
+    expect(fake.requests.some((q) => q.includes('/git/blobs'))).toBe(false);
+    expect([...fake.trees.values()]).toEqual([
+      {
+        base_tree: 'tree-of-sha-base',
+        tree: [
+          {
+            path: 'changes/0007-refund-window/proposal.md',
+            mode: '100644',
+            type: 'blob',
+            content: '# hi',
+          },
+        ],
+      },
+    ]);
+  });
+
+  test.each(['  ', '\n', '\u200b'])(
+    'refuses an empty title %j before any request',
+    async (title) => {
+      const { fake, sink } = setup();
+      expect((await failure(sink.publish({ ...change, title }))).code).toBe(
+        'publish.change-invalid',
+      );
+      expect(fake.requests).toEqual([]);
+    },
+  );
 
   test('refuses an existing branch and writes nothing', async () => {
     const { fake, sink } = setup({
@@ -203,6 +231,49 @@ describe('GitHubChangeSink', () => {
     expect(r.message).not.toContain(TOKEN);
   });
 
+  test('a request that never answers times out as host-unreachable', async () => {
+    const hang = (async (_u: string, init?: RequestInit) =>
+      new Promise((_, reject) =>
+        init?.signal?.addEventListener('abort', () =>
+          reject(new Error(`aborted ${TOKEN}`)),
+        ),
+      )) as unknown as typeof fetch;
+    const sink = new GitHubChangeSink({
+      token: TOKEN,
+      owner: 'acme',
+      repo: 'shop',
+      allowedPrefixes: ['changes/'],
+      fetch: hang,
+      timeoutMs: 20,
+    });
+    const r = await failure(sink.publish(change));
+    expect(r.code).toBe('publish.host-unreachable');
+    expect(r.message).not.toContain(TOKEN);
+  });
+
+  test('a timeout during pull request creation still deletes the branch', async () => {
+    const fake = createFakeGitHost({ owner: 'acme', repo: 'shop', token: TOKEN });
+    const sink = new GitHubChangeSink({
+      token: TOKEN,
+      owner: 'acme',
+      repo: 'shop',
+      allowedPrefixes: ['changes/'],
+      timeoutMs: 50,
+      fetch: ((u: string, init?: RequestInit) =>
+        u.endsWith('/pulls')
+          ? new Promise((_, reject) =>
+              init?.signal?.addEventListener('abort', () =>
+                reject(new Error('aborted')),
+              ),
+            )
+          : fake.fetch(u, init)) as typeof fetch,
+    });
+    const r = await failure(sink.publish(change));
+    expect(r.code).toBe('publish.host-unreachable');
+    expect(r.message).toContain('was removed');
+    expect(fake.refs.has('heads/changes/0007-refund-window')).toBe(false);
+  });
+
   test('neutralizes @ mentions in title, body and commit message and caps lengths', async () => {
     const { fake, sink } = setup();
     await sink.publish({
@@ -245,6 +316,10 @@ describe('GitHubChangeSink', () => {
     'changes/.gitmodules',
     'changes/sub/.GitAttributes',
     'changes/.github/workflows/ci.yml',
+    'changes/.git./config',
+    'changes/.git /config',
+    'changes/.github./x.yml',
+    'changes/.GIT../config',
   ])('refuses the git-sensitive path %j', async (path) => {
     const { fake, sink } = setup();
     const files = [{ path, content: 'x' }];
