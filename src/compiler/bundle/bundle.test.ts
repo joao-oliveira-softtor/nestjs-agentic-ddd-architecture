@@ -19,6 +19,7 @@ import {
   shopRepo as sharedShopRepo,
 } from '../../../test/helpers/shop-repo';
 import { compileBundle } from './index';
+import { neutralLeaks } from './neutral-testkit';
 
 const ROOT = resolve(import.meta.dir, '../../..');
 const dirs: string[] = [];
@@ -68,6 +69,49 @@ describe('compileBundle on the shop project', () => {
       JSON.parse(file('bundle.json').replaceAll(repo.ref, '<baseRef>')),
     ).toMatchSnapshot('bundle.json');
     expect(bundle.files.map((f) => f.path)).toMatchSnapshot('paths');
+  }, 120_000);
+
+  test('the neutral layer is free of TypeScript, covers every invariant and is hashed', async () => {
+    const bundle = await compileBundle(input());
+    const neutral = bundle.files.filter((f) => f.path.startsWith('neutral/'));
+    expect(neutral.map((f) => f.path)).toContain('neutral/model.json');
+    expect(neutralLeaks(neutral)).toEqual([]);
+    const model = JSON.parse(
+      neutral.find((f) => f.path === 'neutral/model.json')!.content,
+    );
+    expect(model.invariants.length).toBeGreaterThan(0);
+    for (const inv of model.invariants)
+      expect(inv.examples.length).toBeGreaterThan(0);
+    for (const f of neutral)
+      expect(bundle.manifest.files.map((x) => x.path)).toContain(f.path);
+    expect(bundle.manifest.layers.neutral.briefs.length).toBe(
+      bundle.manifest.layers.target.items.length,
+    );
+    expect(bundle.files.find((f) => f.path === 'BUNDLE.md')!.content).toContain(
+      'only the target layer is certified',
+    );
+  }, 120_000);
+
+  test('the neutral layer of an addition holds only the added members of the existing entity', async () => {
+    const bundle = await compileBundle(input());
+    const model = JSON.parse(
+      bundle.files.find((f) => f.path === 'neutral/model.json')!.content,
+    );
+    expect(model.entities).toHaveLength(1);
+    const order = model.entities[0];
+    expect(order.name).toBe('Order');
+    expect(order.existing).toBe(true);
+    expect(order.methods.map((m: { name: string }) => m.name)).toEqual(['refund']);
+    expect(order.invariants).toEqual(['invariant:Order/paid-once']);
+    expect(model.transitions).toEqual([
+      { entity: 'Order', method: 'refund', from: ['paid'], to: 'open' },
+    ]);
+  }, 120_000);
+
+  test('the neutral layer is a snapshot on the shop project', async () => {
+    const bundle = await compileBundle(input());
+    const neutral = bundle.files.filter((f) => f.path.startsWith('neutral/'));
+    expect(neutral).toMatchSnapshot('neutral');
   }, 120_000);
 
   test('the same Delta on the same base gives a byte-identical bundle and hash', async () => {

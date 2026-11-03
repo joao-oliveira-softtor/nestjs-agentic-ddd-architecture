@@ -12,6 +12,11 @@ const input = {
       items: [],
       skeleton: [],
     },
+    neutral: {
+      model: 'neutral/model.json',
+      readme: 'neutral/README.md',
+      briefs: [],
+    },
   },
   examples: [],
 };

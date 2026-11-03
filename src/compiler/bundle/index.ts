@@ -7,8 +7,9 @@ import { DEFAULT_CONVENTIONS } from '../conventions';
 import { AgenticError, toPosix } from '../ir';
 import { parseLock, type DomainLock } from '../lock';
 import { renderDelta, type RenderResult } from '../delta/render';
-import { validateDelta } from '../delta/schema';
+import { validateDelta, type Delta } from '../delta/schema';
 import { splice, type Fragment } from '../delta/splice';
+import { parseProposal } from '../changes/proposal';
 import { analysisSchema, type CandidateAnalysis } from './analysis';
 import {
   DEFAULT_TIMEOUT_MS,
@@ -18,6 +19,7 @@ import {
   runCandidateCli,
   withWorktree,
 } from './candidate';
+import { buildNeutral, type NeutralBuild } from './neutral';
 import {
   buildManifest,
   byPath,
@@ -32,6 +34,7 @@ export {
   BUNDLE_VERSION,
   type BundleFile,
   type BundleManifest,
+  type NeutralLayer,
   type TargetItem,
   type TargetLayer,
 } from './manifest';
@@ -134,7 +137,10 @@ async function loadBase(dir: string, delta: unknown): Promise<Base> {
   };
 }
 
-type Rendered = Extract<RenderResult, { ok: true }>;
+/** The render result plus the validated Delta it came from, which the neutral layer reads. */
+type Rendered = Extract<RenderResult, { ok: true }> & {
+  readonly delta: Delta;
+};
 
 /** One source of truth: the base commit (lock, conventions, `changes/`), never the working copy. */
 async function renderOnBase(delta: unknown, base: Base): Promise<Rendered> {
@@ -157,7 +163,7 @@ async function renderOnBase(delta: unknown, base: Base): Promise<Rendered> {
       'bundle.delta-invalid',
       `the Delta does not render against the base: ${quote(JSON.stringify(rendered.errors), 4000)}`,
     );
-  return rendered;
+  return { ...rendered, delta: checked.delta };
 }
 
 async function extendFile(
@@ -313,6 +319,34 @@ function itemEntries(analysis: CandidateAnalysis): {
   return { items, files };
 }
 
+/**
+ * The neutral files from the validated Delta and the numbered proposal, read back through the strict
+ * parser: the proposal was just written by us, so a parse error is the caller's invalid proposal.
+ */
+function neutralLayer(
+  rendered: Rendered,
+  proposal: NumberedProposal,
+  items: readonly TargetItem[],
+): NeutralBuild {
+  const dir = `${proposal.id}-${proposal.slug}`;
+  const parsed = parseProposal(
+    proposal.markdown,
+    dir,
+    `${dir}/proposal.md`,
+    false,
+  );
+  if (!parsed.proposal)
+    throw new AgenticError(
+      'bundle.proposal-invalid',
+      `the proposal is invalid: ${quote(parsed.errors.map((e) => e.message).join('; '), 500)}`,
+    );
+  return buildNeutral({
+    delta: rendered.delta,
+    acceptance: parsed.proposal.acceptance,
+    items: items.map(({ id, layer, wave }) => ({ id, layer, wave })),
+  });
+}
+
 /** The manifest, its hash and every file, from what the candidate produced. */
 async function assemble(parts: {
   baseRef: string;
@@ -324,6 +358,7 @@ async function assemble(parts: {
   const { base, rendered, proposal, analysis } = parts;
   const skeleton = await skeletonFiles(base, rendered);
   const entries = itemEntries(analysis);
+  const neutral = neutralLayer(rendered, proposal, entries.items);
   const files = [
     ...skeleton.files,
     lf(
@@ -332,6 +367,7 @@ async function assemble(parts: {
     ),
     ...(await devSkillFiles(base)),
     ...entries.files,
+    ...neutral.files.map((f) => lf(f.path, f.content)),
   ];
   const manifest = buildManifest(
     {
@@ -343,6 +379,11 @@ async function assemble(parts: {
           waves: analysis.waves,
           items: entries.items,
           skeleton: skeleton.skeleton,
+        },
+        neutral: {
+          model: 'neutral/model.json',
+          readme: 'neutral/README.md',
+          briefs: neutral.briefs,
         },
       },
       examples: rendered.examples,
