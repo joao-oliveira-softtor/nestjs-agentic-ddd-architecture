@@ -621,6 +621,7 @@ describe('validateDelta boundaries', () => {
 });
 
 describe('additions to existing items', () => {
+// eslint-disable-next-line unicorn/no-thenable
   const ex = () => [{ given: 'g', when: 'w', then: 't' }];
   const base = {
     irVersion: 1,
@@ -710,6 +711,7 @@ describe('additions to existing items', () => {
   test('example strings are capped and non-empty, and unknown keys fail', () => {
     const d = addition();
     d.entityAdditions![0]!.invariants[0]!.examples = [
+// eslint-disable-next-line unicorn/no-thenable
       { given: 'x'.repeat(LIMITS.exampleText + 1), when: ' ', then: 't' },
     ];
     const paths = errorsOf(d, base).map((e) => e.path);

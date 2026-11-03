@@ -167,6 +167,100 @@ describe('splice', () => {
     expect(refused(source, fragment).code as string).toBe(code);
   });
 
+  test('keeps a CRLF file pure CRLF across every kind of insertion', () => {
+    const crlf = ENTITY.replace(/\n/g, '\r\n');
+    const out = ok(crlf, { ...member, appended: ['export const z = 1;'] });
+    expect(out.replace(/\r\n/g, '')).not.toContain('\n');
+    expect(out).toContain("@Invariant({ id: 'x', text: 'y' })");
+    const uc = USE_CASE.replace(/\n/g, '\r\n');
+    const arr = ok(uc, {
+      path: 'p',
+      imports: [imp('../domain/order.events', 'OrderRefunded')],
+      target: { kind: 'use-case', name: 'pay_order' },
+      arrays: [{ property: 'emits', elements: ['OrderRefunded'] }],
+    });
+    expect(arr.replace(/\r\n/g, '')).not.toContain('\n');
+    expect(arr).toContain('emits: [OrderRefunded],');
+  });
+
+  test('keeps a leading BOM and leaves LF files LF', () => {
+    const out = ok(`\uFEFF${ENTITY}`, member);
+    expect(out.startsWith('\uFEFFimport')).toBe(true);
+    expect(ok(ENTITY, member)).not.toContain('\r');
+  });
+
+  test('refuses to append a declaration that already exists (also as an import)', () => {
+    const f = (code: string): Fragment => ({
+      path: 'domain/order.events.ts',
+      imports: [],
+      target: null,
+      appended: [code],
+    });
+    const payload = 'const orderPaidPayload = 1;\nexport class OrderPaid {}';
+    expect(refused('const orderPaidPayload = 0;\n', f(payload)).code as string).toBe(
+      'delta.splice-unexpected-shape',
+    );
+    expect(refused('export class OrderPaid {}\n', f(payload)).code as string).toBe(
+      'delta.splice-unexpected-shape',
+    );
+    expect(
+      refused("import { OrderPaid } from './x';\n", f(payload)).code as string,
+    ).toBe('delta.splice-unexpected-shape');
+  });
+
+  test('refuses a decorator that is already on the class (idempotent)', () => {
+    const once = ok(ENTITY, member);
+    expect(refused(once, member).code as string).toBe('delta.splice-unexpected-shape');
+  });
+
+  test('keeps comments and multiline layout of a host import', () => {
+    const src = `import {\n  // keep me\n  AggregateRoot, // trailing\n} from '@agentic-ddd/core';\n${ENTITY.split('\n').slice(1).join('\n')}`;
+    const out = ok(src, { ...member, imports: [imp('@agentic-ddd/core', 'notImplemented')] });
+    expect(out).toContain(
+      "import {\n  // keep me\n  AggregateRoot, notImplemented, // trailing\n} from '@agentic-ddd/core';",
+    );
+  });
+
+  test('inserts at the sorted position when the list is sorted, appends otherwise', () => {
+    const f = (names: string): string =>
+      ok(`import { ${names} } from '@agentic-ddd/core';\n@AgentEntity({})\nexport class Order {}\n`, {
+        path: 'p',
+        imports: [imp('@agentic-ddd/core', 'Bravo')],
+        target: null,
+      });
+    expect(f('Alpha, Charlie')).toContain('{ Alpha, Bravo, Charlie }');
+    expect(f('Charlie, Alpha')).toContain('{ Charlie, Alpha, Bravo }');
+  });
+
+  test('puts new imports after a shebang and header comment when there are none', () => {
+    const out = ok(`#!/usr/bin/env bun\n// header\n@AgentEntity({})\nexport class Order {}\n`, {
+      ...member,
+      imports: [imp('@agentic-ddd/core', 'notImplemented')],
+      classDecorators: [],
+      members: [],
+    });
+    expect(out.startsWith('#!/usr/bin/env bun\n// header\nimport {')).toBe(true);
+  });
+
+  test('refuses a syntactically broken file', () => {
+    expect(refused('export class Order { foo( }\n', member).code as string).toBe(
+      'delta.splice-unexpected-shape',
+    );
+  });
+
+  test('keeps a trailing comment before the closing brace, byte for byte', () => {
+    const src = "@AgentEntity({})\nexport class Order {\n  a = 1;\n  // trailing\n}\n";
+    const out = ok(src, { ...member, imports: [], classDecorators: [] });
+    expect(out).toContain('  a = 1;\n  // trailing\n\n  @AgentMethod');
+  });
+
+  test('handles `export default class` and preserves decorators with arguments', () => {
+    const src = "@AgentEntity({ description: 'A, b' })\n@Other(1, 'x')\nexport default class Order {}\n";
+    const out = ok(src, { ...member, imports: [], classDecorators: [] });
+    expect(out.startsWith("@AgentEntity({ description: 'A, b' })\n@Other(1, 'x')\nexport default class Order {")).toBe(true);
+    expect(out).toContain('refund(): void');
+  });
+
   test('never touches the source on refusal', () => {
     const r = splice('export class Other {}\n', member);
     expect(r.ok).toBe(false);

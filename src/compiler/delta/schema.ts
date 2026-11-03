@@ -51,6 +51,7 @@ const exampleText = text.refine(
 const example = z.strictObject({
   given: exampleText,
   when: exampleText,
+  // eslint-disable-next-line unicorn/no-thenable
   then: exampleText,
 });
 // Every new invariant carries acceptance examples (ADR-0007 D10); they ride in the neutral layer.

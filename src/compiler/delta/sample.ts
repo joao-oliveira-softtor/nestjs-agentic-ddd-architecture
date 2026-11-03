@@ -17,6 +17,7 @@ export function sampleDelta(): Delta {
               {
                 given: 'a product',
                 when: 'its price is zero',
+                // eslint-disable-next-line unicorn/no-thenable
                 then: 'it is rejected',
               },
             ],
@@ -50,6 +51,7 @@ export function sampleDelta(): Delta {
                   {
                     given: 'a draft product without stock',
                     when: 'it is published',
+                    // eslint-disable-next-line unicorn/no-thenable
                     then: 'publishing is refused',
                   },
                 ],

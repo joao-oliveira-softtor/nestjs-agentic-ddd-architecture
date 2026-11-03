@@ -77,21 +77,19 @@ export function splice(source: string, fragment: Fragment): SpliceResult {
       true,
       ts.ScriptKind.TS,
     );
-    const parseDiagnostics = (
-      file as unknown as { parseDiagnostics: readonly unknown[] }
-    ).parseDiagnostics;
-    if (parseDiagnostics.length > 0)
+    // transpileModule reports syntactic diagnostics through the public API.
+    const syntax = ts.transpileModule(source, {
+      fileName: 'target.ts',
+      reportDiagnostics: true,
+    }).diagnostics;
+    if ((syntax ?? []).length > 0)
       unexpected(`${fragment.path} does not parse as TypeScript`);
+    const eol = dominantEol(source);
     const edits = [
       ...importEdits(file, fragment.imports),
       ...targetEdits(file, source, fragment),
-    ];
-    if ((fragment.appended ?? []).length > 0)
-      edits.push({
-        start: source.length,
-        end: source.length,
-        text: `${source.endsWith('\n') ? '' : '\n'}\n${fragment.appended!.join('\n\n')}\n`,
-      });
+      ...appendEdits(file, source, fragment),
+    ].map((e) => ({ ...e, text: e.text.replace(/\r?\n/g, eol) }));
     // Applied from the end so earlier offsets stay valid; ties keep their creation order.
     const ordered = edits
       .map((e, i) => ({ e, i }))
@@ -105,6 +103,48 @@ export function splice(source: string, fragment: Fragment): SpliceResult {
       return { ok: false, error: { code: e.code, message: e.message } };
     throw e;
   }
+}
+
+// Inserted text is built with "\n"; it takes the file's dominant EOL so CRLF files stay pure CRLF.
+const dominantEol = (source: string): string => {
+  const crlf = source.split('\r\n').length - 1;
+  const lf = source.split('\n').length - 1 - crlf;
+  return crlf > lf ? '\r\n' : '\n';
+};
+
+function appendEdits(
+  file: ts.SourceFile,
+  source: string,
+  fragment: Fragment,
+): Edit[] {
+  const blocks = fragment.appended ?? [];
+  if (blocks.length === 0) return [];
+  const text = blocks.join('\n\n');
+  const mine = ts.createSourceFile(
+    'appended.ts',
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const taken = new Set(file.statements.flatMap(declaredNames));
+  for (const st of file.statements.filter(ts.isImportDeclaration)) {
+    const c = st.importClause;
+    if (c?.name) taken.add(c.name.text);
+    const nb = c?.namedBindings;
+    if (nb && ts.isNamespaceImport(nb)) taken.add(nb.name.text);
+    if (nb && ts.isNamedImports(nb))
+      for (const el of nb.elements) taken.add(el.name.text);
+  }
+  for (const name of mine.statements.flatMap(declaredNames))
+    if (taken.has(name))
+      unexpected(`${name} is already declared in ${fragment.path}`);
+  return [
+    {
+      start: source.length,
+      end: source.length,
+      text: `${source.endsWith('\n') ? '' : '\n'}\n${text}\n`,
+    },
+  ];
 }
 
 function importEdits(
@@ -157,7 +197,6 @@ function importEdits(
   const fresh: string[] = [];
   const render = (i: FragmentImport): string =>
     i.typeOnly ? `type ${i.name}` : i.name;
-  const bare = (n: string): string => n.replace(/^type /, '');
   for (const spec of [...pending.keys()].sort(cmp)) {
     const adds = pending.get(spec)!;
     const host = decls.find(
@@ -170,15 +209,35 @@ function importEdits(
     );
     if (host) {
       const named = host.importClause!.namedBindings as ts.NamedImports;
-      const names = [
-        ...named.elements.map((el) => el.getText()),
-        ...adds.map(render),
-      ].sort((a, b) => cmp(bare(a), bare(b)));
-      edits.push({
-        start: named.getStart(),
-        end: named.end,
-        text: `{ ${names.join(', ')} }`,
-      });
+      const els = named.elements;
+      if (els.length === 0)
+        edits.push({
+          start: named.getStart(),
+          end: named.end,
+          text: `{ ${adds.map(render).join(', ')} }`,
+        });
+      else {
+        // Existing elements are never rewritten (comments and layout stay). If the list is already
+        // sorted, each new specifier goes at its sorted position; otherwise it is appended last.
+        const sorted = els.every(
+          (el, i) => i === 0 || cmp(els[i - 1]!.name.text, el.name.text) <= 0,
+        );
+        const lastEnd = els.at(-1)!.end;
+        for (const a of adds) {
+          const next = sorted
+            ? els.find((el) => cmp(a.name, el.name.text) < 0)
+            : undefined;
+          edits.push(
+            next
+              ? {
+                  start: next.getStart(),
+                  end: next.getStart(),
+                  text: `${render(a)}, `,
+                }
+              : { start: lastEnd, end: lastEnd, text: `, ${render(a)}` },
+          );
+        }
+      }
     } else
       fresh.push(
         `import { ${adds.map(render).join(', ')} } from ${quote(spec)};`,
@@ -189,7 +248,11 @@ function importEdits(
     edits.push(
       last
         ? { start: last.end, end: last.end, text: `\n${fresh.join('\n')}` }
-        : { start: 0, end: 0, text: `${fresh.join('\n')}\n\n` },
+        : (() => {
+            // Leading comments, a shebang and the BOM stay above the new imports.
+            const at = file.statements[0]?.getStart(file) ?? file.end;
+            return { start: at, end: at, text: `${fresh.join('\n')}\n\n` };
+          })(),
     );
   }
   return edits;
@@ -199,22 +262,23 @@ function importEdits(
 const quote = (s: string): string =>
   `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 
-function declaresName(node: ts.Statement, name: string): boolean {
+const declaresName = (node: ts.Statement, name: string): boolean =>
+  declaredNames(node).includes(name);
+
+function declaredNames(node: ts.Statement): string[] {
   if (
-    (ts.isClassDeclaration(node) ||
-      ts.isFunctionDeclaration(node) ||
-      ts.isInterfaceDeclaration(node) ||
-      ts.isTypeAliasDeclaration(node) ||
-      ts.isEnumDeclaration(node)) &&
-    node.name?.text === name
+    ts.isClassDeclaration(node) ||
+    ts.isFunctionDeclaration(node) ||
+    ts.isInterfaceDeclaration(node) ||
+    ts.isTypeAliasDeclaration(node) ||
+    ts.isEnumDeclaration(node)
   )
-    return true;
-  return (
-    ts.isVariableStatement(node) &&
-    node.declarationList.declarations.some(
-      (d) => ts.isIdentifier(d.name) && d.name.text === name,
-    )
-  );
+    return node.name ? [node.name.text] : [];
+  if (ts.isVariableStatement(node))
+    return node.declarationList.declarations.flatMap((d) =>
+      ts.isIdentifier(d.name) ? [d.name.text] : [],
+    );
+  return [];
 }
 
 function targetEdits(
@@ -289,6 +353,11 @@ function decoratorEdits(cls: ts.ClassDeclaration, fragment: Fragment): Edit[] {
   const last = ts.getDecorators(cls)?.at(-1);
   if (!last)
     return missing(`class ${cls.name?.text} has no decorator to anchor on`);
+  const norm = (t: string): string => t.replace(/\s+/g, ' ').trim();
+  const have = new Set(ts.getDecorators(cls)!.map((d) => norm(d.getText())));
+  for (const d of add)
+    if (have.has(norm(d)))
+      unexpected(`class ${cls.name?.text} already has the decorator ${d}`);
   return [{ start: last.end, end: last.end, text: `\n${add.join('\n')}` }];
 }
 

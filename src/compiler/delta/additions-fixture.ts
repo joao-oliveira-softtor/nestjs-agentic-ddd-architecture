@@ -4,6 +4,7 @@ import { renderDelta, type RenderedFile } from './render';
 import type { Delta } from './schema';
 import { splice, type Fragment } from './splice';
 
+// eslint-disable-next-line unicorn/no-thenable
 const ex = () => [{ given: 'g', when: 'w', then: 't' }];
 
 /** A module with one entity, one event and one use-case, to be extended by `additionDelta`. */
@@ -126,6 +127,7 @@ export function additionDelta(text = 'Refunds a paid order.'): Delta {
           {
             id: 'paid-once',
             text,
+            // eslint-disable-next-line unicorn/no-thenable
             examples: [{ given: text, when: text, then: text }],
           },
         ],
