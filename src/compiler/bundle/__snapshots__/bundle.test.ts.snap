@@ -7,8 +7,8 @@ A skeleton, per-item packets and the module skill for one proposed change, compi
 
 - Bundle version: 1
 - Base ref: \`<baseRef>\`
-- Base lock hash: \`f47d040f330b5b97d592802184a151ed32d4e84f581cb0a7b80bf2538598db4e\`
-- Bundle hash: \`de28c57be1292e2844d44adc916f5051bf65c9a7336081f5e55e66f4368a1d05\`
+- Base lock hash: \`99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc\`
+- Bundle hash: \`787a1bf76a6fe8f7b523ab25c609a8c0d9900ab801566f24ddcb444a09ba0101\`
 
 ## Apply the bundle
 
@@ -50,7 +50,7 @@ Finish every item of a wave before the next. A task is complete only when \`veri
 
 exports[`compileBundle on the shop project returns the bundle, its manifest and BUNDLE.md as a snapshot: bundle.json 1`] = `
 {
-  "baseLockHash": "f47d040f330b5b97d592802184a151ed32d4e84f581cb0a7b80bf2538598db4e",
+  "baseLockHash": "99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc",
   "baseRef": "<baseRef>",
   "examples": [
     {
@@ -108,7 +108,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "3b9e9284f7c4b4076ec457d52e840e0d24800d99192d2edae572764b8a6c83a8",
     },
   ],
-  "hash": "de28c57be1292e2844d44adc916f5051bf65c9a7336081f5e55e66f4368a1d05",
+  "hash": "787a1bf76a6fe8f7b523ab25c609a8c0d9900ab801566f24ddcb444a09ba0101",
   "layers": {
     "target": {
       "items": [
