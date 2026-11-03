@@ -4,6 +4,12 @@ import { basename, dirname, join, resolve } from 'node:path';
 import ts from 'typescript';
 import { analyzeProject } from '../compile';
 import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../conventions';
+import {
+  additionDelta,
+  BASE_FILES,
+  baseIR,
+  spliceScenario,
+} from './additions-fixture';
 import { literal, renderDelta } from './render';
 import { sampleDelta } from './sample';
 import type { Delta } from './schema';
@@ -298,5 +304,123 @@ export default defineConfig({ root: '../..', modules: [{ name: 'shop', path: '${
       'event:ProductCreated',
       'event:ProductPublished',
     ]);
+  });
+});
+
+describe('additions to existing items', () => {
+  const run = (delta: Delta = additionDelta()) => {
+    const r = renderDelta(delta, {
+      conventions,
+      base: baseIR(),
+      existingFiles: BASE_FILES,
+    });
+    if (!r.ok) throw new Error(JSON.stringify(r.errors));
+    return r;
+  };
+
+  test('emits fragments for the existing files and never re-renders them', () => {
+    const r = run();
+    expect(r.files).toEqual([]);
+    expect(r.fragments.map((f) => f.path)).toEqual([
+      'application/pay-order.ts',
+      'domain/order.events.ts',
+      'domain/order.ts',
+    ]);
+  });
+
+  test('is byte-identical across runs and input order', () => {
+    const a = additionDelta();
+    const b = additionDelta();
+    b.entityAdditions![0]!.methods.push({
+      name: 'archive',
+      description: 'Archives.',
+      params: [],
+      returns: 'void',
+    });
+    a.entityAdditions![0]!.methods.unshift(
+      structuredClone(b.entityAdditions![0]!.methods[1]!),
+    );
+    const reordered = structuredClone(b);
+    reordered.entityAdditions![0]!.methods.reverse();
+    expect(JSON.stringify(run(b))).toBe(JSON.stringify(run(reordered)));
+    expect(JSON.stringify(run(a))).toBe(JSON.stringify(run(a)));
+  });
+
+  test('the spliced files keep hand-written bodies and read as the renderer would', () => {
+    const { base, spliced } = spliceScenario();
+    const order = spliced.find((f) => f.path === 'domain/order.ts')!.content;
+    const before = base.find((f) => f.path === 'domain/order.ts')!.content;
+    expect(order).toContain(
+      "pay(): void {\n    return notImplemented();\n  }\n\n  @AgentMethod",
+    );
+    expect(order.length).toBeGreaterThan(before.length);
+    expect(order).toContain('refund(reason?: string): void');
+  });
+
+  test('lists the examples of every new invariant, in the neutral layer only', () => {
+    const r = run();
+    expect(r.examples.map((e) => e.invariant)).toEqual([
+      'invariant:Order/paid-once',
+      'invariant:Order/refund-needs-paid',
+    ]);
+    for (const f of r.fragments)
+      expect(JSON.stringify(f)).not.toContain('"given"');
+  });
+
+  const hostile = [
+    "'); process.exit(); ('",
+    '${1+1}',
+    'a`b`',
+    'a\u2028\u2029b',
+    '\u202eRTL\u200b',
+    '*/ evil /*',
+    '\\',
+  ];
+  test.each(hostile.map((h) => [h.slice(0, 20), h] as const))(
+    'a hostile client string %j stays one escaped literal after splicing',
+    (_t, h) => {
+      const { spliced } = spliceScenario(additionDelta(h));
+      for (const f of spliced) {
+        const file = parse(f.content);
+        expect(
+          (file as unknown as { parseDiagnostics: unknown[] }).parseDiagnostics,
+        ).toHaveLength(0);
+        const found: string[] = [];
+        const visit = (n: ts.Node): void => {
+          if (ts.isStringLiteral(n)) found.push(n.text);
+          ts.forEachChild(n, visit);
+        };
+        visit(file);
+        // Every statement is still a declaration: nothing leaked out of a literal.
+        expect(
+          file.statements.every(
+            (s) =>
+              ts.isImportDeclaration(s) ||
+              ts.isClassDeclaration(s) ||
+              ts.isVariableStatement(s) ||
+              ts.isTypeAliasDeclaration(s),
+          ),
+        ).toBe(true);
+        if (f.path === 'domain/order.ts') expect(found).toContain(h);
+      }
+    },
+  );
+
+  test('refuses to redeclare an existing member or to touch an unknown entity', () => {
+    const d = additionDelta();
+    d.entityAdditions![0]!.methods[0]!.name = 'pay';
+    const r = renderDelta(d, {
+      conventions,
+      base: baseIR(),
+      existingFiles: BASE_FILES,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok)
+      expect(r.errors).toContainEqual(
+        expect.objectContaining({
+          code: 'delta.name-collision',
+          path: 'entityAdditions[0].methods[0].name',
+        }),
+      );
   });
 });

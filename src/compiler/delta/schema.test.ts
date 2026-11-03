@@ -165,7 +165,7 @@ describe('validateDelta', () => {
     );
   });
 
-  test('a collision with the base says additions to existing items are not supported yet', () => {
+  test('a collision with the base says removing or renaming existing items is not supported', () => {
     const base = {
       irVersion: 1,
       modules: [],
@@ -180,9 +180,7 @@ describe('validateDelta', () => {
       (x) => x.code === 'delta.name-collision',
     )!;
     expect(e.path).toBe('entities[0].name');
-    expect(e.message).toContain(
-      'additions to existing items are not supported yet',
-    );
+    expect(e.message).toContain('removing or renaming existing items');
   });
 
   test.each<[string, (d: Delta) => void, ErrorCode]>([
@@ -619,5 +617,126 @@ describe('validateDelta boundaries', () => {
         },
       ]);
     });
+  });
+});
+
+describe('additions to existing items', () => {
+  const ex = () => [{ given: 'g', when: 'w', then: 't' }];
+  const base = {
+    irVersion: 1,
+    modules: [{ name: 'shop', path: 'src/shop' }],
+    entities: [
+      {
+        id: 'entity:Order',
+        name: 'Order',
+        module: 'shop',
+        states: ['open', 'paid'],
+        invariants: [{ id: 'invariant:Order/has-lines', text: 'x', on: null }],
+        methods: [{ id: 'method:Order.pay', name: 'pay' }],
+        source: 'src/shop/domain/order.ts:3',
+      },
+    ],
+    events: [
+      { id: 'event:OrderPaid', name: 'OrderPaid', module: 'shop', source: 'src/shop/domain/order.events.ts:1' },
+    ],
+    useCases: [
+      {
+        id: 'usecase:pay_order',
+        name: 'pay_order',
+        module: 'shop',
+        uses: ['method:Order.pay'],
+        emits: ['event:OrderPaid'],
+        source: 'src/shop/application/pay-order.ts:1',
+      },
+    ],
+    operators: [],
+  } as unknown as IR;
+  const empty = (): Delta => ({
+    module: 'shop',
+    entities: [],
+    valueObjects: [],
+    ports: [],
+    events: [],
+    useCases: [],
+  });
+  const addition = (): Delta => ({
+    ...empty(),
+    entityAdditions: [
+      {
+        entity: 'Order',
+        invariants: [{ id: 'paid-once', text: 'Pay once.', examples: ex() }],
+        methods: [
+          {
+            name: 'refund',
+            description: 'Refunds.',
+            params: [],
+            returns: 'void',
+            transition: { from: ['paid'], to: 'open' },
+            invariants: [{ id: 'refund-needs-paid', text: 'Paid only.', examples: ex() }],
+          },
+        ],
+      },
+    ],
+    useCaseAdditions: [
+      { useCase: 'pay_order', uses: ['method:Order.refund'], emits: [] },
+    ],
+  });
+
+  test('accepts additions to an existing entity and use-case', () => {
+    expect(errorsOf(addition(), base)).toEqual([]);
+  });
+
+  test('a new event may belong to an existing entity', () => {
+    const d = addition();
+    d.events = [{ name: 'OrderRefunded', entity: 'Order', description: 'd', payload: [] }];
+    expect(errorsOf(d, base)).toEqual([]);
+  });
+
+  test('every new invariant needs at least one example', () => {
+    const d = addition();
+    d.entityAdditions![0]!.invariants[0]!.examples = [];
+    expect(errorsOf(d, base)[0]).toMatchObject({
+      code: 'delta.schema-invalid',
+      path: 'entityAdditions[0].invariants[0].examples',
+    });
+    const s = sampleDelta();
+    delete (s.entities[0]!.invariants[0] as { examples?: unknown }).examples;
+    expect(errorsOf(s)[0]).toMatchObject({
+      code: 'delta.schema-invalid',
+      path: 'entities[0].invariants[0].examples',
+    });
+  });
+
+  test('example strings are capped and non-empty, and unknown keys fail', () => {
+    const d = addition();
+    d.entityAdditions![0]!.invariants[0]!.examples = [
+      { given: 'x'.repeat(LIMITS.exampleText + 1), when: ' ', then: 't' },
+    ];
+    const paths = errorsOf(d, base).map((e) => e.path);
+    expect(paths).toContain('entityAdditions[0].invariants[0].examples[0].given');
+    expect(paths).toContain('entityAdditions[0].invariants[0].examples[0].when');
+    const e = addition();
+    (e.entityAdditions![0]!.invariants[0]!.examples[0] as Record<string, unknown>).extra = 1;
+    expect(errorsOf(e, base)[0]!.code).toBe('delta.schema-invalid');
+  });
+
+  test.each<[string, (d: Delta) => void, ErrorCode, string]>([
+    ['an unknown entity', (d) => (d.entityAdditions![0]!.entity = 'Nope'), 'delta.reference-unknown', 'entityAdditions[0].entity'],
+    ['an existing method', (d) => (d.entityAdditions![0]!.methods[0]!.name = 'pay'), 'delta.name-collision', 'entityAdditions[0].methods[0].name'],
+    ['an existing invariant', (d) => (d.entityAdditions![0]!.invariants[0]!.id = 'has-lines'), 'delta.name-collision', 'entityAdditions[0].invariants[0].id'],
+    ['an unknown state', (d) => (d.entityAdditions![0]!.methods[0]!.transition!.to = 'gone'), 'delta.reference-unknown', 'entityAdditions[0].methods[0].transition.to'],
+    ['a removal-like field', (d) => ((d.entityAdditions![0] as Record<string, unknown>).removeMethods = ['pay']), 'delta.schema-invalid', 'entityAdditions[0]'],
+    ['a rename-like field', (d) => ((d.entityAdditions![0]!.methods[0] as Record<string, unknown>).renameTo = 'x'), 'delta.schema-invalid', 'entityAdditions[0].methods[0]'],
+    ['a duplicate entity entry', (d) => d.entityAdditions!.push(structuredClone(d.entityAdditions![0]!)), 'delta.name-collision', 'entityAdditions[1].entity'],
+    ['an unknown use-case', (d) => (d.useCaseAdditions![0]!.useCase = 'nope'), 'delta.reference-unknown', 'useCaseAdditions[0].useCase'],
+    ['a use already on the use-case', (d) => (d.useCaseAdditions![0]!.uses = ['method:Order.pay']), 'delta.name-collision', 'useCaseAdditions[0].uses[0]'],
+    ['an emit already on the use-case', (d) => (d.useCaseAdditions![0]!.emits = ['OrderPaid']), 'delta.name-collision', 'useCaseAdditions[0].emits[0]'],
+    ['an unknown emit', (d) => (d.useCaseAdditions![0]!.emits = ['Ghost']), 'delta.reference-unknown', 'useCaseAdditions[0].emits[0]'],
+    ['an unknown use', (d) => (d.useCaseAdditions![0]!.uses = ['method:Order.ghost']), 'delta.reference-unknown', 'useCaseAdditions[0].uses[0]'],
+    ['an event of an unknown entity', (d) => (d.events = [{ name: 'X', entity: 'Ghost', description: 'd', payload: [] }]), 'delta.reference-unknown', 'events[0].entity'],
+  ])('rejects %s', (_t, mutate, code, path) => {
+    const d = addition();
+    mutate(d);
+    expect(errorsOf(d, base)).toContainEqual(expect.objectContaining({ code, path }));
   });
 });

@@ -10,7 +10,17 @@ export function sampleDelta(): Delta {
         description: 'A product of the catalog.',
         states: ['draft', 'published'],
         invariants: [
-          { id: 'price-positive', text: 'The price is above zero.' },
+          {
+            id: 'price-positive',
+            text: 'The price is above zero.',
+            examples: [
+              {
+                given: 'a product',
+                when: 'its price is zero',
+                then: 'it is rejected',
+              },
+            ],
+          },
         ],
         methods: [
           {
@@ -33,7 +43,17 @@ export function sampleDelta(): Delta {
             transition: { from: ['draft'], to: 'published' },
             emits: ['ProductPublished'],
             invariants: [
-              { id: 'publish-needs-stock', text: 'Needs stock to publish.' },
+              {
+                id: 'publish-needs-stock',
+                text: 'Needs stock to publish.',
+                examples: [
+                  {
+                    given: 'a draft product without stock',
+                    when: 'it is published',
+                    then: 'publishing is refused',
+                  },
+                ],
+              },
             ],
           },
         ],

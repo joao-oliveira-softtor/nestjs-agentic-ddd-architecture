@@ -5,6 +5,7 @@ import ts from 'typescript';
 import { analyzeProject } from '../compile';
 import { DEFAULT_CONVENTIONS } from '../conventions';
 import type { IR } from '../ir';
+import { additionDelta, HOSTILE, spliceScenario } from './additions-fixture';
 import { renderDelta, type RenderedFile } from './render';
 import { sampleDelta } from './sample';
 import type { Delta } from './schema';
@@ -296,6 +297,11 @@ const valid: [string, (d: Delta) => void][] = [
   ],
 ];
 
+const spliced: [string, Delta][] = [
+  ['additions spliced into an existing module', additionDelta()],
+  ['hostile client strings in spliced additions', additionDelta(HOSTILE)],
+];
+
 const written: string[] = [];
 afterAll(async () => {
   for (const dir of written) await rm(dir, { recursive: true, force: true });
@@ -361,6 +367,11 @@ describe('renderDelta output type-checks and passes the validator', () => {
       if (!r.ok) throw new Error(`${title}: ${JSON.stringify(r.errors)}`);
       cases.push({ title, files: r.files, ...(await project(r.files)) });
     }
+    // Spliced files (additions to existing files) join the same batched program.
+    for (const [title, delta] of spliced) {
+      const files = spliceScenario(delta).spliced;
+      cases.push({ title, files, ...(await project(files)) });
+    }
     const diagnostics = semanticDiagnostics(cases);
     for (const [i, c] of cases.entries()) {
       const { errors } = await analyzeProject({ configPath: c.configPath });
@@ -368,7 +379,7 @@ describe('renderDelta output type-checks and passes the validator', () => {
     }
   }, 120_000);
 
-  test.each(valid.map(([title]) => [title] as const))('%s', (title) => {
+  test.each([...valid.map(([title]) => title), ...spliced.map(([t]) => t)].map((t) => [t] as const))('%s', (title) => {
     expect(results.get(title)).toEqual({ diagnostics: [], errors: [] });
   });
 });
