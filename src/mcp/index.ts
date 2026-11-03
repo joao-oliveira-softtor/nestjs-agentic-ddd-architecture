@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
+import { compileBundle } from '../compiler/bundle/index';
+import { validateDelta } from '../compiler/delta/schema';
 import { moduleAccess, type ModuleAccess } from '../auth/scopes';
 import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
@@ -33,6 +35,9 @@ import { changes, element, overview, rulesForPath } from './tools';
 // The scopes the per-module filter narrows: `domain:read` for the domain tools, `skill:read` for the skill documents.
 const CAPABILITY = 'domain:read';
 const SKILL_CAPABILITY = 'skill:read';
+const PROPOSE_CAPABILITY = 'change:propose';
+// Room for a large Delta plus its proposal.md; anything bigger is refused before any work.
+const MAX_PROPOSE_BYTES = 256 * 1024;
 
 // The authoring skill ships next to `src` and `dist`: the same relative path resolves from both.
 const AUTHORING_DIR = fileURLToPath(
@@ -343,6 +348,78 @@ export function createDomainServer(
         return found.content;
       }),
   );
+  server.registerTool(
+    'propose_change',
+    {
+      title: 'Propose a change',
+      description: `${LANGUAGE_RULE} Renders a Delta (the domain change as JSON) onto the served project, compiles it in a temporary worktree and returns the compiled bundle: manifest, hash and files (BUNDLE.md first). The base, conventions and limits are fixed by the server; nothing is stored.`,
+      inputSchema: z.strictObject({
+        delta: z.record(z.string(), z.unknown()),
+        proposal: z
+          .strictObject({ slug: z.string(), markdown: z.string() })
+          .optional(),
+      }),
+      // Stateless: the temporary worktree is gone when the call returns.
+      annotations: { ...annotations, idempotentHint: true },
+    },
+    (
+      args: {
+        delta: Record<string, unknown>;
+        proposal?: { slug: string; markdown: string };
+      },
+      ctx?: Ctx,
+    ) =>
+      respond(async () => {
+        const access = accessOf(ctx, PROPOSE_CAPABILITY);
+        const module = args.delta.module;
+        if (
+          noGrant(access) ||
+          (access !== 'all' &&
+            !(typeof module === 'string' && access.has(module)))
+        )
+          throw new AgenticError(
+            'auth.scope-missing',
+            `the ${PROPOSE_CAPABILITY} scope for the module of the Delta is needed`,
+          );
+        if (Buffer.byteLength(JSON.stringify(args)) > MAX_PROPOSE_BYTES)
+          throw new AgenticError(
+            'mcp.input-too-large',
+            `the input exceeds ${MAX_PROPOSE_BYTES} bytes`,
+          );
+        const s = await scopedFor(ctx, PROPOSE_CAPABILITY);
+        if (s.root === undefined)
+          throw new AgenticError(
+            'mcp.propose-unavailable',
+            'this server serves a published lock; propose_change needs a working copy',
+          );
+        const checked = validateDelta(args.delta, { base: s.fullLock.ir });
+        if (!checked.ok)
+          throw new AgenticError(
+            checked.errors[0]!.code,
+            checked.errors
+              .slice(0, 10)
+              .map((e) => `${e.path}: ${e.message}`)
+              .join('; '),
+          );
+        // The server, not the client, owns the numbering: the next change number of the base lock.
+        const last = Math.max(
+          0,
+          ...s.fullLock.changes
+            .map((c) => Number(c.id))
+            .filter(Number.isInteger),
+        );
+        return compileBundle({
+          delta: checked.delta,
+          baseRoot: s.root,
+          baseRef: 'HEAD',
+          conventions: s.conventions,
+          proposal: args.proposal && {
+            ...args.proposal,
+            id: String(last + 1).padStart(4, '0'),
+          },
+        });
+      }),
+  );
   server.registerResource(
     'skill',
     new ResourceTemplate('skill://{+path}', {
@@ -451,7 +528,7 @@ export async function startMcpHttpServer({
     resource: mcp.resource,
     jwksUri: mcp.jwksUri,
     requiredScopes: [],
-    anyOfScopes: [CAPABILITY, SKILL_CAPABILITY],
+    anyOfScopes: [CAPABILITY, SKILL_CAPABILITY, PROPOSE_CAPABILITY],
   });
   const resource = new URL(mcp.resource);
   const mcpPath = trimSlash(resource.pathname);
