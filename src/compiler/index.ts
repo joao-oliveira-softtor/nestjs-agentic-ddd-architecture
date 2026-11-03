@@ -137,6 +137,7 @@ export {
   type Rule,
 } from './rules';
 export {
+  LIMITS as DELTA_LIMITS,
   deltaSchema,
   literal,
   parseType,

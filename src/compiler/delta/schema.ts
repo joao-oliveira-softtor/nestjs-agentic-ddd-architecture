@@ -130,9 +130,10 @@ export type Delta = z.infer<typeof deltaSchema>;
 
 // Same patterns as validate.ts, plus camelCase for methods, params and fields.
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const SNAKE = /^[a-z][a-z0-9_]{0,63}$/;
-// Stricter than SNAKE: no leading, trailing or doubled underscore, which would give `foo-.ts` and class clashes.
-const USE_CASE = /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/;
+// snake_case, at most 64 characters, no leading, trailing or doubled underscore (`foo-.ts`, class clashes).
+const USE_CASE = /^(?=.{1,64}$)[a-z][a-z0-9]*(_[a-z0-9]+)*$/;
+// Windows reserves these as file names whatever the extension; names are ASCII-only, so no ¹²³ variants.
+const DEVICE = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/;
 const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
 const CAMEL = /^[a-z][A-Za-z0-9]*$/;
 const FIELD = /^[a-z][A-Za-z0-9_]*$/;
@@ -147,7 +148,8 @@ const RESERVED: ReadonlySet<string> = new Set([
     'await async abstract any as asserts bigint boolean constructor declare from get global infer is ' +
     'keyof module namespace never number object of out override readonly require set string symbol ' +
     'type undefined unique unknown arguments eval ' +
-    'Array Boolean Date Error Function Map Number Object Promise Set String Symbol'
+    'Array Boolean Date Error Function Map Number Object Promise Set String Symbol ' +
+    'Reflect NaN Infinity Record Partial Readonly Required Pick Omit'
   ).split(' '),
   ...RENDERER_IMPORT_NAMES,
 ]);
@@ -219,7 +221,12 @@ export function validateDelta(
         .map((i): DeltaError => ({
           code: 'delta.schema-invalid',
           path: pathOf(i.path),
-          message: i.message,
+          message:
+            i.code === 'unrecognized_keys'
+              ? `unrecognized keys: ${i.keys.slice(0, 5).map(show).join(', ')}${
+                  i.keys.length > 5 ? ` and ${i.keys.length - 5} more` : ''
+                }`
+              : i.message,
         }))
         .sort(compareErrors),
     };
@@ -228,6 +235,12 @@ export function validateDelta(
     ? { ok: true, delta: parsed.data }
     : { ok: false, errors };
 }
+
+/** A client string for an error message: quoted, and cut so a hostile value cannot bloat the report. */
+const show = (v: string): string =>
+  JSON.stringify(v.length > 80 ? `${v.slice(0, 80)}...` : v);
+
+const lcFirst = (s: string): string => s[0]!.toLowerCase() + s.slice(1);
 
 function pathOf(path: readonly PropertyKey[]): string {
   return path.reduce<string>(
@@ -251,7 +264,7 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
       add(
         'delta.invalid-identifier',
         path,
-        `${JSON.stringify(value)} is not a valid ${label}`,
+        `${show(value)} is not a valid ${label}`,
       );
   };
   const member = (path: string, value: string, taken: ReadonlySet<string>) => {
@@ -259,7 +272,7 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
       add(
         'delta.invalid-identifier',
         path,
-        `${JSON.stringify(value)} clashes with a built-in or inherited member`,
+        `${show(value)} clashes with a built-in or inherited member`,
       );
   };
 
@@ -285,12 +298,12 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
   ]);
   const claim = (scope: Set<string>, key: string, path: string, id = key) => {
     if (scope.has(key))
-      add('delta.name-collision', path, `${id} is declared twice in the Delta`);
+      add('delta.name-collision', path, `${show(id)} is declared twice in the Delta`);
     else if (baseIds.has(id))
       add(
         'delta.name-collision',
         path,
-        `${id} already exists in the base; additions to existing items are not supported yet`,
+        `${show(id)} already exists in the base; additions to existing items are not supported yet`,
       );
     scope.add(key);
   };
@@ -301,15 +314,25 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
       add(
         'delta.name-collision',
         path,
-        `class ${cls} (${id}) is already declared in this Delta`,
+        `class ${show(cls)} (${show(id)}) is already declared in this Delta`,
       );
     else if (baseClasses.has(cls))
       add(
         'delta.name-collision',
         path,
-        `class ${cls} (${id}) already exists in the base; additions to existing items are not supported yet`,
+        `class ${show(cls)} (${show(id)}) already exists in the base; additions to existing items are not supported yet`,
       );
     classes.add(cls);
+  };
+
+  // Every entity, value object, port and use case becomes a file named after it.
+  const fileName = (path: string, stem: string) => {
+    if (DEVICE.test(stem))
+      add(
+        'delta.invalid-identifier',
+        path,
+        `${show(stem)} is a reserved Windows device name and cannot be a file name`,
+      );
   };
 
   ident('module', delta.module, KEBAB, 'kebab-case module name');
@@ -345,10 +368,10 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
       add(
         'delta.type-invalid',
         path,
-        `${JSON.stringify(source)} is not an allowed type`,
+        `${show(source)} is not an allowed type`,
       );
     else if (leaf?.kind === 'ref' && !typeNames.has(leaf.name))
-      add('delta.reference-unknown', path, `type ${leaf.name} is not declared`);
+      add('delta.reference-unknown', path, `type ${show(leaf.name)} is not declared`);
   };
   const checkFields = (
     path: string,
@@ -379,7 +402,7 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
     const seen = new Set<string>();
     items?.forEach((v, i) => {
       if (seen.has(v))
-        add('delta.name-collision', `${path}[${i}]`, `${v} is listed twice`);
+        add('delta.name-collision', `${path}[${i}]`, `${show(v)} is listed twice`);
       seen.add(v);
     });
   };
@@ -389,13 +412,14 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
         add(
           'delta.reference-unknown',
           `${path}[${i}]`,
-          `event ${ev} is not declared in module ${delta.module}`,
+          `event ${show(ev)} is not declared in module ${show(delta.module)}`,
         );
     });
 
   delta.entities.forEach((entity, ei) => {
     const ep = `entities[${ei}]`;
     ident(`${ep}.name`, entity.name, PASCAL, 'PascalCase entity name');
+    fileName(`${ep}.name`, kebab(entity.name));
     claimClass(entity.name, `${ep}.name`, `entity:${entity.name}`);
     const states = new Set(entity.states ?? []);
     noDuplicates(`${ep}.states`, entity.states);
@@ -441,13 +465,13 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
             add(
               'delta.reference-unknown',
               `${mp}.transition.from[${i}]`,
-              `state ${s} is not declared`,
+              `state ${show(s)} is not declared`,
             );
         if (!states.has(m.transition.to))
           add(
             'delta.reference-unknown',
             `${mp}.transition.to`,
-            `state ${m.transition.to} is not declared`,
+            `state ${show(m.transition.to)} is not declared`,
           );
       }
       checkInvariants(`${mp}.invariants`, m.invariants);
@@ -457,6 +481,7 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
   delta.valueObjects.forEach((vo, vi) => {
     const vp = `valueObjects[${vi}]`;
     ident(`${vp}.name`, vo.name, PASCAL, 'PascalCase value object name');
+    fileName(`${vp}.name`, kebab(vo.name));
     claimClass(vo.name, `${vp}.name`, `valueobject:${vo.name}`);
     checkFields(`${vp}.fields`, vo.fields, FIELD, 'field name');
   });
@@ -464,19 +489,20 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
   delta.ports.forEach((port, i) => {
     const p = `ports[${i}]`;
     ident(`${p}.name`, port.name, PASCAL, 'PascalCase port name');
+    fileName(`${p}.name`, kebab(port.name));
     claimClass(port.name, `${p}.name`, `port:${port.name}`);
     if (!entityNames.has(port.root)) {
       if (!baseEntities.some((e) => e.name === port.root))
         add(
           'delta.reference-unknown',
           `${p}.root`,
-          `entity ${port.root} is not declared in module ${delta.module}`,
+          `entity ${show(port.root)} is not declared in module ${show(delta.module)}`,
         );
       else if (contained.has(`entity:${port.root}`))
         add(
           'delta.reference-unknown',
           `${p}.root`,
-          `entity ${port.root} is not an aggregate root (another entity contains it)`,
+          `entity ${show(port.root)} is not an aggregate root (another entity contains it)`,
         );
     }
     const methods = new Set<string>();
@@ -504,7 +530,7 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
       add(
         'delta.reference-unknown',
         `${p}.entity`,
-        `entity ${ev.entity} is not declared in this Delta`,
+        `entity ${show(ev.entity)} is not declared in this Delta`,
       );
     checkFields(`${p}.payload`, ev.payload, FIELD, 'field name');
   });
@@ -514,14 +540,15 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
     const p = `useCases[${i}]`;
     ident(`${p}.name`, uc.name, USE_CASE, 'snake_case use-case name');
     claim(useCases, uc.name, `${p}.name`, `usecase:${uc.name}`);
-    if (USE_CASE.test(uc.name) && SNAKE.test(uc.name)) {
+    fileName(`${p}.name`, uc.name.replace(/_/g, '-'));
+    if (USE_CASE.test(uc.name)) {
       const cls = pascalOfSnake(uc.name);
       // The class is declared next to what the file imports, so it must not shadow any of it.
       if (RESERVED.has(cls))
         add(
           'delta.invalid-identifier',
           `${p}.name`,
-          `class ${cls} would shadow a name the generated file uses`,
+          `class ${show(cls)} would shadow a name the generated file uses`,
         );
       else claimClass(cls, `${p}.name`, `usecase:${uc.name}`);
     }
@@ -536,22 +563,28 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
         add(
           'delta.invalid-identifier',
           `${p}.uses[${ui}]`,
-          `${JSON.stringify(u)} must look like method:Entity.method`,
+          `${show(u)} must look like method:Entity.method`,
         );
       else if (!methodIds.has(`${m[1]}.${m[2]}`))
         add(
           'delta.reference-unknown',
           `${p}.uses[${ui}]`,
-          `${u} is not declared in module ${delta.module}`,
+          `${show(u)} is not declared in module ${show(delta.module)}`,
         );
     });
     checkEmits(`${p}.emits`, uc.emits);
     uc.ports?.forEach((port, pi) => {
+      if (RESERVED.has(lcFirst(port)))
+        add(
+          'delta.invalid-identifier',
+          `${p}.ports[${pi}]`,
+          `port ${show(port)} would give a constructor parameter named after a reserved word`,
+        );
       if (!portNames.has(port))
         add(
           'delta.reference-unknown',
           `${p}.ports[${pi}]`,
-          `port ${port} is not declared in module ${delta.module}`,
+          `port ${show(port)} is not declared in module ${show(delta.module)}`,
         );
     });
   });

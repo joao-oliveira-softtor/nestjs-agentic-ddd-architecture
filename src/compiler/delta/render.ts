@@ -42,41 +42,26 @@ export interface RenderOptions {
  * bidi, surrogate-half or invisible character becomes a \uXXXX escape. Other characters pass through.
  */
 export function literal(s: string): string {
-  let out = '';
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i]!;
-    const c = s.charCodeAt(i);
-    if (ch === '\\') out += '\\\\';
-    else if (ch === "'") out += "\\'";
-    else if (ch === '"') out += '\\"';
-    else if (ch === '`') out += '\\x60';
-    else if (ch === '$' && s[i + 1] === '{') out += '\\x24';
-    else if (ch === '\n') out += '\\n';
-    else if (ch === '\r') out += '\\r';
-    else if (ch === '\t') out += '\\t';
-    else if (c >= 0xd800 && c <= 0xdbff) {
-      const next = s.charCodeAt(i + 1);
-      if (next >= 0xdc00 && next <= 0xdfff) {
-        out += ch + s[i + 1];
-        i++;
-      } else out += unicode(c);
-    } else if (
-      c < 0x20 ||
-      (c >= 0x7f && c <= 0x9f) ||
-      c === 0xad ||
-      c === 0x61c ||
-      c === 0x180e ||
-      (c >= 0xdc00 && c <= 0xdfff) ||
-      (c >= 0x200b && c <= 0x200f) ||
-      (c >= 0x2028 && c <= 0x202e) ||
-      (c >= 0x2060 && c <= 0x2069) ||
-      c === 0xfeff
-    )
-      out += unicode(c);
-    else out += ch;
-  }
-  return `'${out}'`;
+  return `'${s.replace(UNSAFE, (ch) => ESCAPES[ch] ?? escapeUnits(ch))}'`;
 }
+
+// Specials, any control, format, line or paragraph separator, and (with the u flag) lone surrogates.
+const UNSAFE = /[\\'"`\p{Cc}\p{Cf}\p{Zl}\p{Zp}\ud800-\udfff]|\$(?=\{)/gu;
+const ESCAPES: Record<string, string> = {
+  '\\': '\\\\',
+  "'": "\\'",
+  '"': '\\"',
+  '`': '\\x60',
+  $: '\\x24',
+  '\n': '\\n',
+  '\r': '\\r',
+  '\t': '\\t',
+};
+// One \uXXXX per UTF-16 code unit, so an astral format character becomes its surrogate pair.
+const escapeUnits = (ch: string): string =>
+  Array.from({ length: ch.length }, (_, i) => unicode(ch.charCodeAt(i))).join(
+    '',
+  );
 
 const unicode = (c: number): string => `\\u${c.toString(16).padStart(4, '0')}`;
 

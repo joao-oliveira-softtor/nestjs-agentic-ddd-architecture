@@ -58,6 +58,16 @@ describe('literal', () => {
     },
   );
 
+  test.each([
+    ['؀', '\\u0600'],
+    ['\u{e0001}', '\\udb40\\udc01'],
+    ['­', '\\u00ad'],
+    ['\ud800', '\\ud800'],
+    ['\udc00x', '\\udc00x'],
+  ])('escapes the format and surrogate character %j', (input, escaped) => {
+    expect(literal(input)).toBe(`'${escaped}'`);
+  });
+
   test('is pure ASCII-safe for separators and controls', () => {
     const out = literal(String.fromCharCode(0x2028, 0x2029, 0) + '\n${');
     const bad = new Set([0x2028, 0x2029]);
@@ -198,14 +208,56 @@ describe('renderDelta output', () => {
       existingFiles: [],
     });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]!.code).toBe('delta.path-collision');
+    if (!r.ok)
+      expect(r.errors[0]).toMatchObject({
+        code: 'delta.path-collision',
+        path: 'valueObjects[0]',
+      });
   });
 
   test('invalid Deltas come back as coded errors, not files', () => {
     const d = sampleDelta();
     d.entities[0]!.name = 'class';
     const r = renderDelta(d, { conventions, existingFiles: [] });
-    expect(r).toMatchObject({ ok: false });
+    expect(r.ok).toBe(false);
+    if (!r.ok)
+      expect(r.errors).toContainEqual(
+        expect.objectContaining({
+          code: 'delta.invalid-identifier',
+          path: 'entities[0].name',
+        }),
+      );
+  });
+
+  test('a base and existing files give byte-identical output across runs and input order', () => {
+    const base = {
+      irVersion: 1,
+      modules: [{ name: 'shop', path: 'src/shop' }],
+      entities: [],
+      valueObjects: [],
+      events: [],
+      useCases: [],
+      operators: [],
+    } as unknown as IRLike;
+    const run = (d: Delta) => {
+      const r = renderDelta(d, {
+        conventions,
+        base,
+        existingFiles: ['domain/other.ts', 'application/zzz.ts'],
+      });
+      if (!r.ok) throw new Error(JSON.stringify(r.errors));
+      return JSON.stringify(r.files);
+    };
+    const a = run(sampleDelta());
+    expect(a).not.toBe('[]');
+    expect(run(sampleDelta())).toBe(a);
+    const d = sampleDelta();
+    d.entities.reverse();
+    d.valueObjects.reverse();
+    d.ports.reverse();
+    d.events.reverse();
+    d.useCases.reverse();
+    expect(run(d)).toBe(a);
   });
 });
 

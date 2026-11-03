@@ -329,3 +329,106 @@ describe('names derived from the code they protect', () => {
       expect(STATIC_MEMBERS.has(n)).toBe(true);
   });
 });
+
+describe('validateDelta hardening (ADR-0007 D9)', () => {
+  const invalidAt = (d: Delta, path: string) =>
+    expect(errorsOf(d)).toContainEqual(
+      expect.objectContaining({ code: 'delta.invalid-identifier', path }),
+    );
+
+  test.each(['Con', 'Prn', 'Aux', 'Nul', 'Com0', 'Com1', 'Lpt9', 'CON'])(
+    'entity %s would become a Windows device file name',
+    (name) => {
+      const d = sampleDelta();
+      d.entities[0]!.name = name;
+      invalidAt(d, 'entities[0].name');
+    },
+  );
+
+  test('value objects, ports and use cases cannot be device file names either', () => {
+    const v = sampleDelta();
+    v.valueObjects[0]!.name = 'Prn';
+    invalidAt(v, 'valueObjects[0].name');
+    const p = sampleDelta();
+    p.ports[0]!.name = 'Aux';
+    invalidAt(p, 'ports[0].name');
+    const u = sampleDelta();
+    u.useCases[0]!.name = 'nul';
+    invalidAt(u, 'useCases[0].name');
+  });
+
+  test('names that only start with a device stem are fine', () => {
+    const d = sampleDelta();
+    d.valueObjects[0]!.name = 'Console';
+    expect(
+      errorsOf(d).filter((e) => e.path === 'valueObjects[0].name'),
+    ).toEqual([]);
+  });
+
+  test.each([
+    'Delete',
+    'Class',
+    'New',
+    'If',
+    'Var',
+    'Void',
+    'With',
+    'Do',
+    'Enum',
+  ])('port %s cannot become a constructor parameter', (name) => {
+    const d = sampleDelta();
+    d.ports[0]!.name = name;
+    d.useCases[0]!.ports = [name];
+    invalidAt(d, 'useCases[0].ports[0]');
+  });
+
+  test('a use-case name over 64 characters is an error', () => {
+    const d = sampleDelta();
+    d.useCases[0]!.name = 'a'.repeat(65);
+    invalidAt(d, 'useCases[0].name');
+  });
+
+  test.each([
+    'Reflect',
+    'NaN',
+    'Infinity',
+    'Record',
+    'Partial',
+    'Readonly',
+    'Required',
+    'Pick',
+    'Omit',
+  ])('the global %s is not a usable class name', (name) => {
+    const d = sampleDelta();
+    d.valueObjects[0]!.name = name;
+    invalidAt(d, 'valueObjects[0].name');
+  });
+
+  test('messages do not echo long client strings', () => {
+    const long = 'x'.repeat(200); // the schema caps names at 200
+    const d = sampleDelta();
+    d.entities[0]!.states = [long, long];
+    const dup = errorsOf(d).find((e) => e.code === 'delta.name-collision')!;
+    expect(dup.message.length).toBeLessThan(200);
+    expect(dup.message).toContain('"');
+    const e = sampleDelta();
+    e.useCases[0]!.emits = [long];
+    const ref = errorsOf(e).find((x) => x.code === 'delta.reference-unknown')!;
+    expect(ref.message.length).toBeLessThan(250);
+    const f = sampleDelta();
+    f.entities[0]!.methods[1]!.transition = { from: [long], to: long };
+    const refs = errorsOf(f).filter((x) => x.path.includes('transition'));
+    expect(refs.length).toBe(2);
+    for (const x of refs) expect(x.message.length).toBeLessThan(200);
+  });
+
+  test('unknown keys are listed capped, with a count', () => {
+    const extras = Object.fromEntries(
+      Array.from({ length: 300 }, (_, i) => [`k${i}_${'y'.repeat(50)}`, 1]),
+    );
+    const e = errorsOf({ ...sampleDelta(), ...extras });
+    expect(e[0]).toMatchObject({ code: 'delta.schema-invalid', path: '' });
+    expect(e[0]!.message.length).toBeLessThan(500);
+    expect(e[0]!.message).toContain('295');
+  });
+});

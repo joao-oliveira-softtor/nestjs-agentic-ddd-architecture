@@ -1,4 +1,5 @@
 export {
+  LIMITS,
   deltaSchema,
   parseType,
   validateDelta,
