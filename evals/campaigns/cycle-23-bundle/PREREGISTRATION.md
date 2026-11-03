@@ -1,12 +1,13 @@
 # Pre-registration: bundle measurement (#122, ADR-0007 D14)
 
-Version: 0.1 (draft for owner sign-off)
+Version: 0.1.1 (draft for owner sign-off)
 Date: 2026-11-03
 Status: PROPOSED. Pending owner sign-off on the thresholds and the budget.
 
 This file is versioned **before any real run**. The campaign produces a **measurement**; the decision is the owner's. The offline rehearsal (scripted adapter, zero inference cost) is the only run allowed in Phase 3. Its code (`test/evals-bundle-rehearsal.test.ts`, `scripts/evals/`) and the manifests come in a later wave. This file mirrors the structure of `evals/campaigns/cycle-21-pilot/PREREGISTRATION.md` and `evals/campaigns/cycle-22-control/PREREGISTRATION.md`.
 
 Change log:
+- 0.1.1 (2026-11-03): cite the A0 cost source exactly (`aggregate.json`, not `aggregate.md`) and fix T2 to ≤ US$ 0.0488 (50% of 0.0976).
 - 0.1 (2026-11-03): first draft. Arms, items, metrics, proposed thresholds, stopping rules.
 
 ## Question
@@ -53,7 +54,7 @@ Pairing: per item and per repetition, B0 and P0 are compared with A0 on the same
 
 **Primary** (as in the cycle-21 aggregate, `aggregate.md` table and `RESULTADO.md`):
 1. **Final acceptance**: items accepted after corrections (`configurations[].final`, `aggregate.json`). A0: 10 of 10.
-2. **Cost per accepted item**: derived cost (`evals/pricing.json`, labelled `derived`) summed over the 2 repetitions, divided by final acceptance. A0: US$ 0.0976 (`aggregate.md`, "Custo por aceito"). Unavailable cost is never estimated; it makes the run inconclusive.
+2. **Cost per accepted item**: derived cost (`evals/pricing.json`, labelled `derived`) summed over the 2 repetitions, divided by final acceptance. A0: US$ 0.0976 (`aggregate.json`, `configurations[configuration="a0-sonnet-medium"].cost.perAcceptedItem.withoutReview.cheap` = 0.09764292; `total.cheap` = 0.9764292 over 10 accepted items). `aggregate.md` marks the A0 cost as unavailable (`incomplete_or_incompatible_costs`); the per-accepted figure comes from `aggregate.json`'s cost block, and the owner must confirm at sign-off that this figure is an acceptable baseline (otherwise T2 is descriptive only). Unavailable cost is never estimated; it makes the run inconclusive.
 
 **Secondary** (descriptive, as in `aggregate.json`):
 3. Initial acceptance (first attempt, `configurations[].initial`). A0: 9 of 10.
@@ -74,7 +75,7 @@ Derived from the cycle-21 A0 numbers above. Each threshold is a proposal with it
 | # | Metric (arm B0 unless noted) | Proposed threshold | Baseline (cycle-21 A0) |
 |---|---|---|---|
 | T1 | Final acceptance, out of 10 | ≥ 9 | 10 |
-| T2 | Cost per accepted item | ≤ US$ 0.049 (50% of A0) | US$ 0.0976 |
+| T2 | Cost per accepted item | ≤ US$ 0.0488 (50% of A0) | US$ 0.0976 |
 | T3 | Initial acceptance, out of 10 | ≥ 8 | 9 |
 | T4 | Corrections | ≤ 2 | 1 |
 | T5 | Certified runs, out of 2 | = 2 | 2 |
