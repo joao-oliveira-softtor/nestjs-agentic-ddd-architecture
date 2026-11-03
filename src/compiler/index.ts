@@ -154,3 +154,13 @@ export {
   type SpliceResult,
   type TypeExpr,
 } from './delta/index';
+export {
+  BUNDLE_VERSION,
+  compileBundle,
+  type Bundle,
+  type BundleFile,
+  type BundleInput,
+  type BundleManifest,
+  type TargetItem,
+  type TargetLayer,
+} from './bundle/index';
