@@ -11,6 +11,23 @@ export const ERROR_CODES = {
     'The access token is malformed, unsigned or fails verification.',
   'auth.token-missing': 'The request carries no Bearer access token.',
 
+  // bundle
+  'bundle.base-lock-missing':
+    'The base ref has no domain lock to compare the proposal against.',
+  'bundle.base-unknown': 'The base ref is not a commit of the base repository.',
+  'bundle.compile-failed':
+    'The compile of the candidate tree failed (the message carries its output).',
+  'bundle.compile-timeout':
+    'The compile of the candidate tree did not finish in time and was stopped.',
+  'bundle.delta-invalid':
+    'The Delta does not render against the base (the message lists the Delta errors).',
+  'bundle.module-unknown':
+    'The Delta module is not configured in the base project.',
+  'bundle.path-escape':
+    'A rendered or proposal path resolves outside the module or the changes directory.',
+  'bundle.proposal-invalid':
+    'The proposal id or slug does not match NNNN and kebab-case.',
+
   // cli
   'cli.argument-count':
     'The command received the wrong number of positional arguments.',
