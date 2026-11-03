@@ -5,6 +5,9 @@ import { join, resolve } from 'node:path';
 import { parseLock } from '../src/compiler/lock';
 import { SNAPSHOT_PATH, writeSnapshot } from '../src/compiler/snapshot';
 import { DEFAULT_CONVENTIONS } from '../src/compiler/conventions';
+import { additionDelta } from '../src/compiler/delta/additions-fixture';
+import { startStdioMcp } from './helpers/stdio-mcp';
+import { leftovers, shopRepo } from './helpers/shop-repo';
 
 const REPO = resolve(import.meta.dir, '..');
 const LOCK = '.agentic/domain.lock.json';
@@ -108,6 +111,7 @@ describe('agentic mcp (subprocesso)', () => {
         'domain_element',
         'domain_overview',
         'domain_source',
+        'propose_change',
         'rules_for_path',
       ]);
       for (const t of tools) expect(t.annotations.readOnlyHint).toBe(true);
@@ -172,4 +176,33 @@ describe('agentic mcp (subprocesso)', () => {
       await rm(tmp, { recursive: true, force: true });
     }
   }, 60000);
+});
+
+describe('agentic mcp (stdio) propose_change', () => {
+  test('serves the bundle locally, stateless, and refuses what the Delta gets wrong', async () => {
+    const repo = await shopRepo();
+    const mcp = await startStdioMcp(repo.root);
+    try {
+      const before = await leftovers(repo);
+      const ok = await mcp.call('propose_change', { delta: additionDelta() });
+      expect(ok.isError).toBeFalsy();
+      const bundle = JSON.parse(ok.content[0].text);
+      expect(bundle.files.map((f: { path: string }) => f.path)).toContain(
+        'BUNDLE.md',
+      );
+      const again = await mcp.call('propose_change', {
+        delta: additionDelta(),
+      });
+      expect(JSON.parse(again.content[0].text).hash).toBe(bundle.hash);
+      const bad = await mcp.call('propose_change', {
+        delta: { module: 'shop', entities: [{ name: 'x' }] },
+      });
+      expect(bad.isError).toBe(true);
+      expect(bad.content[0].text).toContain('[delta.schema-invalid]');
+      expect(await leftovers(repo)).toEqual(before);
+    } finally {
+      await mcp.close();
+      await rm(repo.root, { recursive: true, force: true });
+    }
+  }, 180_000);
 });
