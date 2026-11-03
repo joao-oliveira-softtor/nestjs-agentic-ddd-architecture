@@ -1,5 +1,6 @@
 import ts from 'typescript';
 import type { Coded } from '../ir';
+import { literal } from './render';
 
 export interface FragmentImport {
   readonly spec: string;
@@ -77,6 +78,7 @@ export function splice(source: string, fragment: Fragment): SpliceResult {
       true,
       ts.ScriptKind.TS,
     );
+    // shortcut: second parse via transpileModule for public syntax diagnostics; switch to a single parse if large target files make splice slow.
     // transpileModule reports syntactic diagnostics through the public API.
     const syntax = ts.transpileModule(source, {
       fileName: 'target.ts',
@@ -240,7 +242,7 @@ function importEdits(
       }
     } else
       fresh.push(
-        `import { ${adds.map(render).join(', ')} } from ${quote(spec)};`,
+        `import { ${adds.map(render).join(', ')} } from ${literal(spec)};`,
       );
   }
   if (fresh.length > 0) {
@@ -257,10 +259,6 @@ function importEdits(
   }
   return edits;
 }
-
-// Specifiers are renderer-built paths or allowlisted package names; escaping is belt and braces.
-const quote = (s: string): string =>
-  `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 
 const declaresName = (node: ts.Statement, name: string): boolean =>
   declaredNames(node).includes(name);

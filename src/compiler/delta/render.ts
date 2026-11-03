@@ -437,7 +437,9 @@ class Renderer {
     typeOnly = false,
   ): void {
     const to = this.locate(name, path);
-    if (to !== null) imports.add(relativeSpec(from, to), name, typeOnly);
+    // A name declared in the very file being written is in scope already: no self-import.
+    if (to !== null && to !== from)
+      imports.add(relativeSpec(from, to), name, typeOnly);
   }
 
   /** Imports the declared type a type text refers to, except `self`. */
