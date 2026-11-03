@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { ERROR_CODES } from '../../contracts/codes';
 import type { ErrorCode, IR } from '../ir';
-import { parseType, validateDelta, type Delta } from './schema';
+import { LIMITS, parseType, validateDelta, type Delta } from './schema';
+import {
+  INSTANCE_MEMBERS,
+  RENDERER_IMPORT_NAMES,
+  STATIC_MEMBERS,
+} from './names';
 import { sampleDelta } from './sample';
 
 const errorsOf = (input: unknown, base: IR | null = null) => {
@@ -222,5 +227,105 @@ describe('validateDelta', () => {
       'delta.schema-invalid',
     ])
       expect(ERROR_CODES).toHaveProperty([c]);
+  });
+});
+
+describe('validateDelta limits and error order', () => {
+  const over = (n: number, make: (i: number) => unknown) =>
+    Array.from({ length: n + 1 }, (_, i) => make(i));
+
+  test.each<[string, (d: Delta) => void]>([
+    [
+      'entities',
+      (d) =>
+        ((d as { entities: unknown }).entities = over(
+          LIMITS.entities,
+          () => ({}),
+        )),
+    ],
+    [
+      'entities[0].methods',
+      (d) =>
+        ((d.entities[0] as { methods: unknown }).methods = over(
+          LIMITS.methods,
+          () => ({}),
+        )),
+    ],
+    [
+      'entities[0].methods[0].params',
+      (d) =>
+        ((d.entities[0]!.methods[0] as { params: unknown }).params = over(
+          LIMITS.params,
+          () => ({}),
+        )),
+    ],
+    [
+      'events[0].payload',
+      (d) =>
+        ((d.events[0] as { payload: unknown }).payload = over(
+          LIMITS.fields,
+          () => ({}),
+        )),
+    ],
+    [
+      'useCases[0].uses',
+      (d) =>
+        ((d.useCases[0] as { uses: unknown }).uses = over(
+          LIMITS.uses,
+          () => 'x',
+        )),
+    ],
+    [
+      'entities[0].states',
+      (d) =>
+        ((d.entities[0] as { states: unknown }).states = over(
+          LIMITS.states,
+          () => 'x',
+        )),
+    ],
+  ])('an over-cap array at %s is rejected with its path', (path, mutate) => {
+    const d = sampleDelta();
+    mutate(d);
+    expect(errorsOf(d)).toContainEqual(
+      expect.objectContaining({ code: 'delta.schema-invalid', path }),
+    );
+  });
+
+  test('errors are ordered by path, code and message whatever the input order', () => {
+    const d = sampleDelta();
+    d.entities[0]!.methods[0]!.name = 'Bad-Name';
+    d.entities[0]!.methods[1]!.name = 'also-bad';
+    d.events[0]!.entity = 'Nobody';
+    d.useCases[0]!.uses = ['method:X.y', 'bogus'];
+    const a = errorsOf(d);
+    expect(a.length).toBeGreaterThan(3);
+    const key = (e: (typeof a)[number]) =>
+      `${e.path}\u0000${e.code}\u0000${e.message}`;
+    expect(a.map(key)).toEqual(a.map(key).sort());
+    const s = sampleDelta();
+    s.entities[0]!.methods = [...d.entities[0]!.methods].reverse();
+    s.events = [...d.events].reverse();
+    s.useCases = [...d.useCases].reverse();
+    const b = errorsOf(s);
+    expect(b.map(key)).toEqual(b.map(key).sort());
+  });
+});
+
+describe('names derived from the code they protect', () => {
+  test('every name the renderer imports is rejected as an identifier', () => {
+    for (const n of RENDERER_IMPORT_NAMES) {
+      const d = sampleDelta();
+      d.valueObjects[0]!.name = n;
+      expect(errorsOf(d).map((e) => e.code)).not.toEqual([]);
+    }
+    expect(RENDERER_IMPORT_NAMES.has('notImplemented')).toBe(true);
+    expect(RENDERER_IMPORT_NAMES.has('AgentPort')).toBe(true);
+  });
+
+  test('inherited and built-in members come from the core classes', () => {
+    for (const n of ['id', 'equals', 'record', 'pullEvents', 'toString'])
+      expect(INSTANCE_MEMBERS.has(n)).toBe(true);
+    for (const n of ['name', 'length', 'prototype', 'apply'])
+      expect(STATIC_MEMBERS.has(n)).toBe(true);
   });
 });

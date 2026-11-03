@@ -1,7 +1,10 @@
 import { posix } from 'node:path';
 import type { ResolvedConventions } from '../conventions';
 import type { IR } from '../ir';
+import { RENDERER_IMPORTS } from './names';
 import {
+  compareErrors,
+  compareText,
   kebab,
   parseType,
   pascalOfSnake,
@@ -25,6 +28,12 @@ export type RenderResult =
 export interface RenderOptions {
   readonly conventions: ResolvedConventions;
   readonly base?: IR | null;
+  /**
+   * REQUIRED. Module-relative paths of every file already in the module (decorated or not),
+   * supplied by the caller. A rendered path equal to one of them, ignoring case, is refused as
+   * `delta.path-collision`: the renderer never overwrites.
+   */
+  readonly existingFiles: readonly string[];
 }
 
 /**
@@ -71,9 +80,14 @@ export function literal(s: string): string {
 
 const unicode = (c: number): string => `\\u${c.toString(16).padStart(4, '0')}`;
 
-const byName = <T extends { name: string }>(list: readonly T[]): T[] =>
-  [...list].sort((a, b) => cmp(a.name, b.name));
-const cmp = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+/** Items with their input index, by name, so errors keep pointing at the caller's array. */
+const ordered = <T extends { name: string }>(
+  items: readonly T[],
+): { item: T; i: number }[] =>
+  items
+    .map((item, i) => ({ item, i }))
+    .sort((a, b) => cmp(a.item.name, b.item.name) || a.i - b.i);
+const cmp = compareText;
 const sorted = (list: readonly string[] | undefined): string[] =>
   [...(list ?? [])].sort(cmp);
 const lcFirst = (s: string): string => s[0]!.toLowerCase() + s.slice(1);
@@ -85,6 +99,12 @@ class Imports {
   readonly #specs = new Map<string, Map<string, boolean>>();
 
   add(spec: string, name: string, typeOnly = false): void {
+    // Only names the schema reserves may be imported from a fixed module, so they cannot drift.
+    const fixed = (RENDERER_IMPORTS as Record<string, readonly string[]>)[spec];
+    if (!spec.startsWith('.') && !fixed?.includes(name))
+      throw new Error(
+        `renderer imports ${name} from ${spec} without declaring it`,
+      );
     const names = this.#specs.get(spec) ?? new Map<string, boolean>();
     names.set(name, (names.get(name) ?? true) && typeOnly);
     this.#specs.set(spec, names);
@@ -203,33 +223,36 @@ export function renderDelta(
     return rel.startsWith('.') ? rel : `./${rel}`;
   };
 
-  // Existing files are never overwritten: a path the base already owns is a collision.
-  const baseFiles = new Set(
-    [
-      ...(base?.entities ?? []),
-      ...(base?.valueObjects ?? []),
-      ...(base?.events ?? []),
-      ...(base?.useCases ?? []),
-      ...(base?.ports ?? []),
-    ].map((i) => i.source.replace(/:\d+$/, '')),
-  );
-  const files = new Map<string, string>();
+  // Existing files are never overwritten: the caller lists every file in the module, and the
+  // base's decorated files count too. Paths compare ignoring case (case-insensitive file systems).
+  const key = (path: string): string =>
+    path.replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase();
+  const taken = new Set(options.existingFiles.map(key));
+  for (const item of [
+    ...(base?.entities ?? []),
+    ...(base?.valueObjects ?? []),
+    ...(base?.events ?? []),
+    ...(base?.useCases ?? []),
+    ...(base?.ports ?? []),
+  ]) {
+    const file = item.source.replace(/:\d+$/, '');
+    if (modulePath && file.startsWith(`${modulePath}/`))
+      taken.add(key(file.slice(modulePath.length + 1)));
+  }
+  const files = new Map<string, { path: string; content: string }>();
   const put = (path: string, content: string, at: string): void => {
-    if (
-      files.has(path) ||
-      (modulePath && baseFiles.has(`${modulePath}/${path}`))
-    )
+    const k = key(path);
+    if (taken.has(k) || files.has(k))
       errors.push({
-        code: 'delta.name-collision',
+        code: 'delta.path-collision',
         path: at,
-        message: `${path} is already written or exists in the base`,
+        message: `${path} already exists in the module or is rendered twice (paths compare ignoring case)`,
       });
-    files.set(path, content);
+    else files.set(k, { path, content });
   };
 
-  const entities = byName(delta.entities);
-  entities.forEach((entity) => {
-    const at = `entities[${delta.entities.indexOf(entity)}]`;
+  ordered(delta.entities).forEach(({ item: entity, i: ei }) => {
+    const at = `entities[${ei}]`;
     const file = where.get(entity.name)!;
     const imports = new Imports();
     imports.add('@agentic-ddd/core', 'AggregateRoot');
@@ -256,8 +279,8 @@ export function renderDelta(
       }\n})`,
       ...invariantDecorators(entity.invariants, ''),
     ];
-    const methods = byName(entity.methods).map((m) => {
-      const mAt = `${at}.methods[${entity.methods.indexOf(m)}]`;
+    const methods = ordered(entity.methods).map(({ item: m, i: mi }) => {
+      const mAt = `${at}.methods[${mi}]`;
       const opts = [`    description: ${literal(m.description)},`];
       if (m.transition)
         opts.push(
@@ -290,8 +313,8 @@ export function renderDelta(
     );
   });
 
-  byName(delta.valueObjects).forEach((vo) => {
-    const at = `valueObjects[${delta.valueObjects.indexOf(vo)}]`;
+  ordered(delta.valueObjects).forEach(({ item: vo, i: vi }) => {
+    const at = `valueObjects[${vi}]`;
     const file = where.get(vo.name)!;
     const imports = new Imports();
     imports.add('@agentic-ddd/core', 'ValueObject');
@@ -311,8 +334,8 @@ export function renderDelta(
     );
   });
 
-  byName(delta.ports).forEach((port) => {
-    const at = `ports[${delta.ports.indexOf(port)}]`;
+  ordered(delta.ports).forEach(({ item: port, i: pi }) => {
+    const at = `ports[${pi}]`;
     const file = where.get(port.name)!;
     const imports = new Imports();
     imports.add('@agentic-ddd/decorators', 'AgentPort');
@@ -324,20 +347,19 @@ export function renderDelta(
       const to = locate(ref, path);
       if (to !== null) imports.add(spec(file, to), ref, true);
     };
-    const methods = byName(port.methods);
-    methods.forEach((m) => {
-      const i = port.methods.indexOf(m);
-      m.params.forEach((p, pi) =>
-        typeImport(p.type, `${at}.methods[${i}].params[${pi}].type`),
+    const methods = ordered(port.methods);
+    methods.forEach(({ item: m, i }) => {
+      m.params.forEach((p, pj) =>
+        typeImport(p.type, `${at}.methods[${i}].params[${pj}].type`),
       );
       typeImport(m.returns, `${at}.methods[${i}].returns`);
     });
     const described = methods
-      .map((m) => `    ${m.name}: ${literal(m.description)},`)
+      .map(({ item: m }) => `    ${m.name}: ${literal(m.description)},`)
       .join('\n');
     const abstracts = methods
       .map(
-        (m) =>
+        ({ item: m }) =>
           `  abstract ${m.name}(${m.params.map(tsField).join(', ')}): Promise<${m.returns}>;`,
       )
       .join('\n');
@@ -349,27 +371,36 @@ export function renderDelta(
   });
 
   // Events are grouped per owning entity, one file each.
-  const owners = [...new Set(delta.events.map((e) => e.entity))].sort(cmp);
-  for (const owner of owners) {
+  const byOwner = new Map<
+    string,
+    { item: Delta['events'][number]; i: number }[]
+  >();
+  delta.events.forEach((item, i) => {
+    const group = byOwner.get(item.entity) ?? [];
+    group.push({ item, i });
+    byOwner.set(item.entity, group);
+  });
+  for (const owner of [...byOwner.keys()].sort(cmp)) {
+    const group = byOwner.get(owner)!;
     const imports = new Imports();
     imports.add('zod', 'z');
     imports.add('@agentic-ddd/core', 'DomainEvent');
     imports.add('@agentic-ddd/decorators', 'AgentEvent');
-    const blocks = byName(delta.events.filter((e) => e.entity === owner)).map(
-      (ev) => {
+    const blocks = group
+      .sort((a, b) => cmp(a.item.name, b.item.name) || a.i - b.i)
+      .map(({ item: ev }) => {
         const payload = `${lcFirst(ev.name)}Payload`;
         return `const ${payload} = ${zodObject(ev.payload)};\n\n@AgentEvent({\n  description: ${literal(ev.description)},\n  payload: ${payload},\n})\nexport class ${ev.name} extends DomainEvent<z.infer<typeof ${payload}>> {}`;
-      },
-    );
+      });
     put(
       eventsFile(owner),
       `${imports.render()}\n\n${blocks.join('\n\n')}\n`,
-      `events[${delta.events.findIndex((e) => e.entity === owner)}]`,
+      `events[${Math.min(...group.map((g) => g.i))}]`,
     );
   }
 
-  byName(delta.useCases).forEach((uc) => {
-    const at = `useCases[${delta.useCases.indexOf(uc)}]`;
+  ordered(delta.useCases).forEach(({ item: uc, i: ui }) => {
+    const at = `useCases[${ui}]`;
     const file = `${layers.application}/${uc.name.replace(/_/g, '-')}.ts`;
     const cls = pascalOfSnake(uc.name);
     const stem = camelOfSnake(uc.name);
@@ -415,14 +446,10 @@ export function renderDelta(
   if (errors.length > 0)
     return {
       ok: false,
-      errors: errors.sort(
-        (a, b) => cmp(a.path, b.path) || cmp(a.message, b.message),
-      ),
+      errors: errors.sort(compareErrors),
     };
   return {
     ok: true,
-    files: [...files.entries()]
-      .sort(([a], [b]) => cmp(a, b))
-      .map(([path, content]) => ({ path, content })),
+    files: [...files.values()].sort((a, b) => cmp(a.path, b.path)),
   };
 }

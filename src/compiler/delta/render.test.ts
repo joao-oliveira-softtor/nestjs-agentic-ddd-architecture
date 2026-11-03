@@ -12,7 +12,7 @@ const ROOT = resolve(import.meta.dir, '../../..');
 const conventions = DEFAULT_CONVENTIONS;
 
 function render(delta: Delta, c: ResolvedConventions = conventions) {
-  const r = renderDelta(delta, { conventions: c });
+  const r = renderDelta(delta, { conventions: c, existingFiles: [] });
   if (!r.ok) throw new Error(JSON.stringify(r.errors));
   return r.files;
 }
@@ -192,15 +192,19 @@ describe('renderDelta output', () => {
       useCases: [],
       operators: [],
     } as unknown as IRLike;
-    const r = renderDelta(sampleDelta(), { conventions, base });
+    const r = renderDelta(sampleDelta(), {
+      conventions,
+      base,
+      existingFiles: [],
+    });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors[0]!.code).toBe('delta.name-collision');
+    if (!r.ok) expect(r.errors[0]!.code).toBe('delta.path-collision');
   });
 
   test('invalid Deltas come back as coded errors, not files', () => {
     const d = sampleDelta();
     d.entities[0]!.name = 'class';
-    const r = renderDelta(d, { conventions });
+    const r = renderDelta(d, { conventions, existingFiles: [] });
     expect(r).toMatchObject({ ok: false });
   });
 });

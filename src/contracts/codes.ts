@@ -82,6 +82,8 @@ export const ERROR_CODES = {
     'A Delta name or id is not an allowed identifier (wrong pattern or a reserved word).',
   'delta.name-collision':
     'A Delta name or id repeats inside the Delta or already exists in the base.',
+  'delta.path-collision':
+    'A rendered file path already exists in the module (compared ignoring case) or is rendered twice.',
   'delta.reference-unknown':
     'A Delta uses, emits, ports, owner, state or type reference points to something not declared.',
   'delta.schema-invalid':

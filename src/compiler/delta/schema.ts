@@ -1,12 +1,43 @@
 import { z } from 'zod';
 import type { Coded, ErrorCode, IR } from '../ir';
+import {
+  INSTANCE_MEMBERS,
+  RENDERER_IMPORT_NAMES,
+  STATIC_MEMBERS,
+} from './names';
 
 export interface DeltaError extends Coded {
   readonly path: string;
 }
 
-const text = z.string().min(1).max(10_000);
+/**
+ * Caps on every array of the schema, so a hostile Delta cannot make validation or rendering do
+ * unbounded work. They are generous for a hand-written domain and are part of the contract.
+ */
+export const LIMITS = {
+  entities: 200,
+  valueObjects: 200,
+  ports: 100,
+  events: 400,
+  useCases: 200,
+  methods: 100,
+  params: 20,
+  fields: 100,
+  invariants: 100,
+  states: 50,
+  /** emits, transition.from and use-case ports. */
+  references: 100,
+  uses: 100,
+} as const;
+
+// Business text must carry something, as validate.ts `required` demands (non-empty after trim).
+const text = z
+  .string()
+  .max(10_000)
+  .refine((s) => s.trim() !== '', 'must not be empty or whitespace only');
 const name = z.string().min(1).max(200);
+const list = <T extends z.ZodType>(item: T, max: number) =>
+  z.array(item).max(max);
 
 const field = z.strictObject({ name, type: name });
 const invariant = z.strictObject({ id: name, text });
@@ -14,62 +45,77 @@ const method = z.strictObject({
   name,
   description: text,
   static: z.boolean().optional(),
-  params: z.array(field),
+  params: list(field, LIMITS.params),
   returns: name,
-  emits: z.array(name).optional(),
-  transition: z.strictObject({ from: z.array(name), to: name }).optional(),
-  invariants: z.array(invariant).optional(),
+  emits: list(name, LIMITS.references).optional(),
+  transition: z
+    .strictObject({
+      from: list(name, LIMITS.references).min(1),
+      to: name,
+    })
+    .optional(),
+  invariants: list(invariant, LIMITS.invariants).optional(),
 });
 
 export const deltaSchema = z.strictObject({
   module: name,
-  entities: z.array(
+  entities: list(
     z.strictObject({
       name,
       description: text,
-      states: z.array(name).optional(),
-      invariants: z.array(invariant),
-      methods: z.array(method),
+      states: list(name, LIMITS.states).optional(),
+      invariants: list(invariant, LIMITS.invariants),
+      methods: list(method, LIMITS.methods),
     }),
+    LIMITS.entities,
   ),
-  valueObjects: z.array(
-    z.strictObject({ name, description: text, fields: z.array(field) }),
+  valueObjects: list(
+    z.strictObject({
+      name,
+      description: text,
+      fields: list(field, LIMITS.fields),
+    }),
+    LIMITS.valueObjects,
   ),
-  ports: z.array(
+  ports: list(
     z.strictObject({
       name,
       description: text,
       root: name,
-      methods: z.array(
+      methods: list(
         z.strictObject({
           name,
           description: text,
-          params: z.array(field),
+          params: list(field, LIMITS.params),
           returns: name,
         }),
+        LIMITS.methods,
       ),
     }),
+    LIMITS.ports,
   ),
-  events: z.array(
+  events: list(
     z.strictObject({
       name,
       entity: name,
       description: text,
-      payload: z.array(field),
+      payload: list(field, LIMITS.fields),
     }),
+    LIMITS.events,
   ),
-  useCases: z.array(
+  useCases: list(
     z.strictObject({
       name,
       description: text,
       whenToUse: text,
       whenNotToUse: text.optional(),
-      input: z.array(field),
-      output: z.array(field),
-      uses: z.array(name),
-      emits: z.array(name),
-      ports: z.array(name).optional(),
+      input: list(field, LIMITS.fields),
+      output: list(field, LIMITS.fields),
+      uses: list(name, LIMITS.uses),
+      emits: list(name, LIMITS.references),
+      ports: list(name, LIMITS.references).optional(),
     }),
+    LIMITS.useCases,
   ),
 });
 
@@ -92,20 +138,19 @@ const CAMEL = /^[a-z][A-Za-z0-9]*$/;
 const FIELD = /^[a-z][A-Za-z0-9_]*$/;
 const USES = /^method:([A-Z][A-Za-z0-9]*)\.([a-z][A-Za-z0-9]*)$/;
 
-// JS/TS reserved and strict-mode words, plus names that would shadow what the renderer imports.
-const RESERVED = new Set(
-  (
+// JS/TS reserved and strict-mode words, global names the output uses, and every name the renderer imports.
+const RESERVED: ReadonlySet<string> = new Set([
+  ...(
     'break case catch class const continue debugger default delete do else enum export extends false ' +
     'finally for function if import in instanceof new null return super switch this throw true try ' +
     'typeof var void while with yield let static implements interface package private protected public ' +
     'await async abstract any as asserts bigint boolean constructor declare from get global infer is ' +
     'keyof module namespace never number object of out override readonly require set string symbol ' +
     'type undefined unique unknown arguments eval ' +
-    'Array Boolean Date Error Function Map Number Object Promise Set String Symbol DomainEvent ' +
-    'AggregateRoot ValueObject UseCase UseCaseContext AgentEntity AgentEvent AgentMethod AgentUseCase ' +
-    'AgentValueObject Invariant z'
+    'Array Boolean Date Error Function Map Number Object Promise Set String Symbol'
   ).split(' '),
-);
+  ...RENDERER_IMPORT_NAMES,
+]);
 
 export const PRIMITIVES = ['string', 'number', 'boolean', 'Date'] as const;
 
@@ -147,11 +192,21 @@ export function pascalOfSnake(snake: string): string {
     .join('');
 }
 
+/** Plain code-unit comparison, so the order never depends on the locale. */
+export const compareText = (a: string, b: string): number =>
+  a < b ? -1 : a > b ? 1 : 0;
+
+/** The one error order: path, then code, then message. */
+export const compareErrors = (a: DeltaError, b: DeltaError): number =>
+  compareText(a.path, b.path) ||
+  compareText(a.code, b.code) ||
+  compareText(a.message, b.message);
+
 export interface ValidateOptions {
   readonly base?: IR | null;
 }
 
-/** Zod shape check, then the semantic checks. Returns every problem, ordered by path. */
+/** Zod shape check, then the semantic checks. Returns every problem, ordered by `compareErrors`. */
 export function validateDelta(
   input: unknown,
   options: ValidateOptions = {},
@@ -160,11 +215,13 @@ export function validateDelta(
   if (!parsed.success)
     return {
       ok: false,
-      errors: parsed.error.issues.map((i) => ({
-        code: 'delta.schema-invalid',
-        path: pathOf(i.path),
-        message: i.message,
-      })),
+      errors: parsed.error.issues
+        .map((i): DeltaError => ({
+          code: 'delta.schema-invalid',
+          path: pathOf(i.path),
+          message: i.message,
+        }))
+        .sort(compareErrors),
     };
   const errors = semanticErrors(parsed.data, options.base ?? null);
   return errors.length === 0
@@ -197,12 +254,29 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
         `${JSON.stringify(value)} is not a valid ${label}`,
       );
   };
-  // Duplicates inside one scope, and against the global IR ids of the base.
+  const member = (path: string, value: string, taken: ReadonlySet<string>) => {
+    if (taken.has(value))
+      add(
+        'delta.invalid-identifier',
+        path,
+        `${JSON.stringify(value)} clashes with a built-in or inherited member`,
+      );
+  };
+
+  // Only elements of this module can be referenced; the class namespace is checked against the whole base.
+  const mine = <T extends { module: string }>(l: readonly T[] | undefined) =>
+    (l ?? []).filter((x) => x.module === delta.module);
+  const baseEntities = mine(base?.entities);
+  const baseClasses = new Set<string>(
+    [
+      ...(base?.entities ?? []),
+      ...(base?.valueObjects ?? []),
+      ...(base?.events ?? []),
+      ...(base?.ports ?? []),
+      ...(base?.adapters ?? []),
+    ].map((x) => x.name),
+  );
   const baseIds = new Set<string>([
-    ...(base?.entities.map((e) => e.id) ?? []),
-    ...(base?.valueObjects?.map((v) => v.id) ?? []),
-    ...(base?.events.map((e) => e.id) ?? []),
-    ...(base?.ports?.map((p) => p.id) ?? []),
     ...(base?.useCases.map((u) => u.id) ?? []),
     ...(base?.entities.flatMap((e) => [
       ...e.invariants.map((i) => i.id),
@@ -220,32 +294,48 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
       );
     scope.add(key);
   };
+  // One class-name namespace for the module: entities, value objects, ports, events, use-case classes.
+  const classes = new Set<string>();
+  const claimClass = (cls: string, path: string, id: string) => {
+    if (classes.has(cls))
+      add(
+        'delta.name-collision',
+        path,
+        `class ${cls} (${id}) is already declared in this Delta`,
+      );
+    else if (baseClasses.has(cls))
+      add(
+        'delta.name-collision',
+        path,
+        `class ${cls} (${id}) already exists in the base; additions to existing items are not supported yet`,
+      );
+    classes.add(cls);
+  };
 
   ident('module', delta.module, KEBAB, 'kebab-case module name');
 
-  // Type names are one namespace across entities, value objects and events.
-  const types = new Set<string>();
   const entityNames = new Set(delta.entities.map((e) => e.name));
   const eventNames = new Set(delta.events.map((e) => e.name));
-  const baseEvents = new Set(base?.events.map((e) => e.name) ?? []);
+  const baseEvents = new Set(mine(base?.events).map((e) => e.name));
   const typeNames = new Set([
     ...entityNames,
     ...delta.valueObjects.map((v) => v.name),
-    ...(base?.entities.map((e) => e.name) ?? []),
-    ...(base?.valueObjects?.map((v) => v.name) ?? []),
+    ...baseEntities.map((e) => e.name),
+    ...mine(base?.valueObjects).map((v) => v.name),
   ]);
   const methodIds = new Set<string>([
     ...delta.entities.flatMap((e) =>
       e.methods.map((m) => `${e.name}.${m.name}`),
     ),
-    ...(base?.entities.flatMap((e) =>
+    ...baseEntities.flatMap((e) =>
       e.methods.map((m) => m.id.replace(/^method:/, '')),
-    ) ?? []),
+    ),
   ]);
   const portNames = new Set([
     ...delta.ports.map((p) => p.name),
-    ...(base?.ports?.map((p) => p.name) ?? []),
+    ...mine(base?.ports).map((p) => p.name),
   ]);
+  const contained = new Set(base?.entities.flatMap((e) => e.contains ?? []));
 
   const checkType = (path: string, source: string): void => {
     const t = parseType(source);
@@ -265,42 +355,56 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
     fields: readonly { name: string; type: string }[],
     re: RegExp,
     label: string,
+    params = false,
   ): void => {
     const seen = new Set<string>();
+    let optionalSeen = false;
     fields.forEach((f, i) => {
-      const { id } = splitOptional(f.name);
+      const { id, optional } = splitOptional(f.name);
       ident(`${path}[${i}].name`, id, re, label);
       checkType(`${path}[${i}].type`, f.type);
       claim(seen, id, `${path}[${i}].name`);
+      if (params) {
+        if (!optional && optionalSeen)
+          add(
+            'delta.schema-invalid',
+            `${path}[${i}].name`,
+            'a required parameter cannot follow an optional one',
+          );
+        optionalSeen ||= optional;
+      }
     });
   };
-  const noDuplicates = (path: string, list: readonly string[] | undefined) =>
-    list?.forEach((v, i) => {
-      if (list.indexOf(v) !== i)
+  const noDuplicates = (path: string, items: readonly string[] | undefined) => {
+    const seen = new Set<string>();
+    items?.forEach((v, i) => {
+      if (seen.has(v))
         add('delta.name-collision', `${path}[${i}]`, `${v} is listed twice`);
+      seen.add(v);
     });
-  const checkEmits = (path: string, list: readonly string[] | undefined) =>
-    list?.forEach((ev, i) => {
+  };
+  const checkEmits = (path: string, items: readonly string[] | undefined) =>
+    items?.forEach((ev, i) => {
       if (!eventNames.has(ev) && !baseEvents.has(ev))
         add(
           'delta.reference-unknown',
           `${path}[${i}]`,
-          `event ${ev} is not declared`,
+          `event ${ev} is not declared in module ${delta.module}`,
         );
     });
 
   delta.entities.forEach((entity, ei) => {
     const ep = `entities[${ei}]`;
     ident(`${ep}.name`, entity.name, PASCAL, 'PascalCase entity name');
-    claim(types, entity.name, `${ep}.name`, `entity:${entity.name}`);
+    claimClass(entity.name, `${ep}.name`, `entity:${entity.name}`);
     const states = new Set(entity.states ?? []);
     noDuplicates(`${ep}.states`, entity.states);
     const invariants = new Set<string>();
     const checkInvariants = (
       path: string,
-      list: readonly { id: string }[] | undefined,
+      items: readonly { id: string }[] | undefined,
     ) =>
-      list?.forEach((inv, ii) => {
+      items?.forEach((inv, ii) => {
         ident(`${path}[${ii}].id`, inv.id, KEBAB, 'kebab-case invariant id');
         claim(
           invariants,
@@ -314,8 +418,19 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
     entity.methods.forEach((m, mi) => {
       const mp = `${ep}.methods[${mi}]`;
       ident(`${mp}.name`, m.name, CAMEL, 'camelCase method name');
+      member(
+        `${mp}.name`,
+        m.name,
+        m.static ? STATIC_MEMBERS : INSTANCE_MEMBERS,
+      );
       claim(methods, m.name, `${mp}.name`, `method:${entity.name}.${m.name}`);
-      checkFields(`${mp}.params`, m.params, CAMEL, 'camelCase parameter name');
+      checkFields(
+        `${mp}.params`,
+        m.params,
+        CAMEL,
+        'camelCase parameter name',
+        true,
+      );
       if (m.returns !== 'void') checkType(`${mp}.returns`, m.returns);
       checkEmits(`${mp}.emits`, m.emits);
       noDuplicates(`${mp}.emits`, m.emits);
@@ -342,49 +457,49 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
   delta.valueObjects.forEach((vo, vi) => {
     const vp = `valueObjects[${vi}]`;
     ident(`${vp}.name`, vo.name, PASCAL, 'PascalCase value object name');
-    claim(types, vo.name, `${vp}.name`, `valueobject:${vo.name}`);
+    claimClass(vo.name, `${vp}.name`, `valueobject:${vo.name}`);
     checkFields(`${vp}.fields`, vo.fields, FIELD, 'field name');
   });
 
-  const entityIds = new Set<string>(base?.entities.map((e) => e.name) ?? []);
-  const ports = new Set<string>();
   delta.ports.forEach((port, i) => {
     const p = `ports[${i}]`;
     ident(`${p}.name`, port.name, PASCAL, 'PascalCase port name');
-    claim(ports, port.name, `${p}.name`, `port:${port.name}`);
-    if (types.has(port.name))
-      add(
-        'delta.name-collision',
-        `${p}.name`,
-        `${port.name} is already declared as a type`,
-      );
-    if (!entityNames.has(port.root) && !entityIds.has(port.root))
-      add(
-        'delta.reference-unknown',
-        `${p}.root`,
-        `entity ${port.root} is not declared`,
-      );
+    claimClass(port.name, `${p}.name`, `port:${port.name}`);
+    if (!entityNames.has(port.root)) {
+      if (!baseEntities.some((e) => e.name === port.root))
+        add(
+          'delta.reference-unknown',
+          `${p}.root`,
+          `entity ${port.root} is not declared in module ${delta.module}`,
+        );
+      else if (contained.has(`entity:${port.root}`))
+        add(
+          'delta.reference-unknown',
+          `${p}.root`,
+          `entity ${port.root} is not an aggregate root (another entity contains it)`,
+        );
+    }
     const methods = new Set<string>();
     port.methods.forEach((m, mi) => {
       const mp = `${p}.methods[${mi}]`;
       ident(`${mp}.name`, m.name, CAMEL, 'camelCase method name');
+      member(`${mp}.name`, m.name, INSTANCE_MEMBERS);
       claim(methods, m.name, `${mp}.name`);
-      checkFields(`${mp}.params`, m.params, CAMEL, 'camelCase parameter name');
+      checkFields(
+        `${mp}.params`,
+        m.params,
+        CAMEL,
+        'camelCase parameter name',
+        true,
+      );
       if (m.returns !== 'void') checkType(`${mp}.returns`, m.returns);
     });
   });
 
-  const events = new Set<string>();
   delta.events.forEach((ev, i) => {
     const p = `events[${i}]`;
     ident(`${p}.name`, ev.name, PASCAL, 'PascalCase event name');
-    claim(events, ev.name, `${p}.name`, `event:${ev.name}`);
-    if (types.has(ev.name))
-      add(
-        'delta.name-collision',
-        `${p}.name`,
-        `${ev.name} is already declared as a type`,
-      );
+    claimClass(ev.name, `${p}.name`, `event:${ev.name}`);
     if (!entityNames.has(ev.entity))
       add(
         'delta.reference-unknown',
@@ -408,17 +523,7 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
           `${p}.name`,
           `class ${cls} would shadow a name the generated file uses`,
         );
-      else if (
-        typeNames.has(cls) ||
-        eventNames.has(cls) ||
-        baseEvents.has(cls) ||
-        portNames.has(cls)
-      )
-        add(
-          'delta.name-collision',
-          `${p}.name`,
-          `class ${cls} collides with a declared type, event or port`,
-        );
+      else claimClass(cls, `${p}.name`, `usecase:${uc.name}`);
     }
     noDuplicates(`${p}.uses`, uc.uses);
     noDuplicates(`${p}.emits`, uc.emits);
@@ -437,7 +542,7 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
         add(
           'delta.reference-unknown',
           `${p}.uses[${ui}]`,
-          `${u} is not declared`,
+          `${u} is not declared in module ${delta.module}`,
         );
     });
     checkEmits(`${p}.emits`, uc.emits);
@@ -446,12 +551,10 @@ function semanticErrors(delta: Delta, base: IR | null): DeltaError[] {
         add(
           'delta.reference-unknown',
           `${p}.ports[${pi}]`,
-          `port ${port} is not declared`,
+          `port ${port} is not declared in module ${delta.module}`,
         );
     });
   });
 
-  return errors.sort((a, b) =>
-    a.path === b.path ? (a.code < b.code ? -1 : 1) : a.path < b.path ? -1 : 1,
-  );
+  return errors.sort(compareErrors);
 }
