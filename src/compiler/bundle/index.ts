@@ -153,10 +153,14 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
           `module ${quote(input.delta.module)} is not configured in the base project`,
         );
       const moduleRoot = resolve(config.root, module.path);
+      // EOL rule: every text that feeds a hash is LF (`toLf`). A checkout may be CRLF
+      // (core.autocrlf), but the committed bytes, which `apply` recomputes from, are LF.
       const lockText = await readFile(
         join(config.outRoot, config.out.lock),
         'utf8',
-      ).catch(() => null);
+      )
+        .then(toLf)
+        .catch(() => null);
       if (lockText === null)
         throw new AgenticError(
           'bundle.base-lock-missing',

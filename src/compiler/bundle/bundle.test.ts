@@ -166,6 +166,60 @@ describe('compileBundle on the shop project', () => {
     }
   }, 120_000);
 
+  test('hashes are the same whether the checkout has LF or CRLF line endings', async () => {
+    git(repo.root, 'config', 'core.autocrlf', 'false');
+    const lf = await compileBundle(input());
+    // The worktree of the base is checked out with autocrlf, as on a Windows machine.
+    git(repo.root, 'config', 'core.autocrlf', 'true');
+    let crlf: Awaited<ReturnType<typeof compileBundle>>;
+    try {
+      crlf = await compileBundle(input());
+    } finally {
+      git(repo.root, 'config', 'core.autocrlf', 'false');
+    }
+    expect(crlf.manifest.baseLockHash).toBe(lf.manifest.baseLockHash);
+    expect(crlf.manifest.files).toEqual(lf.manifest.files);
+    expect(crlf.hash).toBe(lf.hash);
+  }, 120_000);
+
+  test('a valid proposal lands in the bundle and is covered by the hash', async () => {
+    const proposal = {
+      id: '0001',
+      slug: 'refund-paid-order',
+      markdown: [
+        '---',
+        'id: "0001"',
+        'title: Refund a paid order',
+        'status: proposed',
+        'origin: proposal-first',
+        'delta:',
+        '  added: []',
+        '  modified: []',
+        '  removed: []',
+        'acceptance: []',
+        '---',
+        '',
+        '## Motivo',
+        '',
+        'Customers ask for refunds.',
+        '',
+      ].join('\n'),
+    };
+    const plain = await compileBundle(input());
+    const a = await compileBundle({ ...input(), proposal });
+    const path = 'target/changes/0001-refund-paid-order/proposal.md';
+    expect(a.files.find((f) => f.path === path)?.content).toBe(
+      proposal.markdown,
+    );
+    expect(a.manifest.files.map((f) => f.path)).toContain(path);
+    expect(a.hash).not.toBe(plain.hash);
+    const b = await compileBundle({
+      ...input(),
+      proposal: { ...proposal, markdown: `${proposal.markdown}More.\n` },
+    });
+    expect(b.hash).not.toBe(a.hash);
+  }, 240_000);
+
   test('stores nothing: no worktree or directory is left after success', async () => {
     await compileBundle(input());
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
@@ -235,6 +289,17 @@ describe('compileBundle on the shop project', () => {
         compileBundle({
           ...input(),
           proposal: { id: '../x', slug: 'ok', markdown: '# x' },
+        }),
+      ),
+    ).toBe('bundle.proposal-invalid');
+  }, 60_000);
+
+  test('refuses a proposal slug that is not kebab-case', async () => {
+    expect(
+      await refusal(
+        compileBundle({
+          ...input(),
+          proposal: { id: '0001', slug: 'Bad Slug', markdown: '# x' },
         }),
       ),
     ).toBe('bundle.proposal-invalid');
