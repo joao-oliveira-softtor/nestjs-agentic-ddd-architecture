@@ -305,6 +305,24 @@ describe('evaluateGates', () => {
     ).toEqual(['verify.command-failed', 'verify.suite-failed']);
   });
 
+  test('G5: a failing suite names the failing tests, capped, keeping the stable code', () => {
+    const failing = [10, 20, 30, 40, 50].map((line) =>
+      testCase([], 'failed', line),
+    );
+    const finding = evaluateGates(
+      input({ tests: { exitCode: 1, cases: [...goodTests, ...failing] } }),
+    )
+      .gates.find((g) => g.id === 'G5')!
+      .findings.find((f) => f.code === 'verify.suite-failed')!;
+    expect(finding.message).toContain(
+      'the test suite exited with 1; failing: ',
+    );
+    for (const t of failing.slice(0, 3))
+      expect(finding.message).toContain(`${t.file}:${t.line} ${t.name}`);
+    expect(finding.message).not.toContain(`${failing[3]!.file}:40`);
+    expect(finding.message).toContain('and 2 more');
+  });
+
   test('G4: findings of tests with unknown covers come out in stable order (file, line, name)', () => {
     const cases = [
       {

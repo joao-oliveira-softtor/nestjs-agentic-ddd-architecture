@@ -71,6 +71,7 @@ const RULE_PREFIXES = [
   'operator:',
   'valueobject:',
 ];
+const MAX_FAILING_NAMED = 3;
 const at = (testCase: TestCaseResult): string =>
   `${testCase.file}:${testCase.line}`;
 const failure = (testCase: TestCaseResult): Finding => ({
@@ -236,9 +237,18 @@ export function evaluateGates(input: GateInput): VerifyReport {
     });
   }
   if (input.tests.exitCode !== 0) {
+    const failing = input.tests.cases.filter((c) => c.status === 'failed');
+    const named = failing
+      .slice(0, MAX_FAILING_NAMED)
+      .map((c) => `${c.file}:${c.line} ${c.name}`);
+    const more = failing.length - named.length;
     g5.push({
       code: 'verify.suite-failed',
-      message: `the test suite exited with ${input.tests.exitCode}`,
+      message: `the test suite exited with ${input.tests.exitCode}${
+        named.length
+          ? `; failing: ${named.join('; ')}${more > 0 ? `; and ${more} more` : ''}`
+          : ''
+      }`,
       fix: 'run bun test and fix the failures',
       source: null,
     });
