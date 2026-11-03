@@ -210,7 +210,18 @@ describe('splice', () => {
 
   test('refuses a decorator that is already on the class (idempotent)', () => {
     const once = ok(ENTITY, member);
-    expect(refused(once, member).code as string).toBe('delta.splice-unexpected-shape');
+    // Decorator-only fragment: no member collision can fire first, so only the decorator check is tested.
+    const decoratorOnly: Fragment = {
+      path: 'domain/order.ts',
+      imports: [],
+      target: { kind: 'class', name: 'Order' },
+      classDecorators: ["@Invariant({ id: 'x', text: 'y' })"],
+      members: [],
+    };
+    const error = refused(once, decoratorOnly);
+    expect(error.code as string).toBe('delta.splice-unexpected-shape');
+    expect(error.message).toContain('already has the decorator');
+    expect(error.message).not.toContain('member');
   });
 
   test('keeps comments and multiline layout of a host import', () => {
