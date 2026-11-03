@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { AgenticError } from '../contracts/codes';
-import { createFakeGitHost } from './fake-git-host';
+import { createFakeGitHost } from '../../test/helpers/fake-git-host';
 import { GitHubChangeSink } from './github-sink';
 
 const TOKEN = 'ghp_SECRET_TOKEN_123';
@@ -30,6 +30,8 @@ function setup(
   });
   return { fake, sink };
 }
+
+const cpLength = (t: string) => Array.from(t).length;
 
 async function failure(
   p: Promise<unknown>,
@@ -93,7 +95,11 @@ describe('GitHubChangeSink', () => {
 
   test('maps a ref-creation race (422) to branch-exists', async () => {
     const { fake, sink } = setup();
-    fake.failWith = { match: '/git/refs', status: 422 };
+    fake.failWith = {
+      match: '/git/refs',
+      status: 422,
+      body: 'Reference already exists',
+    };
     expect((await failure(sink.publish(change))).code).toBe(
       'publish.branch-exists',
     );
@@ -230,5 +236,247 @@ describe('GitHubChangeSink', () => {
           ...bad,
         }),
     ).toThrow(AgenticError);
+  });
+
+  test.each([
+    'changes/.git/config',
+    'changes/.GIT/config',
+    'changes/a/.Git/x',
+    'changes/.gitmodules',
+    'changes/sub/.GitAttributes',
+    'changes/.github/workflows/ci.yml',
+  ])('refuses the git-sensitive path %j', async (path) => {
+    const { fake, sink } = setup();
+    const files = [{ path, content: 'x' }];
+    expect((await failure(sink.publish({ ...change, files }))).code).toBe(
+      'publish.path-invalid',
+    );
+    expect(fake.requests).toEqual([]);
+  });
+
+  test('refuses .github even when the allowed prefix is a hidden module root', async () => {
+    const fake = createFakeGitHost({
+      owner: 'acme',
+      repo: 'shop',
+      token: TOKEN,
+    });
+    const sink = new GitHubChangeSink({
+      token: TOKEN,
+      owner: 'acme',
+      repo: 'shop',
+      allowedPrefixes: ['.hidden/'],
+      fetch: fake.fetch,
+    });
+    const files = [{ path: '.hidden/.github/x.yml', content: 'x' }];
+    expect((await failure(sink.publish({ ...change, files }))).code).toBe(
+      'publish.path-invalid',
+    );
+  });
+
+  test('refuses paths that collide when compared case-insensitively', async () => {
+    const { fake, sink } = setup();
+    const files = [
+      { path: 'changes/0007-x/A.md', content: 'a' },
+      { path: 'changes/0007-x/a.md', content: 'b' },
+    ];
+    expect((await failure(sink.publish({ ...change, files }))).code).toBe(
+      'publish.path-invalid',
+    );
+    expect(fake.requests).toEqual([]);
+  });
+
+  test.each([
+    [''],
+    ['./'],
+    ['.git/'],
+    ['.GIT/'],
+    ['.github/'],
+    ['.github/workflows/'],
+    ['.gitmodules/'],
+  ])('rejects the allowed prefix %j', (prefix) => {
+    expect(
+      () =>
+        new GitHubChangeSink({
+          token: TOKEN,
+          owner: 'a',
+          repo: 'b',
+          allowedPrefixes: [prefix],
+        }),
+    ).toThrow(AgenticError);
+  });
+
+  test('refuses a file over the per-file cap without echoing its content', async () => {
+    const { fake, sink } = setup();
+    const files = [
+      {
+        path: 'changes/0007-x/big.md',
+        content: 'SECRETBODY'.repeat(120_000),
+      },
+    ];
+    const r = await failure(sink.publish({ ...change, files }));
+    expect(r.code).toBe('publish.change-invalid');
+    expect(r.message).toContain('changes/0007-x/big.md');
+    expect(r.message).not.toContain('SECRETBODY');
+    expect(fake.requests).toEqual([]);
+  });
+
+  test('counts UTF-8 bytes, not characters, for the per-file cap', async () => {
+    const { sink } = setup();
+    const files = [
+      { path: 'changes/0007-x/e.md', content: '€'.repeat(400_000) },
+    ];
+    expect((await failure(sink.publish({ ...change, files }))).code).toBe(
+      'publish.change-invalid',
+    );
+  });
+
+  test('refuses a change over the total cap', async () => {
+    const { fake, sink } = setup();
+    const files = Array.from({ length: 11 }, (_, i) => ({
+      path: `changes/0007-x/f${i}.md`,
+      content: 'a'.repeat(1024 * 1024),
+    }));
+    expect((await failure(sink.publish({ ...change, files }))).code).toBe(
+      'publish.change-invalid',
+    );
+    expect(fake.requests).toEqual([]);
+  });
+
+  test('deletes the branch it created when the pull request fails', async () => {
+    const { fake, sink } = setup();
+    fake.failWith = { match: '/pulls', status: 500 };
+    const r = await failure(sink.publish(change));
+    expect(r.code).toBe('publish.host-failed');
+    expect(r.message).toContain('changes/0007-refund-window');
+    expect(fake.refs.has('heads/changes/0007-refund-window')).toBe(false);
+    expect(fake.requests.at(-1)).toBe(
+      'DELETE /repos/acme/shop/git/refs/heads/changes/0007-refund-window',
+    );
+  });
+
+  test('says the branch was left behind when the cleanup also fails', async () => {
+    const { fake, sink } = setup();
+    fake.failWith = [
+      { match: '/pulls', status: 500 },
+      { match: '/git/refs/heads/changes/0007-refund-window', status: 500 },
+    ];
+    const r = await failure(sink.publish(change));
+    expect(r.message).toContain('left behind');
+    expect(r.message).toContain('changes/0007-refund-window');
+    expect(r.message).not.toContain(TOKEN);
+  });
+
+  test('caps text by code points without splitting a surrogate pair', async () => {
+    const { fake, sink } = setup();
+    await sink.publish({
+      ...change,
+      title: '😀'.repeat(300),
+      body: '😀'.repeat(70_000),
+    });
+    const pr = fake.pulls[0]!;
+    const lone = /[\ud800-\udbff](?![\udc00-\udfff])/;
+    expect(cpLength(pr.title)).toBe(256);
+    expect(cpLength(pr.body)).toBe(60_000);
+    expect(pr.title).not.toMatch(lone);
+    expect(pr.body).not.toMatch(lone);
+  });
+
+  test('the cap includes the joiners inserted after @', async () => {
+    const { fake, sink } = setup();
+    await sink.publish({
+      ...change,
+      title: '@'.repeat(300),
+      body: '@'.repeat(70_000),
+    });
+    const pr = fake.pulls[0]!;
+    expect(cpLength(pr.title)).toBeLessThanOrEqual(256);
+    expect(cpLength(pr.body)).toBeLessThanOrEqual(60_000);
+    expect(pr.title).not.toMatch(/@(?!\u200d)/);
+    expect(pr.body).not.toMatch(/@(?!\u200d)/);
+  });
+
+  test('strips control characters and newlines from the title and the commit subject', async () => {
+    const { fake, sink } = setup();
+    await sink.publish({ ...change, title: 'Fix\r\n@evil\tx\u0007y' });
+    const pr = fake.pulls[0]!;
+    expect(pr.title).toBe('Fix @\u200devil x y');
+    expect([...fake.commits.values()][0]!.message).toBe(pr.title);
+  });
+
+  test('never follows a redirect', async () => {
+    const { fake } = setup();
+    const inits: (RequestInit | undefined)[] = [];
+    const sink = new GitHubChangeSink({
+      token: TOKEN,
+      owner: 'acme',
+      repo: 'shop',
+      allowedPrefixes: ['changes/'],
+      fetch: ((u: string, init?: RequestInit) => {
+        inits.push(init);
+        return (
+          fake.fetch as (u: string, i?: RequestInit) => Promise<Response>
+        )(u, init);
+      }) as unknown as typeof fetch,
+    });
+    await sink.publish(change);
+    expect(inits.length).toBeGreaterThan(0);
+    expect(inits.every((i) => i?.redirect === 'error')).toBe(true);
+  });
+
+  test('maps 429 to host-rate-limited with the Retry-After seconds', async () => {
+    const { fake, sink } = setup();
+    fake.failWith = {
+      match: '/git/trees',
+      status: 429,
+      headers: { 'retry-after': '30' },
+    };
+    const r = await failure(sink.publish(change));
+    expect(r.code).toBe('publish.host-rate-limited');
+    expect(r.message).toContain('30');
+  });
+
+  test('maps 403 with an exhausted rate limit to host-rate-limited; a plain 403 stays denied', async () => {
+    const a = setup();
+    a.fake.failWith = {
+      match: '/git/trees',
+      status: 403,
+      headers: { 'x-ratelimit-remaining': '0', 'retry-after': 'abc' },
+    };
+    const r = await failure(a.sink.publish(change));
+    expect(r.code).toBe('publish.host-rate-limited');
+    expect(r.message).not.toContain('abc');
+    const b = setup();
+    b.fake.failWith = { match: '/git/trees', status: 403 };
+    expect((await failure(b.sink.publish(change))).code).toBe(
+      'publish.host-denied',
+    );
+  });
+
+  test('a non-JSON 200 answer is host-failed without echoing the body', async () => {
+    const sink = new GitHubChangeSink({
+      token: TOKEN,
+      owner: 'acme',
+      repo: 'shop',
+      allowedPrefixes: ['changes/'],
+      fetch: (async () =>
+        new Response('<html>LEAK</html>', {
+          status: 200,
+        })) as unknown as typeof fetch,
+    });
+    const r = await failure(sink.publish(change));
+    expect(r.code).toBe('publish.host-failed');
+    expect(r.message).not.toContain('LEAK');
+  });
+
+  test('a 422 on ref creation that is not "already exists" is host-failed', async () => {
+    const { fake, sink } = setup();
+    fake.failWith = {
+      match: '/git/refs',
+      status: 422,
+      body: 'Object does not exist',
+    };
+    expect((await failure(sink.publish(change))).code).toBe(
+      'publish.host-failed',
+    );
   });
 });

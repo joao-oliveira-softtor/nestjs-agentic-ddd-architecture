@@ -24,14 +24,41 @@ const PROTECTED = new Set(['main', 'master']);
 const MAX_TITLE = 256;
 const MAX_BODY = 60_000;
 const MAX_FILES = 500;
+const MAX_FILE_BYTES = 1024 * 1024;
+const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
+// Git metadata, submodule/attribute config and CI workflows: a PR must never touch them.
+const GIT_SEGMENTS = new Set([
+  '.git',
+  '.github',
+  '.gitmodules',
+  '.gitattributes',
+]);
+const CONTROL = /[\p{Cc}\p{Cf}\u2028\u2029]+/gu;
 
 // A zero-width joiner after "@" stops GitHub from turning the text into a mention.
 export function neutralizeMentions(text: string): string {
-  return text.replaceAll('@', '@‍');
+  return text.replaceAll('@', '@\u200d');
 }
 
-const cap = (text: string, max: number) =>
-  neutralizeMentions(text.slice(0, max));
+// Caps by code points (never splits a surrogate pair); an "@" costs two because of its joiner.
+// The body is rendered by GitHub as markdown and only mentions are neutralized: links, images and HTML are not.
+const cap = (text: string, max: number) => {
+  let out = '';
+  let used = 0;
+  for (const ch of text) {
+    const cost = ch === '@' ? 2 : 1;
+    if (used + cost > max) break;
+    used += cost;
+    out += ch;
+  }
+  return neutralizeMentions(out);
+};
+
+// The title is also the commit subject: one line, no control characters.
+const capTitle = (text: string) =>
+  cap(text.replace(CONTROL, ' ').trim(), MAX_TITLE);
+
+const folded = (path: string) => path.normalize('NFC').toLowerCase();
 
 function pathError(path: string, prefixes: readonly string[]): string | null {
   if (path === '' || path.includes('\0') || path.includes('\\'))
@@ -39,9 +66,25 @@ function pathError(path: string, prefixes: readonly string[]): string | null {
   if (path.startsWith('/') || /^[A-Za-z]:/.test(path)) return 'absolute';
   if (path.split('/').some((s) => s === '' || s === '.' || s === '..'))
     return 'empty, "." or ".." segment';
+  if (
+    folded(path)
+      .split('/')
+      .some((s) => GIT_SEGMENTS.has(s))
+  )
+    return 'git metadata or CI path';
   if (!prefixes.some((p) => path.startsWith(p)))
     return 'outside allowed prefixes';
   return null;
+}
+
+// Numbers only: the header values are never echoed as text.
+function waitHint(res: Response): string {
+  const after = res.headers.get('retry-after') ?? '';
+  if (/^\d{1,9}$/.test(after)) return ` (retry after ${after}s)`;
+  const reset = res.headers.get('x-ratelimit-reset') ?? '';
+  if (/^\d{1,12}$/.test(reset))
+    return ` (resets in ${Math.max(0, Number(reset) - Math.floor(Date.now() / 1000))}s)`;
+  return '';
 }
 
 export class GitHubChangeSink implements ChangeSink {
@@ -77,12 +120,28 @@ export class GitHubChangeSink implements ChangeSink {
         'publish.path-invalid',
         `a change carries between 1 and ${MAX_FILES} files`,
       );
+    const seen = new Set<string>();
+    let total = 0;
     for (const f of change.files) {
       const why = pathError(f.path, this.#opts.allowedPrefixes);
       if (why)
         throw new AgenticError(
           'publish.path-invalid',
           `file path ${JSON.stringify(f.path)} rejected: ${why}`,
+        );
+      // Case-insensitive: Windows and macOS checkouts would collapse these into one file.
+      if (seen.has(folded(f.path)))
+        throw new AgenticError(
+          'publish.path-invalid',
+          `file path ${JSON.stringify(f.path)} rejected: duplicate`,
+        );
+      seen.add(folded(f.path));
+      const bytes = Buffer.byteLength(f.content, 'utf8');
+      total += bytes;
+      if (bytes > MAX_FILE_BYTES || total > MAX_TOTAL_BYTES)
+        throw new AgenticError(
+          'publish.change-invalid',
+          `file ${JSON.stringify(f.path)} exceeds the size cap (${MAX_FILE_BYTES} bytes per file, ${MAX_TOTAL_BYTES} in total)`,
         );
     }
 
@@ -130,7 +189,7 @@ export class GitHubChangeSink implements ChangeSink {
       { base_tree: baseCommit.tree.sha, tree },
       'tree',
     );
-    const title = cap(change.title, MAX_TITLE);
+    const title = capTitle(change.title);
     const commit = await this.#call<{ sha: string }>(
       'POST',
       `${repo}/git/commits`,
@@ -141,20 +200,63 @@ export class GitHubChangeSink implements ChangeSink {
       ref: `refs/heads/${branch}`,
       sha: commit.sha,
     });
-    // 422 on create: someone created the branch between the check and now.
-    if (ref.status === 422)
+    // 422 "Reference already exists": someone created the branch between the check and now.
+    if (
+      ref.status === 422 &&
+      (await this.#message(ref)).includes('Reference already exists')
+    )
       throw new AgenticError(
         'publish.branch-exists',
         `branch ${branch} already exists`,
       );
     this.#check(ref, 'branch');
-    const pr = await this.#call<{ html_url: string }>(
-      'POST',
-      `${repo}/pulls`,
-      { title, body: cap(change.body, MAX_BODY), head: branch, base },
-      'pull request',
+    try {
+      const pr = await this.#call<{ html_url: string }>(
+        'POST',
+        `${repo}/pulls`,
+        { title, body: cap(change.body, MAX_BODY), head: branch, base },
+        'pull request',
+      );
+      return { branch, url: pr.html_url };
+    } catch (e) {
+      throw await this.#cleanup(e, repo, branch);
+    }
+  }
+
+  /** Removes the ref this publish just created; always returns the error to throw. */
+  async #cleanup(
+    cause: unknown,
+    repo: string,
+    branch: string,
+  ): Promise<unknown> {
+    if (!(cause instanceof AgenticError)) return cause;
+    try {
+      const res = await this.#send(
+        'DELETE',
+        `${repo}/git/refs/heads/${branch}`,
+        undefined,
+      );
+      if (!res.ok) throw new Error('delete refused');
+    } catch {
+      return new AgenticError(
+        cause.code,
+        `${cause.message}; branch ${branch} was left behind and must be deleted by hand`,
+      );
+    }
+    return new AgenticError(
+      cause.code,
+      `${cause.message}; branch ${branch} was removed`,
     );
-    return { branch, url: pr.html_url };
+  }
+
+  // Only the "message" field is read, and only to compare; it is never echoed.
+  async #message(res: Response): Promise<string> {
+    try {
+      const m = ((await res.json()) as { message?: unknown }).message;
+      return typeof m === 'string' ? m : '';
+    } catch {
+      return '';
+    }
   }
 
   async #exists(path: string): Promise<boolean> {
@@ -172,13 +274,21 @@ export class GitHubChangeSink implements ChangeSink {
   ): Promise<T> {
     const res = await this.#send(method, path, body);
     this.#check(res, step);
-    return (await res.json()) as T;
+    try {
+      return (await res.json()) as T;
+    } catch {
+      throw new AgenticError(
+        'publish.host-failed',
+        `GitHub ${step} failed: the answer was not JSON`,
+      );
+    }
   }
 
   async #send(method: string, path: string, body: unknown): Promise<Response> {
     try {
       return await this.#fetch(`${API}${path}`, {
         method,
+        redirect: 'error',
         headers: {
           authorization: `Bearer ${this.#opts.token}`,
           accept: 'application/vnd.github+json',
@@ -198,6 +308,14 @@ export class GitHubChangeSink implements ChangeSink {
 
   #check(res: Response, step: string): void {
     if (res.ok) return;
+    if (
+      res.status === 429 ||
+      (res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0')
+    )
+      throw new AgenticError(
+        'publish.host-rate-limited',
+        `GitHub ${step} was rate-limited: HTTP ${res.status}${waitHint(res)}`,
+      );
     const code =
       res.status === 401 || res.status === 403
         ? 'publish.host-denied'

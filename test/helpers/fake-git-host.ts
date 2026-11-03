@@ -14,7 +14,14 @@ export interface FakeGitHost {
   /** Every Authorization header seen. */
   readonly auth: string[];
   /** Answers with this status to any request whose "METHOD path" ends with `match`. */
-  failWith: { match: string; status: number; body?: string } | undefined;
+  failWith: Failure | readonly Failure[] | undefined;
+}
+
+interface Failure {
+  match: string;
+  status: number;
+  body?: string;
+  headers?: Record<string, string>;
 }
 
 export function createFakeGitHost(opts: {
@@ -49,10 +56,13 @@ export function createFakeGitHost(opts: {
       host.requests.push(key);
       const auth = new Headers(init?.headers).get('authorization') ?? '';
       host.auth.push(auth);
-      if (host.failWith && key.endsWith(host.failWith.match)) {
-        const f = host.failWith;
-        return json(f.status, { message: f.body ?? 'failure' });
-      }
+      const fails = host.failWith === undefined ? [] : [host.failWith].flat();
+      const f = fails.find((x) => key.endsWith(x.match));
+      if (f)
+        return new Response(JSON.stringify({ message: f.body ?? 'failure' }), {
+          status: f.status,
+          headers: f.headers,
+        });
       if (auth !== `Bearer ${opts.token}`)
         return json(401, { message: 'Bad credentials' });
       if (!url.pathname.startsWith(prefix)) return json(404, {});
@@ -90,6 +100,11 @@ export function createFakeGitHost(opts: {
         host.refs.set(name, body.sha);
         return json(201, { ref: body.ref });
       }
+      const del = /^\/git\/refs\/(heads\/.+)$/.exec(path);
+      if (method === 'DELETE' && del)
+        return host.refs.delete(del[1]!)
+          ? new Response(null, { status: 204 })
+          : json(404, {});
       if (method === 'POST' && path === '/pulls') {
         host.pulls.push(body);
         return json(201, {

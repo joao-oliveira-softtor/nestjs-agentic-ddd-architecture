@@ -264,6 +264,8 @@ export const ERROR_CODES = {
     'The Git host refused the server token (HTTP 401 or 403).',
   'publish.host-failed':
     'The Git host answered with an unexpected HTTP status.',
+  'publish.host-rate-limited':
+    'The Git host rate-limited the server token (HTTP 429, or 403 with no quota left).',
   'publish.host-unreachable': 'The Git host could not be reached.',
   'publish.path-invalid':
     'A file path is not relative POSIX, or is outside the allowed prefixes.',
