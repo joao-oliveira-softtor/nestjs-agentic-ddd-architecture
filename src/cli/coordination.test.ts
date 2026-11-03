@@ -104,7 +104,7 @@ test('new commands reject invalid usage with 2', async () => {
 test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relacionada é ignorada', async () => {
   const { dir, run } = await queryFixture();
   try {
-    const packet = run('packet', 'entity:Thing');
+    const packet = run('packet', 'entity:Thing', '--static');
     expect(packet.code).toBe(0);
     const hash = /specHash: `([a-f0-9]{64})`/.exec(packet.stdout)![1]!;
     const passingTests = await readFile(join(dir, 'app.test.ts'), 'utf8');
@@ -188,7 +188,7 @@ test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relac
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, 30_000); // shortcut: ~9 serial CLI spawns (~0.6 s each, 4 s alone); 30 s absorbs machine load
 
 test('status and verifyItem refuse partial JUnit on a collection error', async () => {
   const { dir, run } = await queryFixture();
@@ -287,4 +287,4 @@ test('project without tests allows status, next and packet, but does not certify
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, 30_000); // shortcut: serial CLI spawns (~0.6 s each, 2.5 s alone); 30 s absorbs machine load

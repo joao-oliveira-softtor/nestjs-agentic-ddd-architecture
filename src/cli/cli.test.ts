@@ -142,7 +142,7 @@ describe('agentic-ddd compile (CLI)', () => {
       '| `.agentic/runtime/order-operator/SKILL.md` |',
     );
     expect(result.stdout).toContain('≈tokens');
-  });
+  }, 30_000); // shortcut: one CLI spawn (~1 s alone); 30 s absorbs machine load
 
   test('lint error in write mode exits 1 but still writes', async () => {
     const result = run(

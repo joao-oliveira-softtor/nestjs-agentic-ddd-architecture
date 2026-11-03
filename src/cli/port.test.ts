@@ -74,7 +74,7 @@ test('port: appears in the packet, changing the description requires a proposal 
       };
     };
     const hashOf = () => {
-      const p = run('packet', 'usecase:matricular_aluno');
+      const p = run('packet', 'usecase:matricular_aluno', '--static');
       expect(p.stderr).toBe('');
       expect(p.code).toBe(0);
       return {
@@ -115,4 +115,4 @@ test('port: appears in the packet, changing the description requires a proposal 
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, 30_000); // shortcut: ~8 serial CLI spawns (3.5 s alone); 30 s absorbs machine load

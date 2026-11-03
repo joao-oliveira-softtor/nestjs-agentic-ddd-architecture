@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from 'bun:test';
+import { afterEach, beforeAll, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -23,6 +23,25 @@ import {
 
 const ROOT = resolve(import.meta.dir, '..');
 const packets = new Map<string, string>();
+// Fetch the packets the tests use once, in parallel, so no test pays for the spawns.
+beforeAll(async () => {
+  await Promise.all(
+    [
+      'entity:Order',
+      'method:Order.cancel',
+      'usecase:create_order',
+      'operator:order-operator',
+    ].map(async (item) => {
+      const proc = Bun.spawn(
+        ['bun', 'src/cli/main.ts', 'packet', item, '--static'],
+        { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' },
+      );
+      const text = await new Response(proc.stdout).text();
+      if ((await proc.exited) === 0) packets.set(item, text);
+    }),
+  );
+  // shortcut: 30 s covers four parallel CLI spawns on a loaded machine; raise only if measured slower.
+}, 30_000);
 function packet(item: string): string {
   const cached = packets.get(item);
   if (cached) return cached;
