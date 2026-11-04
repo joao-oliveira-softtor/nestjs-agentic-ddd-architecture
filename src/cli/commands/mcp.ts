@@ -56,6 +56,24 @@ const BIND_ERRORS: Readonly<
   },
 };
 
+const configPathOf = (values: ReadonlyMap<string, string>, root: string) =>
+  values.get('--config') ?? resolve(root, 'agentic.config.ts');
+
+// publish_change needs a working copy (a published lock has no files to publish from) and a Git host in the environment.
+async function sinkFor(
+  published: PublishedLock | undefined,
+  root: string,
+  configPath: string,
+): Promise<{ sink: ChangeSink | undefined } | { error: AgenticError }> {
+  if (published !== undefined) return { sink: undefined };
+  try {
+    return { sink: await sinkFromProject(root, configPath, process.env) };
+  } catch (error) {
+    if (!(error instanceof AgenticError)) throw error;
+    return { error };
+  }
+}
+
 export async function mcpCommand(
   args: readonly string[],
   load: Load = () => import('../../mcp/index'),
@@ -135,19 +153,16 @@ export async function mcpCommand(
       return 1;
     }
   }
-  const configPath =
-    parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts');
-  // publish_change needs a working copy: a published lock has no files to publish from.
-  let sink: ChangeSink | undefined;
-  if (published === undefined) {
-    try {
-      sink = await sinkFromProject(root, configPath, process.env);
-    } catch (error) {
-      if (!(error instanceof AgenticError)) throw error;
-      console.error(formatCoded(error));
-      return 1;
-    }
+  const made = await sinkFor(
+    published,
+    root,
+    configPathOf(parsed.values, root),
+  );
+  if ('error' in made) {
+    console.error(formatCoded(made.error));
+    return 1;
   }
+  const { sink } = made;
   // Printed only once the server is up, never before a failure.
   const announce = () => {
     if (published !== undefined)
@@ -156,6 +171,7 @@ export async function mcpCommand(
       );
   };
   if (http) {
+    const configPath = configPathOf(parsed.values, root);
     // A published host may have no module sources, so skip the module-path checks.
     const mcp =
       published === undefined

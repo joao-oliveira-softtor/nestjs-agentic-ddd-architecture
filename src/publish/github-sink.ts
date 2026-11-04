@@ -62,22 +62,82 @@ const capTitle = (text: string) =>
 
 const folded = (path: string) => path.normalize('NFC').toLowerCase();
 
-function pathError(path: string, prefixes: readonly string[]): string | null {
+const dotSegment = (s: string) => s === '' || s === '.' || s === '..';
+
+// Windows drops trailing dots and spaces, so ".git." is ".git" there.
+const gitPath = (path: string) =>
+  folded(path)
+    .split('/')
+    .some((s) => GIT_SEGMENTS.has(s.replace(/[. ]+$/, '')));
+
+// What is wrong with the shape of the path, whatever the allowed prefixes are.
+function shapeError(path: string): string | null {
   if (path === '' || path.includes('\0') || path.includes('\\'))
     return 'empty, NUL or backslash';
   if (path.startsWith('/') || /^[A-Za-z]:/.test(path)) return 'absolute';
-  if (path.split('/').some((s) => s === '' || s === '.' || s === '..'))
-    return 'empty, "." or ".." segment';
-  if (
-    folded(path)
-      .split('/')
-      // Windows drops trailing dots and spaces, so ".git." is ".git" there.
-      .some((s) => GIT_SEGMENTS.has(s.replace(/[. ]+$/, '')))
-  )
-    return 'git metadata or CI path';
+  if (path.split('/').some(dotSegment)) return 'empty, "." or ".." segment';
+  return null;
+}
+
+function pathError(path: string, prefixes: readonly string[]): string | null {
+  const shape = shapeError(path);
+  if (shape !== null) return shape;
+  if (gitPath(path)) return 'git metadata or CI path';
   if (!prefixes.some((p) => path.startsWith(p)))
     return 'outside allowed prefixes';
   return null;
+}
+
+/** The capped title of a change whose number, slug and file count are valid; `publish.*` errors otherwise. */
+function checkedTitle(change: PublishableChange): string {
+  if (!NUMBER.test(change.number) || !SLUG.test(change.slug))
+    throw new AgenticError(
+      'publish.change-invalid',
+      'change number must be four digits and the slug kebab-case',
+    );
+  if (change.files.length === 0 || change.files.length > MAX_FILES)
+    throw new AgenticError(
+      'publish.path-invalid',
+      `a change carries between 1 and ${MAX_FILES} files`,
+    );
+  const title = capTitle(change.title);
+  if (title === '')
+    throw new AgenticError(
+      'publish.change-invalid',
+      'the change title is empty',
+    );
+  return title;
+}
+
+/** Refuses the first file with a bad or duplicate path or past the size caps. */
+function checkFiles(
+  files: PublishableChange['files'],
+  prefixes: readonly string[],
+): void {
+  const seen = new Set<string>();
+  let total = 0;
+  for (const f of files) {
+    const why = pathError(f.path, prefixes);
+    if (why)
+      throw new AgenticError(
+        'publish.path-invalid',
+        `file path ${JSON.stringify(f.path)} rejected: ${why}`,
+      );
+    // Case-insensitive: Windows and macOS checkouts would collapse these into one file.
+    if (seen.has(folded(f.path)))
+      throw new AgenticError(
+        'publish.path-invalid',
+        `file path ${JSON.stringify(f.path)} rejected: duplicate`,
+      );
+    seen.add(folded(f.path));
+    const bytes = Buffer.byteLength(f.content, 'utf8');
+    total += bytes;
+    if (bytes > MAX_FILE_BYTES || total > MAX_TOTAL_BYTES)
+      throw new AgenticError(
+        'publish.change-invalid',
+        `file ${JSON.stringify(f.path)} exceeds the size cap (${MAX_FILE_BYTES} bytes per file, ${MAX_TOTAL_BYTES} in total)`,
+      );
+  }
 }
 
 // Numbers only: the header values are never echoed as text.
@@ -113,46 +173,8 @@ export class GitHubChangeSink implements ChangeSink {
   }
 
   async publish(change: PublishableChange): Promise<PublishedChange> {
-    if (!NUMBER.test(change.number) || !SLUG.test(change.slug))
-      throw new AgenticError(
-        'publish.change-invalid',
-        'change number must be four digits and the slug kebab-case',
-      );
-    if (change.files.length === 0 || change.files.length > MAX_FILES)
-      throw new AgenticError(
-        'publish.path-invalid',
-        `a change carries between 1 and ${MAX_FILES} files`,
-      );
-    const title = capTitle(change.title);
-    if (title === '')
-      throw new AgenticError(
-        'publish.change-invalid',
-        'the change title is empty',
-      );
-    const seen = new Set<string>();
-    let total = 0;
-    for (const f of change.files) {
-      const why = pathError(f.path, this.#opts.allowedPrefixes);
-      if (why)
-        throw new AgenticError(
-          'publish.path-invalid',
-          `file path ${JSON.stringify(f.path)} rejected: ${why}`,
-        );
-      // Case-insensitive: Windows and macOS checkouts would collapse these into one file.
-      if (seen.has(folded(f.path)))
-        throw new AgenticError(
-          'publish.path-invalid',
-          `file path ${JSON.stringify(f.path)} rejected: duplicate`,
-        );
-      seen.add(folded(f.path));
-      const bytes = Buffer.byteLength(f.content, 'utf8');
-      total += bytes;
-      if (bytes > MAX_FILE_BYTES || total > MAX_TOTAL_BYTES)
-        throw new AgenticError(
-          'publish.change-invalid',
-          `file ${JSON.stringify(f.path)} exceeds the size cap (${MAX_FILE_BYTES} bytes per file, ${MAX_TOTAL_BYTES} in total)`,
-        );
-    }
+    const title = checkedTitle(change);
+    checkFiles(change.files, this.#opts.allowedPrefixes);
 
     const branch = `changes/${change.number}-${change.slug}`;
     const repo = `/repos/${this.#opts.owner}/${this.#opts.repo}`;
