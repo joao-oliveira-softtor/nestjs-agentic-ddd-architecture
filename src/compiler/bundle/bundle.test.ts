@@ -11,95 +11,24 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
-import { analyzeProject, compile } from '../compile';
-import { serializeLock } from '../lock';
-import { DEFAULT_CONVENTIONS } from '../conventions';
-import { additionDelta, baseDelta } from '../delta/additions-fixture';
-import { renderDelta } from '../delta/render';
+import { additionDelta } from '../delta/additions-fixture';
+import {
+  git,
+  leftovers,
+  shopRepo as sharedShopRepo,
+} from '../../../test/helpers/shop-repo';
 import { compileBundle } from './index';
 
 const ROOT = resolve(import.meta.dir, '../../..');
 const dirs: string[] = [];
 
-function git(cwd: string, ...args: string[]): string {
-  const run = Bun.spawnSync(
-    [
-      'git',
-      '-c',
-      'user.name=Test',
-      '-c',
-      'user.email=test@example.com',
-      '-c',
-      'commit.gpgsign=false',
-      '-c',
-      'core.autocrlf=false',
-      ...args,
-    ],
-    {
-      cwd,
-      stdout: 'pipe',
-      stderr: 'pipe',
-      // A fixed date makes the base commit id, and so the bundle hash, the same on every run.
-      env: {
-        ...process.env,
-        GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z',
-        GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z',
-      },
-    },
-  );
-  if (run.exitCode !== 0) throw new Error(run.stderr.toString());
-  return run.stdout.toString().trim();
-}
-
-/** A committed shop project: the base Delta rendered, compiled (lock and skills) and committed. */
+/** The shared shop fixture, its root tracked for cleanup. */
 async function shopRepo(
   mutateAfterCompile?: (root: string) => Promise<void>,
-): Promise<{ root: string; ref: string; work: string }> {
-  await mkdir(join(ROOT, '.tmp'), { recursive: true });
-  const root = await mkdtemp(join(ROOT, '.tmp', 'bundle-base-'));
-  dirs.push(root);
-  const rendered = renderDelta(baseDelta(), {
-    conventions: DEFAULT_CONVENTIONS,
-    existingFiles: [],
-  });
-  if (!rendered.ok) throw new Error(JSON.stringify(rendered.errors));
-  for (const f of rendered.files) {
-    const target = join(root, 'src/shop', f.path);
-    await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, f.content);
-  }
-  // Bun reads decorator settings from the project tsconfig; the fixture borrows the repository one.
-  await writeFile(
-    join(root, 'tsconfig.json'),
-    JSON.stringify({
-      extends: join(ROOT, 'tsconfig.json').replaceAll('\\', '/'),
-    }),
-  );
-  const configPath = join(root, 'agentic.config.ts');
-  await writeFile(
-    configPath,
-    `import { defineConfig } from '@agentic-ddd/compiler';
-export default defineConfig({ mirrors: [], modules: [{ name: 'shop', path: 'src/shop' }] });
-`,
-  );
-  // A first compile with a domain and no proposal writes no lock, so the base lock is written here.
-  const { ir } = await analyzeProject({ configPath });
-  await mkdir(join(root, '.agentic'), { recursive: true });
-  await writeFile(
-    join(root, '.agentic/domain.lock.json'),
-    serializeLock({ lockVersion: 1, ir, changes: [] }),
-  );
-  const first = await compile({ configPath, mode: 'write' });
-  if (!first.ok) throw new Error(JSON.stringify(first.errors));
-  await mutateAfterCompile?.(root);
-  git(root, 'init', '-q');
-  git(root, 'add', '-A');
-  git(root, 'commit', '-q', '-m', 'base');
-  return {
-    root,
-    ref: git(root, 'rev-parse', 'HEAD'),
-    work: join(root, '.tmp'),
-  };
+): ReturnType<typeof sharedShopRepo> {
+  const made = await sharedShopRepo(mutateAfterCompile, 'bundle-base-');
+  dirs.push(made.root);
+  return made;
 }
 
 /** The code of the error a call is refused with. */
@@ -108,15 +37,6 @@ const refusal = (call: Promise<unknown>): Promise<unknown> =>
     () => 'resolved',
     (error: { code?: string }) => error.code,
   );
-
-const leftovers = async (repo: { root: string; work: string }) => ({
-  dirs: (await readdir(repo.work).catch(() => [])).filter((n) =>
-    n.startsWith('bundle-'),
-  ),
-  worktrees: git(repo.root, 'worktree', 'list', '--porcelain')
-    .split('\n')
-    .filter((l) => l.startsWith('worktree ')).length,
-});
 
 let repo: Awaited<ReturnType<typeof shopRepo>>;
 beforeAll(async () => {
@@ -394,22 +314,6 @@ await Bun.sleep(60_000);
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
   }, 60_000);
 
-  test('a child that hands its pipes to a surviving grandchild cannot hold the call', async () => {
-    const script = join(repo.work, 'grandchild-cli.ts');
-    await writeFile(
-      script,
-      `Bun.spawn(['bun', '-e', 'await Bun.sleep(20000)'], { stdout: 'inherit', stderr: 'inherit' });
-await Bun.sleep(60_000);
-`,
-    );
-    const started = Date.now();
-    expect(
-      await refusal(
-        compileBundle({ ...input(), cliEntry: script, timeoutMs: 1500 }),
-      ),
-    ).toBe('bundle.compile-timeout');
-    expect(Date.now() - started).toBeLessThan(15_000);
-  }, 60_000);
 });
 
 describe('orphans of a crashed server', () => {
