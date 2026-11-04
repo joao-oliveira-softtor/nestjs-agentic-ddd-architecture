@@ -18,7 +18,7 @@ import {
   sep,
 } from 'node:path';
 import { sha256, stableStringify } from '../canonical';
-import { loadConfig } from '../config';
+import { loadConfig, type ResolvedConfig } from '../config';
 import { AgenticError, toPosix } from '../ir';
 import {
   DEFAULT_TIMEOUT_MS,
@@ -26,6 +26,7 @@ import {
   minimalEnv,
   quote,
   run,
+  type Run,
 } from './candidate';
 import { buildManifest, toLf, type BundleManifest } from './manifest';
 
@@ -134,14 +135,15 @@ const text = (path: string): Promise<string | null> =>
     .then(toLf)
     .catch(() => null);
 
-async function readBundle(dir: string): Promise<{
-  manifest: BundleManifest;
-  files: Map<string, string>;
-}> {
-  const mismatch = (why: string) =>
-    new AgenticError('apply.hash-mismatch', `the bundle is not intact: ${why}`);
+const notIntact = (why: string) =>
+  new AgenticError('apply.hash-mismatch', `the bundle is not intact: ${why}`);
+
+/** The text of `bundle.json` and every other file of the bundle directory (LF, the derived ones left out). */
+export async function splitBundleFiles(
+  dir: string,
+): Promise<{ manifestText: string; files: Map<string, string> }> {
   const manifestText = await text(join(dir, 'bundle.json'));
-  if (manifestText === null) throw mismatch('bundle.json is missing');
+  if (manifestText === null) throw notIntact('bundle.json is missing');
   const files = new Map<string, string>();
   const entries = await readdir(dir, { recursive: true, withFileTypes: true });
   for (const e of entries) {
@@ -150,47 +152,78 @@ async function readBundle(dir: string): Promise<{
     if (!DERIVED.has(rel))
       files.set(rel, toLf(await readFile(join(e.parentPath, e.name), 'utf8')));
   }
-  let manifest: BundleManifest;
-  let rebuilt: BundleManifest;
+  return { manifestText, files };
+}
+
+/** The manifest the text declares, the hashes it lists and the manifest rebuilt from the files; `apply.hash-mismatch` for text that is not a manifest. */
+function parseAndRebuild(
+  manifestText: string,
+  files: ReadonlyMap<string, string>,
+): {
+  manifest: BundleManifest;
+  listed: ReadonlyMap<string, string>;
+  rebuilt: BundleManifest;
+} {
   try {
-    manifest = JSON.parse(manifestText) as BundleManifest;
+    const manifest = JSON.parse(manifestText) as BundleManifest;
     const { files: _files, hash: _hash, version: _version, ...rest } = manifest;
-    rebuilt = buildManifest(
+    const rebuilt = buildManifest(
       rest,
       [...files].map(([path, content]) => ({ path, content })),
     );
+    const listed = new Map(manifest.files.map((f) => [f.path, f.sha256]));
+    return { manifest, listed, rebuilt };
   } catch {
-    throw mismatch('bundle.json is not a manifest');
+    throw notIntact('bundle.json is not a manifest');
   }
-  const listed = new Map(manifest.files.map((f) => [f.path, f.sha256]));
-  const offending =
-    [...files.keys()].find((p) => !listed.has(p)) ??
-    [...listed.keys()].find((p) => !files.has(p)) ??
-    rebuilt.files.find((f) => listed.get(f.path) !== f.sha256)?.path;
-  if (offending !== undefined)
-    throw mismatch(`${quote(offending)} differs from the manifest`);
-  if (rebuilt.hash !== manifest.hash)
-    throw mismatch('the manifest does not match its hash');
-  return { manifest, files };
 }
 
-interface Planned {
+/** The first path that is extra, missing or whose sha256 differs from the manifest. */
+function firstDifference(
+  listed: ReadonlyMap<string, string>,
+  rebuilt: BundleManifest,
+  files: ReadonlyMap<string, string>,
+): string | undefined {
+  return (
+    [...files.keys()].find((p) => !listed.has(p)) ??
+    [...listed.keys()].find((p) => !files.has(p)) ??
+    rebuilt.files.find((f) => listed.get(f.path) !== f.sha256)?.path
+  );
+}
+
+/**
+ * The hash check: recomputes the manifest from the files and refuses (`apply.hash-mismatch`) an
+ * extra, missing or changed file and a manifest that does not match its own hash. Pure.
+ */
+export function verifyBundle(
+  manifestText: string,
+  files: ReadonlyMap<string, string>,
+): BundleManifest {
+  const { manifest, listed, rebuilt } = parseAndRebuild(manifestText, files);
+  const offending = firstDifference(listed, rebuilt, files);
+  if (offending !== undefined)
+    throw notIntact(`${quote(offending)} differs from the manifest`);
+  if (rebuilt.hash !== manifest.hash)
+    throw notIntact('the manifest does not match its hash');
+  return manifest;
+}
+
+export interface Planned {
   /** Project-relative, forward slashes. */
   readonly rel: string;
   readonly content: string;
 }
 
 /** Skeleton files, the change directory and its `examples.json`, as project-relative writes. */
-function plan(
-  manifest: BundleManifest,
-  files: Map<string, string>,
+export function plan(
+  manifest: Pick<BundleManifest, 'examples'>,
+  files: ReadonlyMap<string, string>,
   changesRel: string,
 ): { planned: Planned[]; change: string } {
   const planned: Planned[] = [];
   const changes = new Set<string>();
-  for (const [path, content] of [...files].sort(([a], [b]) =>
-    a < b ? -1 : 1,
-  )) {
+  for (const path of [...files.keys()].sort()) {
+    const content = files.get(path)!;
     if (path.startsWith(SKELETON))
       planned.push({ rel: path.slice(SKELETON.length), content });
     else if (path.startsWith(CHANGES)) {
@@ -243,22 +276,62 @@ async function checkBase(
   }
 }
 
+/** What a transaction changed so far: files put in place (with the backup of the one they replaced) and directories created. */
+interface Journal {
+  readonly done: { abs: string; backup?: string }[];
+  readonly dirs: string[];
+}
+
+/** Puts back every original and removes the rest; runs once, later calls find nothing to undo. */
+const rollbackOf = (journal: Journal) => async () => {
+  for (const { abs, backup } of journal.done.splice(0).reverse()) {
+    await rm(abs, { force: true });
+    if (backup) await rename(backup, abs);
+  }
+  for (const dir of journal.dirs.splice(0).reverse())
+    await rm(dir, { recursive: true, force: true });
+};
+
+/** Moves the original at `abs`, when there is one, under `<stage>/backup`; returns where it went. */
+async function backUp(
+  stage: string,
+  abs: string,
+  rel: string,
+): Promise<string | undefined> {
+  const original = await readFile(abs).then(
+    () => true,
+    () => false,
+  );
+  if (!original) return undefined;
+  const backup = join(stage, 'backup', rel);
+  await mkdir(dirname(backup), { recursive: true });
+  await rename(abs, backup);
+  return backup;
+}
+
+/** Moves one staged file into place, recording what it did in the journal. */
+async function moveOne(
+  journal: Journal,
+  stage: string,
+  root: string,
+  rel: string,
+): Promise<void> {
+  const abs = join(root, rel);
+  const created = await mkdir(dirname(abs), { recursive: true });
+  if (created) journal.dirs.push(created);
+  const backup = await backUp(stage, abs, rel);
+  journal.done.push({ abs, backup });
+  await rename(join(stage, 'new', rel), abs);
+}
+
 /**
  * Moves staged files into place, keeping a backup of every original. `rollback` puts back every
  * original and removes the rest; it runs once (later calls find nothing to undo), so a failed
  * move, a failed compile and a signal can all call it. An aborted `signal` stops the moves.
  */
-function transaction(stage: string, root: string, signal: AbortSignal) {
-  const done: { abs: string; backup?: string }[] = [];
-  const dirs: string[] = [];
-  const rollback = async () => {
-    for (const { abs, backup } of done.splice(0).reverse()) {
-      await rm(abs, { force: true });
-      if (backup) await rename(backup, abs);
-    }
-    for (const dir of dirs.splice(0).reverse())
-      await rm(dir, { recursive: true, force: true });
-  };
+export function transaction(stage: string, root: string, signal: AbortSignal) {
+  const journal: Journal = { done: [], dirs: [] };
+  const rollback = rollbackOf(journal);
   const move = async (
     planned: readonly Planned[],
     beforeMove?: (index: number) => void,
@@ -267,21 +340,7 @@ function transaction(stage: string, root: string, signal: AbortSignal) {
       for (const [i, { rel }] of planned.entries()) {
         beforeMove?.(i);
         if (signal.aborted) throw new Error('interrupted by a signal');
-        const abs = join(root, rel);
-        const created = await mkdir(dirname(abs), { recursive: true });
-        if (created) dirs.push(created);
-        const original = await readFile(abs).then(
-          () => true,
-          () => false,
-        );
-        let backup: string | undefined;
-        if (original) {
-          backup = join(stage, 'backup', rel);
-          await mkdir(dirname(backup), { recursive: true });
-          await rename(abs, backup);
-        }
-        done.push({ abs, backup });
-        await rename(join(stage, 'new', rel), abs);
+        await moveOne(journal, stage, root, rel);
       }
     } catch (error) {
       await rollback();
@@ -352,6 +411,35 @@ async function confirmation(
   );
 }
 
+/** Writes every planned file under `<stage>/new`, ready to be moved into place. */
+async function stageFiles(
+  stage: string,
+  planned: readonly Planned[],
+): Promise<void> {
+  for (const { rel, content } of planned) {
+    await mkdir(dirname(join(stage, 'new', rel)), { recursive: true });
+    await Bun.write(join(stage, 'new', rel), content);
+  }
+}
+
+/** Why a finished `compile` counts as a failure (timeout, exit code or signal), or `undefined` when it passed. */
+export function compileRefusal(
+  compiled: Pick<Run, 'code' | 'stderr' | 'timedOut'>,
+  interrupted: boolean,
+  limitMs: number,
+): AgenticError | undefined {
+  if (compiled.timedOut)
+    return new AgenticError(
+      'apply.compile-timeout',
+      `compile did not finish within ${limitMs / 1000} s and was stopped; ${RESTORED}`,
+    );
+  if (compiled.code === 0 && !interrupted) return undefined;
+  return new AgenticError(
+    'apply.compile-failed',
+    `compile ${interrupted ? 'was interrupted by a signal' : 'failed'} after writing the bundle; ${RESTORED}: ${quote(compiled.stderr.trim(), 2000)}`,
+  );
+}
+
 /** Stages the files, moves them into place, runs `compile` on the project; any failure restores them. */
 async function writeAndCompile(
   root: string,
@@ -361,10 +449,7 @@ async function writeAndCompile(
 ): Promise<void> {
   const stage = await mkdtemp(join(root, '.tmp', 'apply-'));
   try {
-    for (const { rel, content } of planned) {
-      await mkdir(dirname(join(stage, 'new', rel)), { recursive: true });
-      await Bun.write(join(stage, 'new', rel), content);
-    }
+    await stageFiles(stage, planned);
     const tx = transaction(stage, root, signal);
     await tx.move(planned, options.beforeMove);
     const limit = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -380,20 +465,82 @@ async function writeAndCompile(
       root,
       { timeoutMs: limit, env: minimalEnv(), signal },
     );
-    if (compiled.timedOut || compiled.code !== 0 || signal.aborted) {
+    const refusal = compileRefusal(compiled, signal.aborted, limit);
+    if (refusal) {
       await tx.rollback();
-      throw compiled.timedOut
-        ? new AgenticError(
-            'apply.compile-timeout',
-            `compile did not finish within ${limit / 1000} s and was stopped; ${RESTORED}`,
-          )
-        : new AgenticError(
-            'apply.compile-failed',
-            `compile ${signal.aborted ? 'was interrupted by a signal' : 'failed'} after writing the bundle; ${RESTORED}: ${quote(compiled.stderr.trim(), 2000)}`,
-          );
+      throw refusal;
     }
   } finally {
     await rm(stage, { recursive: true, force: true });
+  }
+}
+
+const relTo = (root: string, abs: string): string =>
+  toPosix(relative(root, abs));
+
+/** Project-relative directories a bundle may write under: the module paths and its one change directory. */
+export function writableDirs(
+  root: string,
+  config: Pick<ResolvedConfig, 'root' | 'modules'>,
+  changesAbs: string,
+  change: string,
+): string[] {
+  return [
+    ...config.modules.map((m) => relTo(root, resolve(config.root, m.path))),
+    `${relTo(root, changesAbs)}/${change}`,
+  ];
+}
+
+/** Refuses the first planned path that `forbiddenWrite` rejects, naming it. */
+export function checkedWrites(
+  planned: readonly Planned[],
+  allowed: readonly string[],
+): void {
+  for (const { rel } of planned) {
+    const refusal = forbiddenWrite(rel, allowed);
+    if (refusal !== undefined)
+      throw new AgenticError(
+        refusal,
+        `bundle path ${quote(rel)} is ${refusal === 'apply.path-escape' ? 'outside the project' : 'not under a module path or the change directory, or is inside a protected folder'}`,
+      );
+  }
+}
+
+/** A change with the same number must not exist yet (`apply.change-exists`). */
+export async function assertChangeFree(
+  root: string,
+  changesAbs: string,
+  change: string,
+): Promise<void> {
+  const id = change.slice(0, 4);
+  const existing = (await readdir(changesAbs).catch(() => [])).find(
+    (n) => n === id || n.startsWith(`${id}-`),
+  );
+  if (existing !== undefined)
+    throw new AgenticError(
+      'apply.change-exists',
+      `change ${id} already exists as ${quote(`${relTo(root, changesAbs)}/${existing}`)}`,
+    );
+}
+
+/** Awaits `work`; a SIGINT/SIGTERM aborts it, waits for its rollback, then exits 130. */
+async function underSignals(
+  work: Promise<void>,
+  abort: AbortController,
+  exit: (code: number) => void,
+): Promise<void> {
+  const onSignal = () => {
+    abort.abort();
+    const done = () => exit(130);
+    void work.then(done, done);
+  };
+  process.on('SIGINT', onSignal);
+  process.on('SIGTERM', onSignal);
+  try {
+    await work;
+  } finally {
+    process.off('SIGINT', onSignal);
+    process.off('SIGTERM', onSignal);
   }
 }
 
@@ -408,62 +555,32 @@ async function writeAndCompile(
  */
 export async function applyBundle(options: ApplyOptions): Promise<ApplyResult> {
   const root = resolve(options.projectRoot);
-  const { manifest, files } = await readBundle(options.bundleDir);
+  const { manifestText, files } = await splitBundleFiles(options.bundleDir);
+  const manifest = verifyBundle(manifestText, files);
   const config = await loadConfig(join(root, CONFIG));
-  const rel = (abs: string) => toPosix(relative(root, abs));
   const changesAbs = join(config.outRoot, config.changesDir);
-  const { planned, change } = plan(manifest, files, rel(changesAbs));
-  const allowed = [
-    ...config.modules.map((m) => rel(resolve(config.root, m.path))),
-    `${rel(changesAbs)}/${change}`,
-  ];
-  for (const { rel: p } of planned) {
-    const refusal = forbiddenWrite(p, allowed);
-    if (refusal !== undefined)
-      throw new AgenticError(
-        refusal,
-        `bundle path ${quote(p)} is ${refusal === 'apply.path-escape' ? 'outside the project' : 'not under a module path or the change directory, or is inside a protected folder'}`,
-      );
-  }
+  const { planned, change } = plan(manifest, files, relTo(root, changesAbs));
+  const allowed = writableDirs(root, config, changesAbs, change);
+  checkedWrites(planned, allowed);
   await checkLinks(root, planned, allowed);
-  const existing = (await readdir(changesAbs).catch(() => [])).find(
-    (n) => n === change.slice(0, 4) || n.startsWith(`${change.slice(0, 4)}-`),
-  );
-  if (existing !== undefined)
-    throw new AgenticError(
-      'apply.change-exists',
-      `change ${change.slice(0, 4)} already exists as ${quote(`${rel(changesAbs)}/${existing}`)}`,
-    );
+  await assertChangeFree(root, changesAbs, change);
 
   const lock = await takeLock(root);
   const abort = new AbortController();
   const work = (async () => {
     try {
-      await checkBase(
-        root,
-        manifest,
-        rel(join(config.outRoot, config.out.lock)),
-        planned,
-      );
+      const lockRel = relTo(root, join(config.outRoot, config.out.lock));
+      await checkBase(root, manifest, lockRel, planned);
       if (!options.yes) throw await confirmation(root, manifest, planned);
       await writeAndCompile(root, planned, options, abort.signal);
     } finally {
       await rm(lock, { force: true });
     }
   })();
-  const exit = options.exit ?? ((code: number) => process.exit(code));
-  const onSignal = () => {
-    abort.abort();
-    const done = () => exit(130);
-    void work.then(done, done);
-  };
-  process.on('SIGINT', onSignal);
-  process.on('SIGTERM', onSignal);
-  try {
-    await work;
-  } finally {
-    process.off('SIGINT', onSignal);
-    process.off('SIGTERM', onSignal);
-  }
+  await underSignals(
+    work,
+    abort,
+    options.exit ?? ((code: number) => process.exit(code)),
+  );
   return { change, written: planned.map((p) => p.rel) };
 }

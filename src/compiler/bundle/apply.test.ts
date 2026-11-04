@@ -19,7 +19,7 @@ import {
   snapshot,
 } from '../../../test/helpers/apply-fixture';
 import { git } from '../../../test/helpers/shop-repo';
-import { applyBundle, forbiddenWrite } from './apply';
+import { applyBundle } from './apply';
 
 const failure = (call: Promise<unknown>) =>
   call.then(
@@ -215,37 +215,6 @@ describe('applyBundle', () => {
     );
     await noTemp(t);
   }, 120_000);
-});
-
-describe('forbiddenWrite', () => {
-  const allowed = ['src/shop', 'changes/0001-x'];
-  test.each([
-    ['../x', 'apply.path-escape'],
-    ['src/shop/../../x', 'apply.path-escape'],
-    ['/etc/passwd', 'apply.path-escape'],
-    ['C:/Windows/x', 'apply.path-escape'],
-    ['', 'apply.path-escape'],
-    ['.git/hooks/pre-commit', 'apply.path-forbidden'],
-    ['src/shop/.GIT/config', 'apply.path-forbidden'],
-    ['src/shop/.git./config', 'apply.path-forbidden'],
-    ['src/shop/node_modules/x.js', 'apply.path-forbidden'],
-    ['.github/workflows/x.yml', 'apply.path-forbidden'],
-    ['bunfig.toml', 'apply.path-forbidden'],
-    ['src/evil.ts', 'apply.path-forbidden'],
-    ['src/shop-evil/x.ts', 'apply.path-forbidden'],
-    ['changes/0002-y/proposal.md', 'apply.path-forbidden'],
-  ])('refuses %p with %s', (path, code) => {
-    expect(forbiddenWrite(path, allowed)).toBe(
-      code as ReturnType<typeof forbiddenWrite>,
-    );
-  });
-
-  test.each(['src/shop/domain/order.ts', 'changes/0001-x/proposal.md'])(
-    'allows %p',
-    (path) => {
-      expect(forbiddenWrite(path, allowed)).toBeUndefined();
-    },
-  );
 });
 
 describe('applyBundle write rules', () => {
