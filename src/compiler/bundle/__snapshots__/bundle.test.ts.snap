@@ -11,7 +11,7 @@ Two layers for one proposed change, compiled against a base commit. Reply to the
 - Bundle version: 1
 - Base ref: \`<baseRef>\`
 - Base lock hash: \`99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc\`
-- Bundle hash: \`cef16ffa9e852e8f21f6a17ef9f47e78af4a2bb325f87d56806dbc72778d54f2\`
+- Bundle hash: \`49ed44a5475e3b4f3bdc8e495192dc10ea994cef0ad3ecea0c41f59688759c82\`
 
 ## Apply the bundle
 
@@ -72,7 +72,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
   "files": [
     {
       "path": "neutral/README.md",
-      "sha256": "5847042bce433c1b6a5dda7fb6915f2a737338b09cdbd23e5ca23120b8fc7bbc",
+      "sha256": "09229d0cf36bb1ff2e9c3db71bb43abf0ccf84828b800230ad1a3116990e972c",
     },
     {
       "path": "neutral/briefs/entity-Order.md",
@@ -147,7 +147,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "3b9e9284f7c4b4076ec457d52e840e0d24800d99192d2edae572764b8a6c83a8",
     },
   ],
-  "hash": "cef16ffa9e852e8f21f6a17ef9f47e78af4a2bb325f87d56806dbc72778d54f2",
+  "hash": "49ed44a5475e3b4f3bdc8e495192dc10ea994cef0ad3ecea0c41f59688759c82",
   "layers": {
     "neutral": {
       "briefs": [
@@ -256,6 +256,8 @@ The change described without any programming language, for a team that does not 
 
 - \`model.json\`: new and extended entities, value objects, events, ports and use-cases; state transitions (an empty list means the Delta declares none); every invariant with its stable id, text and given/when/then examples; the acceptance criteria of the proposal, if there is one.
 - \`briefs/\`: one brief per item, in wave order.
+
+Text quoted from the change request is escaped and capped; only the surrounding framework text is guaranteed to contain no TypeScript.
 
 This layer has no \`done\` certification: only the nestjs-ts target layer is certified, so a team implementing from here owns its own verification.
 "

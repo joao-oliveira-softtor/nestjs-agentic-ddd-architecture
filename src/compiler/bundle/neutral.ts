@@ -144,6 +144,14 @@ const stripKind = (ref: string): string => ref.replace(/^method:/, '');
 const briefName = (id: string): string =>
   `${id.replaceAll(/[^a-zA-Z0-9_]+/g, '-')}.md`;
 
+const ECHO_CAP = 500;
+/** Client text in a markdown brief: one line, no leading block marker, no fence, capped. */
+const echo = (text: string): string => {
+  const flat = text.replaceAll(/\r\n|\r|\n/g, ' ').trimStart();
+  const capped = flat.length > ECHO_CAP ? `${flat.slice(0, ECHO_CAP)}…` : flat;
+  return capped.replace(/^[#>*+-]/, '\\$&').replaceAll('`', '\\`');
+};
+
 type DeltaMethod = Delta['entities'][number]['methods'][number];
 type DeltaInvariant = Delta['entities'][number]['invariants'][number];
 
@@ -290,15 +298,15 @@ export function neutralModel(
 const exampleLines = (invs: readonly NeutralInvariant[]): string[] =>
   invs.flatMap((inv) => [
     '',
-    `### ${inv.id}`,
+    `### ${echo(inv.id)}`,
     '',
-    inv.text,
+    echo(inv.text),
     ...inv.examples.flatMap((e, i) => [
       '',
       `Example ${i + 1}`,
-      `- Given: ${e.given}`,
-      `- When: ${e.when}`,
-      `- Then: ${e.then}`,
+      `- Given: ${echo(e.given)}`,
+      `- When: ${echo(e.when)}`,
+      `- Then: ${echo(e.then)}`,
     ]),
   ]);
 
@@ -308,22 +316,23 @@ const fieldList = (label: string, list: readonly NeutralField[]): string[] =>
     : [
         `${label}:`,
         ...list.map(
-          (f) => `- ${f.name} (${f.optional ? 'optional ' : ''}${f.type})`,
+          (f) =>
+            `- ${echo(f.name)} (${f.optional ? 'optional ' : ''}${echo(f.type)})`,
         ),
       ];
 
 function methodLines(m: NeutralMethod): string[] {
   return [
-    m.description,
+    echo(m.description),
     '',
     ...fieldList('Inputs', m.inputs),
-    `Returns: ${m.returns}`,
+    `Returns: ${echo(m.returns)}`,
     ...(m.transition
       ? [
-          `State change: from ${m.transition.from.join(' or ')} to ${m.transition.to}`,
+          `State change: from ${m.transition.from.map(echo).join(' or ')} to ${echo(m.transition.to)}`,
         ]
       : []),
-    ...(m.emits.length ? [`Announces events: ${m.emits.join(', ')}`] : []),
+    ...(m.emits.length ? [`Announces events: ${m.emits.map(echo).join(', ')}`] : []),
   ];
 }
 
@@ -338,12 +347,12 @@ function entityJob(model: NeutralModel, name: string): Job | null {
   return {
     lines: [
       e.existing
-        ? `Extend the existing entity ${e.name} with the members listed in model.json and nothing else.`
-        : `Implement the entity ${e.name}: ${e.description ?? ''}`,
-      ...(e.states.length ? [`States: ${e.states.join(', ')}`] : []),
+        ? `Extend the existing entity ${echo(e.name)} with the members listed in model.json and nothing else.`
+        : `Implement the entity ${echo(e.name)}: ${echo(e.description ?? '')}`,
+      ...(e.states.length ? [`States: ${e.states.map(echo).join(', ')}`] : []),
       ...(e.methods.length
         ? [
-            `Operations: ${e.methods.map((m) => m.name).join(', ')} (each has its own brief)`,
+            `Operations: ${e.methods.map((m) => echo(m.name)).join(', ')} (each has its own brief)`,
           ]
         : []),
     ],
@@ -360,7 +369,11 @@ function methodJob(model: NeutralModel, path: string): Job | null {
     ?.methods.find((x) => x.name === name);
   if (!m) return null;
   return {
-    lines: [`Implement the operation ${name} of ${owner}.`, '', ...methodLines(m)],
+    lines: [
+      `Implement the operation ${echo(name)} of ${echo(owner)}.`,
+      '',
+      ...methodLines(m),
+    ],
     invariants: model.invariants.filter(
       (i) => i.owner === owner && i.method === name,
     ),
@@ -373,15 +386,15 @@ function useCaseJob(model: NeutralModel, name: string): Job | null {
   return {
     lines: [
       u.existing
-        ? `Extend the existing use-case ${u.name} with what is listed here.`
-        : `Implement the use-case ${u.name}: ${u.description ?? ''}`,
-      ...(u.whenToUse ? [`Use it when: ${u.whenToUse}`] : []),
-      ...(u.whenNotToUse ? [`Do not use it when: ${u.whenNotToUse}`] : []),
+        ? `Extend the existing use-case ${echo(u.name)} with what is listed here.`
+        : `Implement the use-case ${echo(u.name)}: ${echo(u.description ?? '')}`,
+      ...(u.whenToUse ? [`Use it when: ${echo(u.whenToUse)}`] : []),
+      ...(u.whenNotToUse ? [`Do not use it when: ${echo(u.whenNotToUse)}`] : []),
       ...fieldList('Inputs', u.inputs),
       ...fieldList('Outputs', u.outputs),
-      ...(u.uses.length ? [`Calls operations: ${u.uses.join(', ')}`] : []),
-      ...(u.ports.length ? [`Needs ports: ${u.ports.join(', ')}`] : []),
-      ...(u.emits.length ? [`Announces events: ${u.emits.join(', ')}`] : []),
+      ...(u.uses.length ? [`Calls operations: ${u.uses.map(echo).join(', ')}`] : []),
+      ...(u.ports.length ? [`Needs ports: ${u.ports.map(echo).join(', ')}`] : []),
+      ...(u.emits.length ? [`Announces events: ${u.emits.map(echo).join(', ')}`] : []),
     ],
     invariants: [],
   };
@@ -408,8 +421,8 @@ function jobOf(id: string, model: NeutralModel): Job {
   return {
     lines: [
       simple
-        ? `Implement ${kind} ${simple.name}: ${simple.description} Its full shape is in model.json.`
-        : `Implement the element ${id} as described in model.json.`,
+        ? `Implement ${kind} ${echo(simple.name)}: ${echo(simple.description)} Its full shape is in model.json.`
+        : `Implement the element ${echo(id)} as described in model.json.`,
     ],
     invariants: [],
   };
@@ -418,7 +431,7 @@ function jobOf(id: string, model: NeutralModel): Job {
 export function neutralBrief(item: NeutralItem, model: NeutralModel): string {
   const job = jobOf(item.id, model);
   return [
-    `# Brief: ${item.id}`,
+    `# Brief: ${echo(item.id)}`,
     '',
     `Wave ${item.wave}, ${item.layer} layer. Finish every item of an earlier wave first.`,
     '',
@@ -445,6 +458,8 @@ const README = [
   '',
   '- `model.json`: new and extended entities, value objects, events, ports and use-cases; state transitions (an empty list means the Delta declares none); every invariant with its stable id, text and given/when/then examples; the acceptance criteria of the proposal, if there is one.',
   '- `briefs/`: one brief per item, in wave order.',
+  '',
+  'Text quoted from the change request is escaped and capped; only the surrounding framework text is guaranteed to contain no TypeScript.',
   '',
   NO_CERTIFICATION,
   '',

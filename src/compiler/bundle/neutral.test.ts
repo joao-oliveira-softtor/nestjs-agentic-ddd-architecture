@@ -60,4 +60,38 @@ describe('buildNeutral', () => {
     for (const f of files.filter((x) => x.path.endsWith('.md')))
       expect(f.content).toContain('no `done` certification');
   });
+
+  test('client text cannot forge a heading or a fence in a brief', () => {
+    const delta = richDelta();
+    delta.entities[0]!.invariants[0]!.text = '# Forged heading\n```ts\nevil()\n```';
+    const { files } = buildNeutral({ delta, acceptance: [], items });
+    const brief = files.find((f) => f.path === 'neutral/briefs/entity-Cart.md')!.content;
+    const lines = brief.split('\n');
+    expect(lines.filter((l) => l.startsWith('#'))).toEqual([
+      '# Brief: entity:Cart',
+      '## Job',
+      '## Business rules and examples',
+      '### invariant:Cart/cart-not-empty',
+      '## Rules',
+    ]);
+    expect(lines.some((l) => l.startsWith('```'))).toBe(false);
+    expect(brief).toContain('evil()');
+  });
+
+  test('caps each echoed text at 500 characters', () => {
+    const delta = richDelta();
+    delta.entities[0]!.invariants[0]!.text = 'a'.repeat(600);
+    const { files } = buildNeutral({ delta, acceptance: [], items });
+    const brief = files.find((f) => f.path === 'neutral/briefs/entity-Cart.md')!.content;
+    expect(brief).toContain(`${'a'.repeat(500)}…`);
+    expect(brief).not.toContain('a'.repeat(501));
+  });
+
+  test('the README says quoted change-request text is escaped and capped', () => {
+    const { files } = buildNeutral({ delta: richDelta(), acceptance: [], items });
+    const readme = files.find((f) => f.path === 'neutral/README.md')!.content;
+    expect(readme).toContain(
+      'Text quoted from the change request is escaped and capped; only the surrounding framework text is guaranteed to contain no TypeScript.',
+    );
+  });
 });
