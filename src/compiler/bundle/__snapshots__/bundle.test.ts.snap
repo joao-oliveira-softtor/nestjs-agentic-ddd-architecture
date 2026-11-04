@@ -8,7 +8,7 @@ A skeleton, per-item packets and the module skill for one proposed change, compi
 - Bundle version: 1
 - Base ref: \`<baseRef>\`
 - Base lock hash: \`99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc\`
-- Bundle hash: \`ef3163407d8055008a85b153f0e0cd20da371416817d904981e69d50f485a023\`
+- Bundle hash: \`2afae9dd7f95129af725e4b7cb81d8515c244e379bacaaa511d8aa163a49f0f7\`
 
 ## Apply the bundle
 
@@ -80,6 +80,10 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "fab5300c930008138006f07493d68d2905c256c51451f9ca1f7ac6ffce6e4d50",
     },
     {
+      "path": "target/changes/0001-refund-order/proposal.md",
+      "sha256": "723ec8b4b252479c089fbb1af6c580764e850d2e9beb43220c7c5a4b4f43581f",
+    },
+    {
       "path": "target/dev-skill/SKILL.md",
       "sha256": "9a47ae2bb0ec2bdbaf71ae07ebafe4561be10eedf2db6f8de8a0393f2b5342cc",
     },
@@ -120,7 +124,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "3b9e9284f7c4b4076ec457d52e840e0d24800d99192d2edae572764b8a6c83a8",
     },
   ],
-  "hash": "ef3163407d8055008a85b153f0e0cd20da371416817d904981e69d50f485a023",
+  "hash": "2afae9dd7f95129af725e4b7cb81d8515c244e379bacaaa511d8aa163a49f0f7",
   "layers": {
     "target": {
       "items": [
@@ -182,6 +186,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
   "target/briefs/entity-Order.md",
   "target/briefs/method-Order-refund.md",
   "target/briefs/usecase-pay_order.md",
+  "target/changes/0001-refund-order/proposal.md",
   "target/dev-skill/SKILL.md",
   "target/dev-skill/references/history.md",
   "target/dev-skill/references/schemas.json",
