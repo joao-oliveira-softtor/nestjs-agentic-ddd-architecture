@@ -8,7 +8,7 @@ A skeleton, per-item packets and the module skill for one proposed change, compi
 - Bundle version: 1
 - Base ref: \`<baseRef>\`
 - Base lock hash: \`99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc\`
-- Bundle hash: \`8e233e1a8a3335ab82e6bd1195ebbcc125b463c418cf31514745fc7c1a1b8b4c\`
+- Bundle hash: \`ef3163407d8055008a85b153f0e0cd20da371416817d904981e69d50f485a023\`
 
 ## Apply the bundle
 
@@ -120,7 +120,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "3b9e9284f7c4b4076ec457d52e840e0d24800d99192d2edae572764b8a6c83a8",
     },
   ],
-  "hash": "8e233e1a8a3335ab82e6bd1195ebbcc125b463c418cf31514745fc7c1a1b8b4c",
+  "hash": "ef3163407d8055008a85b153f0e0cd20da371416817d904981e69d50f485a023",
   "layers": {
     "target": {
       "items": [
