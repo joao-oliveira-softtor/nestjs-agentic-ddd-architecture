@@ -43,7 +43,7 @@ export interface BundleManifest {
   readonly hash: string;
 }
 
-const byPath = (a: { path: string }, b: { path: string }): number =>
+export const byPath = (a: { path: string }, b: { path: string }): number =>
   a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
 
 export const toLf = (s: string): string => s.replaceAll('\r\n', '\n');

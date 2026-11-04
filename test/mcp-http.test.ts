@@ -424,6 +424,19 @@ describe('agentic mcp --http propose_change', () => {
     expect(await leftovers(repo)).toEqual(before);
   });
 
+  test('an input of exactly 256 KiB serialized is still accepted', async () => {
+    const small = { delta: additionDelta(), proposal: shopProposal() };
+    const pad = 256 * 1024 - Buffer.byteLength(JSON.stringify(small));
+    const r = await propose('change:propose', {
+      ...small,
+      proposal: {
+        ...small.proposal,
+        markdown: small.proposal.markdown + 'x'.repeat(pad),
+      },
+    });
+    expect(r.isError).toBeUndefined();
+  }, 180_000);
+
   test('a body above the transport cap is refused', async () => {
     // Bun either answers 413 or drops the connection; both mean the body never reached the handler.
     const outcome = await raw('change:propose', {
