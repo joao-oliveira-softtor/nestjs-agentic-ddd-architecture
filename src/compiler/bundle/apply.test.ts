@@ -171,6 +171,11 @@ describe('applyBundle', () => {
         /BUNDLE\.md|bundle\.json|packets\//.test(k),
       ),
     ).toBe(false);
+    // the neutral layer is in the bundle but never written into the project
+    expect(fx.bundle.files.some((f) => f.path.startsWith('neutral/'))).toBe(
+      true,
+    );
+    expect([...after.keys()].some((k) => k.includes('neutral'))).toBe(false);
     // compile ran: the module dev skill now describes the new skeleton
     const skill = '.agents/skills/shop-dev/SKILL.md';
     expect(after.get(skill)).not.toBe(
