@@ -191,6 +191,57 @@ describe('compileBundle on the shop project', () => {
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
   }, 60_000);
 
+  test('names the offending path of a Delta that does not validate', async () => {
+    const error = await compileBundle({
+      ...input(),
+      delta: {
+        ...additionDelta(),
+        useCaseAdditions: [{ useCase: 'missing', uses: [], emits: [] }],
+      },
+    }).catch((e: Error) => e);
+    expect((error as Error).message).toStartWith('useCaseAdditions[0]');
+  }, 60_000);
+
+  test('refuses a Delta that is not an object as an unknown module', async () => {
+    expect(await refusal(compileBundle({ ...input(), delta: null }))).toBe(
+      'bundle.module-unknown',
+    );
+  }, 60_000);
+
+  test('a time limit of zero expires at once', async () => {
+    expect(await refusal(compileBundle({ ...input(), timeoutMs: 0 }))).toBe(
+      'bundle.compile-timeout',
+    );
+    expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
+  }, 60_000);
+
+  test('a Delta that adds an entity puts its new file in the skeleton', async () => {
+    const bundle = await compileBundle({
+      ...input(),
+      delta: {
+        ...additionDelta(),
+        entities: [
+          {
+            name: 'Refund',
+            description: 'A refund.',
+            states: ['issued'],
+            invariants: [],
+            methods: [],
+          },
+        ],
+      },
+    });
+    const skeleton = bundle.manifest.layers.target.skeleton;
+    expect(skeleton).toContain('src/shop/domain/refund.ts');
+    expect(bundle.manifest.layers.target.items.map((i) => i.id)).toContain(
+      'entity:Refund',
+    );
+    expect(
+      bundle.files.find((f) => f.path === 'target/skeleton/src/shop/domain/refund.ts')
+        ?.content,
+    ).toContain('class Refund');
+  }, 120_000);
+
   test('refuses a proposal slug that is not kebab-case', async () => {
     expect(
       await refusal(

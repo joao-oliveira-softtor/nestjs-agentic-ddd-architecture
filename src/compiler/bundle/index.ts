@@ -20,6 +20,7 @@ import {
 } from './candidate';
 import {
   buildManifest,
+  byPath,
   renderBundleMd,
   toLf,
   type BundleFile,
@@ -66,9 +67,6 @@ export interface Bundle {
 
 const CONFIG = 'agentic.config.ts';
 
-const byPath = (a: { path: string }, b: { path: string }): number =>
-  a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
-
 const fileName = (id: string): string =>
   `${id.replaceAll(/[^a-zA-Z0-9_]+/g, '-')}.md`;
 
@@ -79,7 +77,7 @@ const lf = (path: string, content: string): BundleFile => ({
 });
 
 /** `base/rel`, refusing a result outside `base`. */
-function inside(base: string, rel: string): string {
+export function inside(base: string, rel: string): string {
   const abs = resolve(base, rel);
   const back = relative(base, abs);
   if (back === '' || back.startsWith('..') || isAbsolute(back))
