@@ -36,4 +36,11 @@ export const GOOD = {
   // Never published: only what `apply` would write goes into the branch.
   'target/packets/refund.md': 'packet\n',
   'neutral/README.md': 'neutral\n',
+  // The Delta's module, as the neutral model of a compiled bundle records it.
+  'neutral/model.json': modelOf('shop'),
 };
+
+/** The hashed `neutral/model.json` of a bundle for `module` (only the field publish reads). */
+export function modelOf(module: string): string {
+  return JSON.stringify({ module });
+}

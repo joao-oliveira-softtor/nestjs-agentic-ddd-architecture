@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { createFakeGitHost } from '../../test/helpers/fake-git-host';
-import { CHANGE, GOOD, bundleOf } from '../../test/helpers/publish-bundle';
+import {
+  CHANGE,
+  GOOD,
+  bundleOf,
+  modelOf,
+} from '../../test/helpers/publish-bundle';
 import { publishBundle, sinkFromEnv } from './bundle';
 import { GitHubChangeSink } from './github-sink';
 
@@ -95,12 +100,41 @@ describe('publishBundle', () => {
   test('a module-scoped grant publishes only that module and the change directory', async () => {
     const { fake, publish } = setup();
     expect(await code(publish(bundleOf(GOOD), new Set(['billing'])))).toBe(
-      'apply.path-forbidden',
+      'auth.scope-missing',
     );
     expect(fake.requests).toEqual([]);
     expect((await publish(bundleOf(GOOD), new Set(['shop']))).branch).toBe(
       CHANGE,
     );
+  });
+
+  test('a module-scoped grant cannot publish a change-only bundle of another module', async () => {
+    const { fake, publish } = setup();
+    const changeOnly = bundleOf({
+      [`target/${CHANGE}/proposal.md`]: '# proposal\n',
+      'neutral/model.json': modelOf('billing'),
+    });
+    expect(await code(publish(changeOnly, new Set(['shop'])))).toBe(
+      'auth.scope-missing',
+    );
+    // No recorded module: a module-scoped grant cannot prove it, so it is refused too.
+    const unknown = bundleOf({ [`target/${CHANGE}/proposal.md`]: '# p\n' });
+    expect(await code(publish(unknown, new Set(['shop'])))).toBe(
+      'auth.scope-missing',
+    );
+    expect(fake.requests).toEqual([]);
+  });
+
+  test('the path allow-list still holds when the recorded module is the granted one', async () => {
+    const { fake, publish } = setup();
+    const crossing = bundleOf({
+      ...GOOD,
+      'target/skeleton/src/billing/domain/x.ts': 'x\n',
+    });
+    expect(await code(publish(crossing, new Set(['shop'])))).toBe(
+      'apply.path-forbidden',
+    );
+    expect(fake.requests).toEqual([]);
   });
 
   test('refuses a bundle without exactly one change directory with apply.change-invalid', async () => {

@@ -112,7 +112,7 @@ describe('agentic mcp --http publish_change', () => {
     host.refs.delete(`heads/${CHANGE}`);
     const other = await publish('change:publish:billing', bundleOf(GOOD));
     expect(other.isError).toBe(true);
-    expect(other.content[0]!.text).toEndWith('[apply.path-forbidden]');
+    expect(other.content[0]!.text).toEndWith('[auth.scope-missing]');
     const own = await publish('change:publish:shop', bundleOf(GOOD));
     expect(own.isError).toBeUndefined();
   });

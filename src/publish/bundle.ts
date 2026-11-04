@@ -31,6 +31,16 @@ export interface PublishInput {
   readonly sink: ChangeSink;
 }
 
+// The Delta's module, as `compileBundle` records it in the hashed neutral model (verified content).
+function recordedModule(model: string | undefined): string | undefined {
+  try {
+    const { module } = JSON.parse(model ?? '') as { module?: unknown };
+    return typeof module === 'string' ? module : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Publishes what `agentic apply` would write (skeleton files, the change directory and its
  * `examples.json`) as a branch and pull request. The bundle is untrusted: its hash is recomputed
@@ -48,6 +58,14 @@ export async function publishBundle(
       'the bundle is not intact: the hash sent is not the hash of its files',
     );
   const { root, config, access } = input;
+  if (access !== 'all') {
+    const module = recordedModule(files.get('neutral/model.json'));
+    if (module === undefined || !access.has(module))
+      throw new AgenticError(
+        'auth.scope-missing',
+        'the change:publish scope for the module of the bundle is needed',
+      );
+  }
   const changesAbs = join(config.outRoot, config.changesDir);
   const { planned, change } = plan(
     manifest,
