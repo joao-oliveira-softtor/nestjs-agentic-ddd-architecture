@@ -191,6 +191,10 @@ export const ERROR_CODES = {
     'Another propose_change is running on this server; retry shortly.',
   'mcp.propose-unavailable':
     'propose_change needs a working copy with a git history; this server serves a published lock.',
+  'mcp.publish-busy':
+    'Another publish_change is running on this server; retry shortly.',
+  'mcp.publish-unavailable':
+    'publish_change needs a working copy and a Git host configured on the server (AGENTIC_GITHUB_TOKEN and AGENTIC_GITHUB_REPO).',
   'mcp.path-out-of-scope':
     'The requested path is outside the modules the token may read.',
   'mcp.path-outside-root': 'The requested path is outside the project root.',

@@ -105,7 +105,7 @@ describe('agentic mcp (subprocesso)', () => {
       const list = await request('tools/list');
       const tools = list.result.tools as {
         name: string;
-        annotations: { readOnlyHint: boolean };
+        annotations: Record<string, boolean>;
       }[];
       expect(tools.map((t) => t.name).sort()).toEqual([
         'authoring_guide',
@@ -114,13 +114,25 @@ describe('agentic mcp (subprocesso)', () => {
         'domain_overview',
         'domain_source',
         'propose_change',
+        'publish_change',
         'rules_for_path',
       ]);
-      for (const t of tools) expect(t.annotations.readOnlyHint).toBe(true);
+      // publish_change is the one tool with a side effect (a pull request on the Git host).
+      for (const t of tools)
+        expect(t.annotations.readOnlyHint).toBe(t.name !== 'publish_change');
       // The same Delta on the same base gives the same bundle, so a retry is safe.
       expect(
         tools.find((t) => t.name === 'propose_change')?.annotations,
       ).toMatchObject({ idempotentHint: true });
+      // A published branch exists afterwards: never idempotent, not destructive, talks to the Git host.
+      expect(
+        tools.find((t) => t.name === 'publish_change')?.annotations,
+      ).toEqual({
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      });
 
       const text = (r: any) => r.result.content[0].text as string;
       for (const [name, args] of [

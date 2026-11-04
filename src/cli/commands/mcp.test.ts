@@ -516,3 +516,60 @@ describe('mcpCommand --published', () => {
     expect(messages).not.toContain('serving published lock');
   });
 });
+
+describe('mcpCommand publish sink', () => {
+  const KEYS = ['AGENTIC_GITHUB_TOKEN', 'AGENTIC_GITHUB_REPO'] as const;
+  const saved = KEYS.map((k) => process.env[k]);
+  afterEach(() => {
+    KEYS.forEach((k, i) => {
+      if (saved[i] === undefined) delete process.env[k];
+      else process.env[k] = saved[i];
+    });
+  });
+
+  const run = async (calls: unknown[]) => {
+    const error = captureErrors();
+    const code = await mcpCommand(
+      ['--http', '--root', dir, '--config', await configFile(MCP)],
+      httpLoad(calls),
+    );
+    const messages = error.mock.calls.flat().join('\n');
+    error.mockRestore();
+    return { code, messages };
+  };
+
+  test('without the GitHub variables no sink is passed', async () => {
+    for (const k of KEYS) delete process.env[k];
+    const calls: { sink?: unknown }[] = [];
+    expect((await run(calls)).code).toBe(0);
+    expect(calls[0]!.sink).toBeUndefined();
+  });
+
+  test('with both variables a sink is passed, limited to the module paths and the changes directory', async () => {
+    process.env.AGENTIC_GITHUB_TOKEN = 'ghp_SECRET_TOKEN_123';
+    process.env.AGENTIC_GITHUB_REPO = 'acme/shop';
+    const calls: { sink?: { publish(c: unknown): Promise<unknown> } }[] = [];
+    expect((await run(calls)).code).toBe(0);
+    const outside = await calls[0]!
+      .sink!.publish({
+        number: '0001',
+        slug: 'x',
+        title: 't',
+        body: 'b',
+        files: [{ path: 'elsewhere/a.ts', content: 'x' }],
+      })
+      .catch((e: { code: string }) => e.code);
+    expect(outside).toBe('publish.path-invalid');
+  });
+
+  test('a half configuration exits 1 with publish.config-invalid and never prints the token', async () => {
+    process.env.AGENTIC_GITHUB_TOKEN = 'ghp_SECRET_TOKEN_123';
+    delete process.env.AGENTIC_GITHUB_REPO;
+    const calls: unknown[] = [];
+    const { code, messages } = await run(calls);
+    expect(code).toBe(1);
+    expect(messages).toContain('[publish.config-invalid]');
+    expect(messages).not.toContain('ghp_SECRET_TOKEN_123');
+    expect(calls).toEqual([]);
+  });
+});

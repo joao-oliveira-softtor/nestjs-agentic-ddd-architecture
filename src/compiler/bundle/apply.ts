@@ -138,21 +138,40 @@ const text = (path: string): Promise<string | null> =>
 const notIntact = (why: string) =>
   new AgenticError('apply.hash-mismatch', `the bundle is not intact: ${why}`);
 
-/** The text of `bundle.json` and every other file of the bundle directory (LF, the derived ones left out). */
+/** The text of `bundle.json` and every other file of a bundle held as entries (LF, the derived ones left out). */
+export function splitBundleEntries(
+  all: readonly { readonly path: string; readonly content: string }[],
+): { manifestText: string; files: Map<string, string> } {
+  const manifest = all.find((e) => e.path === 'bundle.json');
+  if (manifest === undefined) throw notIntact('bundle.json is missing');
+  const files = new Map(
+    all
+      .filter((e) => !DERIVED.has(e.path))
+      .map((e) => [e.path, toLf(e.content)] as const),
+  );
+  return { manifestText: toLf(manifest.content), files };
+}
+
+/** `splitBundleEntries` for the files of a bundle directory. */
 export async function splitBundleFiles(
   dir: string,
 ): Promise<{ manifestText: string; files: Map<string, string> }> {
-  const manifestText = await text(join(dir, 'bundle.json'));
-  if (manifestText === null) throw notIntact('bundle.json is missing');
-  const files = new Map<string, string>();
-  const entries = await readdir(dir, { recursive: true, withFileTypes: true });
-  for (const e of entries) {
-    if (!e.isFile()) continue;
-    const rel = toPosix(relative(dir, join(e.parentPath, e.name)));
-    if (!DERIVED.has(rel))
-      files.set(rel, toLf(await readFile(join(e.parentPath, e.name), 'utf8')));
-  }
-  return { manifestText, files };
+  const entries = await readdir(dir, {
+    recursive: true,
+    withFileTypes: true,
+  }).catch(() => []);
+  const all = await Promise.all(
+    entries
+      .filter((e) => e.isFile())
+      .map(async (e) => {
+        const abs = join(e.parentPath, e.name);
+        return {
+          path: toPosix(relative(dir, abs)),
+          content: await readFile(abs, 'utf8'),
+        };
+      }),
+  );
+  return splitBundleEntries(all);
 }
 
 /** The manifest the text declares, the hashes it lists and the manifest rebuilt from the files; `apply.hash-mismatch` for text that is not a manifest. */

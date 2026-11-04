@@ -9,11 +9,17 @@ import {
   type PublishedLock,
 } from '../../compiler/published';
 import { AgenticError, formatCoded } from '../../contracts/codes';
+import { sinkFromProject } from '../../publish/bundle';
+import type { ChangeSink } from '../../publish/change-sink';
 import { parseArgs } from '../args';
 import { USAGE } from '../usage';
 
 type Load = () => Promise<{
-  startMcpServer(options: { root: string; published?: PublishedLock }): {
+  startMcpServer(options: {
+    root: string;
+    published?: PublishedLock;
+    sink?: ChangeSink;
+  }): {
     close(): unknown;
   };
   startMcpHttpServer(options: {
@@ -22,6 +28,7 @@ type Load = () => Promise<{
     port: number;
     host: string;
     mcp: McpConfig;
+    sink?: ChangeSink;
   }): Promise<{ close(): unknown; port: number }>;
 }>;
 
@@ -128,6 +135,19 @@ export async function mcpCommand(
       return 1;
     }
   }
+  const configPath =
+    parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts');
+  // publish_change needs a working copy: a published lock has no files to publish from.
+  let sink: ChangeSink | undefined;
+  if (published === undefined) {
+    try {
+      sink = await sinkFromProject(root, configPath, process.env);
+    } catch (error) {
+      if (!(error instanceof AgenticError)) throw error;
+      console.error(formatCoded(error));
+      return 1;
+    }
+  }
   // Printed only once the server is up, never before a failure.
   const announce = () => {
     if (published !== undefined)
@@ -136,8 +156,6 @@ export async function mcpCommand(
       );
   };
   if (http) {
-    const configPath =
-      parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts');
     // A published host may have no module sources, so skip the module-path checks.
     const mcp =
       published === undefined
@@ -160,6 +178,7 @@ export async function mcpCommand(
         port: Number(port),
         host,
         mcp,
+        sink,
       });
     } catch (error) {
       const { code, message } = error as { code?: string; message?: string };
@@ -202,7 +221,7 @@ export async function mcpCommand(
     await handle.close();
     return 0;
   }
-  const handle = mod.startMcpServer({ root, published });
+  const handle = mod.startMcpServer({ root, published, sink });
   announce();
   const { stdin } = process;
   if (!stdin.readableEnded && !stdin.destroyed)
