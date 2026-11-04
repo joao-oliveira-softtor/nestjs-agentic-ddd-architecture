@@ -1,12 +1,13 @@
 # Pre-registration: bundle measurement (#122, ADR-0007 D14)
 
-Version: 0.1.1 (draft for owner sign-off)
-Date: 2026-11-03
+Version: 0.2.0 (draft for owner sign-off)
+Date: 2026-11-04
 Status: PROPOSED. Pending owner sign-off on the thresholds and the budget.
 
-This file is versioned **before any real run**. The campaign produces a **measurement**; the decision is the owner's. The offline rehearsal (scripted adapter, zero inference cost) is the only run allowed in Phase 3. Its code (`test/evals-bundle-rehearsal.test.ts`, `scripts/evals/`) and the manifests come in a later wave. This file mirrors the structure of `evals/campaigns/cycle-21-pilot/PREREGISTRATION.md` and `evals/campaigns/cycle-22-control/PREREGISTRATION.md`.
+This file is versioned **before any real run**. The campaign produces a **measurement**; the decision is the owner's. The offline rehearsal (scripted adapter, zero inference cost) is the only run allowed in Phase 3. Its code is `test/evals-bundle-rehearsal.test.ts` and `scripts/evals/bundle-rehearsal.ts`; the manifests come in a later wave. This file mirrors the structure of `evals/campaigns/cycle-21-pilot/PREREGISTRATION.md` and `evals/campaigns/cycle-22-control/PREREGISTRATION.md`.
 
 Change log:
+- 0.2.0 (2026-11-04): the offline rehearsal exists; the Offline rehearsal section says what it covers and what is still to come. Thresholds, arms, budget and campaign id are unchanged.
 - 0.1.1 (2026-11-03): cite the A0 cost source exactly (`aggregate.json`, not `aggregate.md`) and fix T2 to ≤ US$ 0.0488 (50% of 0.0976).
 - 0.1 (2026-11-03): first draft. Arms, items, metrics, proposed thresholds, stopping rules.
 
@@ -113,6 +114,10 @@ T7 and T8 are reported but do not enter rule 2. No result of this campaign chang
 - Scripted adapter only. It runs the whole pipeline end to end: arms, manifests, aggregation, the reading rule, and the check that this text matches the manifests (as `test/evals-control-rehearsal.test.ts` does).
 - The P0 tests (written from the acceptance examples) are created in the rehearsal wave, frozen, and their hashes recorded in this file before any real run.
 - No real inference is allowed in Phase 3.
+
+Done in 0.2.0 (`test/evals-bundle-rehearsal.test.ts`, in the evals suite, Linux with bubblewrap): the pipeline from `compileBundle` to `verify 0001` returning `done`, with the scripted adapter implementing each item from its packet in wave order, and the per-run record (`bundleRunSchema` in `scripts/evals/bundle-rehearsal.ts`) carrying initial and final acceptance, corrections, certified runs and timeouts, as in the cycle-21 aggregate. Offline proof: the scripted adapter runs under bubblewrap with no network and an empty environment, every child of the rehearsal gets an environment without credentials, and the test checks both with planted sentinels.
+
+Still to come before any real run, none of it covered by 0.2.0: the manifests and arms above, aggregation and the reading rule, the B0 comprehension questions, the P0 tests and their hashes, token usage and cost in the record, the same configuration across stages, and an `unscored` outcome when a judge fails.
 
 ## Deviations (declared)
 
