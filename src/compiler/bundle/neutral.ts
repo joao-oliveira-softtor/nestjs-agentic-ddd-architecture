@@ -1,6 +1,11 @@
 import type { AcceptanceCriterion } from '../changes/proposal';
 import type { Delta } from '../delta/schema';
-import { parseType, splitOptional, type TypeExpr } from '../delta/schema';
+import {
+  orEmpty,
+  parseType,
+  splitOptional,
+  type TypeExpr,
+} from '../delta/schema';
 import { AgenticError } from '../ir';
 
 /** The sentence every neutral text carries (ADR-0007 D12). */
@@ -147,96 +152,158 @@ const briefName = (id: string): string =>
 const ECHO_CAP = 500;
 /** Client text in a markdown brief: one line, no leading block marker, no fence, capped. */
 const echo = (text: string): string => {
-  const flat = text.replaceAll(/\r\n|\r|\n/g, ' ').trimStart();
-  const capped = flat.length > ECHO_CAP ? `${flat.slice(0, ECHO_CAP)}…` : flat;
+  // Code points, not UTF-16 units, so the cap never splits a surrogate pair.
+  const flat = Array.from(text.replaceAll(/\r\n|\r|\n/g, ' ').trimStart());
+  const capped =
+    flat.length > ECHO_CAP
+      ? `${flat.slice(0, ECHO_CAP).join('')}…`
+      : flat.join('');
   return capped.replace(/^[#>*+-]/, '\\$&').replaceAll('`', '\\`');
 };
 
 type DeltaMethod = Delta['entities'][number]['methods'][number];
 type DeltaInvariant = Delta['entities'][number]['invariants'][number];
 
+type NeutralEntity = NeutralModel['entities'][number];
+type NeutralUseCase = NeutralModel['useCases'][number];
+
+/** What the walk over the entities collects on the side: the flat invariant list and the transitions. */
+interface Collected {
+  readonly invariants: NeutralInvariant[];
+  readonly transitions: NeutralModel['transitions'][number][];
+}
+
+/** Registers each invariant in `into` and returns their ids; an invariant without an example is refused. */
+function registerInvariants(
+  into: Collected,
+  owner: string,
+  method: string | null,
+  list: readonly DeltaInvariant[] | undefined,
+): string[] {
+  return orEmpty(list).map((inv) => {
+    const id = `invariant:${owner}/${inv.id}`;
+    if (inv.examples.length === 0)
+      throw new AgenticError(
+        'bundle.delta-invalid',
+        `${id} has no given/when/then example`,
+      );
+    into.invariants.push({
+      id,
+      owner,
+      method,
+      text: inv.text,
+      examples: inv.examples.map((e) => ({
+        given: e.given,
+        when: e.when,
+        // eslint-disable-next-line unicorn/no-thenable
+        then: e.then,
+      })),
+    });
+    return id;
+  });
+}
+
+function neutralMethod(
+  into: Collected,
+  owner: string,
+  m: DeltaMethod,
+): NeutralMethod {
+  if (m.transition)
+    into.transitions.push({
+      entity: owner,
+      method: m.name,
+      from: m.transition.from,
+      to: m.transition.to,
+    });
+  return {
+    name: m.name,
+    description: m.description,
+    static: m.static ?? false,
+    inputs: fields(m.params),
+    returns: neutralType(m.returns),
+    emits: orEmpty(m.emits),
+    transition: m.transition ?? null,
+    invariants: registerInvariants(into, owner, m.name, m.invariants),
+  };
+}
+
+function neutralEntity(
+  into: Collected,
+  head: Pick<NeutralEntity, 'name' | 'existing' | 'description' | 'states'>,
+  members: {
+    readonly invariants: readonly DeltaInvariant[];
+    readonly methods: readonly DeltaMethod[];
+  },
+): NeutralEntity {
+  return {
+    ...head,
+    // Entity invariants are registered before the methods', so ids list in declaration order.
+    invariants: registerInvariants(into, head.name, null, members.invariants),
+    methods: members.methods.map((m) => neutralMethod(into, head.name, m)),
+  };
+}
+
+/** Additions to existing entities first, then the new ones. */
+function neutralEntities(into: Collected, delta: Delta): NeutralEntity[] {
+  return [
+    ...orEmpty(delta.entityAdditions).map((a) =>
+      neutralEntity(
+        into,
+        { name: a.entity, existing: true, description: null, states: [] },
+        a,
+      ),
+    ),
+    ...delta.entities.map((e) =>
+      neutralEntity(
+        into,
+        {
+          name: e.name,
+          existing: false,
+          description: e.description,
+          states: orEmpty(e.states),
+        },
+        e,
+      ),
+    ),
+  ];
+}
+
+/** Additions to existing use-cases first, then the new ones. */
+function neutralUseCases(delta: Delta): NeutralUseCase[] {
+  return [
+    ...orEmpty(delta.useCaseAdditions).map((u): NeutralUseCase => ({
+      name: u.useCase,
+      existing: true,
+      description: null,
+      whenToUse: null,
+      whenNotToUse: null,
+      inputs: [],
+      outputs: [],
+      uses: u.uses.map(stripKind),
+      emits: u.emits,
+      ports: [],
+    })),
+    ...delta.useCases.map((u): NeutralUseCase => ({
+      name: u.name,
+      existing: false,
+      description: u.description,
+      whenToUse: u.whenToUse,
+      whenNotToUse: u.whenNotToUse ?? null,
+      inputs: fields(u.input),
+      outputs: fields(u.output),
+      uses: u.uses.map(stripKind),
+      emits: u.emits,
+      ports: orEmpty(u.ports),
+    })),
+  ];
+}
+
 export function neutralModel(
   delta: Delta,
   acceptance: readonly AcceptanceCriterion[],
 ): NeutralModel {
-  const invariants: NeutralInvariant[] = [];
-  const transitions: NeutralModel['transitions'][number][] = [];
-  const invariantIds = (
-    owner: string,
-    method: string | null,
-    list: readonly DeltaInvariant[] | undefined,
-  ): string[] =>
-    (list ?? []).map((inv) => {
-      const id = `invariant:${owner}/${inv.id}`;
-      if (inv.examples.length === 0)
-        throw new AgenticError(
-          'bundle.delta-invalid',
-          `${id} has no given/when/then example`,
-        );
-      invariants.push({
-        id,
-        owner,
-        method,
-        text: inv.text,
-        examples: inv.examples.map((e) => ({
-          given: e.given,
-          when: e.when,
-          // eslint-disable-next-line unicorn/no-thenable
-          then: e.then,
-        })),
-      });
-      return id;
-    });
-  const method = (owner: string, m: DeltaMethod): NeutralMethod => {
-    if (m.transition)
-      transitions.push({
-        entity: owner,
-        method: m.name,
-        from: m.transition.from,
-        to: m.transition.to,
-      });
-    return {
-      name: m.name,
-      description: m.description,
-      static: m.static ?? false,
-      inputs: fields(m.params),
-      returns: neutralType(m.returns),
-      emits: m.emits ?? [],
-      transition: m.transition ?? null,
-      invariants: invariantIds(owner, m.name, m.invariants),
-    };
-  };
-  const entity = (
-    name: string,
-    existing: boolean,
-    description: string | null,
-    states: readonly string[],
-    inv: readonly DeltaInvariant[],
-    methods: readonly DeltaMethod[],
-  ) => ({
-    name,
-    existing,
-    description,
-    states,
-    // Entity invariants are registered before the methods', so ids list in declaration order.
-    invariants: invariantIds(name, null, inv),
-    methods: methods.map((m) => method(name, m)),
-  });
-  const entities = [
-    ...(delta.entityAdditions ?? []).map((a) =>
-      entity(a.entity, true, null, [], a.invariants, a.methods),
-    ),
-    ...delta.entities.map((e) =>
-      entity(
-        e.name,
-        false,
-        e.description,
-        e.states ?? [],
-        e.invariants,
-        e.methods,
-      ),
-    ),
-  ];
+  const into: Collected = { invariants: [], transitions: [] };
+  const entities = neutralEntities(into, delta);
   return {
     module: delta.module,
     certification: NO_CERTIFICATION,
@@ -263,34 +330,9 @@ export function neutralModel(
         returns: neutralType(m.returns),
       })),
     })),
-    useCases: [
-      ...(delta.useCaseAdditions ?? []).map((u) => ({
-        name: u.useCase,
-        existing: true,
-        description: null,
-        whenToUse: null,
-        whenNotToUse: null,
-        inputs: [],
-        outputs: [],
-        uses: u.uses.map(stripKind),
-        emits: u.emits,
-        ports: [],
-      })),
-      ...delta.useCases.map((u) => ({
-        name: u.name,
-        existing: false,
-        description: u.description,
-        whenToUse: u.whenToUse,
-        whenNotToUse: u.whenNotToUse ?? null,
-        inputs: fields(u.input),
-        outputs: fields(u.output),
-        uses: u.uses.map(stripKind),
-        emits: u.emits,
-        ports: u.ports ?? [],
-      })),
-    ],
-    transitions,
-    invariants,
+    useCases: neutralUseCases(delta),
+    transitions: into.transitions,
+    invariants: into.invariants,
     acceptance,
   };
 }
@@ -332,7 +374,9 @@ function methodLines(m: NeutralMethod): string[] {
           `State change: from ${m.transition.from.map(echo).join(' or ')} to ${echo(m.transition.to)}`,
         ]
       : []),
-    ...(m.emits.length ? [`Announces events: ${m.emits.map(echo).join(', ')}`] : []),
+    ...(m.emits.length
+      ? [`Announces events: ${m.emits.map(echo).join(', ')}`]
+      : []),
   ];
 }
 
@@ -389,12 +433,20 @@ function useCaseJob(model: NeutralModel, name: string): Job | null {
         ? `Extend the existing use-case ${echo(u.name)} with what is listed here.`
         : `Implement the use-case ${echo(u.name)}: ${echo(u.description ?? '')}`,
       ...(u.whenToUse ? [`Use it when: ${echo(u.whenToUse)}`] : []),
-      ...(u.whenNotToUse ? [`Do not use it when: ${echo(u.whenNotToUse)}`] : []),
+      ...(u.whenNotToUse
+        ? [`Do not use it when: ${echo(u.whenNotToUse)}`]
+        : []),
       ...fieldList('Inputs', u.inputs),
       ...fieldList('Outputs', u.outputs),
-      ...(u.uses.length ? [`Calls operations: ${u.uses.map(echo).join(', ')}`] : []),
-      ...(u.ports.length ? [`Needs ports: ${u.ports.map(echo).join(', ')}`] : []),
-      ...(u.emits.length ? [`Announces events: ${u.emits.map(echo).join(', ')}`] : []),
+      ...(u.uses.length
+        ? [`Calls operations: ${u.uses.map(echo).join(', ')}`]
+        : []),
+      ...(u.ports.length
+        ? [`Needs ports: ${u.ports.map(echo).join(', ')}`]
+        : []),
+      ...(u.emits.length
+        ? [`Announces events: ${u.emits.map(echo).join(', ')}`]
+        : []),
     ],
     invariants: [],
   };

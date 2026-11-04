@@ -323,8 +323,8 @@ function itemEntries(analysis: CandidateAnalysis): {
  * The neutral files from the validated Delta and the numbered proposal, read back through the strict
  * parser: the proposal was just written by us, so a parse error is the caller's invalid proposal.
  */
-function neutralLayer(
-  rendered: Rendered,
+export function neutralLayer(
+  delta: Delta,
   proposal: NumberedProposal,
   items: readonly TargetItem[],
 ): NeutralBuild {
@@ -341,7 +341,7 @@ function neutralLayer(
       `the proposal is invalid: ${quote(parsed.errors.map((e) => e.message).join('; '), 500)}`,
     );
   return buildNeutral({
-    delta: rendered.delta,
+    delta,
     acceptance: parsed.proposal.acceptance,
     items: items.map(({ id, layer, wave }) => ({ id, layer, wave })),
   });
@@ -358,7 +358,7 @@ async function assemble(parts: {
   const { base, rendered, proposal, analysis } = parts;
   const skeleton = await skeletonFiles(base, rendered);
   const entries = itemEntries(analysis);
-  const neutral = neutralLayer(rendered, proposal, entries.items);
+  const neutral = neutralLayer(rendered.delta, proposal, entries.items);
   const files = [
     ...skeleton.files,
     lf(

@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { inside, nextChangeId } from './index';
+import { inside, neutralLayer, nextChangeId } from './index';
+import { richDelta } from './neutral-testkit';
 
 describe('nextChangeId', () => {
   test('the first change is 0001', () => {
@@ -17,6 +18,88 @@ describe('nextChangeId', () => {
     expect(nextChangeId(['0007'])).toBe('0008');
     const others = ['0007x', '12345-big', 'draft', '007-short', '.gitkeep'];
     expect(nextChangeId(others)).toBe('0001');
+  });
+});
+
+describe('neutralLayer', () => {
+  const proposal = (delta = '  added: []', acceptance = 'acceptance: []') => ({
+    id: '0007',
+    slug: 'close-cart',
+    markdown: [
+      '---',
+      'id: "0007"',
+      'title: Close a cart',
+      'status: proposed',
+      'origin: proposal-first',
+      'delta:',
+      delta,
+      acceptance,
+      '---',
+      '',
+      '## Motivo',
+      '',
+      'Shoppers close carts.',
+      '',
+    ].join('\n'),
+  });
+  const items = [
+    {
+      id: 'entity:Cart',
+      layer: 'domain',
+      wave: 2,
+      state: 'todo' as const,
+      specHash: 'h',
+      packet: 'target/packets/p.md',
+      brief: 'target/briefs/b.md',
+    },
+  ];
+  const refusalOf = (p: ReturnType<typeof proposal>) => {
+    try {
+      neutralLayer(richDelta(), p, items);
+    } catch (error) {
+      return error as { code?: string; message: string };
+    }
+    return undefined;
+  };
+
+  test('puts the acceptance criteria of the proposal in the model and one brief per item', () => {
+    const acceptance = [
+      'acceptance:',
+      '  - id: cart-closes',
+      '    covers: ["entity:Cart"]',
+      '    given: an open cart',
+      '    when: the shopper closes it',
+      '    then: it is closed',
+    ].join('\n');
+    const built = neutralLayer(richDelta(), proposal(undefined, acceptance), items);
+    expect(built.model.acceptance).toEqual([
+      {
+        id: 'cart-closes',
+        covers: ['entity:Cart'],
+        given: 'an open cart',
+        when: 'the shopper closes it',
+        // eslint-disable-next-line unicorn/no-thenable
+        then: 'it is closed',
+        manual: false,
+      },
+    ]);
+    expect(built.briefs).toEqual([
+      { item: 'entity:Cart', path: 'neutral/briefs/entity-Cart.md' },
+    ]);
+    expect(built.files.find((f) => f.path === built.briefs[0]!.path)!.content).toContain(
+      'Wave 2, domain layer.',
+    );
+  });
+
+  test('reads the proposal strictly: an unknown delta key is refused with its text', () => {
+    const error = refusalOf(proposal('  added: []\n  renamed: []'));
+    expect(error?.code).toBe('bundle.proposal-invalid');
+    expect(error?.message).toContain('delta: unknown key');
+    expect(error?.message).toContain('renamed');
+  });
+
+  test('refuses a delta that is not an object', () => {
+    expect(refusalOf(proposal(' []'))?.code).toBe('bundle.proposal-invalid');
   });
 });
 

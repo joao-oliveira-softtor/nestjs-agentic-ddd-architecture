@@ -1,8 +1,10 @@
 import { baseDelta } from '../delta/additions-fixture';
 import type { Delta } from '../delta/schema';
 
-// eslint-disable-next-line unicorn/no-thenable
-const ex = [{ given: 'a paid order', when: 'it is refunded', then: 'it is open' }];
+const ex = [
+  // eslint-disable-next-line unicorn/no-thenable
+  { given: 'a paid order', when: 'it is refunded', then: 'it is open' },
+];
 
 /** Brand-new elements of every kind, with a transition, optional and list-typed parameters. */
 export function richDelta(): Delta {
@@ -14,7 +16,9 @@ export function richDelta(): Delta {
         name: 'Cart',
         description: 'A cart.',
         states: ['open', 'closed'],
-        invariants: [{ id: 'cart-not-empty', text: 'A cart needs items.', examples: ex }],
+        invariants: [
+          { id: 'cart-not-empty', text: 'A cart needs items.', examples: ex },
+        ],
         methods: [
           {
             name: 'close',
@@ -27,13 +31,23 @@ export function richDelta(): Delta {
             returns: 'void',
             transition: { from: ['open'], to: 'closed' },
             emits: ['CartClosed'],
-            invariants: [{ id: 'close-needs-open', text: 'Only open carts close.', examples: ex }],
+            invariants: [
+              {
+                id: 'close-needs-open',
+                text: 'Only open carts close.',
+                examples: ex,
+              },
+            ],
           },
         ],
       },
     ],
     valueObjects: [
-      { name: 'Money', description: 'An amount.', fields: [{ name: 'amount', type: 'number' }] },
+      {
+        name: 'Money',
+        description: 'An amount.',
+        fields: [{ name: 'amount', type: 'number' }],
+      },
     ],
     ports: [
       {
@@ -41,12 +55,22 @@ export function richDelta(): Delta {
         description: 'Stores carts.',
         root: 'Cart',
         methods: [
-          { name: 'save', description: 'Saves.', params: [{ name: 'cart', type: 'Cart' }], returns: 'void' },
+          {
+            name: 'save',
+            description: 'Saves.',
+            params: [{ name: 'cart', type: 'Cart' }],
+            returns: 'void',
+          },
         ],
       },
     ],
     events: [
-      { name: 'CartClosed', entity: 'Cart', description: 'Closed.', payload: [{ name: 'cartId', type: 'string' }] },
+      {
+        name: 'CartClosed',
+        entity: 'Cart',
+        description: 'Closed.',
+        payload: [{ name: 'cartId', type: 'string' }],
+      },
     ],
     useCases: [
       {
@@ -72,7 +96,10 @@ const TS_LEAKS: readonly [string, RegExp][] = [
   ['export', /\bexport\s/],
   ['notImplemented', /notImplemented/],
   ['arrow', /=>/],
-  ['type annotation', /\w\??:\s*(string|number|boolean|void|Date|unknown|any)\b/],
+  [
+    'type annotation',
+    /\w\??:\s*(string|number|boolean|void|Date|unknown|any)\b/,
+  ],
   ['bun', /\bbun\b/],
   ['class keyword', /\b(class|const|interface|async|await)\s/],
   ['generics', /\w<\w+>/],
@@ -91,9 +118,14 @@ function strings(value: unknown): string[] {
   return [];
 }
 
-export const neutralLeaks = (files: readonly { path: string; content: string }[]): string[] =>
+export const neutralLeaks = (
+  files: readonly { path: string; content: string }[],
+): string[] =>
   files.flatMap((f) => {
-    const texts = f.path.endsWith('.json') ? strings(JSON.parse(f.content)) : [f.content];
-    return texts.flatMap((t) => leaks(t).map((l) => `${f.path}: ${l}: ${t.slice(0, 40)}`));
+    const texts = f.path.endsWith('.json')
+      ? strings(JSON.parse(f.content))
+      : [f.content];
+    return texts.flatMap((t) =>
+      leaks(t).map((l) => `${f.path}: ${l}: ${t.slice(0, 40)}`),
+    );
   });
-
