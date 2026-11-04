@@ -1,7 +1,16 @@
 import { describe, expect, test } from 'bun:test';
 import { ERROR_CODES } from '../../contracts/codes';
 import type { ErrorCode, IR } from '../ir';
-import { LIMITS, parseType, validateDelta, type Delta } from './schema';
+import {
+  LIMITS,
+  compareErrors,
+  compareText,
+  parseType,
+  splitOptional,
+  validateDelta,
+  type Delta,
+  type DeltaError,
+} from './schema';
 import {
   INSTANCE_MEMBERS,
   RENDERER_IMPORT_NAMES,
@@ -430,5 +439,185 @@ describe('validateDelta hardening (ADR-0007 D9)', () => {
     expect(e[0]).toMatchObject({ code: 'delta.schema-invalid', path: '' });
     expect(e[0]!.message.length).toBeLessThan(500);
     expect(e[0]!.message).toContain('295');
+  });
+});
+
+describe('schema building blocks', () => {
+  test('splitOptional reads the trailing question mark', () => {
+    expect(splitOptional('x?')).toEqual({ id: 'x', optional: true });
+    expect(splitOptional('x')).toEqual({ id: 'x', optional: false });
+  });
+
+  test('parseType returns the structure of the type text', () => {
+    expect(parseType('string')).toEqual({ kind: 'primitive', name: 'string' });
+    expect(parseType('Money')).toEqual({ kind: 'ref', name: 'Money' });
+    expect(parseType('string[]')).toEqual({
+      kind: 'array',
+      of: { kind: 'primitive', name: 'string' },
+    });
+    expect(parseType('Money[][]')).toEqual({
+      kind: 'array',
+      of: { kind: 'array', of: { kind: 'ref', name: 'Money' } },
+    });
+  });
+
+  test('compareText orders by code unit', () => {
+    expect(compareText('a', 'b')).toBe(-1);
+    expect(compareText('b', 'a')).toBe(1);
+    expect(compareText('a', 'a')).toBe(0);
+    expect(compareText('B', 'a')).toBe(-1);
+  });
+
+  test('compareErrors orders by path, then code, then message', () => {
+    const err = (
+      path: string,
+      code: DeltaError['code'],
+      message: string,
+    ): DeltaError => ({ path, code, message });
+    expect(
+      compareErrors(
+        err('a', 'delta.type-invalid', ''),
+        err('b', 'delta.name-collision', ''),
+      ),
+    ).toBe(-1);
+    expect(
+      compareErrors(
+        err('a', 'delta.type-invalid', ''),
+        err('a', 'delta.name-collision', ''),
+      ),
+    ).toBe(1);
+    expect(
+      compareErrors(
+        err('a', 'delta.type-invalid', 'x'),
+        err('a', 'delta.type-invalid', 'y'),
+      ),
+    ).toBe(-1);
+    expect(
+      compareErrors(
+        err('a', 'delta.type-invalid', 'x'),
+        err('a', 'delta.type-invalid', 'x'),
+      ),
+    ).toBe(0);
+  });
+});
+
+describe('validateDelta boundaries', () => {
+  const unknownKeys = (keys: string[]) =>
+    errorsOf({
+      ...sampleDelta(),
+      ...Object.fromEntries(keys.map((k) => [k, 1])),
+    })[0]!.message;
+
+  test('unknown keys name the first five and count the rest', () => {
+    expect(unknownKeys(['zA', 'zB'])).toBe('unrecognized keys: "zA", "zB"');
+    expect(unknownKeys(['k0', 'k1', 'k2', 'k3', 'k4'])).toBe(
+      'unrecognized keys: "k0", "k1", "k2", "k3", "k4"',
+    );
+    expect(unknownKeys(['k0', 'k1', 'k2', 'k3', 'k4', 'k5'])).toBe(
+      'unrecognized keys: "k0", "k1", "k2", "k3", "k4" and 1 more',
+    );
+  });
+
+  test('a client string is cut after 80 characters', () => {
+    const at80 = 'k'.repeat(80);
+    expect(unknownKeys([at80])).toBe(`unrecognized keys: "${at80}"`);
+    expect(unknownKeys([`${at80}k`])).toBe(`unrecognized keys: "${at80}..."`);
+  });
+
+  test('a required parameter cannot follow an optional one, in methods and ports', () => {
+    const method = sampleDelta();
+    method.entities[0]!.methods[0]!.params = [
+      { name: 'a?', type: 'string' },
+      { name: 'b', type: 'string' },
+    ];
+    expect(errorsOf(method)).toEqual([
+      {
+        code: 'delta.schema-invalid',
+        path: 'entities[0].methods[0].params[1].name',
+        message: 'a required parameter cannot follow an optional one',
+      },
+    ]);
+    const port = sampleDelta();
+    port.ports[0]!.methods[0]!.params = [
+      { name: 'a?', type: 'string' },
+      { name: 'b', type: 'string' },
+    ];
+    expect(errorsOf(port)).toEqual([
+      {
+        code: 'delta.schema-invalid',
+        path: 'ports[0].methods[0].params[1].name',
+        message: 'a required parameter cannot follow an optional one',
+      },
+    ]);
+  });
+
+  test('field lists accept an optional field before a required one', () => {
+    const d = sampleDelta();
+    d.valueObjects[0]!.fields = [
+      { name: 'a?', type: 'string' },
+      { name: 'b', type: 'string' },
+    ];
+    d.events[0]!.payload = [
+      { name: 'c?', type: 'string' },
+      { name: 'd', type: 'string' },
+    ];
+    expect(errorsOf(d)).toEqual([]);
+  });
+
+  test('a method may omit emits', () => {
+    const d = sampleDelta();
+    delete d.entities[0]!.methods[0]!.emits;
+    expect(validateDelta(d).ok).toBe(true);
+  });
+
+  describe('against a base', () => {
+    const baseWith = (
+      ...entities: { name: string; module: string }[]
+    ): IR =>
+      ({
+        irVersion: 1,
+        modules: [],
+        entities: entities.map((e) => ({
+          id: `entity:${e.name}`,
+          invariants: [],
+          methods: [],
+          ...e,
+        })),
+        events: [],
+        useCases: [],
+        operators: [],
+      }) as unknown as IR;
+    const rootError = (root: string, base: IR) => {
+      const d = sampleDelta();
+      d.ports[0]!.root = root;
+      return errorsOf(d, base);
+    };
+
+    test('a port root must be an entity of this module, not of another', () => {
+      expect(
+        rootError('Foreign', baseWith({ name: 'Foreign', module: 'other' })),
+      ).toEqual([
+        {
+          code: 'delta.reference-unknown',
+          path: 'ports[0].root',
+          message: 'entity "Foreign" is not declared in module "shop"',
+        },
+      ]);
+      expect(
+        rootError('Mine', baseWith({ name: 'Mine', module: 'shop' })),
+      ).toEqual([]);
+    });
+
+    test('an undeclared port root is refused although the base has other entities', () => {
+      expect(
+        rootError('Nobody', baseWith({ name: 'Other', module: 'shop' })),
+      ).toEqual([
+        {
+          code: 'delta.reference-unknown',
+          path: 'ports[0].root',
+          message: 'entity "Nobody" is not declared in module "shop"',
+        },
+      ]);
+    });
   });
 });
