@@ -5,11 +5,20 @@ export const ERROR_CODES = {
   'apply.base-mismatch':
     'The project is not at the bundle base: another lock or base ref, or a target file changed locally.',
   'apply.change-exists': 'The change directory for the bundle already exists.',
+  'apply.change-invalid':
+    'The bundle does not carry exactly one NNNN-slug change directory.',
   'apply.compile-failed':
-    'The compile after writing the bundle failed; every write was rolled back.',
+    'The compile after writing the bundle failed; the bundle files were restored.',
+  'apply.compile-timeout':
+    'The compile after writing the bundle did not finish in time and was stopped; the bundle files were restored.',
+  'apply.confirmation-required':
+    'apply lists the files it would write and needs --yes before writing.',
   'apply.hash-mismatch':
     'The bundle is not intact: a file is tampered, missing or extra.',
+  'apply.locked': 'Another apply holds the lock file.',
   'apply.path-escape': 'A bundle path resolves outside the project.',
+  'apply.path-forbidden':
+    'A bundle path is outside the module paths and the change directory, or inside .git, .github, node_modules or .tmp.',
   'apply.write-failed':
     'A file of the bundle could not be written; every write was rolled back.',
 

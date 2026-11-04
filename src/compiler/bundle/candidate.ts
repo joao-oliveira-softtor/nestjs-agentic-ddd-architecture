@@ -5,23 +5,31 @@ import { AgenticError } from '../ir';
 
 export const DEFAULT_TIMEOUT_MS = 120_000;
 
-interface Run {
+export interface Run {
   readonly code: number | null;
   readonly stdout: string;
   readonly stderr: string;
   readonly timedOut: boolean;
 }
 
-async function run(
+export async function run(
   cmd: readonly string[],
   cwd: string,
-  options: { timeoutMs?: number; env?: Record<string, string> } = {},
+  options: {
+    timeoutMs?: number;
+    env?: Record<string, string>;
+    /** Kills the child when aborted. */
+    signal?: AbortSignal;
+  } = {},
 ): Promise<Run> {
   const child = Bun.spawn([...cmd], {
     cwd,
     env: options.env,
     stdout: 'pipe',
     stderr: 'pipe',
+  });
+  options.signal?.addEventListener('abort', () => child.kill(), {
+    once: true,
   });
   const finished = Promise.all([
     new Response(child.stdout).text(),
@@ -137,7 +145,18 @@ const ENV_ALLOWED = [
   'USERPROFILE',
   'LOCALAPPDATA',
   'APPDATA',
+  'BUN_INSTALL',
 ];
+
+/** PATH and the platform variables a Bun child needs; no tokens or other secrets. */
+export function minimalEnv(): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const key of ENV_ALLOWED) {
+    const value = process.env[key];
+    if (value !== undefined) env[key] = value;
+  }
+  return env;
+}
 
 /** The CLI entry next to this module: the TypeScript source in a checkout, the build in the package. */
 export function defaultCliEntry(): string {
@@ -157,15 +176,10 @@ export async function runCandidateCli(
   timeoutMs: number,
   what: string,
 ): Promise<string> {
-  const env: Record<string, string> = {};
-  for (const key of ENV_ALLOWED) {
-    const value = process.env[key];
-    if (value !== undefined) env[key] = value;
-  }
   const result = await run(
     [process.execPath, '--no-install', cliEntry, ...args],
     dir,
-    { timeoutMs, env },
+    { timeoutMs, env: minimalEnv() },
   );
   if (result.timedOut)
     throw new AgenticError(

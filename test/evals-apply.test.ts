@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { applyBundle } from '../src/compiler/bundle/apply';
-import { applyFixture, cloneAt } from './helpers/apply-fixture';
+import { applyFixture, cloneAt, snapshot } from './helpers/apply-fixture';
 
 const CLI = resolve(import.meta.dir, '../src/cli/main.ts');
 const cleanup: string[] = [];
@@ -32,7 +32,7 @@ const agentic = (cwd: string, ...args: string[]) => {
 test('after apply, packet and verify --item work on every new item with the bundled specHash', async () => {
   const target = await cloneAt(fx.repo.root, fx.ref);
   cleanup.push(target);
-  await applyBundle({ bundleDir: fx.dir, projectRoot: target });
+  await applyBundle({ bundleDir: fx.dir, projectRoot: target, yes: true });
   // `verify` needs at least one test to collect a JUnit report.
   await Bun.write(
     join(target, 'src/shop/smoke.test.ts'),
@@ -61,11 +61,23 @@ test('after apply, packet and verify --item work on every new item with the bund
   }
 }, 300_000);
 
-test('agentic apply <bundle-dir> applies the bundle from the CLI', async () => {
+test('agentic apply <bundle-dir> --yes applies the bundle from the CLI', async () => {
   const target = await cloneAt(fx.repo.root, fx.ref);
   cleanup.push(target);
-  const run = agentic(target, 'apply', fx.dir);
+  const run = agentic(target, 'apply', fx.dir, '--yes');
   expect(run.err).toBe('');
   expect(run.code).toBe(0);
   expect(run.out).toContain('0001-refund-paid-order');
+}, 120_000);
+
+test('agentic apply <bundle-dir> without --yes lists what it would write and changes nothing', async () => {
+  const target = await cloneAt(fx.repo.root, fx.ref);
+  cleanup.push(target);
+  const before = await snapshot(target);
+  const run = agentic(target, 'apply', fx.dir);
+  expect(run.code).not.toBe(0);
+  expect(run.err).toContain('[apply.confirmation-required]');
+  expect(run.err).toContain(fx.bundle.manifest.hash);
+  expect(run.err).toContain('not who made it');
+  expect(await snapshot(target)).toEqual(before);
 }, 120_000);
