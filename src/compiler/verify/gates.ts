@@ -96,6 +96,16 @@ const gate = (
   warnings,
 });
 
+const failingTestsSuffix = (failing: TestCaseResult[]): string => {
+  const named = failing
+    .slice(0, MAX_FAILING_NAMED)
+    .map((c) => `${c.file}:${c.line} ${c.name.replace(/\s+/g, ' ')}`);
+  const more = failing.length - named.length;
+  return named.length
+    ? `; failing: ${named.join('; ')}${more > 0 ? `; and ${more} more` : ''}`
+    : '';
+};
+
 export function evaluateGates(input: GateInput): VerifyReport {
   const { proposal } = input;
   const sortedCases = [...input.tests.cases].sort((a, b) => {
@@ -238,17 +248,9 @@ export function evaluateGates(input: GateInput): VerifyReport {
   }
   if (input.tests.exitCode !== 0) {
     const failing = sortedCases.filter((c) => c.status === 'failed');
-    const named = failing
-      .slice(0, MAX_FAILING_NAMED)
-      .map((c) => `${c.file}:${c.line} ${c.name.replace(/\s+/g, ' ')}`);
-    const more = failing.length - named.length;
     g5.push({
       code: 'verify.suite-failed',
-      message: `the test suite exited with ${input.tests.exitCode}${
-        named.length
-          ? `; failing: ${named.join('; ')}${more > 0 ? `; and ${more} more` : ''}`
-          : ''
-      }`,
+      message: `the test suite exited with ${input.tests.exitCode}${failingTestsSuffix(failing)}`,
       fix: 'run bun test and fix the failures',
       source: null,
     });

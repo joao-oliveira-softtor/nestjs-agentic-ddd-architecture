@@ -323,6 +323,35 @@ describe('evaluateGates', () => {
     expect(finding.message).toContain('and 2 more');
   });
 
+  test('G5: exactly three failing tests are all named, with no "more" suffix', () => {
+    const failing = [10, 20, 30].map((line) => testCase([], 'failed', line));
+    const finding = evaluateGates(
+      input({ tests: { exitCode: 1, cases: [...goodTests, ...failing] } }),
+    )
+      .gates.find((g) => g.id === 'G5')!
+      .findings.find((f) => f.code === 'verify.suite-failed')!;
+    expect(finding.message).toBe(
+      `the test suite exited with 1; failing: ${failing
+        .map((t) => `${t.file}:${t.line} ${t.name}`)
+        .join('; ')}`,
+    );
+  });
+
+  test('G5: exactly four failing tests name three and end with "and 1 more"', () => {
+    const failing = [10, 20, 30, 40].map((line) => testCase([], 'failed', line));
+    const finding = evaluateGates(
+      input({ tests: { exitCode: 1, cases: [...goodTests, ...failing] } }),
+    )
+      .gates.find((g) => g.id === 'G5')!
+      .findings.find((f) => f.code === 'verify.suite-failed')!;
+    expect(finding.message).toBe(
+      `the test suite exited with 1; failing: ${failing
+        .slice(0, 3)
+        .map((t) => `${t.file}:${t.line} ${t.name}`)
+        .join('; ')}; and 1 more`,
+    );
+  });
+
   test('G5: the named failing tests do not depend on the runner order', () => {
     const failing = [50, 10, 40, 20, 30].map((line) =>
       testCase([], 'failed', line),
