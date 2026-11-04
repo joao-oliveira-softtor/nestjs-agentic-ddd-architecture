@@ -101,6 +101,7 @@
     "dist/nestjs",
     "dist/testing",
     "dist/mcp",
+    "dist/publish",
     "dist/auth",
     "dist/cli",
     "bin/agentic-ddd.js",
