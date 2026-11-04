@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
-import { compileBundle } from '../compiler/bundle/index';
+import { compileBundle, type Bundle } from '../compiler/bundle/index';
 import { moduleAccess, type ModuleAccess } from '../auth/scopes';
 import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
@@ -19,7 +19,7 @@ import type { ResolvedConventions } from '../compiler/conventions';
 import type { PublishedLock } from '../compiler/published';
 import type { Rule } from '../compiler/rules';
 import { checkSnapshot } from '../compiler/snapshot';
-import { narrowRuleGlobs, pathModule, scopeLock } from './scope';
+import { coversModule, narrowRuleGlobs, pathModule, scopeLock } from './scope';
 import {
   authoringCatalogue,
   authoringLoader,
@@ -75,6 +75,44 @@ type Scoped = {
 };
 
 type Ctx = { http?: { authInfo?: { scopes: string[] } } };
+
+type ProposeArgs = {
+  delta: Record<string, unknown>;
+  proposal: { slug: string; markdown: string };
+};
+
+// Scope, size and source are checked before any work; a published lock has no working copy to compile against.
+async function proposeChange(
+  source: Source,
+  access: ModuleAccess,
+  args: ProposeArgs,
+): Promise<Bundle> {
+  if (!coversModule(access, args.delta.module))
+    throw new AgenticError(
+      'auth.scope-missing',
+      `the ${PROPOSE_CAPABILITY} scope for the module of the Delta is needed`,
+    );
+  if (Buffer.byteLength(JSON.stringify(args)) > MAX_PROPOSE_BYTES)
+    throw new AgenticError(
+      'mcp.input-too-large',
+      `the input exceeds ${MAX_PROPOSE_BYTES} bytes`,
+    );
+  if ('published' in source)
+    throw new AgenticError(
+      'mcp.propose-unavailable',
+      'this server serves a published lock; propose_change needs a working copy',
+    );
+  // The base is the HEAD commit (lock, conventions, `changes/`): compileBundle validates,
+  // numbers and renders against it, never against the served working copy.
+  return withProposeSlot(() =>
+    compileBundle({
+      delta: args.delta,
+      baseRoot: source.root,
+      baseRef: 'HEAD',
+      proposal: args.proposal,
+    }),
+  );
+}
 
 // The read-only tools and skill documents, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
 export function createDomainServer(
@@ -375,46 +413,10 @@ export function createDomainServer(
       // readOnlyHint stays true: no client-visible state changes; the temp worktree is server-internal and gone on return.
       annotations: { ...annotations, idempotentHint: true },
     },
-    (
-      args: {
-        delta: Record<string, unknown>;
-        proposal: { slug: string; markdown: string };
-      },
-      ctx?: Ctx,
-    ) =>
-      respond(async () => {
-        const access = accessOf(ctx, PROPOSE_CAPABILITY);
-        const module = args.delta.module;
-        if (
-          noGrant(access) ||
-          (access !== 'all' &&
-            !(typeof module === 'string' && access.has(module)))
-        )
-          throw new AgenticError(
-            'auth.scope-missing',
-            `the ${PROPOSE_CAPABILITY} scope for the module of the Delta is needed`,
-          );
-        if (Buffer.byteLength(JSON.stringify(args)) > MAX_PROPOSE_BYTES)
-          throw new AgenticError(
-            'mcp.input-too-large',
-            `the input exceeds ${MAX_PROPOSE_BYTES} bytes`,
-          );
-        if ('published' in source)
-          throw new AgenticError(
-            'mcp.propose-unavailable',
-            'this server serves a published lock; propose_change needs a working copy',
-          );
-        // The base is the HEAD commit (lock, conventions, `changes/`): compileBundle validates,
-        // numbers and renders against it, never against the served working copy.
-        return withProposeSlot(() =>
-          compileBundle({
-            delta: args.delta,
-            baseRoot: source.root,
-            baseRef: 'HEAD',
-            proposal: args.proposal,
-          }),
-        );
-      }),
+    (args: ProposeArgs, ctx?: Ctx) =>
+      respond(() =>
+        proposeChange(source, accessOf(ctx, PROPOSE_CAPABILITY), args),
+      ),
   );
   server.registerResource(
     'skill',

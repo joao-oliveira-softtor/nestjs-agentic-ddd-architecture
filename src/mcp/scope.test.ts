@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { DomainLock } from '../compiler/lock';
 import type { Rule } from '../compiler/rules';
-import { narrowRuleGlobs, pathModule, scopeLock } from './scope';
+import { coversModule, narrowRuleGlobs, pathModule, scopeLock } from './scope';
 
 const inv = (id: string, on: string | null = null) => ({
   id,
@@ -369,5 +369,21 @@ describe('narrowRuleGlobs', () => {
       'examples/orders/**',
       'examples/billing/**',
     ]);
+  });
+});
+
+describe('coversModule', () => {
+  test('all access covers any module name and the listed ones cover only themselves', () => {
+    expect(coversModule('all', 'billing')).toBe(true);
+    expect(coversModule(new Set(['orders']), 'orders')).toBe(true);
+    expect(coversModule(new Set(['orders']), 'billing')).toBe(false);
+    expect(coversModule(new Set<string>(), 'orders')).toBe(false);
+  });
+
+  test('a value that is not a module name is covered only by all access', () => {
+    for (const value of [undefined, null, 1, ['orders'], { name: 'orders' }]) {
+      expect(coversModule(new Set(['orders']), value)).toBe(false);
+      expect(coversModule('all', value)).toBe(true);
+    }
   });
 });
