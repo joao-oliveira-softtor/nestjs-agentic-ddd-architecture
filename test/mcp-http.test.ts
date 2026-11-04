@@ -14,7 +14,7 @@ import {
 } from './helpers/auth-server';
 import { DEFAULT_CONVENTIONS } from '../src/compiler/conventions';
 import { additionDelta } from '../src/compiler/delta/additions-fixture';
-import { leftovers, shopRepo } from './helpers/shop-repo';
+import { leftovers, shopProposal, shopRepo } from './helpers/shop-repo';
 
 const REPO = resolve(import.meta.dir, '..');
 const LOCK = '.agentic/domain.lock.json';
@@ -310,25 +310,6 @@ describe('agentic mcp --http endpoint path', () => {
   );
 });
 
-const PROPOSAL = [
-  '---',
-  'id: "0001"',
-  'title: Refund a paid order',
-  'status: proposed',
-  'origin: proposal-first',
-  'delta:',
-  '  added: []',
-  '  modified: []',
-  '  removed: []',
-  'acceptance: []',
-  '---',
-  '',
-  '## Motivo',
-  '',
-  'Customers ask for refunds.',
-  '',
-].join('\n');
-
 describe('agentic mcp --http propose_change', () => {
   let repo: Awaited<ReturnType<typeof shopRepo>>;
   let signer: Signer;
@@ -392,13 +373,7 @@ describe('agentic mcp --http propose_change', () => {
 
   test('change:propose returns the bundle, the same one twice, and leaves nothing behind', async () => {
     const before = await leftovers(repo);
-    const args = {
-      delta: additionDelta(),
-      proposal: {
-        slug: 'refund-order',
-        markdown: PROPOSAL,
-      },
-    };
+    const args = { delta: additionDelta(), proposal: shopProposal() };
     const a = await propose('change:propose', args);
     const b = await propose('change:propose:shop', args);
     expect(a.isError).toBeUndefined();
@@ -412,7 +387,7 @@ describe('agentic mcp --http propose_change', () => {
   }, 180_000);
 
   test('a token without change:propose, or scoped to another module, is denied', async () => {
-    const args = { delta: additionDelta() };
+    const args = { delta: additionDelta(), proposal: shopProposal() };
     for (const scope of ['domain:read', 'change:propose:billing']) {
       const r = await propose(scope, args);
       expect(r.isError).toBe(true);
@@ -430,6 +405,7 @@ describe('agentic mcp --http propose_change', () => {
     ]) {
       const r = await propose('change:propose', {
         delta: additionDelta(),
+        proposal: shopProposal(),
         ...extra,
       });
       expect(r.isError).toBe(true);
@@ -465,6 +441,7 @@ describe('agentic mcp --http propose_change', () => {
     const bad = additionDelta() as unknown as Record<string, unknown>;
     const r = await propose('change:propose', {
       delta: { ...bad, entities: [{ name: 'not valid' }] },
+      proposal: shopProposal(),
     });
     expect(r.isError).toBe(true);
     expect(r.content[0]!.text).toEndWith('[delta.schema-invalid]');

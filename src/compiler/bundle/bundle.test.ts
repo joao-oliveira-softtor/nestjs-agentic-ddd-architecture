@@ -15,6 +15,7 @@ import { additionDelta } from '../delta/additions-fixture';
 import {
   git,
   leftovers,
+  shopProposal,
   shopRepo as sharedShopRepo,
 } from '../../../test/helpers/shop-repo';
 import { compileBundle } from './index';
@@ -50,6 +51,7 @@ const input = () => ({
   delta: additionDelta(),
   baseRoot: repo.root,
   baseRef: repo.ref,
+  proposal: shopProposal(),
 });
 
 describe('compileBundle on the shop project', () => {
@@ -111,36 +113,14 @@ describe('compileBundle on the shop project', () => {
     expect(crlf.hash).toBe(lf.hash);
   }, 120_000);
 
-  test('a valid proposal lands in the bundle and is covered by the hash', async () => {
-    const proposal = {
-      slug: 'refund-paid-order',
-      markdown: [
-        '---',
-        'id: "0001"',
-        'title: Refund a paid order',
-        'status: proposed',
-        'origin: proposal-first',
-        'delta:',
-        '  added: []',
-        '  modified: []',
-        '  removed: []',
-        'acceptance: []',
-        '---',
-        '',
-        '## Motivo',
-        '',
-        'Customers ask for refunds.',
-        '',
-      ].join('\n'),
-    };
-    const plain = await compileBundle(input());
+  test('the proposal lands in the bundle and is covered by the hash', async () => {
+    const proposal = shopProposal('0001', 'refund-paid-order');
     const a = await compileBundle({ ...input(), proposal });
     const path = 'target/changes/0001-refund-paid-order/proposal.md';
     expect(a.files.find((f) => f.path === path)?.content).toBe(
       proposal.markdown,
     );
     expect(a.manifest.files.map((f) => f.path)).toContain(path);
-    expect(a.hash).not.toBe(plain.hash);
     const b = await compileBundle({
       ...input(),
       proposal: { ...proposal, markdown: `${proposal.markdown}More.\n` },
@@ -233,32 +213,13 @@ describe('compileBundle on the shop project', () => {
           delta: additionDelta(),
           baseRoot: stale.root,
           baseRef: stale.ref,
+          proposal: shopProposal(),
         }),
       ),
     ).toBe('delta.splice-anchor-missing');
     expect(await leftovers(stale)).toEqual({ dirs: [], worktrees: 1 });
   }, 120_000);
 });
-
-const PROPOSAL = (id: string, status = 'proposed') =>
-  [
-    '---',
-    `id: "${id}"`,
-    'title: Refund a paid order',
-    `status: ${status}`,
-    'origin: proposal-first',
-    'delta:',
-    '  added: []',
-    '  modified: []',
-    '  removed: []',
-    'acceptance: []',
-    '---',
-    '',
-    '## Motivo',
-    '',
-    'Customers ask for refunds.',
-    '',
-  ].join('\n');
 
 const alive = (pid: number): boolean => {
   try {
@@ -286,6 +247,7 @@ export {};
       delta: additionDelta(),
       baseRoot: effect.root,
       baseRef: effect.ref,
+      proposal: shopProposal(),
     });
     const pids = (await readdir(marks)).map((n) => Number(n.slice(4)));
     expect(pids.length).toBeGreaterThan(0);
@@ -350,7 +312,7 @@ describe('the base commit is the single source of truth', () => {
     try {
       const dirty = await compileBundle({
         ...input(),
-        proposal: { slug: 'x', markdown: PROPOSAL('0001') },
+        proposal: shopProposal('0001', 'x'),
       });
       expect(dirty.manifest.baseLockHash).toBe(clean.manifest.baseLockHash);
       expect(dirty.files.map((f) => f.path)).toContain(
@@ -367,7 +329,7 @@ describe('the base commit is the single source of truth', () => {
       await mkdir(join(root, 'changes/0003-earlier'), { recursive: true });
       await writeFile(
         join(root, 'changes/0003-earlier/proposal.md'),
-        PROPOSAL('0003'),
+        shopProposal('0003').markdown,
       );
     });
     // The open 0003 makes the candidate refuse a second one: the message proves the new number.
@@ -375,7 +337,7 @@ describe('the base commit is the single source of truth', () => {
       delta: additionDelta(),
       baseRoot: numbered.root,
       baseRef: numbered.ref,
-      proposal: { slug: 'next', markdown: PROPOSAL('0004') },
+      proposal: shopProposal('0004', 'next'),
     }).catch((e: Error) => e);
     expect(error).toMatchObject({ code: 'bundle.compile-failed' });
     expect((error as Error).message).toContain('0003, 0004');

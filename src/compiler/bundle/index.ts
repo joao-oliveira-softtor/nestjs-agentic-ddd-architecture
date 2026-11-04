@@ -43,10 +43,11 @@ export interface BundleInput {
   /** Any ref that resolves to a commit; the bundle records the full commit id. */
   readonly baseRef: string;
   /**
-   * `proposal.md` of the change, written to `changes/<id>-<slug>/` of the candidate and bundled. The
-   * number is not the caller's: it is one past the highest of the base lock and the base `changes/`.
+   * `proposal.md` of the change, written to `changes/<id>-<slug>/` of the candidate and bundled: the
+   * bundle always carries one, because `apply` takes its change directory from it. The number is not
+   * the caller's: it is one past the highest of the base lock and the base `changes/`.
    */
-  readonly proposal?: {
+  readonly proposal: {
     readonly slug: string;
     readonly markdown: string;
   };
@@ -98,7 +99,7 @@ async function filesUnder(dir: string): Promise<string[]> {
  */
 export async function compileBundle(input: BundleInput): Promise<Bundle> {
   const proposal = input.proposal;
-  if (proposal && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(proposal.slug))
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(proposal.slug))
     throw new AgenticError(
       'bundle.proposal-invalid',
       `proposal slug ${quote(proposal.slug)} is not kebab-case`,
@@ -176,7 +177,7 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
         await writeFile(target, spliced.source);
       }
       const changesDir = join(config.outRoot, config.changesDir);
-      const numbered = proposal && {
+      const numbered = {
         ...proposal,
         id: String(
           1 +
@@ -192,14 +193,12 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
             ),
         ).padStart(4, '0'),
       };
-      if (numbered) {
-        const target = inside(
-          changesDir,
-          `${numbered.id}-${numbered.slug}/proposal.md`,
-        );
-        await mkdir(dirname(target), { recursive: true });
-        await writeFile(target, numbered.markdown);
-      }
+      const proposalTarget = inside(
+        changesDir,
+        `${numbered.id}-${numbered.slug}/proposal.md`,
+      );
+      await mkdir(dirname(proposalTarget), { recursive: true });
+      await writeFile(proposalTarget, numbered.markdown);
 
       // Candidate code runs only in these children (killable, no network, scrubbed env).
       await runCandidateCli(
@@ -240,11 +239,10 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
         skeleton.push(repoPath);
         add(`target/skeleton/${repoPath}`, await read(join(moduleRoot, rel)));
       }
-      if (numbered)
-        add(
-          `target/changes/${numbered.id}-${numbered.slug}/proposal.md`,
-          numbered.markdown,
-        );
+      add(
+        `target/changes/${numbered.id}-${numbered.slug}/proposal.md`,
+        numbered.markdown,
+      );
       const skillDir = join(
         config.outRoot,
         config.out.devSkills,

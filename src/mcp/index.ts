@@ -367,12 +367,10 @@ export function createDomainServer(
     'propose_change',
     {
       title: 'Propose a change',
-      description: `${LANGUAGE_RULE} Renders a Delta (the domain change as JSON) onto the served project, compiles it in a temporary worktree and returns the compiled bundle: manifest, hash and files (BUNDLE.md first). The base, conventions and limits are fixed by the server; nothing is stored.`,
+      description: `${LANGUAGE_RULE} Renders a Delta (the domain change as JSON) onto the served project, compiles it in a temporary worktree and returns the compiled bundle: manifest, hash and files (BUNDLE.md first). The proposal (a kebab-case slug and the proposal.md text) is required: the bundle carries it as changes/NNNN-slug/proposal.md. The base, conventions and limits are fixed by the server; nothing is stored.`,
       inputSchema: z.strictObject({
         delta: z.record(z.string(), z.unknown()),
-        proposal: z
-          .strictObject({ slug: z.string(), markdown: z.string() })
-          .optional(),
+        proposal: z.strictObject({ slug: z.string(), markdown: z.string() }),
       }),
       // readOnlyHint stays true: no client-visible state changes; the temp worktree is server-internal and gone on return.
       annotations: { ...annotations, idempotentHint: true },
@@ -380,7 +378,7 @@ export function createDomainServer(
     (
       args: {
         delta: Record<string, unknown>;
-        proposal?: { slug: string; markdown: string };
+        proposal: { slug: string; markdown: string };
       },
       ctx?: Ctx,
     ) =>

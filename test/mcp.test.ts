@@ -9,7 +9,7 @@ import { additionDelta } from '../src/compiler/delta/additions-fixture';
 import { compileBundle } from '../src/compiler/bundle';
 import { withProposeSlot } from '../src/mcp';
 import { startStdioMcp } from './helpers/stdio-mcp';
-import { leftovers, shopRepo } from './helpers/shop-repo';
+import { leftovers, shopProposal, shopRepo } from './helpers/shop-repo';
 
 const REPO = resolve(import.meta.dir, '..');
 const LOCK = '.agentic/domain.lock.json';
@@ -186,7 +186,16 @@ describe('agentic mcp (stdio) propose_change', () => {
     const mcp = await startStdioMcp(repo.root);
     try {
       const before = await leftovers(repo);
-      const ok = await mcp.call('propose_change', { delta: additionDelta() });
+      // The bundle's changes/NNNN-slug/ comes from the proposal: a call without one is refused.
+      const missing = await mcp.call('propose_change', {
+        delta: additionDelta(),
+      });
+      expect(missing.isError).toBe(true);
+      expect(missing.content[0].text).toContain('proposal');
+      const ok = await mcp.call('propose_change', {
+        delta: additionDelta(),
+        proposal: shopProposal(),
+      });
       expect(ok.isError).toBeFalsy();
       const bundle = JSON.parse(ok.content[0].text);
       expect(bundle.files.map((f: { path: string }) => f.path)).toContain(
@@ -194,10 +203,12 @@ describe('agentic mcp (stdio) propose_change', () => {
       );
       const again = await mcp.call('propose_change', {
         delta: additionDelta(),
+        proposal: shopProposal(),
       });
       expect(JSON.parse(again.content[0].text).hash).toBe(bundle.hash);
       const bad = await mcp.call('propose_change', {
         delta: { module: 'shop', entities: [{ name: 'x' }] },
+        proposal: shopProposal(),
       });
       expect(bad.isError).toBe(true);
       expect(bad.content[0].text).toContain('[delta.schema-invalid]');
@@ -220,6 +231,7 @@ describe('propose_change concurrency', () => {
         delta: additionDelta(),
         baseRoot: repo.root,
         baseRef: 'HEAD',
+        proposal: shopProposal(),
       };
       // The first call hangs in the child until the 1 s timeout, so the second arrives mid-flight.
       const first = withProposeSlot(() =>

@@ -96,6 +96,29 @@ export default defineConfig({ mirrors: [], modules: [{ name: 'shop', path: 'src/
   return { root, ref: git(root, 'rev-parse', 'HEAD'), work: join(root, '.tmp') };
 }
 
+/** A valid `proposal.md` for the shop change; `id` must be the number the bundle assigns. */
+export const shopProposal = (id = '0001', slug = 'refund-order') => ({
+  slug,
+  markdown: [
+    '---',
+    `id: "${id}"`,
+    'title: Refund a paid order',
+    'status: proposed',
+    'origin: proposal-first',
+    'delta:',
+    '  added: []',
+    '  modified: []',
+    '  removed: []',
+    'acceptance: []',
+    '---',
+    '',
+    '## Motivo',
+    '',
+    'Customers ask for refunds.',
+    '',
+  ].join('\n'),
+});
+
 /** What a call must leave as it found it: registered worktrees and the bundle temp dirs. */
 export async function leftovers(repo: { root: string; work: string }) {
   return {
