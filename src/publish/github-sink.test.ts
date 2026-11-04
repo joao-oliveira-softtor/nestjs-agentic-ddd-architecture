@@ -252,7 +252,11 @@ describe('GitHubChangeSink', () => {
   });
 
   test('a timeout during pull request creation still deletes the branch', async () => {
-    const fake = createFakeGitHost({ owner: 'acme', repo: 'shop', token: TOKEN });
+    const fake = createFakeGitHost({
+      owner: 'acme',
+      repo: 'shop',
+      token: TOKEN,
+    });
     const sink = new GitHubChangeSink({
       token: TOKEN,
       owner: 'acme',
@@ -405,6 +409,34 @@ describe('GitHubChangeSink', () => {
     );
   });
 
+  test('accepts files exactly at the per-file and total caps', async () => {
+    const { sink } = setup();
+    const files = Array.from({ length: 10 }, (_, i) => ({
+      path: `changes/0007-x/f${i}.md`,
+      content: 'a'.repeat(1024 * 1024),
+    }));
+    expect((await sink.publish({ ...change, files })).branch).toBe(
+      'changes/0007-refund-window',
+    );
+  });
+
+  test('accepts exactly 500 files and refuses 501', async () => {
+    const files = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({
+        path: `changes/0007-x/f${i}.md`,
+        content: 'a',
+      }));
+    const { sink } = setup();
+    expect((await sink.publish({ ...change, files: files(500) })).branch).toBe(
+      'changes/0007-refund-window',
+    );
+    const more = setup();
+    expect(
+      (await failure(more.sink.publish({ ...change, files: files(501) }))).code,
+    ).toBe('publish.path-invalid');
+    expect(more.fake.requests).toEqual([]);
+  });
+
   test('refuses a change over the total cap', async () => {
     const { fake, sink } = setup();
     const files = Array.from({ length: 11 }, (_, i) => ({
@@ -508,6 +540,43 @@ describe('GitHubChangeSink', () => {
     const r = await failure(sink.publish(change));
     expect(r.code).toBe('publish.host-rate-limited');
     expect(r.message).toContain('30');
+  });
+
+  test('tells the seconds until the rate limit resets, never negative', async () => {
+    const hint = async (reset: number) => {
+      const { fake, sink } = setup();
+      fake.failWith = {
+        match: '/git/trees',
+        status: 429,
+        headers: { 'x-ratelimit-reset': String(reset) },
+      };
+      return (await failure(sink.publish(change))).message;
+    };
+    const now = Math.floor(Date.now() / 1000);
+    const [, secs] = /resets in (\d+)s/.exec(await hint(now + 120)) ?? [];
+    expect(Number(secs)).toBeGreaterThan(100);
+    expect(Number(secs)).toBeLessThanOrEqual(120);
+    expect(await hint(now - 500)).toEndWith('(resets in 0s)');
+  });
+
+  test('refuses an absolute path, a drive-letter path and a drive-letter prefix', async () => {
+    const { sink } = setup();
+    for (const path of ['/etc/passwd', 'C:/x', 'c:x']) {
+      const r = await failure(
+        sink.publish({ ...change, files: [{ path, content: 'x' }] }),
+      );
+      expect(r.code).toBe('publish.path-invalid');
+      expect(r.message).toEndWith('rejected: absolute');
+    }
+    expect(
+      () =>
+        new GitHubChangeSink({
+          token: TOKEN,
+          owner: 'acme',
+          repo: 'shop',
+          allowedPrefixes: ['C:/'],
+        }),
+    ).toThrow(AgenticError);
   });
 
   test('maps 403 with an exhausted rate limit to host-rate-limited; a plain 403 stays denied', async () => {

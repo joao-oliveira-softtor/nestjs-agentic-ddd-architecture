@@ -205,6 +205,20 @@ describe('mcpCommand', () => {
     expect(calls).toEqual([]);
   });
 
+  test('an explicit empty --config is used as given, not replaced by the default', async () => {
+    await configFile(MCP);
+    const calls: unknown[] = [];
+    const outcome = await mcpCommand(
+      ['--http', '--root', dir, '--config', ''],
+      httpLoad(calls),
+    ).then(
+      () => 'ran',
+      () => 'failed',
+    );
+    expect(outcome).toBe('failed');
+    expect(calls).toEqual([]);
+  });
+
   test('--http reports a missing SDK like stdio mode', async () => {
     const error = captureErrors();
     const code = await mcpCommand(

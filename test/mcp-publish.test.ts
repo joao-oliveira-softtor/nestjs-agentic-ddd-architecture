@@ -122,6 +122,9 @@ describe('agentic mcp --http publish_change', () => {
     for (const scope of ['change:propose', 'domain:read']) {
       const r = await publish(scope, bundleOf(GOOD));
       expect(r.isError).toBe(true);
+      expect(r.content[0]!.text).toContain(
+        'the change:publish scope is needed to publish a change',
+      );
       expect(r.content[0]!.text).toEndWith('[auth.scope-missing]');
     }
     expect(host.requests.length).toBe(before);
@@ -161,6 +164,34 @@ describe('agentic mcp --http publish_change', () => {
     expect(r.content[0]!.text).toEndWith('[mcp.input-too-large]');
     expect(r.content[0]!.text).not.toContain('SECRET-MARKER');
     expect(host.requests.length).toBe(before);
+  });
+
+  test('an input of exactly 256 KiB serialized passes the size check; one byte more is refused', async () => {
+    const sized = (bytes: number) => {
+      const base = bundleOf(GOOD);
+      const empty = {
+        ...base,
+        files: [...base.files, { path: 'p', content: '' }],
+      };
+      return {
+        ...base,
+        files: [
+          ...base.files,
+          {
+            path: 'p',
+            content: 'x'.repeat(
+              bytes - Buffer.byteLength(JSON.stringify(empty)),
+            ),
+          },
+        ],
+      };
+    };
+    const limit = 256 * 1024;
+    // The server without a sink answers right after the size check.
+    const at = await call(withoutSink, 'change:publish', sized(limit));
+    expect(at.content[0]!.text).toEndWith('[mcp.publish-unavailable]');
+    const over = await call(withoutSink, 'change:publish', sized(limit + 1));
+    expect(over.content[0]!.text).toEndWith('[mcp.input-too-large]');
   });
 
   test('a tampered bundle and a forbidden path are refused before the host is called', async () => {
