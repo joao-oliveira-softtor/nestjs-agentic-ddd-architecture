@@ -1,4 +1,5 @@
 import { AgenticError, formatCoded } from '../contracts/codes';
+import { applyCommand } from './commands/apply';
 import { compileCommand } from './commands/compile';
 import { irCommand } from './commands/ir';
 import { verifyCommand } from './commands/verify';
@@ -14,6 +15,7 @@ export { USAGE };
 const COMMANDS: Readonly<
   Record<string, (args: readonly string[]) => Promise<number>>
 > = {
+  apply: applyCommand,
   compile: compileCommand,
   ir: irCommand,
   verify: verifyCommand,

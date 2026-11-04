@@ -1,6 +1,7 @@
 export const USAGE = [
   'usage:',
   '  agentic-ddd compile [--check] [--report] [--draft-change <slug>] [--config <file>] [--out-root <dir>]',
+  '  agentic-ddd apply <bundle-dir> [--root <dir>]',
   '  agentic-ddd ir [--config <file>]',
   '  agentic-ddd status [--json] [--static] [--change NNNN] [--config <file>]',
   '  agentic-ddd next [--json] [--change NNNN] [--config <file>]',

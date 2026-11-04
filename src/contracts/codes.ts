@@ -1,6 +1,18 @@
 // Stable error codes for CLI, compile, verify and MCP output. Codes are part of the public
 // surface: tests and tooling match on them, so reword messages freely but never rename a code.
 export const ERROR_CODES = {
+  // apply
+  'apply.base-mismatch':
+    'The project is not at the bundle base: another lock or base ref, or a target file changed locally.',
+  'apply.change-exists': 'The change directory for the bundle already exists.',
+  'apply.compile-failed':
+    'The compile after writing the bundle failed; every write was rolled back.',
+  'apply.hash-mismatch':
+    'The bundle is not intact: a file is tampered, missing or extra.',
+  'apply.path-escape': 'A bundle path resolves outside the project.',
+  'apply.write-failed':
+    'A file of the bundle could not be written; every write was rolled back.',
+
   // auth
   'auth.audience-mismatch':
     'The token audience does not include this resource.',
