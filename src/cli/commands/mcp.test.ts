@@ -15,7 +15,10 @@ import {
   createPublishedLock,
   serializePublishedLock,
 } from '../../compiler/published';
-import { shortPath } from '../../../test/helpers/short-path';
+import {
+  SHORT_PATH_TEST_TIMEOUT_MS,
+  shortPath,
+} from '../../../test/helpers/short-path';
 import { mcpCommand } from './mcp';
 import { DEFAULT_CONVENTIONS } from '../../compiler/conventions';
 
@@ -610,15 +613,19 @@ describe('mcpCommand publish sink', () => {
   });
 
   // Windows reports the temp folder by its 8.3 name (RUNNER~1); the config root is expanded, so the two must still agree.
-  test('a root given by its 8.3 short name still yields the module prefixes', async () => {
-    process.env.AGENTIC_GITHUB_TOKEN = 'ghp_SECRET_TOKEN_123';
-    process.env.AGENTIC_GITHUB_REPO = 'acme/shop';
-    const short = shortPath(dir);
-    const calls: unknown[] = [];
-    const { code, messages } = await run(calls, short);
-    expect(messages).not.toContain('publish.config-invalid');
-    expect(code).toBe(0);
-  });
+  test(
+    'a root given by its 8.3 short name still yields the module prefixes',
+    async () => {
+      process.env.AGENTIC_GITHUB_TOKEN = 'ghp_SECRET_TOKEN_123';
+      process.env.AGENTIC_GITHUB_REPO = 'acme/shop';
+      const short = shortPath(dir);
+      const calls: unknown[] = [];
+      const { code, messages } = await run(calls, short);
+      expect(messages).not.toContain('publish.config-invalid');
+      expect(code).toBe(0);
+    },
+    SHORT_PATH_TEST_TIMEOUT_MS,
+  );
 
   test('the publish config is the one of --config, loaded once for the server', async () => {
     process.env.AGENTIC_GITHUB_TOKEN = 'ghp_SECRET_TOKEN_123';
