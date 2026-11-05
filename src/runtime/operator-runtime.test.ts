@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test';
 import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FakeLlm } from '@agentic-ddd/testing';
-import { OperatorRuntime } from './index';
+import { OperatorRuntime, createRuntime } from './index';
 
 test('registration loads matching skill; request uses instructions, allowlist, schema and model', async () => {
   const f = fixture();
@@ -101,4 +101,14 @@ test('concurrent registrations of the same operator reject one instead of overwr
   expect(rejected?.status === 'rejected' && String(rejected.reason)).toContain(
     'Duplicate operator',
   );
+});
+
+test('useCase finds the declaration of its own class in the runtime registry and nothing for other classes', () => {
+  const f = fixture();
+  const runtime = createRuntime({ ...f, llm: new FakeLlm([]) });
+  expect(runtime.useCase(f.Tool)).toBe(f.registry.useCases[0]);
+  expect(runtime.useCase(f.registry.useCases[1]!.target)).toBe(
+    f.registry.useCases[1]!,
+  );
+  expect(runtime.useCase(f.Agent)).toBeUndefined();
 });

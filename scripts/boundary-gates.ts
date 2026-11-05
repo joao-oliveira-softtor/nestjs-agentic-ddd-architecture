@@ -229,7 +229,10 @@ export function importSpecifiers(text: string): string[] {
 const FRAMEWORK_RUNTIME = new Set([
   '@agentic-ddd/runtime',
   '@agentic-ddd/nestjs',
+  '@agentic-ddd/elysia',
+  'elysia',
 ]);
+const FRAMEWORK_PREFIX = /^(?:@nestjs\/|elysia\/|@elysiajs\/)/;
 /** Pastas que a camada não pode importar, a partir das convenções. */
 export function outerFolders(
   conventions: ResolvedConventions,
@@ -255,13 +258,13 @@ function layerRoot(
 }
 
 /**
- * Direção de import por camada: domínio e aplicação não importam Nest nem o runtime do
+ * Direção de import por camada: domínio e aplicação não importam Nest, Elysia nem o runtime do
  * framework, e nenhuma camada importa as camadas externas a ela. A comparação usa o
  * primeiro segmento do import relativo à raiz da camada do arquivo, então diretórios
  * acima do módulo (por exemplo `src/infra/`) não geram falso positivo.
  *
  * Limitações conhecidas: especificadores não relativos (aliases de `paths` do tsconfig,
- * auto-referência de pacote) não são resolvidos, só `@nestjs/*` e o runtime do framework
+ * auto-referência de pacote) não são resolvidos, só `@nestjs/*`, `elysia` e o runtime do framework
  * são barrados; `import()`/`require()` com argumento não literal são acusados porque não
  * podem ser verificados. Os gates de corpo e de escopo de classe (`bodyOnlyFindings`, `classScopeFindings`) só localizam a classe (ou `Classe.método`) por nome.
  */
@@ -284,11 +287,11 @@ export function importDirectionFindings(
       const outers = outerFolders(conventions, layer);
       for (const specifier of specifiers) {
         if (
-          specifier.startsWith('@nestjs/') ||
+          FRAMEWORK_PREFIX.test(specifier) ||
           FRAMEWORK_RUNTIME.has(specifier)
         ) {
           findings.push(
-            `Forbidden import in ${path}: ${specifier} (${layer} não importa Nest nem o runtime)`,
+            `Forbidden import in ${path}: ${specifier} (${layer} não importa Nest, Elysia nem o runtime)`,
           );
           continue;
         }
