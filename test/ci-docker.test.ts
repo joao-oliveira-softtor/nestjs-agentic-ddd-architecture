@@ -1,6 +1,8 @@
 import { expect, spyOn, test } from 'bun:test';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   containerScript,
   defaultCpus,
@@ -259,7 +261,8 @@ test('main reports a bad option with exit code 2 before touching docker', async 
 test('main exits 127 with one line when docker is not installed', async () => {
   const error = spyOn(console, 'error').mockImplementation(() => {});
   const path = process.env.PATH;
-  process.env.PATH = '';
+  // An empty PATH makes Bun fall back to the system default and find a real docker; an empty dir does not.
+  process.env.PATH = mkdtempSync(join(tmpdir(), 'no-bin-'));
   try {
     expect(await main([])).toBe(127);
     expect(error).toHaveBeenCalledTimes(1);
