@@ -217,7 +217,8 @@ function moduleRelative(
 /** Where every symbol the Delta declares lives, relative to the module root. */
 function declaredLocations(
   delta: Delta,
-  { layers, suffixes }: ResolvedConventions,
+  { layers }: ResolvedConventions,
+  eventsFileOf: (entity: string) => string,
 ): Map<string, string> {
   const where = new Map<string, string>();
   const domain = (name: string): string =>
@@ -225,7 +226,7 @@ function declaredLocations(
   for (const e of delta.entities) where.set(e.name, domain(e.name));
   for (const v of delta.valueObjects) where.set(v.name, domain(v.name));
   for (const ev of delta.events)
-    where.set(ev.name, eventsFile(layers, suffixes.events, ev.entity));
+    where.set(ev.name, eventsFileOf(ev.entity));
   for (const p of delta.ports) where.set(p.name, domain(p.name));
   return where;
 }
@@ -248,6 +249,23 @@ function addBaseLocations(
     const file = moduleRelative(item.source, modulePath);
     if (file !== null) where.set(item.name, file);
   }
+}
+
+/** The file the base declares the events of an entity in (read from what its methods emit), or null. */
+function baseEventsFile(
+  base: IR | null,
+  module: string,
+  modulePath: string | undefined,
+  entity: string,
+): string | null {
+  const owner = base?.entities.find(
+    (e) => e.name === entity && e.module === module,
+  );
+  const emitted = new Set(owner?.methods.flatMap((m) => m.emits));
+  const files = (base?.events ?? [])
+    .filter((ev) => ev.module === module && emitted.has(ev.id))
+    .flatMap((ev) => moduleRelative(ev.source, modulePath) ?? []);
+  return files.sort(cmp)[0] ?? null;
 }
 
 const eventsFile = (layers: Layers, suffix: string, entity: string): string =>
@@ -385,7 +403,12 @@ class Renderer {
     this.#base = base;
     this.#modulePath = modulePath;
     this.#conventions = options.conventions;
-    this.#where = declaredLocations(delta, options.conventions);
+    const { layers, suffixes } = options.conventions;
+    this.#where = declaredLocations(delta, options.conventions, (entity) =>
+      (!delta.entities.some((e) => e.name === entity)
+        ? baseEventsFile(base, delta.module, modulePath, entity)
+        : null) ?? eventsFile(layers, suffixes.events, entity),
+    );
     if (base) addBaseLocations(this.#where, base, delta.module, modulePath);
     this.#taken = takenPaths(options.existingFiles, base, modulePath);
   }
@@ -625,8 +648,7 @@ class Renderer {
         const payload = `${lcFirst(ev.name)}Payload`;
         return `const ${payload} = ${zodObject(ev.payload)};\n\n@AgentEvent({\n  description: ${literal(ev.description)},\n  payload: ${payload},\n})\nexport class ${ev.name} extends DomainEvent<z.infer<typeof ${payload}>> {}`;
       });
-    const { layers, suffixes } = this.#conventions;
-    const path = eventsFile(layers, suffixes.events, owner);
+    const path = this.#where.get(group[0]!.item.name)!;
     // Events of an entity that already has an events file are appended to it.
     if (this.appendsToExisting(owner, path))
       this.#fragments.push({
