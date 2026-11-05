@@ -13,12 +13,17 @@ import { parseArgs } from '../args';
 import { USAGE } from '../usage';
 
 type Load = () => Promise<{
-  startMcpServer(options: { root: string; published?: PublishedLock }): {
+  startMcpServer(options: {
+    root: string;
+    published?: PublishedLock;
+    config?: string;
+  }): {
     close(): unknown;
   };
   startMcpHttpServer(options: {
     root: string;
     published?: PublishedLock;
+    config?: string;
     port: number;
     host: string;
     mcp: McpConfig;
@@ -157,6 +162,7 @@ export async function mcpCommand(
       handle = await mod.startMcpHttpServer({
         root,
         published,
+        config: resolve(configPath),
         port: Number(port),
         host,
         mcp,
@@ -202,7 +208,12 @@ export async function mcpCommand(
     await handle.close();
     return 0;
   }
-  const handle = mod.startMcpServer({ root, published });
+  const configArg = parsed.values.get('--config');
+  const handle = mod.startMcpServer({
+    root,
+    published,
+    config: configArg === undefined ? undefined : resolve(configArg),
+  });
   announce();
   const { stdin } = process;
   if (!stdin.readableEnded && !stdin.destroyed)

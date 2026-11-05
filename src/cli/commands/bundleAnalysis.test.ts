@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, spyOn, test } from 'bun:test';
-import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { shopRepo } from '../../../test/helpers/shop-repo';
@@ -11,13 +11,14 @@ afterAll(async () => {
 });
 
 describe('bundleAnalysisCommand', () => {
-  test('prints the analysis as JSON and exits 0', async () => {
+  test('writes the analysis as JSON to --out and exits 0, printing nothing', async () => {
     const repo = await shopRepo(undefined, 'analysis-cmd-');
     dirs.push(repo.root);
     const scratch = await mkdtemp(join(tmpdir(), 'analysis-cmd-base-'));
     dirs.push(scratch);
     const lock = join(scratch, 'base.json');
     await cp(join(repo.root, '.agentic/domain.lock.json'), lock);
+    const out = join(scratch, 'analysis.json');
     const write = spyOn(process.stdout, 'write').mockImplementation(() => true);
     let code: number;
     let printed: string;
@@ -27,14 +28,19 @@ describe('bundleAnalysisCommand', () => {
         join(repo.root, 'agentic.config.ts'),
         '--base-lock',
         lock,
+        '--module',
+        'shop',
+        '--out',
+        out,
       ]);
     } finally {
       printed = write.mock.calls.map((c) => String(c[0])).join('');
       write.mockRestore();
     }
     expect(code).toBe(0);
+    expect(printed).toBe('');
     // The candidate equals the base, so nothing is listed.
-    expect(printed).toBe('{"waves":[],"items":[]}');
+    expect(await readFile(out, 'utf8')).toBe('{"waves":[],"items":[]}');
   }, 60_000);
 
   test('exits 2 with the message and usage when the arguments are refused', async () => {
@@ -51,33 +57,51 @@ describe('bundleAnalysisCommand', () => {
 });
 
 describe('bundleAnalysisArgs', () => {
-  test('takes the config and the base lock', () => {
+  const required = [
+    '--base-lock',
+    'b.json',
+    '--module',
+    'm',
+    '--out',
+    'o.json',
+  ];
+
+  test('takes the config, the base lock, the module and the output file', () => {
     expect(
-      bundleAnalysisArgs(['--config', 'a.config.ts', '--base-lock', 'b.json']),
-    ).toEqual({ config: 'a.config.ts', baseLock: 'b.json' });
+      bundleAnalysisArgs(['--config', 'a.config.ts', ...required]),
+    ).toEqual({
+      config: 'a.config.ts',
+      baseLock: 'b.json',
+      module: 'm',
+      out: 'o.json',
+    });
   });
 
   test('the config defaults to agentic.config.ts', () => {
-    expect(bundleAnalysisArgs(['--base-lock', 'b.json'])).toEqual({
+    expect(bundleAnalysisArgs(required)).toMatchObject({
       config: 'agentic.config.ts',
-      baseLock: 'b.json',
     });
   });
 
-  test('refuses a call without the base lock', () => {
-    expect(bundleAnalysisArgs(['--config', 'a.config.ts'])).toEqual({
-      error: 'missing --base-lock',
-    });
+  test.each([
+    ['--base-lock', 'missing --base-lock'],
+    ['--module', 'missing --module'],
+    ['--out', 'missing --out'],
+  ])('refuses a call without %s', (flag, error) => {
+    const at = required.indexOf(flag);
+    expect(
+      bundleAnalysisArgs(required.filter((_, i) => i !== at && i !== at + 1)),
+    ).toEqual({ error });
   });
 
   test('refuses what the argument parser refuses, with its coded message', () => {
     expect(bundleAnalysisArgs(['--base-lock'])).toEqual({
       error: '--base-lock requires a value [cli.option-value-required]',
     });
-    expect(bundleAnalysisArgs(['--base-lock', 'b.json', '--x'])).toEqual({
+    expect(bundleAnalysisArgs([...required, '--x'])).toEqual({
       error: 'unknown option: --x [cli.option-unknown]',
     });
-    expect(bundleAnalysisArgs(['--base-lock', 'b.json', 'extra'])).toEqual({
+    expect(bundleAnalysisArgs([...required, 'extra'])).toEqual({
       error: 'expected 0 argument(s), received 1 [cli.argument-count]',
     });
   });

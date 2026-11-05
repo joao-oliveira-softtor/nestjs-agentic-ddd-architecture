@@ -4,6 +4,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  rename,
   readdir,
   rm,
   utimes,
@@ -327,6 +328,63 @@ await Bun.sleep(60_000);
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
   }, 60_000);
 
+});
+
+describe('the project config and the team rules', () => {
+  const asBundle = (r: Awaited<ReturnType<typeof shopRepo>>) => ({
+    delta: additionDelta(),
+    baseRoot: r.root,
+    baseRef: r.ref,
+    proposal: shopProposal(),
+  });
+  const moveConfig = async (root: string) => {
+    await rename(
+      join(root, 'agentic.config.ts'),
+      join(root, 'agentic.alt.config.ts'),
+    );
+  };
+
+  test('compiles with a config that has another name when its path is given', async () => {
+    const moved = await shopRepo(moveConfig);
+    const bundle = await compileBundle({
+      ...asBundle(moved),
+      configPath: join(moved.root, 'agentic.alt.config.ts'),
+    });
+    expect(bundle.manifest.layers.target.items.length).toBeGreaterThan(0);
+  }, 120_000);
+
+  test('refuses with a coded error, and no server path, when the config is not committed', async () => {
+    const moved = await shopRepo(moveConfig);
+    const error = await compileBundle(asBundle(moved)).catch((e: Error) => e);
+    expect(error).toMatchObject({ code: 'bundle.config-missing' });
+    expect((error as Error).message).not.toContain(moved.root);
+    expect(await leftovers(moved)).toEqual({ dirs: [], worktrees: 1 });
+  }, 60_000);
+
+  test('the executor briefs carry the team rules that apply to their file', async () => {
+    const ruled = await shopRepo(async (root) => {
+      await mkdir(join(root, '.ai/rules'), { recursive: true });
+      await writeFile(join(root, '.ai/rules/style.md'), '- Prefer early returns.\n');
+    });
+    const bundle = await compileBundle(asBundle(ruled));
+    const briefs = bundle.files.filter((f) => f.path.startsWith('target/briefs/'));
+    expect(briefs.length).toBeGreaterThan(0);
+    for (const b of briefs) expect(b.content).toContain('Prefer early returns.');
+  }, 120_000);
+
+  test('team rules over the brief budget are a coded error, not an internal one', async () => {
+    const heavy = await shopRepo(async (root) => {
+      await mkdir(join(root, '.ai/rules'), { recursive: true });
+      await writeFile(
+        join(root, '.ai/rules/long.md'),
+        `- ${'Keep every function small and named after what it does. '.repeat(400)}\n`,
+      );
+    });
+    expect(await refusal(compileBundle(asBundle(heavy)))).toBe(
+      'bundle.brief-invalid',
+    );
+    expect(await leftovers(heavy)).toEqual({ dirs: [], worktrees: 1 });
+  }, 120_000);
 });
 
 describe('orphans of a crashed server', () => {

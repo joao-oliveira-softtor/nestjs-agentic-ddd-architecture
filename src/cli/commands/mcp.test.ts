@@ -90,16 +90,19 @@ describe('mcpCommand', () => {
   test('--http starts on 127.0.0.1:3333 with the config mcp section', async () => {
     const calls: unknown[] = [];
     const error = captureErrors();
+    const config = await configFile(MCP);
     const code = await mcpCommand(
-      ['--http', '--config', await configFile(MCP)],
+      ['--http', '--config', config],
       httpLoad(calls),
     );
     const messages = error.mock.calls.flat().join('\n');
     error.mockRestore();
     expect(code).toBe(0);
+    // The config also reaches the server: propose_change compiles with it.
     expect(calls).toEqual([
       {
         root: process.cwd(),
+        config,
         port: 3333,
         host: '127.0.0.1',
         mcp: {
