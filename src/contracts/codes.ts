@@ -38,18 +38,21 @@ export const ERROR_CODES = {
   'bundle.base-lock-missing':
     'The base ref has no domain lock to compare the proposal against.',
   'bundle.base-unknown': 'The base ref is not a commit of the base repository.',
+  'bundle.brief-invalid':
+    'An executor brief cannot be rendered for an item (for example the team rules exceed their token budget).',
   'bundle.compile-failed':
     'The compile of the candidate tree failed (the message carries its output).',
   'bundle.compile-timeout':
     'The compile of the candidate tree did not finish in time and was stopped.',
+  'bundle.config-missing':
+    'The project config is not committed in the base ref, or is outside the base repository.',
   'bundle.delta-invalid':
     'The Delta does not render against the base (the message lists the Delta errors).',
   'bundle.module-unknown':
     'The Delta module is not configured in the base project.',
   'bundle.path-escape':
     'A rendered or proposal path resolves outside the module or the changes directory.',
-  'bundle.proposal-invalid':
-    'The proposal id or slug does not match NNNN and kebab-case.',
+  'bundle.proposal-invalid': 'The proposal slug is not kebab-case.',
 
   // cli
   'cli.argument-count':

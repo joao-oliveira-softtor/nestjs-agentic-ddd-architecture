@@ -125,7 +125,7 @@ export function changeOwners(ir: IR, id: string): string[] {
 export function selectChange(
   report: ProjectStatus,
   ir: IR,
-  proposal: Proposal,
+  proposal: Pick<Proposal, 'id' | 'delta'>,
 ): ProjectStatus {
   const byId = new Map(report.items.map((i) => [i.id, i]));
   const selected = new Set<string>();

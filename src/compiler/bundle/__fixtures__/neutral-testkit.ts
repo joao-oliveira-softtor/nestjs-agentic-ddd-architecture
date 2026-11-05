@@ -1,5 +1,5 @@
-import { baseDelta } from '../delta/additions-fixture';
-import type { Delta } from '../delta/schema';
+import { baseDelta } from '../../delta/additions-fixture';
+import type { Delta } from '../../delta/schema';
 
 const ex = [
   // eslint-disable-next-line unicorn/no-thenable

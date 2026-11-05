@@ -4,6 +4,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  rename,
   readdir,
   rm,
   utimes,
@@ -18,8 +19,8 @@ import {
   shopProposal,
   shopRepo as sharedShopRepo,
 } from '../../../test/helpers/shop-repo';
-import { compileBundle } from './index';
-import { neutralLeaks } from './neutral-testkit';
+import { compileBundle, type Bundle } from './index';
+import { neutralLeaks } from './__fixtures__/neutral-testkit';
 
 const ROOT = resolve(import.meta.dir, '../../..');
 const dirs: string[] = [];
@@ -55,9 +56,13 @@ const input = () => ({
   proposal: shopProposal(),
 });
 
+/** One compile of the shared input, for the tests that only read the bundle. */
+let first: Promise<Bundle> | undefined;
+const firstBundle = (): Promise<Bundle> => (first ??= compileBundle(input()));
+
 describe('compileBundle on the shop project', () => {
   test('returns the bundle, its manifest and BUNDLE.md as a snapshot', async () => {
-    const bundle = await compileBundle(input());
+    const bundle = await firstBundle();
     const file = (p: string) =>
       bundle.files.find((f) => f.path === p)?.content ?? '';
     expect(bundle.manifest.baseRef).toBe(repo.ref);
@@ -72,7 +77,7 @@ describe('compileBundle on the shop project', () => {
   }, 120_000);
 
   test('the neutral layer is free of TypeScript, covers every invariant and is hashed', async () => {
-    const bundle = await compileBundle(input());
+    const bundle = await firstBundle();
     const neutral = bundle.files.filter((f) => f.path.startsWith('neutral/'));
     expect(neutral.map((f) => f.path)).toContain('neutral/model.json');
     expect(neutralLeaks(neutral)).toEqual([]);
@@ -93,7 +98,7 @@ describe('compileBundle on the shop project', () => {
   }, 120_000);
 
   test('the neutral layer of an addition holds only the added members of the existing entity', async () => {
-    const bundle = await compileBundle(input());
+    const bundle = await firstBundle();
     const model = JSON.parse(
       bundle.files.find((f) => f.path === 'neutral/model.json')!.content,
     );
@@ -101,7 +106,10 @@ describe('compileBundle on the shop project', () => {
     const order = model.entities[0];
     expect(order.name).toBe('Order');
     expect(order.existing).toBe(true);
-    expect(order.methods.map((m: { name: string }) => m.name)).toEqual(['refund']);
+    expect(order.states).toEqual(['open', 'paid']);
+    expect(order.methods.map((m: { name: string }) => m.name)).toEqual([
+      'refund',
+    ]);
     expect(order.invariants).toEqual(['invariant:Order/paid-once']);
     expect(model.transitions).toEqual([
       { entity: 'Order', method: 'refund', from: ['paid'], to: 'open' },
@@ -109,7 +117,7 @@ describe('compileBundle on the shop project', () => {
   }, 120_000);
 
   test('the neutral layer is a snapshot on the shop project', async () => {
-    const bundle = await compileBundle(input());
+    const bundle = await firstBundle();
     const neutral = bundle.files.filter((f) => f.path.startsWith('neutral/'));
     expect(neutral).toMatchSnapshot('neutral');
   }, 120_000);
@@ -281,8 +289,9 @@ describe('compileBundle on the shop project', () => {
       'entity:Refund',
     );
     expect(
-      bundle.files.find((f) => f.path === 'target/skeleton/src/shop/domain/refund.ts')
-        ?.content,
+      bundle.files.find(
+        (f) => f.path === 'target/skeleton/src/shop/domain/refund.ts',
+      )?.content,
     ).toContain('class Refund');
   }, 120_000);
 
@@ -370,7 +379,63 @@ await Bun.sleep(60_000);
     expect(alive(pid)).toBe(false);
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
   }, 60_000);
+});
 
+describe('the project config and the team rules', () => {
+  const asBundle = (r: Awaited<ReturnType<typeof shopRepo>>) => ({
+    delta: additionDelta(),
+    baseRoot: r.root,
+    baseRef: r.ref,
+    proposal: shopProposal(),
+  });
+  const moveConfig = async (root: string) => {
+    await rename(
+      join(root, 'agentic.config.ts'),
+      join(root, 'agentic.alt.config.ts'),
+    );
+  };
+
+  test('compiles with a config that has another name when its path is given', async () => {
+    const moved = await shopRepo(moveConfig);
+    const bundle = await compileBundle({
+      ...asBundle(moved),
+      configPath: join(moved.root, 'agentic.alt.config.ts'),
+    });
+    expect(bundle.manifest.layers.target.items.length).toBeGreaterThan(0);
+  }, 120_000);
+
+  test('refuses with a coded error, and no server path, when the config is not committed', async () => {
+    const moved = await shopRepo(moveConfig);
+    const error = await compileBundle(asBundle(moved)).catch((e: Error) => e);
+    expect(error).toMatchObject({ code: 'bundle.config-missing' });
+    expect((error as Error).message).not.toContain(moved.root);
+    expect(await leftovers(moved)).toEqual({ dirs: [], worktrees: 1 });
+  }, 60_000);
+
+  test('the executor briefs carry the team rules that apply to their file', async () => {
+    const ruled = await shopRepo(async (root) => {
+      await mkdir(join(root, '.ai/rules'), { recursive: true });
+      await writeFile(join(root, '.ai/rules/style.md'), '- Prefer early returns.\n');
+    });
+    const bundle = await compileBundle(asBundle(ruled));
+    const briefs = bundle.files.filter((f) => f.path.startsWith('target/briefs/'));
+    expect(briefs.length).toBeGreaterThan(0);
+    for (const b of briefs) expect(b.content).toContain('Prefer early returns.');
+  }, 120_000);
+
+  test('team rules over the brief budget are a coded error, not an internal one', async () => {
+    const heavy = await shopRepo(async (root) => {
+      await mkdir(join(root, '.ai/rules'), { recursive: true });
+      await writeFile(
+        join(root, '.ai/rules/long.md'),
+        `- ${'Keep every function small and named after what it does. '.repeat(400)}\n`,
+      );
+    });
+    expect(await refusal(compileBundle(asBundle(heavy)))).toBe(
+      'bundle.brief-invalid',
+    );
+    expect(await leftovers(heavy)).toEqual({ dirs: [], worktrees: 1 });
+  }, 120_000);
 });
 
 describe('orphans of a crashed server', () => {

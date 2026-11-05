@@ -51,6 +51,11 @@ export const INSTANCE_MEMBERS: ReadonlySet<string> = new Set([
   ...ownNames(new Probe()),
 ]);
 
+/** What a generated port (a plain abstract class) would clash with. */
+export const PORT_MEMBERS: ReadonlySet<string> = new Set(
+  ownNames(Object.prototype),
+);
+
 /** Statics a generated class would clash with: the constructor chain (name, length, apply, ...). */
 export const STATIC_MEMBERS: ReadonlySet<string> = new Set([
   ...chain(AggregateRoot),
