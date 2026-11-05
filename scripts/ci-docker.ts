@@ -98,6 +98,11 @@ export function dockerRunArgv(
   ];
 }
 
+// A failed archive wins: the container ran on a truncated snapshot, so its own result means nothing.
+export function exitCode(archived: number, container: number): number {
+  return archived !== 0 ? archived : container;
+}
+
 async function exec(command: string[]): Promise<number> {
   const child = Bun.spawn(command, {
     cwd: repo,
@@ -188,7 +193,7 @@ export async function main(
     container.exited,
     archive.exited,
   ]);
-  return archived !== 0 ? archived : code;
+  return exitCode(archived, code);
 }
 
 if (import.meta.main) process.exit(await main(process.argv.slice(2)));

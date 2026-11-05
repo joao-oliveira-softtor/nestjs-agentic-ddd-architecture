@@ -1,11 +1,13 @@
-import { expect, test } from 'bun:test';
+import { expect, spyOn, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import {
   CI_GATE_STEPS,
   containerScript,
   dockerRunArgv,
+  exitCode,
   gateScript,
   imageTag,
+  main,
   parseArgs,
 } from '../scripts/ci-docker';
 
@@ -78,4 +80,21 @@ test('dockerRunArgv applies the resource defaults and the env overrides', () => 
   expect(tuned).toContain('4g');
   expect(tuned.slice(-4)).toEqual(['img:1', 'bash', '-c', 'echo']);
   expect(tuned.some((arg) => arg.endsWith('ci-docker:/out'))).toBe(true);
+});
+
+test('exitCode returns the archive failure first, then the container code', () => {
+  expect(exitCode(0, 0)).toBe(0);
+  expect(exitCode(0, 3)).toBe(3);
+  expect(exitCode(128, 0)).toBe(128);
+  expect(exitCode(128, 3)).toBe(128);
+});
+
+test('main reports a bad option with exit code 2 before touching docker', async () => {
+  const error = spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    expect(await main(['--nope'])).toBe(2);
+    expect(error).toHaveBeenCalledWith('unknown option --nope');
+  } finally {
+    error.mockRestore();
+  }
 });
