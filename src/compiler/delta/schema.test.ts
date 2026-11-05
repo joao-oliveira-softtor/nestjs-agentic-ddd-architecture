@@ -47,8 +47,12 @@ describe('validateDelta', () => {
       (d) => (d.entities[0]!.methods[1]!.name = 'Bad-Name'),
     ],
     [
-      'entities[0].methods[1].name',
-      (d) => (d.entities[0]!.methods[1]!.name = 'delete'),
+      'entities[0].methods[0].params[0].name',
+      (d) => (d.entities[0]!.methods[0]!.params[0]!.name = 'delete'),
+    ],
+    [
+      'entities[0].methods[0].params[0].name',
+      (d) => (d.entities[0]!.methods[0]!.params[0]!.name = 'notImplemented'),
     ],
     [
       'entities[0].name',
@@ -567,6 +571,7 @@ describe('validateDelta boundaries', () => {
   test('a method may omit emits', () => {
     const d = sampleDelta();
     delete d.entities[0]!.methods[0]!.emits;
+    d.useCases[1]!.emits = [];
     expect(validateDelta(d).ok).toBe(true);
   });
 
@@ -619,5 +624,109 @@ describe('validateDelta boundaries', () => {
         },
       ]);
     });
+  });
+});
+
+describe('validateDelta code review findings (#117)', () => {
+  const at = (
+    d: Delta,
+    code: ErrorCode,
+    path: string,
+    base: IR | null = null,
+  ) =>
+    expect(errorsOf(d, base)).toContainEqual(
+      expect.objectContaining({ code, path }),
+    );
+
+  test('a use case must list every event its methods emit', () => {
+    const d = sampleDelta();
+    d.useCases[1]!.emits = [];
+    at(d, 'delta.reference-unknown', 'useCases[1].emits');
+  });
+
+  test('a use case cannot emit an event none of its methods emit', () => {
+    const d = sampleDelta();
+    d.useCases[1]!.emits = ['ProductCreated', 'ProductPublished'];
+    at(d, 'delta.reference-unknown', 'useCases[1].emits[1]');
+  });
+
+  test('the events of a base method named in uses count too', () => {
+    const base = {
+      irVersion: 1,
+      modules: [],
+      entities: [
+        {
+          id: 'entity:Cart',
+          name: 'Cart',
+          module: 'shop',
+          invariants: [],
+          methods: [{ id: 'method:Cart.add', emits: ['event:ItemAdded'] }],
+        },
+      ],
+      events: [{ id: 'event:ItemAdded', name: 'ItemAdded', module: 'shop' }],
+      useCases: [],
+      operators: [],
+    } as unknown as IR;
+    const d = sampleDelta();
+    d.useCases[1]!.uses = ['method:Product.create', 'method:Cart.add'];
+    at(d, 'delta.reference-unknown', 'useCases[1].emits', base);
+    d.useCases[1]!.emits = ['ProductCreated', 'ItemAdded'];
+    expect(errorsOf(d, base)).toEqual([]);
+  });
+
+  test('a blank state is refused in states and in transitions', () => {
+    const d = sampleDelta();
+    d.entities[0]!.states = ['draft', ' '];
+    d.entities[0]!.methods[1]!.transition = { from: ['\t'], to: '  ' };
+    at(d, 'delta.schema-invalid', 'entities[0].states[1]');
+    at(d, 'delta.schema-invalid', 'entities[0].methods[1].transition.from[0]');
+    at(d, 'delta.schema-invalid', 'entities[0].methods[1].transition.to');
+  });
+
+  test('keyword-like names are fine for methods and fields, not for parameters', () => {
+    const d = sampleDelta();
+    d.entities[0]!.methods[1]!.name = 'delete';
+    d.useCases[0]!.uses = ['method:Product.delete'];
+    d.valueObjects[0]!.fields.push({ name: 'default', type: 'string' });
+    d.events[0]!.payload.push({ name: 'from', type: 'string' });
+    d.useCases[0]!.input.push({ name: 'number', type: 'string' });
+    d.useCases[0]!.output.push({ name: 'get', type: 'string' });
+    d.ports[0]!.methods[0]!.name = 'delete';
+    expect(errorsOf(d)).toEqual([]);
+    d.entities[0]!.methods[0]!.params.push({ name: 'default?', type: 'string' });
+    at(d, 'delta.invalid-identifier', 'entities[0].methods[0].params[3].name');
+  });
+
+  test('a port is a plain class: only Object members clash, not AggregateRoot ones', () => {
+    const d = sampleDelta();
+    d.ports[0]!.methods[0]!.name = 'record';
+    d.ports[0]!.methods[1]!.name = 'pullEvents';
+    expect(errorsOf(d)).toEqual([]);
+    d.ports[0]!.methods[0]!.name = 'constructor';
+    at(d, 'delta.invalid-identifier', 'ports[0].methods[0].name');
+  });
+
+  test('a clash with a base entity is one error, not one per invariant and method', () => {
+    const base = {
+      irVersion: 1,
+      modules: [],
+      entities: [
+        {
+          id: 'entity:Product',
+          name: 'Product',
+          module: 'shop',
+          invariants: [{ id: 'invariant:Product/price-positive' }],
+          methods: [{ id: 'method:Product.create', emits: [] }],
+        },
+      ],
+      events: [],
+      useCases: [],
+      operators: [],
+    } as unknown as IR;
+    expect(
+      errorsOf(sampleDelta(), base)
+        .filter((e) => e.code === 'delta.name-collision')
+        .map((e) => e.path),
+    ).toEqual(['entities[0].name']);
   });
 });

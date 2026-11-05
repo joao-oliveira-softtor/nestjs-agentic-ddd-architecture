@@ -161,10 +161,16 @@ describe('renderDelta output', () => {
     d.entities.forEach((e) => {
       e.methods.reverse();
       e.invariants.reverse();
-      e.states?.reverse();
     });
     d.valueObjects.forEach((v) => v.fields.reverse());
     expect(JSON.stringify(render(d))).toBe(a);
+  });
+
+  test('states keep the declared lifecycle order', () => {
+    const d = sampleDelta();
+    d.entities[0]!.states = ['published', 'draft'];
+    const product = render(d).find((f) => f.path === 'domain/product.ts')!;
+    expect(product.content).toContain("states: ['published', 'draft']");
   });
 
   test('optional markers and void render as TypeScript and zod', () => {
