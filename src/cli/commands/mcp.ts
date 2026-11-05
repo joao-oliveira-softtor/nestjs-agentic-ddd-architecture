@@ -80,6 +80,16 @@ async function publishFor(
   }
 }
 
+// A published host may have no module sources, so skip the module-path checks.
+async function mcpConfigOf(
+  published: PublishedLock | undefined,
+  publish: PublishTarget | undefined,
+  configPath: string,
+): Promise<McpConfig | undefined> {
+  if (published !== undefined) return loadMcpConfig(configPath);
+  return (publish?.config ?? (await loadConfig(configPath))).mcp;
+}
+
 export async function mcpCommand(
   args: readonly string[],
   load: Load = () => import('../../mcp/index'),
@@ -174,11 +184,7 @@ export async function mcpCommand(
       );
   };
   if (http) {
-    // A published host may have no module sources, so skip the module-path checks.
-    const mcp =
-      published === undefined
-        ? (publish?.config ?? (await loadConfig(configPath))).mcp
-        : await loadMcpConfig(configPath);
+    const mcp = await mcpConfigOf(published, publish, configPath);
     if (mcp === undefined) {
       console.error(
         formatCoded({
