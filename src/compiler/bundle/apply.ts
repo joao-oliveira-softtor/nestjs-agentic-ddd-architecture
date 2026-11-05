@@ -290,7 +290,7 @@ async function checkLock(
 }
 
 /** Every target file equals its content at `ref`; returns the ones already on disk. */
-async function checkTargets(
+export async function checkTargets(
   root: string,
   ref: string,
   planned: readonly Planned[],

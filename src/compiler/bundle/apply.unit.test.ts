@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   assertChangeFree,
+  checkTargets,
   checkedWrites,
   compileRefusal,
   forbiddenWrite,
@@ -21,6 +22,7 @@ import {
   verifyBundle,
   writableDirs,
 } from './apply';
+import { git } from '../../../test/helpers/shop-repo';
 import { buildManifest } from './manifest';
 
 describe('forbiddenWrite', () => {
@@ -528,5 +530,40 @@ describe('transaction', () => {
     expect(error?.code).toBe('apply.write-failed');
     expect(error?.message).toContain('interrupted by a signal');
     expect(await readdir(root)).toEqual(['old.txt']);
+  });
+});
+
+describe('checkTargets', () => {
+  const repo = async () => {
+    const root = await tempDir();
+    git(root, 'init', '-q');
+    await writeFile(join(root, 'a.txt'), 'one\n');
+    git(root, 'add', '-A');
+    git(root, 'commit', '-q', '-m', 'base');
+    return { root, ref: git(root, 'rev-parse', 'HEAD') };
+  };
+  const failure = (call: Promise<unknown>) =>
+    call.then(
+      () => undefined,
+      (e: { code: string; message: string }) => e,
+    );
+
+  test('names the first planned file that differs from the base, even when it is the first one', async () => {
+    const { root, ref } = await repo();
+    await writeFile(join(root, 'a.txt'), 'local\n');
+    const error = await failure(
+      checkTargets(root, ref, [{ rel: 'a.txt', content: 'one\n' }]),
+    );
+    expect(error?.code).toBe('apply.base-mismatch');
+    expect(error?.message).toContain('a.txt');
+  });
+
+  test('returns the planned files already on disk when every file equals its base', async () => {
+    const { root, ref } = await repo();
+    const present = await checkTargets(root, ref, [
+      { rel: 'a.txt', content: 'x' },
+      { rel: 'new.txt', content: 'x' },
+    ]);
+    expect([...present]).toEqual(['a.txt']);
   });
 });
