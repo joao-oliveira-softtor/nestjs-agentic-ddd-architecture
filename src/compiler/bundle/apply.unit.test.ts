@@ -361,6 +361,23 @@ describe('plan', () => {
   });
 });
 
+describe('plan with a shipped examples.json', () => {
+  test('refuses a bundle that already carries the examples.json plan adds, naming it', () => {
+    const files = new Map([
+      ['target/changes/0001-x/proposal.md', 'p'],
+      ['target/changes/0001-x/examples.json', '[]'],
+    ]);
+    expect(() => plan({ examples: [] }, files, 'changes')).toThrow(
+      'examples.json',
+    );
+    try {
+      plan({ examples: [] }, files, 'changes');
+    } catch (error) {
+      expect((error as { code: string }).code).toBe('apply.change-invalid');
+    }
+  });
+});
+
 describe('assertChangeFree', () => {
   const failure = (call: Promise<unknown>) =>
     call.then(
@@ -393,6 +410,20 @@ describe('assertChangeFree', () => {
       );
     },
   );
+
+  test('refuses a number used by an archived change', async () => {
+    const root = await tempDir();
+    await mkdir(join(root, 'changes', 'archive', '0002-old'), {
+      recursive: true,
+    });
+    const error = await failure(
+      assertChangeFree(root, join(root, 'changes'), '0002-y'),
+    );
+    expect(error?.code).toBe('apply.change-exists');
+    expect(error?.message).toBe(
+      'change 0002 already exists as "changes/archive/0002-old"',
+    );
+  });
 
   test('does not mistake a longer number for the same one', async () => {
     const root = await tempDir();
@@ -465,6 +496,20 @@ describe('transaction', () => {
     );
     expect(await readdir(root)).toEqual(['old.txt']);
     expect(await readFile(join(root, 'old.txt'), 'utf8')).toBe('original');
+  });
+
+  test('a failed restore does not stop the others and is reported with the stage that keeps the originals', async () => {
+    const { root, stage, tx } = await setup(['b.txt', 'old.txt']);
+    await tx.move(planned('b.txt', 'old.txt'));
+    // The last file moved is restored first: take its backup away so that restore fails.
+    await rm(join(stage, 'backup', 'old.txt'));
+    const error = await tx.rollback().then(
+      () => undefined,
+      (e: { code: string; message: string }) => e,
+    );
+    expect(error?.code).toBe('apply.rollback-failed');
+    expect(error?.message).toContain(stage);
+    expect(await exists(join(root, 'b.txt'))).toBe(false);
   });
 
   test('beforeMove can fail a write and an aborted signal stops the moves', async () => {

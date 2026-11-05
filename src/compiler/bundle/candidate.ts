@@ -1,6 +1,6 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { mkdir, mkdtemp, readdir, rm, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { AgenticError } from '../ir';
 
 export const DEFAULT_TIMEOUT_MS = 120_000;
@@ -22,6 +22,9 @@ export async function run(
     signal?: AbortSignal;
   } = {},
 ): Promise<Run> {
+  // Already aborted: the caller wants nothing to run, so nothing is spawned.
+  if (options.signal?.aborted)
+    return { code: null, stdout: '', stderr: '', timedOut: false };
   const child = Bun.spawn([...cmd], {
     cwd,
     env: options.env,
@@ -48,7 +51,10 @@ export async function run(
   const expired = new Promise<Run>((resolve) => {
     timer = setTimeout(() => {
       child.kill();
-      resolve({ code: null, stdout: '', stderr: '', timedOut: true });
+      // Resolved once the process is gone: the caller removes the directory it runs in next.
+      void child.exited.then(() =>
+        resolve({ code: null, stdout: '', stderr: '', timedOut: true }),
+      );
     }, options.timeoutMs);
   });
   try {
@@ -58,11 +64,56 @@ export async function run(
   }
 }
 
+const escapeRegExp = (s: string): string =>
+  s.replaceAll(/[$()*+.?[\\\]^{|}]/g, String.raw`\$&`);
+
+const resolved = (path: string): string => {
+  try {
+    return realpathSync.native(path);
+  } catch {
+    return path;
+  }
+};
+
+/**
+ * Hides server paths in text that reaches a client: each path as given and resolved, in both slash
+ * forms, whatever its case (Windows). Earlier entries go first, so list the longer path first.
+ */
+export function redact(
+  text: string,
+  paths: readonly (readonly [path: string, label: string])[],
+): string {
+  let out = text;
+  for (const [path, label] of paths) {
+    const forms = new Set(
+      [path, resolved(path)].flatMap((p) => [
+        p,
+        p.replaceAll('\\', '/'),
+        p.replaceAll('/', '\\'),
+      ]),
+    );
+    for (const form of forms)
+      out = out.replaceAll(new RegExp(escapeRegExp(form), 'gi'), label);
+  }
+  return out;
+}
+
 /** Client text in a message: JSON-quoted (control characters escaped) and cut short. */
 export const quote = (s: string, max = 80): string =>
   JSON.stringify(s.length > max ? `${s.slice(0, max)}...` : s);
 
 const git = (cwd: string, ...args: string[]) => run(['git', ...args], cwd);
+
+/** The top level of the git repository that holds `root`, or `bundle.base-unknown`. */
+export async function repoTop(root: string): Promise<string> {
+  const out = await git(root, 'rev-parse', '--show-toplevel');
+  if (out.code !== 0)
+    throw new AgenticError(
+      'bundle.base-unknown',
+      'the base root is not inside a git repository',
+    );
+  return out.stdout.trim();
+}
 
 /** The full commit id of `ref`, or `bundle.base-unknown`. A ref that looks like an option is refused. */
 export async function resolveBase(root: string, ref: string): Promise<string> {
@@ -93,16 +144,28 @@ export async function pruneStale(
   workRoot: string,
   staleMs: number,
 ): Promise<void> {
-  for (const name of await readdir(workRoot).catch(() => [])) {
+  const registered = (await git(root, 'worktree', 'list', '--porcelain')).stdout
+    .split('\n')
+    .filter((l) => l.startsWith('worktree '))
+    .map((l) => resolve(l.slice('worktree '.length)));
+  const names = new Set([
+    ...(await readdir(workRoot).catch(() => [])),
+    ...registered
+      .filter((p) => samePath(dirname(p), workRoot))
+      .map((p) => basename(p)),
+  ]);
+  for (const name of names) {
     if (!name.startsWith('bundle-')) continue;
     const dir = join(workRoot, name);
     const info = await stat(dir).catch(() => null);
-    if (!info || Date.now() - info.mtimeMs < staleMs) continue;
-    await git(root, 'worktree', 'remove', '--force', dir);
-    await rm(dir, { recursive: true, force: true });
+    // A registered entry whose directory is gone has no age: it is an orphan.
+    if (info && Date.now() - info.mtimeMs < staleMs) continue;
+    await removeWorktree(root, dir);
   }
-  await git(root, 'worktree', 'prune');
 }
+
+const samePath = (a: string, b: string): boolean =>
+  resolve(a).toLowerCase() === resolve(b).toLowerCase();
 
 /**
  * Runs `use` on a detached worktree of `sha`, created under `workRoot` (inside the base project by
@@ -123,14 +186,33 @@ export async function withWorktree<T>(
     if (added.code !== 0)
       throw new AgenticError(
         'bundle.base-unknown',
-        `cannot check out the base commit: ${quote(added.stderr.trim(), 300)}`,
+        `cannot check out the base commit: ${quote(
+          redact(added.stderr.trim(), [
+            [dir, '<candidate>'],
+            [root, '<base>'],
+          ]),
+          300,
+        )}`,
       );
     return await use(dir);
   } finally {
-    await git(root, 'worktree', 'remove', '--force', dir);
-    await rm(dir, { recursive: true, force: true });
-    await git(root, 'worktree', 'prune');
+    await removeWorktree(root, dir);
   }
+}
+
+/**
+ * Removes only our own worktree (no global `git worktree prune`, which would also drop the entries
+ * of the user's worktrees that are momentarily unreachable). A failure here never replaces the
+ * result of the call: a leftover is swept by `pruneStale` on a later call.
+ */
+async function removeWorktree(root: string, dir: string): Promise<void> {
+  await git(root, 'worktree', 'remove', '--force', dir).catch(() => {});
+  await rm(dir, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  }).catch(() => {});
 }
 
 const ENV_ALLOWED = [
@@ -175,6 +257,7 @@ export async function runCandidateCli(
   args: readonly string[],
   timeoutMs: number,
   what: string,
+  hide: readonly string[] = [],
 ): Promise<string> {
   const result = await run(
     [process.execPath, '--no-install', cliEntry, ...args],
@@ -190,7 +273,10 @@ export async function runCandidateCli(
     throw new AgenticError(
       'bundle.compile-failed',
       `${what} of the candidate tree exited with ${result.code}: ${quote(
-        result.stderr.replaceAll(dir, '<candidate>').trim(),
+        redact(result.stderr, [
+          [dir, '<candidate>'],
+          ...hide.map((p): [string, string] => [p, '<base>']),
+        ]).trim(),
         2000,
       )}`,
     );

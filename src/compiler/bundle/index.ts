@@ -1,25 +1,33 @@
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
-import { renderBrief } from '../briefs';
+import {
+  briefFileName,
+  firstBriefClash,
+  parsePacket,
+  renderBrief,
+} from '../briefs';
 import { sha256, stableStringify } from '../canonical';
 import { loadConfig, type ModuleConfig, type ResolvedConfig } from '../config';
 import { DEFAULT_CONVENTIONS } from '../conventions';
-import { AgenticError, toPosix } from '../ir';
+import { AgenticError, canonicalPath, toPosix } from '../ir';
 import { parseLock, type DomainLock } from '../lock';
+import { briefRules, loadRules, type Rule } from '../rules';
 import { renderDelta, type RenderResult } from '../delta/render';
 import { validateDelta, type Delta } from '../delta/schema';
 import { splice, type Fragment } from '../delta/splice';
-import { parseProposal } from '../changes/proposal';
+import { parseProposal, type AcceptanceCriterion } from '../changes/proposal';
 import { analysisSchema, type CandidateAnalysis } from './analysis';
 import {
   DEFAULT_TIMEOUT_MS,
   defaultCliEntry,
   quote,
+  repoTop,
   resolveBase,
   runCandidateCli,
   withWorktree,
 } from './candidate';
-import { buildNeutral, type NeutralBuild } from './neutral';
+import { buildNeutral } from './neutral';
 import {
   buildManifest,
   byPath,
@@ -42,8 +50,10 @@ export {
 export interface BundleInput {
   /** The Delta as received: validated here, against the base commit's lock. */
   readonly delta: unknown;
-  /** The base git repository (a checkout with its `node_modules`). */
+  /** The project root inside the base git repository (a checkout with its `node_modules`); it need not be the repository top. */
   readonly baseRoot: string;
+  /** The project config, absolute or relative to `baseRoot`; it must be committed. Default `<baseRoot>/agentic.config.ts`. */
+  readonly configPath?: string;
   /** Any ref that resolves to a commit; the bundle records the full commit id. */
   readonly baseRef: string;
   /**
@@ -69,9 +79,6 @@ export interface Bundle {
 }
 
 const CONFIG = 'agentic.config.ts';
-
-const fileName = (id: string): string =>
-  `${id.replaceAll(/[^a-zA-Z0-9_]+/g, '-')}.md`;
 
 /** A bundle file; every text that feeds a hash is LF. */
 const lf = (path: string, content: string): BundleFile => ({
@@ -99,9 +106,30 @@ async function filesUnder(dir: string): Promise<string[]> {
     .sort();
 }
 
+/**
+ * The config's path from the repository top (posix): the same file in every worktree of the repo.
+ * Refused when it is outside the repository.
+ */
+export function configInRepo(
+  top: string,
+  baseRoot: string,
+  configPath: string = CONFIG,
+): string {
+  const rel = toPosix(
+    relative(canonicalPath(top), canonicalPath(resolve(baseRoot, configPath))),
+  );
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel))
+    throw new AgenticError(
+      'bundle.config-missing',
+      'the project config is not inside the base repository',
+    );
+  return rel;
+}
+
 /** What the base commit gives the candidate: its config, the module to extend and its lock. */
 interface Base {
   readonly config: ResolvedConfig;
+  readonly rules: readonly Rule[];
   readonly module: ModuleConfig;
   readonly moduleRoot: string;
   /** LF text, as committed: the bundle hashes it. */
@@ -109,8 +137,17 @@ interface Base {
   readonly lock: DomainLock;
 }
 
-async function loadBase(dir: string, delta: unknown): Promise<Base> {
-  const config = await loadConfig(join(dir, CONFIG));
+async function loadBase(
+  dir: string,
+  configRel: string,
+  delta: unknown,
+): Promise<Base> {
+  if (!existsSync(join(dir, configRel)))
+    throw new AgenticError(
+      'bundle.config-missing',
+      `the project config ${quote(configRel)} is not committed in the base ref`,
+    );
+  const config = await loadConfig(join(dir, configRel));
   const wanted = (delta as { module?: unknown } | null)?.module;
   const module = config.modules.find((m) => m.name === wanted);
   if (!module)
@@ -130,6 +167,7 @@ async function loadBase(dir: string, delta: unknown): Promise<Base> {
     );
   return {
     config,
+    rules: await loadRules(config),
     module,
     moduleRoot: resolve(config.root, module.path),
     lockText,
@@ -208,9 +246,29 @@ export function nextChangeId(names: readonly string[]): string {
 
 const KEBAB_CASE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-type NumberedProposal = BundleInput['proposal'] & { readonly id: string };
+type NumberedProposal = BundleInput['proposal'] & {
+  readonly id: string;
+  /** Read once, strictly, before anything is compiled. */
+  readonly acceptance: readonly AcceptanceCriterion[];
+};
 
-/** Numbers the proposal against the base and writes it to `changes/<id>-<slug>/` of the candidate. */
+/** The acceptance criteria of the proposal, through the strict parser: a parse error is the caller's invalid proposal. */
+export function parseAcceptance(
+  id: string,
+  slug: string,
+  markdown: string,
+): readonly AcceptanceCriterion[] {
+  const dir = `${id}-${slug}`;
+  const parsed = parseProposal(markdown, dir, `${dir}/proposal.md`, false);
+  if (!parsed.proposal)
+    throw new AgenticError(
+      'bundle.proposal-invalid',
+      `the proposal is invalid: ${quote(parsed.errors.map((e) => e.message).join('; '), 500)}`,
+    );
+  return parsed.proposal.acceptance;
+}
+
+/** Numbers the proposal against the base, validates it and writes it to `changes/<id>-<slug>/` of the candidate. */
 async function writeProposal(
   base: Base,
   proposal: BundleInput['proposal'],
@@ -220,39 +278,61 @@ async function writeProposal(
     ...base.lock.changes.map((c) => c.id),
     ...(await readdir(changesDir).catch(() => [])),
   ]);
+  const acceptance = parseAcceptance(id, proposal.slug, proposal.markdown);
   const target = inside(changesDir, `${id}-${proposal.slug}/proposal.md`);
   await mkdir(dirname(target), { recursive: true });
   await writeFile(target, proposal.markdown);
-  return { ...proposal, id };
+  return { ...proposal, id, acceptance };
 }
 
 /** Compiles the candidate and analyzes it; candidate code runs only in these children (killable, no network, scrubbed env). */
-async function analyzeTree(
-  dir: string,
-  cliEntry: string,
-  remaining: () => number,
-  baseLockText: string,
-): Promise<CandidateAnalysis> {
+async function analyzeTree(run: {
+  dir: string;
+  cliEntry: string;
+  remaining: () => number;
+  configRel: string;
+  /** Server paths that must not reach the client. */
+  hide: readonly string[];
+  base: Base;
+}): Promise<CandidateAnalysis> {
+  const { dir, cliEntry, remaining, configRel, hide, base } = run;
   await runCandidateCli(
     dir,
     cliEntry,
-    ['compile', '--config', CONFIG],
+    ['compile', '--config', configRel],
     remaining(),
     'compile',
+    hide,
   );
   const baseLock = join(dir, '.bundle-base-lock.json');
-  await writeFile(baseLock, baseLockText);
-  return analysisSchema.parse(
-    JSON.parse(
-      await runCandidateCli(
-        dir,
-        cliEntry,
-        ['bundle-analysis', '--config', CONFIG, '--base-lock', baseLock],
-        remaining(),
-        'analysis',
-      ),
-    ),
+  await writeFile(baseLock, base.lockText);
+  // The child writes its result to a file: its stdout is shared with every module it imports.
+  const out = join(dir, '.bundle-analysis.json');
+  await runCandidateCli(
+    dir,
+    cliEntry,
+    [
+      'bundle-analysis',
+      '--config',
+      configRel,
+      '--base-lock',
+      baseLock,
+      '--module',
+      base.module.name,
+      '--out',
+      out,
+    ],
+    remaining(),
+    'analysis',
+    hide,
   );
+  const text = await readFile(out, 'utf8').catch(() => {
+    throw new AgenticError(
+      'bundle.compile-failed',
+      'analysis of the candidate tree produced no result',
+    );
+  });
+  return analysisSchema.parse(JSON.parse(text));
 }
 
 /** The rendered files and fragments, as full contents of the candidate. */
@@ -291,20 +371,43 @@ async function devSkillFiles(base: Base): Promise<BundleFile[]> {
   );
 }
 
+/** The executor brief of a packet, with the team rules that apply to its file; a brief that cannot be rendered is a coded error. */
+function brief(base: Base, packet: string): string {
+  try {
+    return renderBrief({
+      packet,
+      rules: briefRules(base.rules, [parsePacket(packet).sourcePath]),
+      rulesMaxTokens: base.config.rules.briefMaxTokens,
+    });
+  } catch (error) {
+    if (error instanceof AgenticError) throw error;
+    throw new AgenticError('bundle.brief-invalid', (error as Error).message);
+  }
+}
+
 /** Each item with its packet and executor brief, wave numbers from 1. */
-function itemEntries(analysis: CandidateAnalysis): {
+function itemEntries(
+  base: Base,
+  analysis: CandidateAnalysis,
+): {
   items: TargetItem[];
   files: BundleFile[];
 } {
+  const clash = firstBriefClash(analysis.items.map((i) => i.id));
+  if (clash)
+    throw new AgenticError(
+      'bundle.brief-invalid',
+      `items ${quote(clash.id)} and ${quote(clash.other)} would share the file ${clash.name}`,
+    );
   const waveOf = new Map(
     analysis.waves.flatMap((wave, w) => wave.map((id) => [id, w + 1])),
   );
   const files: BundleFile[] = [];
   const items = analysis.items.map((item): TargetItem => {
-    const name = fileName(item.id);
+    const name = briefFileName(item.id);
     files.push(
       lf(`target/packets/${name}`, item.packet),
-      lf(`target/briefs/${name}`, renderBrief({ packet: item.packet })),
+      lf(`target/briefs/${name}`, brief(base, item.packet)),
     );
     return {
       id: item.id,
@@ -319,34 +422,6 @@ function itemEntries(analysis: CandidateAnalysis): {
   return { items, files };
 }
 
-/**
- * The neutral files from the validated Delta and the numbered proposal, read back through the strict
- * parser: the proposal was just written by us, so a parse error is the caller's invalid proposal.
- */
-export function neutralLayer(
-  delta: Delta,
-  proposal: NumberedProposal,
-  items: readonly TargetItem[],
-): NeutralBuild {
-  const dir = `${proposal.id}-${proposal.slug}`;
-  const parsed = parseProposal(
-    proposal.markdown,
-    dir,
-    `${dir}/proposal.md`,
-    false,
-  );
-  if (!parsed.proposal)
-    throw new AgenticError(
-      'bundle.proposal-invalid',
-      `the proposal is invalid: ${quote(parsed.errors.map((e) => e.message).join('; '), 500)}`,
-    );
-  return buildNeutral({
-    delta,
-    acceptance: parsed.proposal.acceptance,
-    items: items.map(({ id, layer, wave }) => ({ id, layer, wave })),
-  });
-}
-
 /** The manifest, its hash and every file, from what the candidate produced. */
 async function assemble(parts: {
   baseRef: string;
@@ -357,8 +432,13 @@ async function assemble(parts: {
 }): Promise<Bundle> {
   const { base, rendered, proposal, analysis } = parts;
   const skeleton = await skeletonFiles(base, rendered);
-  const entries = itemEntries(analysis);
-  const neutral = neutralLayer(rendered.delta, proposal, entries.items);
+  const entries = itemEntries(base, analysis);
+  const neutral = buildNeutral({
+    delta: rendered.delta,
+    acceptance: proposal.acceptance,
+    base: base.lock.ir,
+    items: entries.items.map(({ id, layer, wave }) => ({ id, layer, wave })),
+  });
   const files = [
     ...skeleton.files,
     lf(
@@ -380,11 +460,7 @@ async function assemble(parts: {
           items: entries.items,
           skeleton: skeleton.skeleton,
         },
-        neutral: {
-          model: 'neutral/model.json',
-          readme: 'neutral/README.md',
-          briefs: neutral.briefs,
-        },
+        neutral: neutral.layer,
       },
       examples: rendered.examples,
     },
@@ -410,6 +486,8 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
       `proposal slug ${quote(proposal.slug)} is not kebab-case`,
     );
   const baseRef = await resolveBase(input.baseRoot, input.baseRef);
+  const top = await repoTop(input.baseRoot);
+  const configRel = configInRepo(top, input.baseRoot, input.configPath);
   const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const deadline = Date.now() + timeoutMs;
   const remaining = () => Math.max(1, deadline - Date.now());
@@ -420,16 +498,18 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
     baseRef,
     2 * timeoutMs,
     async (dir) => {
-      const base = await loadBase(dir, input.delta);
+      const base = await loadBase(dir, configRel, input.delta);
       const rendered = await renderOnBase(input.delta, base);
       await writeRendered(base.moduleRoot, rendered);
       const numbered = await writeProposal(base, proposal);
-      const analysis = await analyzeTree(
+      const analysis = await analyzeTree({
         dir,
         cliEntry,
         remaining,
-        base.lockText,
-      );
+        configRel,
+        hide: [input.baseRoot, top],
+        base,
+      });
       return assemble({
         baseRef,
         base,

@@ -10,7 +10,9 @@ import {
 import {
   DEFAULT_MAX_TOKENS,
   ROLE_CORES,
+  briefFileName,
   checkBudget,
+  firstBriefClash,
   parsePacket,
   renderBrief,
   renderExtras,
@@ -19,6 +21,7 @@ import {
 } from '../src/compiler/briefs';
 
 // The generator lives in the package; this script is the CLI and keeps the old import path.
+export { briefFileName };
 export {
   DEFAULT_MAX_TOKENS,
   DOMAIN_CORE,
@@ -82,11 +85,6 @@ export function renderReviewerBrief(input: ReviewerInput): string {
     input.maxTokens ?? DEFAULT_MAX_TOKENS,
     input.rules,
   );
-}
-
-/** `_` é válido em IDs (ex.: `usecase:a_b`) e fica; o resto vira `-`, para não colidir. */
-export function briefFileName(id: string): string {
-  return `${id.replaceAll(/[^a-zA-Z0-9_]+/g, '-')}.md`;
 }
 
 export function assertOutsideGenerated(root: string, out: string): string {
@@ -174,14 +172,11 @@ export async function main(argv: readonly string[]): Promise<number> {
   try {
     const root = process.cwd();
     const out = assertOutsideGenerated(root, options.out);
-    const names = new Map<string, string>();
-    for (const item of options.items) {
-      const name = briefFileName(item);
-      const other = names.get(name);
-      if (other)
-        throw new Error(`${item} e ${other} gerariam o mesmo arquivo: ${name}`);
-      names.set(name, item);
-    }
+    const clash = firstBriefClash(options.items);
+    if (clash)
+      throw new Error(
+        `${clash.id} e ${clash.other} gerariam o mesmo arquivo: ${clash.name}`,
+      );
     const present = await access(options.config).then(
       () => true,
       () => false,

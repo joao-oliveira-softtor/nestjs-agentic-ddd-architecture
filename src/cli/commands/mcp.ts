@@ -20,6 +20,7 @@ type Load = () => Promise<{
   startMcpServer(options: {
     root: string;
     published?: PublishedLock;
+    config?: string;
     publish?: PublishTarget;
   }): {
     close(): unknown;
@@ -27,6 +28,7 @@ type Load = () => Promise<{
   startMcpHttpServer(options: {
     root: string;
     published?: PublishedLock;
+    config?: string;
     port: number;
     host: string;
     mcp: McpConfig;
@@ -191,6 +193,7 @@ export async function mcpCommand(
       handle = await mod.startMcpHttpServer({
         root,
         published,
+        config: resolve(configPath),
         port: Number(port),
         host,
         mcp,
@@ -237,7 +240,12 @@ export async function mcpCommand(
     await handle.close();
     return 0;
   }
-  const handle = mod.startMcpServer({ root, published, publish });
+  const handle = mod.startMcpServer({
+    root,
+    published,
+    config: resolve(configPath),
+    publish,
+  });
   announce();
   const { stdin } = process;
   if (!stdin.readableEnded && !stdin.destroyed)

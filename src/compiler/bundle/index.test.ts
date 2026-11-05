@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { inside, neutralLayer, nextChangeId } from './index';
-import { richDelta } from './neutral-testkit';
+import { configInRepo, inside, nextChangeId, parseAcceptance } from './index';
 
 describe('nextChangeId', () => {
   test('the first change is 0001', () => {
@@ -21,11 +20,9 @@ describe('nextChangeId', () => {
   });
 });
 
-describe('neutralLayer', () => {
-  const proposal = (delta = '  added: []', acceptance = 'acceptance: []') => ({
-    id: '0007',
-    slug: 'close-cart',
-    markdown: [
+describe('parseAcceptance', () => {
+  const proposal = (delta = '  added: []', acceptance = 'acceptance: []') =>
+    [
       '---',
       'id: "0007"',
       'title: Close a cart',
@@ -40,29 +37,17 @@ describe('neutralLayer', () => {
       '',
       'Shoppers close carts.',
       '',
-    ].join('\n'),
-  });
-  const items = [
-    {
-      id: 'entity:Cart',
-      layer: 'domain',
-      wave: 2,
-      state: 'todo' as const,
-      specHash: 'h',
-      packet: 'target/packets/p.md',
-      brief: 'target/briefs/b.md',
-    },
-  ];
-  const refusalOf = (p: ReturnType<typeof proposal>) => {
+    ].join('\n');
+  const refusalOf = (markdown: string) => {
     try {
-      neutralLayer(richDelta(), p, items);
+      parseAcceptance('0007', 'close-cart', markdown);
     } catch (error) {
       return error as { code?: string; message: string };
     }
     return undefined;
   };
 
-  test('puts the acceptance criteria of the proposal in the model and one brief per item', () => {
+  test('returns the acceptance criteria of the proposal', () => {
     const acceptance = [
       'acceptance:',
       '  - id: cart-closes',
@@ -71,8 +56,9 @@ describe('neutralLayer', () => {
       '    when: the shopper closes it',
       '    then: it is closed',
     ].join('\n');
-    const built = neutralLayer(richDelta(), proposal(undefined, acceptance), items);
-    expect(built.model.acceptance).toEqual([
+    expect(
+      parseAcceptance('0007', 'close-cart', proposal(undefined, acceptance)),
+    ).toEqual([
       {
         id: 'cart-closes',
         covers: ['entity:Cart'],
@@ -83,12 +69,6 @@ describe('neutralLayer', () => {
         manual: false,
       },
     ]);
-    expect(built.briefs).toEqual([
-      { item: 'entity:Cart', path: 'neutral/briefs/entity-Cart.md' },
-    ]);
-    expect(built.files.find((f) => f.path === built.briefs[0]!.path)!.content).toContain(
-      'Wave 2, domain layer.',
-    );
   });
 
   test('reads the proposal strictly: an unknown delta key is refused with its text', () => {
@@ -120,5 +100,39 @@ describe('inside', () => {
   test('refuses the base itself and every way out of it', () => {
     for (const rel of ['', '.', '../x', 'a/../../x', join(tmpdir(), 'other')])
       expect(code(rel)).toBe('bundle.path-escape');
+  });
+});
+
+describe('configInRepo', () => {
+  const top = tmpdir();
+  const code = (call: () => string): string | undefined => {
+    try {
+      call();
+    } catch (error) {
+      return (error as { code?: string }).code;
+    }
+  };
+
+  test('maps the config of a project below the repository top, as in the worktree', () => {
+    expect(configInRepo(top, join(top, 'apps', 'api'))).toBe(
+      'apps/api/agentic.config.ts',
+    );
+    expect(configInRepo(top, top)).toBe('agentic.config.ts');
+  });
+
+  test('honors a config path, absolute or relative to the project', () => {
+    const api = join(top, 'apps', 'api');
+    expect(configInRepo(top, api, 'conf/x.config.ts')).toBe(
+      'apps/api/conf/x.config.ts',
+    );
+    expect(configInRepo(top, api, join(api, 'y.config.ts'))).toBe(
+      'apps/api/y.config.ts',
+    );
+  });
+
+  test('refuses a config outside the repository', () => {
+    expect(code(() => configInRepo(join(top, 'a'), join(top, 'b')))).toBe(
+      'bundle.config-missing',
+    );
   });
 });

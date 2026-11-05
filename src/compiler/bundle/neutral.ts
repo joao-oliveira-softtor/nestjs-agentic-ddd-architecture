@@ -6,7 +6,9 @@ import {
   splitOptional,
   type TypeExpr,
 } from '../delta/schema';
-import { AgenticError } from '../ir';
+import { AgenticError, type IR } from '../ir';
+import { briefFileName } from '../briefs';
+import type { NeutralLayer } from './manifest';
 
 /** The sentence every neutral text carries (ADR-0007 D12). */
 export const NO_CERTIFICATION =
@@ -46,7 +48,7 @@ export interface NeutralMethod {
 export interface NeutralModel {
   readonly module: string;
   readonly certification: string;
-  /** An entity with `existing: true` lists only the members this change adds to it. */
+  /** An entity with `existing: true` lists only the members this change adds to it, with the states of the base entity. */
   readonly entities: readonly {
     readonly name: string;
     readonly existing: boolean;
@@ -113,8 +115,8 @@ export interface NeutralFile {
 export interface NeutralBuild {
   readonly model: NeutralModel;
   readonly files: readonly NeutralFile[];
-  /** Per item, the bundle path of its brief. */
-  readonly briefs: readonly { readonly item: string; readonly path: string }[];
+  /** The paths the manifest records. */
+  readonly layer: NeutralLayer;
 }
 
 const PRIMITIVE_NAMES = {
@@ -146,20 +148,19 @@ const fields = (
 
 const stripKind = (ref: string): string => ref.replace(/^method:/, '');
 
-const briefName = (id: string): string =>
-  `${id.replaceAll(/[^a-zA-Z0-9_]+/g, '-')}.md`;
-
-const ECHO_CAP = 500;
-/** Client text in a markdown brief: one line, no leading block marker, no fence, capped. */
-const echo = (text: string): string => {
-  // Code points, not UTF-16 units, so the cap never splits a surrogate pair.
-  const flat = Array.from(text.replaceAll(/\r\n|\r|\n/g, ' ').trimStart());
-  const capped =
-    flat.length > ECHO_CAP
-      ? `${flat.slice(0, ECHO_CAP).join('')}…`
-      : flat.join('');
-  return capped.replace(/^[#>*+-]/, '\\$&').replaceAll('`', '\\`');
-};
+/**
+ * Client text in a markdown brief: one line, never a block or an HTML comment. Not truncated: the
+ * brief promises business text exactly as written, and the schema already bounds its length.
+ */
+const echo = (text: string): string =>
+  text
+    .replaceAll(/\r\n|\r|\n/g, ' ')
+    .trimStart()
+    // Backslash, backtick and `<` (inline HTML, comments) are escaped anywhere...
+    .replaceAll(/[\\`<]/g, '\\$&')
+    // ...block markers only where they open a line: heading, quote, list, fence, table, setext, rule, link definition.
+    .replace(/^[#>*+~[|=_-]/, '\\$&')
+    .replace(/^(\d+)([.)])/, '$1\\$2');
 
 type DeltaMethod = Delta['entities'][number]['methods'][number];
 type DeltaInvariant = Delta['entities'][number]['invariants'][number];
@@ -244,12 +245,27 @@ function neutralEntity(
 }
 
 /** Additions to existing entities first, then the new ones. */
-function neutralEntities(into: Collected, delta: Delta): NeutralEntity[] {
+function neutralEntities(
+  into: Collected,
+  delta: Delta,
+  base: IR,
+): NeutralEntity[] {
+  // The states belong to the base entity; the transitions of the additions are written in them.
+  const baseStates = (name: string): readonly string[] =>
+    orEmpty(
+      base.entities.find((e) => e.module === delta.module && e.name === name)
+        ?.states,
+    );
   return [
     ...orEmpty(delta.entityAdditions).map((a) =>
       neutralEntity(
         into,
-        { name: a.entity, existing: true, description: null, states: [] },
+        {
+          name: a.entity,
+          existing: true,
+          description: null,
+          states: baseStates(a.entity),
+        },
         a,
       ),
     ),
@@ -301,9 +317,10 @@ function neutralUseCases(delta: Delta): NeutralUseCase[] {
 export function neutralModel(
   delta: Delta,
   acceptance: readonly AcceptanceCriterion[],
+  base: IR,
 ): NeutralModel {
   const into: Collected = { invariants: [], transitions: [] };
-  const entities = neutralEntities(into, delta);
+  const entities = neutralEntities(into, delta, base);
   return {
     module: delta.module,
     certification: NO_CERTIFICATION,
@@ -388,20 +405,30 @@ interface Job {
 function entityJob(model: NeutralModel, name: string): Job | null {
   const e = model.entities.find((x) => x.name === name);
   if (!e) return null;
+  // A static method is no item of its own: the entity brief carries it in full.
+  const statics = e.methods.filter((m) => m.static);
+  const operations = e.methods.filter((m) => !m.static);
   return {
     lines: [
       e.existing
         ? `Extend the existing entity ${echo(e.name)} with the members listed in model.json and nothing else.`
         : `Implement the entity ${echo(e.name)}: ${echo(e.description ?? '')}`,
       ...(e.states.length ? [`States: ${e.states.map(echo).join(', ')}`] : []),
-      ...(e.methods.length
+      ...(operations.length
         ? [
-            `Operations: ${e.methods.map((m) => echo(m.name)).join(', ')} (each has its own brief)`,
+            `Operations: ${operations.map((m) => echo(m.name)).join(', ')} (each has its own brief)`,
           ]
         : []),
+      ...statics.flatMap((m) => [
+        '',
+        `Static operation ${echo(m.name)}:`,
+        ...methodLines(m),
+      ]),
     ],
     invariants: model.invariants.filter(
-      (i) => i.owner === name && i.method === null,
+      (i) =>
+        i.owner === name &&
+        (i.method === null || statics.some((m) => m.name === i.method)),
     ),
   };
 }
@@ -511,7 +538,7 @@ const README = [
   '- `model.json`: new and extended entities, value objects, events, ports and use-cases; state transitions (an empty list means the Delta declares none); every invariant with its stable id, text and given/when/then examples; the acceptance criteria of the proposal, if there is one.',
   '- `briefs/`: one brief per item, in wave order.',
   '',
-  'Text quoted from the change request is escaped and capped; only the surrounding framework text is guaranteed to contain no TypeScript.',
+  'Text quoted from the change request is escaped; only the surrounding framework text is guaranteed to contain no TypeScript.',
   '',
   NO_CERTIFICATION,
   '',
@@ -520,24 +547,30 @@ const README = [
 export function buildNeutral(input: {
   readonly delta: Delta;
   readonly acceptance: readonly AcceptanceCriterion[];
+  /** The IR of the base commit: where the states of an existing entity come from. */
+  readonly base: IR;
   readonly items: readonly NeutralItem[];
 }): NeutralBuild {
-  const model = neutralModel(input.delta, input.acceptance);
-  const briefs = input.items.map((item) => ({
-    item: item.id,
-    path: `neutral/briefs/${briefName(item.id)}`,
-  }));
+  const model = neutralModel(input.delta, input.acceptance, input.base);
+  const layer: NeutralLayer = {
+    model: 'neutral/model.json',
+    readme: 'neutral/README.md',
+    briefs: input.items.map((item) => ({
+      item: item.id,
+      path: `neutral/briefs/${briefFileName(item.id)}`,
+    })),
+  };
   return {
     model,
-    briefs,
+    layer,
     files: [
-      { path: 'neutral/README.md', content: README },
+      { path: layer.readme, content: README },
       {
-        path: 'neutral/model.json',
+        path: layer.model,
         content: `${JSON.stringify(model, null, 2)}\n`,
       },
       ...input.items.map((item, i) => ({
-        path: briefs[i]!.path,
+        path: layer.briefs[i]!.path,
         content: neutralBrief(item, model),
       })),
     ],
