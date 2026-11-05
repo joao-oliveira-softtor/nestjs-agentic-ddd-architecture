@@ -116,11 +116,13 @@ describe('agentic mcp (subprocesso)', () => {
         'propose_change',
         'rules_for_path',
       ]);
-      for (const t of tools) expect(t.annotations.readOnlyHint).toBe(true);
+      // propose_change creates a worktree and runs processes on the server: not read-only.
+      for (const t of tools)
+        expect(t.annotations.readOnlyHint).toBe(t.name !== 'propose_change');
       // The same Delta on the same base gives the same bundle, so a retry is safe.
       expect(
         tools.find((t) => t.name === 'propose_change')?.annotations,
-      ).toMatchObject({ idempotentHint: true });
+      ).toMatchObject({ idempotentHint: true, destructiveHint: false });
 
       const text = (r: any) => r.result.content[0].text as string;
       for (const [name, args] of [

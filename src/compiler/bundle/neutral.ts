@@ -7,7 +7,8 @@ import {
   type TypeExpr,
 } from '../delta/schema';
 import { AgenticError, type IR } from '../ir';
-import { fileName, type NeutralLayer } from './manifest';
+import { briefFileName } from '../briefs';
+import type { NeutralLayer } from './manifest';
 
 /** The sentence every neutral text carries (ADR-0007 D12). */
 export const NO_CERTIFICATION =
@@ -556,7 +557,7 @@ export function buildNeutral(input: {
     readme: 'neutral/README.md',
     briefs: input.items.map((item) => ({
       item: item.id,
-      path: `neutral/briefs/${fileName(item.id)}`,
+      path: `neutral/briefs/${briefFileName(item.id)}`,
     })),
   };
   return {

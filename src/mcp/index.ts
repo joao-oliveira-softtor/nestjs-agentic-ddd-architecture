@@ -61,7 +61,7 @@ const AUTHORING_DIR = fileURLToPath(
 const INSTRUCTIONS = `${LANGUAGE_RULE} This server serves a domain contract. Before proposing a change, call authoring_guide (or read the skill:// resources): it explains how to write the proposal and the dev skill of each module.`;
 
 // Where the answers come from: the compiled working copy (revalidated per call) or a published lock (fixed).
-type Source = { root: string } | { published: PublishedLock };
+type Source = { root: string; config?: string } | { published: PublishedLock };
 
 // `lock` is already filtered to what the caller may read; `fullLock` is for server-side decisions only.
 // `root` is absent for a published lock: it has no filesystem.
@@ -108,6 +108,7 @@ async function proposeChange(
     compileBundle({
       delta: args.delta,
       baseRoot: source.root,
+      configPath: source.config,
       baseRef: 'HEAD',
       proposal: args.proposal,
     }),
@@ -410,8 +411,13 @@ export function createDomainServer(
         delta: z.record(z.string(), z.unknown()),
         proposal: z.strictObject({ slug: z.string(), markdown: z.string() }),
       }),
-      // readOnlyHint stays true: no client-visible state changes; the temp worktree is server-internal and gone on return.
-      annotations: { ...annotations, idempotentHint: true },
+      // Not read-only: it creates a git worktree and runs processes on the server (gone on return).
+      annotations: {
+        ...annotations,
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
     },
     (args: ProposeArgs, ctx?: Ctx) =>
       respond(() =>
@@ -447,19 +453,26 @@ export function createDomainServer(
 }
 
 // `published`, when given, replaces the working copy: `root` is then unused.
-const sourceOf = (root: string, published?: PublishedLock): Source =>
-  published ? { published } : { root };
+const sourceOf = (
+  root: string,
+  published?: PublishedLock,
+  config?: string,
+): Source => (published ? { published } : { root, config });
 
 export function startMcpServer({
   root,
   published,
+  config,
 }: {
   root: string;
   published?: PublishedLock;
+  config?: string;
 }): {
   close(): Promise<void>;
 } {
-  return serveStdio(() => createDomainServer(sourceOf(root, published), false));
+  return serveStdio(() =>
+    createDomainServer(sourceOf(root, published, config), false),
+  );
 }
 
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -509,12 +522,14 @@ function rejectHostOrigin(
 export async function startMcpHttpServer({
   root,
   published,
+  config,
   port,
   host,
   mcp,
 }: {
   root: string;
   published?: PublishedLock;
+  config?: string;
   port: number;
   host: string;
   mcp: McpConfig;
@@ -535,7 +550,7 @@ export async function startMcpHttpServer({
   );
   // Stateless: the tools are read-only, so a fresh server per request is enough.
   const handler = createMcpHandler(
-    () => createDomainServer(sourceOf(root, published), true),
+    () => createDomainServer(sourceOf(root, published, config), true),
     {
       maxRequestBodySize: MAX_BODY_BYTES,
     },
@@ -545,8 +560,9 @@ export async function startMcpHttpServer({
     hostname: host,
     port,
     maxRequestBodySize: MAX_BODY_BYTES,
-    // Tool calls revalidate the snapshot on each request, so they can outlast Bun's 10 s default.
-    idleTimeout: 120,
+    // A propose_change compile runs up to its 120 s budget plus the worktree setup, with nothing on the
+    // connection meanwhile: stay above it (255 s is Bun's maximum).
+    idleTimeout: 255,
     async fetch(request) {
       const pathname = trimSlash(new URL(request.url).pathname);
       if (pathname !== metadataPath && pathname !== mcpPath)

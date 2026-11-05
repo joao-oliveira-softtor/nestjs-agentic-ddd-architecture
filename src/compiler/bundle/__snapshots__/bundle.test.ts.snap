@@ -11,7 +11,7 @@ Two layers for one proposed change, compiled against a base commit. Reply to the
 - Bundle version: 1
 - Base ref: \`<baseRef>\`
 - Base lock hash: \`99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc\`
-- Bundle hash: \`3ac2bcca4c7378a7b86f886094d3a79a63a1a9a4eb3371cca2658c14a174fe38\`
+- Bundle hash: \`45527d9713aee39ad3331dcb9e103efc5743d262c4c2598e155fac62d06377ba\`
 
 ## Apply the bundle
 
@@ -34,6 +34,12 @@ Finish every item of a wave before the next. A task is complete only when \`veri
   \`\`\`
 
 ### Wave 2
+
+- \`method:Order.pay\` (domain), executor brief: \`target/briefs/method-Order-pay.md\`
+  \`\`\`bash
+  bun run agentic packet method:Order.pay
+  bun run agentic verify --item method:Order.pay --spec-hash ad9064e22d5f240912d07146ff815837ba7ba2eb23dda8adc0a66d125346002d
+  \`\`\`
 
 - \`method:Order.refund\` (domain), executor brief: \`target/briefs/method-Order-refund.md\`
   \`\`\`bash
@@ -79,6 +85,10 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "df2f668ea84b45940be247bd136a185c156451b0cfa58ae1ff245f5c2779d930",
     },
     {
+      "path": "neutral/briefs/method-Order-pay.md",
+      "sha256": "65b1f79f3d6a56841d5501573f1409c704de15c97651cb250231190739cea1b5",
+    },
+    {
       "path": "neutral/briefs/method-Order-refund.md",
       "sha256": "abb9b91673a993bcc22e7bf843fd9814d5605b6d39d864f867fad12fb45c2e18",
     },
@@ -93,6 +103,10 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
     {
       "path": "target/briefs/entity-Order.md",
       "sha256": "a51be333db93eca74237aa054aeed896a99aa7c31135cf64fac975e2b25a8496",
+    },
+    {
+      "path": "target/briefs/method-Order-pay.md",
+      "sha256": "30dda7077776267653381559da963c3f166a674be2067f10cd984e8543707ead",
     },
     {
       "path": "target/briefs/method-Order-refund.md",
@@ -127,6 +141,10 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "e87d3737af5283315e93fc133e31774cd3c691b467f66b80345abc1ff673f08b",
     },
     {
+      "path": "target/packets/method-Order-pay.md",
+      "sha256": "0aff11959f73513c70b2220179e0558cf64e8717f46acc5fc84a8ec6eff69f7b",
+    },
+    {
       "path": "target/packets/method-Order-refund.md",
       "sha256": "bb64b676c469867dc3fac7c7b5635db84d77a04f28af04315f0666ea77cb64cf",
     },
@@ -147,13 +165,17 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "3b9e9284f7c4b4076ec457d52e840e0d24800d99192d2edae572764b8a6c83a8",
     },
   ],
-  "hash": "3ac2bcca4c7378a7b86f886094d3a79a63a1a9a4eb3371cca2658c14a174fe38",
+  "hash": "45527d9713aee39ad3331dcb9e103efc5743d262c4c2598e155fac62d06377ba",
   "layers": {
     "neutral": {
       "briefs": [
         {
           "item": "entity:Order",
           "path": "neutral/briefs/entity-Order.md",
+        },
+        {
+          "item": "method:Order.pay",
+          "path": "neutral/briefs/method-Order-pay.md",
         },
         {
           "item": "method:Order.refund",
@@ -177,6 +199,15 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
           "specHash": "01bdc3919c88391c3c4ad85cb2c535b85451fe80d21d9e5e84ffb74cf8ca7c8b",
           "state": "implemented",
           "wave": 1,
+        },
+        {
+          "brief": "target/briefs/method-Order-pay.md",
+          "id": "method:Order.pay",
+          "layer": "domain",
+          "packet": "target/packets/method-Order-pay.md",
+          "specHash": "ad9064e22d5f240912d07146ff815837ba7ba2eb23dda8adc0a66d125346002d",
+          "state": "declared",
+          "wave": 2,
         },
         {
           "brief": "target/briefs/method-Order-refund.md",
@@ -208,6 +239,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
           "entity:Order",
         ],
         [
+          "method:Order.pay",
           "method:Order.refund",
         ],
         [
@@ -226,10 +258,12 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
   "bundle.json",
   "neutral/README.md",
   "neutral/briefs/entity-Order.md",
+  "neutral/briefs/method-Order-pay.md",
   "neutral/briefs/method-Order-refund.md",
   "neutral/briefs/usecase-pay_order.md",
   "neutral/model.json",
   "target/briefs/entity-Order.md",
+  "target/briefs/method-Order-pay.md",
   "target/briefs/method-Order-refund.md",
   "target/briefs/usecase-pay_order.md",
   "target/changes/0001-refund-order/proposal.md",
@@ -238,6 +272,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
   "target/dev-skill/references/schemas.json",
   "target/dev-skill/references/state-machine.md",
   "target/packets/entity-Order.md",
+  "target/packets/method-Order-pay.md",
   "target/packets/method-Order-refund.md",
   "target/packets/usecase-pay_order.md",
   "target/skeleton/src/shop/application/pay-order.ts",
@@ -295,6 +330,25 @@ Example 1
 "
 ,
     "path": "neutral/briefs/entity-Order.md",
+  },
+  {
+    "content": 
+"# Brief: method:Order.pay
+
+Wave 2, domain layer. Finish every item of an earlier wave first.
+
+## Job
+
+Implement the element method:Order.pay as described in model.json.
+
+## Rules
+
+- model.json, one folder up, is the full specification; this brief is the slice for one item.
+- Use your own language, layout and test tools. Keep invariant ids and business text exactly as written.
+- This layer has no \`done\` certification: only the nestjs-ts target layer is certified, so a team implementing from here owns its own verification.
+"
+,
+    "path": "neutral/briefs/method-Order-pay.md",
   },
   {
     "content": 
