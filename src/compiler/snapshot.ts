@@ -1,10 +1,14 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { sha256, stableStringify } from './canonical';
+import {
+  isResolvedConventions,
+  type ResolvedConventions,
+} from './conventions';
 import { moduleFiles } from './load';
 import { parseLock, type DomainLock } from './lock';
 import { ruleFiles, type Rule } from './rules';
-import { canonicalPath, toPosix } from './ir';
+import { AgenticError, canonicalPath, toPosix, type ErrorCode } from './ir';
 
 export const SNAPSHOT_PATH = '.agentic/mcp/snapshot.json';
 
@@ -16,33 +20,35 @@ export interface McpSnapshot {
   rulesDir: string;
   inputsHash: string;
   rules: Rule[];
+  conventions: ResolvedConventions;
 }
 
 type Locations = Pick<McpSnapshot, 'root' | 'config' | 'lock' | 'rulesDir'>;
 
 const STALE =
-  'o código, as regras, o config ou o lock mudaram desde o último `agentic compile` bem-sucedido (ou ele nunca rodou); rode `bun run agentic compile` e repita';
+  'the code, rules, config or lock changed since the last successful `agentic compile` (or it never ran); run `bun run agentic compile` and try again';
 
 async function fileLines(outRoot: string, files: string[]): Promise<string[]> {
   return Promise.all(
     files.map(async (f) => {
-      // O snapshot vem do disco: caminho para dispositivo ou FIFO travaria a leitura.
-      if (!(await stat(f)).isFile()) throw new Error(`${f}: não é arquivo`);
+      // The snapshot comes from disk: a device path or FIFO would hang the read.
+      if (!(await stat(f)).isFile())
+        throw new AgenticError('snapshot.not-file', `${f}: not a file`);
       const text = await readFile(f, 'utf8');
       return `${toPosix(relative(outRoot, f))}\0${sha256(text)}`;
     }),
   );
 }
 
-/** Hash das fontes (config, módulos, regras); o compile o calcula antes de importá-las. */
+/** Hash of the sources (config, modules, rules); compile computes it before importing them. */
 export async function sourceLines(
   outRoot: string,
   s: Omit<Locations, 'lock'>,
   modules: readonly { path: string }[],
 ): Promise<string[]> {
-  // resolve, não join: em outro disco do Windows, s.root é absoluto (D:/...).
+  // resolve, not join: on another Windows drive, s.root is absolute (D:/...).
   const root = resolve(outRoot, s.root);
-  // shortcut: imports de fora das pastas dos módulos não entram no hash; incluir se virar problema real.
+  // shortcut: imports from outside the module folders are not in the hash; include them if they become a real problem.
   const rulesAbs = join(root, s.rulesDir);
   return fileLines(outRoot, [
     resolve(outRoot, s.config),
@@ -67,14 +73,19 @@ async function inputsHash(
 
 export async function writeSnapshot(
   outRoot: string,
-  fields: Locations & { rules: Rule[]; modules: readonly { path: string }[] },
+  fields: Locations & {
+    rules: Rule[];
+    modules: readonly { path: string }[];
+    conventions: ResolvedConventions;
+  },
   sources?: readonly string[],
 ): Promise<void> {
-  const { modules, ...saved } = fields;
+  const { modules, conventions, ...saved } = fields;
   const lines = sources ?? (await sourceLines(outRoot, saved, modules));
   const snapshot: McpSnapshot = {
     snapshotVersion: 1,
     ...saved,
+    conventions,
     inputsHash: await inputsHash(outRoot, saved, lines, saved.rules),
   };
   const file = join(outRoot, SNAPSHOT_PATH);
@@ -87,34 +98,47 @@ export async function removeSnapshot(outRoot: string): Promise<void> {
   await rm(join(outRoot, SNAPSHOT_PATH), { force: true });
 }
 
-export async function checkSnapshot(
-  given: string,
-): Promise<
-  | { ok: true; lock: DomainLock; rules: Rule[]; root: string }
-  | { ok: false; reason: string }
+export async function checkSnapshot(given: string): Promise<
+  | {
+      ok: true;
+      lock: DomainLock;
+      rules: Rule[];
+      conventions: ResolvedConventions;
+      root: string;
+    }
+  | { ok: false; code: ErrorCode; reason: string }
 > {
-  // Com a raiz 8.3 o realpath das regras sairia da raiz e o hash divergiria.
+  // With root 8.3 the realpath of the rules would leave the root and the hash would diverge.
   const outRoot = canonicalPath(given);
   const file = join(outRoot, SNAPSHOT_PATH);
   const text = await readFile(file, 'utf8').catch(() => null);
-  // Pasta errada é o caso comum de snapshot ausente: a mensagem mostra onde procurou.
+  // The wrong folder is the usual cause of a missing snapshot: the message shows where it looked.
   if (text === null)
     return {
       ok: false,
-      reason: `nenhum snapshot em ${file}; rode \`bun run agentic compile\` na raiz do projeto ou passe --root com essa raiz`,
+      code: 'snapshot.missing',
+      reason: `no snapshot at ${file}; run \`bun run agentic compile\` at the project root or pass --root with that root`,
     };
   try {
     const s = JSON.parse(text) as McpSnapshot;
-    if (s.snapshotVersion !== 1) return { ok: false, reason: STALE };
+    // A snapshot from before conventions were saved is stale: defaults could differ from the generated skills.
+    if (s.snapshotVersion !== 1 || !isResolvedConventions(s.conventions))
+      return { ok: false, code: 'snapshot.stale', reason: STALE };
     const lock = parseLock(
       await readFile(join(outRoot, s.lock), 'utf8'),
       s.lock,
     );
     const sources = await sourceLines(outRoot, s, lock.ir.modules);
     if ((await inputsHash(outRoot, s, sources, s.rules)) !== s.inputsHash)
-      return { ok: false, reason: STALE };
-    return { ok: true, lock, rules: s.rules, root: resolve(outRoot, s.root) };
+      return { ok: false, code: 'snapshot.stale', reason: STALE };
+    return {
+      ok: true,
+      lock,
+      rules: s.rules,
+      conventions: s.conventions,
+      root: resolve(outRoot, s.root),
+    };
   } catch {
-    return { ok: false, reason: STALE };
+    return { ok: false, code: 'snapshot.stale', reason: STALE };
   }
 }

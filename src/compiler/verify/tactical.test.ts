@@ -89,7 +89,9 @@ describe('T1', () => {
   ])('viola: %s', (body, field) => {
     expect(msgs('entity:Matricula', 'Matricula', body)).toEqual([
       expect.stringMatching(
-        new RegExp(`^T1: campo ${field} guarda a raiz \\w+ de outro agregado$`),
+        new RegExp(
+          `^T1: field ${field} holds the root \\w+ of another aggregate$`,
+        ),
       ),
     ]);
   });
@@ -123,11 +125,11 @@ describe('T1', () => {
   test('fix do T1 e linha do campo, ordenado por linha', () => {
     const found = run('entity:Matricula', 'Matricula', 'a: Turma;\nb: Aluno;');
     expect(found.map((f) => [f.line, f.message])).toEqual([
-      [3, 'T1: campo a guarda a raiz Turma de outro agregado'],
-      [4, 'T1: campo b guarda a raiz Aluno de outro agregado'],
+      [3, 'T1: field a holds the root Turma of another aggregate'],
+      [4, 'T1: field b holds the root Aluno of another aggregate'],
     ]);
     expect(found[0]!.fix).toBe(
-      'guarde só o id de Turma (id primitivo ou VO de id no contains de Matricula); se o campo é declarado, o gerente ajusta a declaração',
+      'store only the id of Turma (primitive id or id VO in the contains of Matricula); if the field is declared, the manager adjusts the declaration',
     );
   });
 });
@@ -153,14 +155,14 @@ describe('T2', () => {
     };
     const bad = check(voCode('{ aluno: Aluno }'));
     expect(bad.map((f) => f.message)).toEqual([
-      'T2: campo aluno do VO referencia a entidade Aluno',
+      'T2: field aluno of the VO references the entity Aluno',
     ]);
     expect(bad[0]!.fix).toBe(
-      'guarde só o id de Aluno; se o campo ou a prop é declarada, o gerente ajusta a declaração',
+      'store only the id of Aluno; if the field or prop is declared, the manager adjusts the declaration',
     );
     expect(check(voCode('{ valor: string }'))).toEqual([]);
     expect(check('class AlunoId { #a: Item; }').map((f) => f.message)).toEqual([
-      'T2: campo #a do VO referencia a entidade Item',
+      'T2: field #a of the VO references the entity Item',
     ]);
   });
 });
@@ -169,27 +171,27 @@ describe('T3', () => {
   test('VO fora do contains viola (a); dentro passa', () => {
     const found = run('entity:Matricula', 'Matricula', 'preco: Dinheiro;');
     expect(found.map((f) => f.message)).toEqual([
-      'T3: campo preco usa o VO Dinheiro fora do contains de Matricula',
+      'T3: field preco uses the VO Dinheiro outside the contains of Matricula',
     ]);
     expect(found[0]!.fix).toBe(
-      'declare Dinheiro no contains de Matricula ou troque o tipo do campo; ambos são declaração, ajustados pelo gerente',
+      'declare Dinheiro in the contains of Matricula or change the field type; both are declarations, adjusted by the manager',
     );
     expect(msgs('entity:Pedido', 'Pedido', 'preco: Dinheiro;')).toEqual([]);
   });
 
   test('aluno: Aluno trocado por alunoId: AlunoId sem contains gera T3(a)', () => {
     expect(msgs('entity:Pedido', 'Pedido', 'alunoId: AlunoId;')).toEqual([
-      'T3: campo alunoId usa o VO AlunoId fora do contains de Pedido',
+      'T3: field alunoId uses the VO AlunoId outside the contains of Pedido',
     ]);
   });
 
   test('filha de outro agregado viola (b) com o fix do caso', () => {
     const found = run('entity:Matricula', 'Matricula', 'linha: Linha;');
     expect(found.map((f) => f.message)).toEqual([
-      'T3: campo linha usa Linha, filha de outro agregado',
+      'T3: field linha uses Linha, a child of another aggregate',
     ]);
     expect(found[0]!.fix).toBe(
-      'guarde só o id de Linha ou passe pela raiz dela; se o campo é declarado, o gerente ajusta a declaração',
+      'store only the id of Linha or go through its root; if the field is declared, the manager adjusts the declaration',
     );
   });
 
@@ -198,7 +200,7 @@ describe('T3', () => {
     expect(msgs('entity:Pedido', 'Pedido', 'l: Linha;')).toEqual([]);
     expect(msgs('entity:Item', 'Item', 'l: Linha; e: Extra;')).toEqual([]);
     expect(msgs('entity:Item', 'Item', 'd: Dinheiro;')).toEqual([
-      'T3: campo d usa o VO Dinheiro fora do contains de Item',
+      'T3: field d uses the VO Dinheiro outside the contains of Item',
     ]);
   });
 });
@@ -237,8 +239,9 @@ describe('tacticalGate', () => {
     });
     expect(out).toEqual([
       {
-        message: 'T: classe Matricula não encontrada em a.ts:1',
-        fix: 'confira o decorator na linha do source',
+        code: 'verify.tactical-class-missing',
+        message: 'T: class Matricula not found in a.ts:1',
+        fix: 'check the decorator on the source line',
         source: 'a.ts:1',
       },
     ]);
@@ -253,9 +256,9 @@ describe('tacticalGate', () => {
       kind: 'entity',
     });
     expect(out.map((f) => f.message)).toEqual([
-      'T: não foi possível ler nao-existe.ts: ENOENT',
+      'T: could not read nao-existe.ts: ENOENT',
     ]);
-    expect(out[0]?.message).toContain('não foi possível ler');
+    expect(out[0]?.message).toContain('could not read');
   });
 
   test('achado usa o source relativo e a linha do campo', () => {

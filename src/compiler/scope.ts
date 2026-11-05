@@ -30,9 +30,9 @@ export function registrySizes(registry: Registry): RegistrySizes {
 }
 
 /**
- * Registry só com o que pertence a esta configuração: registros cujo arquivo de
- * origem foi importado por ela e registros acrescentados desde `before`
- * (imports transitivos novos, que ainda precisam gerar o erro de "fora dos módulos").
+ * Registry with only what belongs to this configuration: records whose source file
+ * was imported by it, and records added since `before` (new transitive imports, which
+ * must still raise the "outside the modules" error).
  */
 export function scopeRegistry(
   source: Registry,

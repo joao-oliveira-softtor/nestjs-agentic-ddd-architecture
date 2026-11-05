@@ -16,7 +16,8 @@ export function workItemFindings(
   return report.items
     .filter((i) => touched.has(i.id) && i.state !== 'done')
     .map((i) => ({
-      message: `${i.id} está ${i.state === 'blocked' ? `blocked(${i.baseState})` : i.state}`,
+      code: 'verify.item-not-done' as const,
+      message: `${i.id} is ${i.state === 'blocked' ? `blocked(${i.baseState})` : i.state}`,
       source: i.source,
       fix: `bun run agentic packet ${i.id}`,
     }));

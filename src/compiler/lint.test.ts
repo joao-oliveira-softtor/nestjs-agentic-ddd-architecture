@@ -7,69 +7,74 @@ import { DEFAULT_OUT, renderAll } from './render/index';
 
 const ROOT = resolve(import.meta.dir, '../..');
 
-function skill(name: string, description: string, body = 'Corpo.\n'): string {
+function skill(name: string, description: string, body = 'Body.\n'): string {
   return `---\nname: ${name}\ndescription: ${JSON.stringify(description)}\nmetadata:\n  agentic-ddd.generated: "true"\n---\n${body}`;
 }
 
-const errorsOf = (path: string, content: string) =>
+const errorCodesOf = (path: string, content: string) =>
   lintSkill(path, content)
     .filter((f) => f.severity === 'error')
-    .map((f) => f.message);
+    .map((f) => f.code);
 
 describe('lintSkill', () => {
-  test('skill válida não tem erros', () => {
+  test('valid skill has no errors', () => {
     expect(
-      errorsOf(
-        'x/minha-skill/SKILL.md',
-        skill('minha-skill', 'Faz algo. Use quando precisar.'),
+      errorCodesOf(
+        'x/my-skill/SKILL.md',
+        skill('my-skill', 'Does something. Use when needed.'),
       ),
     ).toEqual([]);
   });
 
-  test('name diferente da pasta ou fora do padrão', () => {
-    expect(errorsOf('x/outra/SKILL.md', skill('minha-skill', 'D.'))).toEqual([
-      'name "minha-skill" difere da pasta "outra"',
+  test('name differs from the folder or does not match the pattern', () => {
+    expect(errorCodesOf('x/other/SKILL.md', skill('my-skill', 'D.'))).toEqual([
+      'lint.name-mismatch',
     ]);
     expect(
-      errorsOf('x/Minha--Skill/SKILL.md', skill('Minha--Skill', 'D.')),
-    ).toContain(
-      'name "Minha--Skill" fora do padrão (a-z, 0-9 e hífens simples; até 64)',
-    );
+      errorCodesOf('x/My--Skill/SKILL.md', skill('My--Skill', 'D.')),
+    ).toContain('lint.name-invalid');
   });
 
-  test('description vazia ou acima de 1024 caracteres', () => {
-    expect(errorsOf('x/s/SKILL.md', skill('s', ''))).toEqual([
-      'description com 0 caracteres (precisa de 1 a 1024)',
+  test('description empty or longer than 1024 characters', () => {
+    expect(errorCodesOf('x/s/SKILL.md', skill('s', ''))).toEqual([
+      'lint.description-length',
     ]);
-    expect(errorsOf('x/s/SKILL.md', skill('s', 'a'.repeat(1100)))).toEqual([
-      'description com 1100 caracteres (precisa de 1 a 1024)',
-    ]);
-  });
-
-  test('SKILL.md acima de 500 linhas e referência profunda', () => {
-    expect(
-      errorsOf('x/s/SKILL.md', skill('s', 'D.', 'linha\n'.repeat(500))),
-    ).toContain('SKILL.md com 506 linhas (máximo 500)');
-    expect(
-      errorsOf('x/s/SKILL.md', skill('s', 'D.', '[x](references/a/b.md)\n')),
-    ).toEqual([
-      'referência references/a/b.md passa de um nível de profundidade',
+    expect(errorCodesOf('x/s/SKILL.md', skill('s', 'a'.repeat(1100)))).toEqual([
+      'lint.description-length',
     ]);
   });
 
-  test('SKILL.md com exatamente 500 linhas não tem erro', () => {
+  test('description length message reports the character count', () => {
     expect(
-      errorsOf('x/s/SKILL.md', skill('s', 'D.', 'linha\n'.repeat(494))),
+      lintSkill('x/s/SKILL.md', skill('s', 'a'.repeat(1100)))[0]?.message,
+    ).toBe('description has 1100 characters (needs 1 to 1024)');
+  });
+
+  test('SKILL.md over 500 lines and a deep reference', () => {
+    expect(
+      errorCodesOf('x/s/SKILL.md', skill('s', 'D.', 'line\n'.repeat(500))),
+    ).toContain('lint.skill-too-long');
+    expect(
+      errorCodesOf(
+        'x/s/SKILL.md',
+        skill('s', 'D.', '[x](references/a/b.md)\n'),
+      ),
+    ).toEqual(['lint.reference-too-deep']);
+  });
+
+  test('SKILL.md with exactly 500 lines has no error', () => {
+    expect(
+      errorCodesOf('x/s/SKILL.md', skill('s', 'D.', 'line\n'.repeat(494))),
     ).toEqual([]);
   });
 
-  test('frontmatter ausente', () => {
-    expect(errorsOf('x/s/SKILL.md', '# sem frontmatter\n')).toEqual([
-      'frontmatter YAML ausente',
+  test('missing frontmatter', () => {
+    expect(errorCodesOf('x/s/SKILL.md', '# no frontmatter\n')).toEqual([
+      'lint.frontmatter-missing',
     ]);
   });
 
-  test('orçamento de tokens vira aviso', () => {
+  test('token budget becomes a warning', () => {
     const findings = lintSkill(
       'x/s/SKILL.md',
       skill('s', 'D.', 'x'.repeat(21_000)),
@@ -78,13 +83,14 @@ describe('lintSkill', () => {
       {
         path: 'x/s/SKILL.md',
         severity: 'warning',
-        message: 'corpo com ~5250 tokens (orçamento < 5000)',
+        code: 'lint.body-tokens',
+        message: 'body is ~5250 tokens (budget < 5000)',
       },
     ]);
     expect(approxTokens('abcd')).toBe(1);
   });
 
-  test('as skills geradas do shop passam no lint', () => {
+  test('skills generated for shop pass lint', () => {
     const rendered = renderAll(
       analyze(defineShop(), { root: ROOT, modules: [SHOP_MODULE] }).ir,
       DEFAULT_OUT,

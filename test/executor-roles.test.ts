@@ -83,7 +83,7 @@ test('o revisor lê só o diff, os packets e os gates, não edita e cita ID ou g
   );
   expect(reviewer).toContain('Without an ID or gate, it is not a finding');
   // Os packets só listam obrigações (método, caso de uso, invariante); o revisor pode citá-las.
-  expect(reviewer).toContain('Obrigações de teste');
+  expect(reviewer).toContain('Test obligations');
   expect(reviewer).toContain('expect(true)');
   expect(skill).toContain('(references/reviewer.md)');
   expect(ROLE_CORES.reviewer).toBe(reviewer.trimEnd());

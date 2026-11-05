@@ -36,7 +36,7 @@ export abstract class MatriculaRepository {
 export class MatricularAluno {}
 `;
 
-test('port: aparece no packet e mudar a descrição exige proposta e muda o specHash', async () => {
+test('port: appears in the packet, changing the description requires a proposal and changes the specHash', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'agentic-port-'));
   try {
     await mkdir(join(dir, 'app'));
@@ -104,13 +104,13 @@ test('port: aparece no packet e mudar a descrição exige proposta e muda o spec
     await write('Persistência alterada.', 'Conta matrículas da turma.');
     const top = run('compile', '--check');
     expect(top.code).toBe(1);
-    expect(top.stderr).toContain('pendente: há ');
+    expect(top.stderr).toContain('pending: there are ');
     expect(hashOf().hash).not.toBe(base.hash);
 
     await write('Persistência de matrículas.', 'Conta alunos da turma.');
     const method = run('compile', '--check');
     expect(method.code).toBe(1);
-    expect(method.stderr).toContain('pendente: há ');
+    expect(method.stderr).toContain('pending: there are ');
     expect(hashOf().hash).not.toBe(base.hash);
   } finally {
     await rm(dir, { recursive: true, force: true });

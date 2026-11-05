@@ -1,3 +1,4 @@
+import { ERROR_CODES, type ErrorCode } from '@agentic-ddd/compiler';
 import { z } from 'zod';
 import {
   answerSchema,
@@ -99,6 +100,12 @@ const command = z.strictObject({
   result: process,
 });
 const finding = z.strictObject({
+  // shortcut: reports stored before #111 have no code, so a missing code passes and is typed as present; split a legacy schema if aggregate ever reads codes.
+  code: z
+    .custom<ErrorCode>(
+      (v) => typeof v === 'string' && Object.hasOwn(ERROR_CODES, v),
+    )
+    .optional() as unknown as z.ZodType<ErrorCode>,
   message: z.string(),
   fix: z.string().nullable(),
   source: z.string().nullable(),

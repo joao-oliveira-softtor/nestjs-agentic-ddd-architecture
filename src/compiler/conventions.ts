@@ -35,3 +35,27 @@ export const DEFAULT_CONVENTIONS: ResolvedConventions = {
     application: ['operators', 'infrastructure'],
   },
 };
+
+const isStrings = (x: unknown): x is string[] =>
+  Array.isArray(x) && x.every((v) => typeof v === 'string');
+
+/** Shape check for conventions read back from a snapshot or a published lock (not the config rules). */
+export function isResolvedConventions(x: unknown): x is ResolvedConventions {
+  const o = x as Record<string, Record<string, unknown>> | null;
+  if (o === null || typeof o !== 'object') return false;
+  const { layers, suffixes, forbiddenImports } = o;
+  const isObject = (v: unknown) => v !== null && typeof v === 'object';
+  return (
+    isObject(layers) &&
+    ['domain', 'application', 'operators'].every(
+      (k) => typeof layers![k] === 'string',
+    ) &&
+    isObject(suffixes) &&
+    typeof suffixes!.events === 'string' &&
+    typeof suffixes!.operator === 'string' &&
+    isStrings(o.infrastructure) &&
+    isObject(forbiddenImports) &&
+    isStrings(forbiddenImports!.domain) &&
+    isStrings(forbiddenImports!.application)
+  );
+}

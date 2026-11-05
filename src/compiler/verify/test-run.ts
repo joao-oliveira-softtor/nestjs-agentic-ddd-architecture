@@ -128,7 +128,7 @@ export async function runTests(
       ...(!valid || incomplete || emptySuite
         ? {
             collectionError:
-              'coleta JUnit ausente, inválida ou incompleta; não é possível verificar conclusão',
+              'JUnit collection is missing, invalid or incomplete; cannot verify completion',
           }
         : {}),
     };

@@ -20,7 +20,13 @@ test('tarball audit accepts relative maps and rejects unrelated or sensitive fil
       }),
     ),
   ).toEqual([]);
+  expect(auditFile('skills/agentic-ddd/SKILL.md', '# Skill')).toEqual([]);
+  expect(
+    auditFile('skills/agentic-ddd/references/authoring.md', '# Authoring'),
+  ).toEqual([]);
   for (const file of [
+    'skills/agentic-ddd/assets/tasks/a.md',
+    'skills/agentic-ddd/references/sub/a.md',
     '.env',
     'node_modules/x.js',
     'dist/main.js',

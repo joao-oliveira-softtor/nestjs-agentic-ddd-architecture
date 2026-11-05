@@ -31,7 +31,7 @@ describe('element', () => {
     });
   }
 
-  test('invariante de use-case é achada e devolve o use-case dono', () => {
+  test('use-case invariant is found and returns the owning use-case', () => {
     const invariant = {
       ...lock.ir.entities[0]!.invariants[0]!,
       id: 'invariant:matricular_aluno/aluno-ativo',
@@ -58,7 +58,7 @@ describe('element', () => {
     });
   });
 
-  test('invariante de value object é achada e devolve o VO dono', () => {
+  test('value object invariant is found and returns the owning VO', () => {
     const invariant = {
       id: 'invariant:Dinheiro/nao-negativo',
       text: 'Valor não pode ser negativo.',
@@ -93,20 +93,23 @@ describe('element', () => {
     });
   });
 
-  test('id desconhecido e prefixo desconhecido dão erro com a mensagem', () => {
+  test('unknown id and unknown prefix return an error with the mcp.element-unknown code', () => {
     const suffix =
-      '; use domain_overview para ver os ids (prefixos: entity, method, invariant, event, usecase, operator)';
+      '; use domain_overview to see the ids (prefixes: entity, method, invariant, event, usecase, operator)';
     expect(element(lock, 'entity:Nope')).toEqual({
       ok: false,
-      error: `id desconhecido: entity:Nope${suffix}`,
+      code: 'mcp.element-unknown',
+      error: `unknown id: entity:Nope${suffix}`,
     });
     expect(element(lock, 'foo:Order')).toEqual({
       ok: false,
-      error: `id desconhecido: foo:Order${suffix}`,
+      code: 'mcp.element-unknown',
+      error: `unknown id: foo:Order${suffix}`,
     });
     expect(element(lock, 'constructor:x')).toEqual({
       ok: false,
-      error: `id desconhecido: constructor:x${suffix}`,
+      code: 'mcp.element-unknown',
+      error: `unknown id: constructor:x${suffix}`,
     });
   });
 });
@@ -122,7 +125,7 @@ describe('changes', () => {
 });
 
 describe('determinismo', () => {
-  test('chamar duas vezes dá saída idêntica', () => {
+  test('calling twice gives identical output', () => {
     expect(JSON.stringify(overview(lock))).toBe(JSON.stringify(overview(lock)));
     expect(JSON.stringify(element(lock, 'method:Order.cancel'))).toBe(
       JSON.stringify(element(lock, 'method:Order.cancel')),
@@ -141,7 +144,7 @@ describe('rulesForPath', () => {
     { key: 'b', file: null, paths: null, body: 'B' },
   ];
 
-  test('normaliza ./ e devolve as regras que casam com o caminho', () => {
+  test('normalizes ./ and returns the rules that match the path', () => {
     expect(rulesForPath(rules, 'src/x.ts')).toEqual({
       path: 'src/x.ts',
       rules: both,
@@ -152,11 +155,11 @@ describe('rulesForPath', () => {
     });
   });
 
-  test('troca barra invertida por barra', () => {
+  test('replaces backslash with slash', () => {
     expect(rulesForPath(rules, 'src\\x.ts').path).toBe('src/x.ts');
   });
 
-  test('caminho fora do glob devolve só a regra sem paths', () => {
+  test('path outside the glob returns only the rule without paths', () => {
     expect(rulesForPath(rules, 'docs/x.md')).toEqual({
       path: 'docs/x.md',
       rules: [both[1]],

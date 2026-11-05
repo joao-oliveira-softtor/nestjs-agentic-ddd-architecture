@@ -34,7 +34,7 @@ export function renderDevSkill(
   const summaryWithNames =
     [
       entities.length > 0
-        ? `entidades ${entities.map((e) => e.name).join(', ')}`
+        ? `entities ${entities.map((e) => e.name).join(', ')}`
         : null,
       valueObjects.length > 0
         ? `value objects ${valueObjects.map((v) => v.name).join(', ')}`
@@ -47,23 +47,23 @@ export function renderDevSkill(
         : null,
     ]
       .filter((part): part is string => part !== null)
-      .join('; ') || 'sem elementos declarados';
+      .join('; ') || 'no declared elements';
 
-  const descriptionWithNames = `Domínio ${module.name}: ${summaryWithNames}. Use quando for implementar, alterar, testar ou revisar código em ${module.path}.`;
+  const descriptionWithNames = `Domain ${module.name}: ${summaryWithNames}. Use when implementing, changing, testing or reviewing code in ${module.path}.`;
 
   let description: string;
   if (descriptionWithNames.length > 1024) {
     // Use count-based form
     const parts = [
-      entities.length > 0 ? `${entities.length} entidades` : null,
-      valueObjects.length > 0 ? `${valueObjects.length} value objects` : null,
-      useCases.length > 0 ? `${useCases.length} use-cases` : null,
-      operators.length > 0 ? `${operators.length} operators` : null,
+      counted(entities.length, 'entity', 'entities'),
+      counted(valueObjects.length, 'value object', 'value objects'),
+      counted(useCases.length, 'use-case', 'use-cases'),
+      counted(operators.length, 'operator', 'operators'),
     ]
       .filter((part): part is string => part !== null)
       .join(', ');
 
-    description = `Domínio ${module.name}: ${parts || 'sem elementos declarados'}. Use quando for implementar, alterar, testar ou revisar código em ${module.path}.`;
+    description = `Domain ${module.name}: ${parts || 'no declared elements'}. Use when implementing, changing, testing or reviewing code in ${module.path}.`;
   } else {
     description = descriptionWithNames;
   }
@@ -77,21 +77,21 @@ export function renderDevSkill(
     }),
     GENERATED_HEADER(module.path),
     '',
-    `# Módulo ${code(module.name)}`,
+    `# Module ${code(module.name)}`,
     '',
-    `Código em ${code(module.path)}. Esta skill descreve o domínio declarado (requisitos, regras e contratos); ela não registra estado de implementação.`,
+    `Code in ${code(module.path)}. This skill describes the declared domain (requirements, rules and contracts); it does not record implementation state.`,
     '',
   ];
 
   if (entities.length > 0) {
-    lines.push('## Entidades', '');
+    lines.push('## Entities', '');
     for (const entity of entities) {
       lines.push(
         `### ${entity.name} — ${code(entity.id)}`,
         '',
         entity.description,
         '',
-        `Fonte: ${code(entity.source)} · Estados: ${entity.states.length > 0 ? entity.states.map(code).join(', ') : '—'}`,
+        `Source: ${code(entity.source)} · States: ${entity.states.length > 0 ? entity.states.map(code).join(', ') : '—'}`,
         '',
       );
       if (entity.invariants.length > 0) {
@@ -102,7 +102,7 @@ export function renderDevSkill(
           code(i.source),
         ]);
         lines.push(
-          table(['Invariante', 'Regra', 'Garantida por', 'Fonte'], rows),
+          table(['Invariant', 'Rule', 'Guaranteed by', 'Source'], rows),
           '',
         );
       }
@@ -117,7 +117,10 @@ export function renderDevSkill(
           code(m.source),
         ]);
         lines.push(
-          table(['Método', 'Descrição', 'Transição', 'Emite', 'Fonte'], rows),
+          table(
+            ['Method', 'Description', 'Transition', 'Emits', 'Source'],
+            rows,
+          ),
           '',
         );
       }
@@ -132,7 +135,7 @@ export function renderDevSkill(
         '',
         vo.description,
         '',
-        `Fonte: ${code(vo.source)}`,
+        `Source: ${code(vo.source)}`,
         '',
       );
       if (vo.invariants.length > 0) {
@@ -141,17 +144,17 @@ export function renderDevSkill(
           i.text,
           code(i.source),
         ]);
-        lines.push(table(['Invariante', 'Regra', 'Fonte'], rows), '');
+        lines.push(table(['Invariant', 'Rule', 'Source'], rows), '');
       }
     }
   }
 
   if (events.length > 0) {
     lines.push(
-      '## Eventos',
+      '## Events',
       '',
       table(
-        ['Evento', 'Descrição', 'Fonte'],
+        ['Event', 'Description', 'Source'],
         events.map((e) => [code(e.name), e.description, code(e.source)]),
       ),
       '',
@@ -169,7 +172,7 @@ export function renderDevSkill(
     lines.push(
       '## Use-cases',
       '',
-      table(['Use-case', 'Descrição', 'Aciona', 'Emite', 'Fonte'], rows),
+      table(['Use-case', 'Description', 'Triggers', 'Emits', 'Source'], rows),
       '',
     );
   }
@@ -184,7 +187,7 @@ export function renderDevSkill(
     lines.push(
       '## Operators',
       '',
-      table(['Operator', 'Use-cases', 'Exige aprovação', 'Fonte'], rows),
+      table(['Operator', 'Use-cases', 'Requires approval', 'Source'], rows),
       '',
     );
   }
@@ -196,9 +199,9 @@ export function renderDevSkill(
       i.dependsOn.length > 0 ? i.dependsOn.map(code).join(', ') : '—',
     ]);
     lines.push(
-      '## Dependências entre itens',
+      '## Dependencies between items',
       '',
-      table(['Item', 'Camada', 'Depende de'], dependencies),
+      table(['Item', 'Layer', 'Depends on'], dependencies),
       '',
     );
     const obligations = items.map((i) => [
@@ -206,11 +209,11 @@ export function renderDevSkill(
       i.obligations.map(code).join(', '),
     ]);
     lines.push(
-      '## Obrigações de teste',
+      '## Test obligations',
       '',
-      'Cada ID abaixo precisa de ao menos um teste nomeado com `covers([...ids], título)` de `@agentic-ddd/testing`.',
+      'Each ID below needs at least one test named with `covers([...ids], title)` from `@agentic-ddd/testing`.',
       '',
-      table(['Item', 'IDs a cobrir'], obligations),
+      table(['Item', 'IDs to cover'], obligations),
       '',
     );
   }
@@ -223,10 +226,10 @@ export function renderDevSkill(
   const rulesSection =
     teamRules.length > 0
       ? [
-          '## Regras do time',
+          '## Team rules',
           '',
           table(
-            ['Arquivo', 'Globs', 'sha256'],
+            ['File', 'Globs', 'sha256'],
             teamRules.map((r) => [
               code(r.file!),
               r.paths!.map(code).join(', '),
@@ -238,47 +241,47 @@ export function renderDevSkill(
       : [];
 
   lines.push(
-    '## Como estender',
+    '## How to extend',
     '',
     table(
-      ['Artefato', 'Onde criar', 'Como declarar'],
+      ['Artifact', 'Where to create', 'How to declare'],
       [
         [
-          'Entidade',
-          code(`${module.path}/${layers.domain}/<nome>.ts`),
-          '`@AgentEntity({ description, states })` + `@Invariant({ id, text })` na classe',
+          'Entity',
+          code(`${module.path}/${layers.domain}/<name>.ts`),
+          '`@AgentEntity({ description, states })` + `@Invariant({ id, text })` on the class',
         ],
         [
-          'Método de entidade',
-          'na classe da entidade',
-          '`@AgentMethod({ description, transition?, emits? })`; regra garantida pelo método: `@Invariant` no método; auxiliares: `#privado`',
+          'Entity method',
+          'in the entity class',
+          '`@AgentMethod({ description, transition?, emits? })`; rule guaranteed by the method: `@Invariant` on the method; helpers: `#private`',
         ],
         [
-          'Evento',
-          code(`${module.path}/${layers.domain}/<agregado>${suffixes.events}`),
-          '`@AgentEvent({ description, payload })` estendendo `DomainEvent`',
+          'Event',
+          code(`${module.path}/${layers.domain}/<aggregate>${suffixes.events}`),
+          '`@AgentEvent({ description, payload })` extending `DomainEvent`',
         ],
         [
           'Use-case',
-          code(`${module.path}/${layers.application}/<nome>.ts`),
-          "`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entidade>.<método>'], emits? })`",
+          code(`${module.path}/${layers.application}/<name>.ts`),
+          "`@AgentUseCase({ name, description, whenToUse, input, output, uses: ['method:<Entity>.<method>'], emits? })`",
         ],
         [
           'Operator',
-          code(`${module.path}/${layers.operators}/<nome>${suffixes.operator}`),
+          code(`${module.path}/${layers.operators}/<name>${suffixes.operator}`),
           '`@Operator({ name, description, instructions, useCases, requiresApproval? })`',
         ],
       ],
     ),
     '',
-    'Corpo declarado e ainda não implementado usa `notImplemented()` de `@agentic-ddd/core`.',
+    'A declared body that is not implemented yet uses `notImplemented()` from `@agentic-ddd/core`.',
     '',
     ...rulesSection,
-    '## Referências',
+    '## References',
     '',
-    '- [Histórico de mudanças](references/history.md)',
-    '- [Schemas de eventos e use-cases](references/schemas.json)',
-    '- [Máquina de estados](references/state-machine.md)',
+    '- [Change history](references/history.md)',
+    '- [Event and use-case schemas](references/schemas.json)',
+    '- [State machine](references/state-machine.md)',
     '',
   );
 
@@ -301,4 +304,8 @@ export function renderDevSkill(
     ['references/schemas.json', stableStringify(schemas)],
     ['references/state-machine.md', renderStateMachine(entities, module.path)],
   ]);
+}
+
+function counted(n: number, one: string, many: string): string | null {
+  return n === 0 ? null : `${n} ${n === 1 ? one : many}`;
 }

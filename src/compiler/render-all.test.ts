@@ -45,7 +45,7 @@ describe('renderAll', () => {
     );
     expect(rendered.agentsBlock).toContain('`notImplemented()`');
     expect(rendered.agentsBlock).toContain(
-      '`bun run agentic verify <NNNN>` retorna `done` ou `needs-human`',
+      '`bun run agentic verify <NNNN>` returns `done` or `needs-human`',
     );
     expect(rendered.agentsBlock).toContain('`changes/NNNN-<slug>/proposal.md`');
     expect(rendered.agentsBlock).toMatchSnapshot();
@@ -105,15 +105,15 @@ describe('renderAll', () => {
     const rules = composeRules(team, ['core/done']);
     const out = renderAll(ir, DEFAULT_OUT, { rules });
     expect(out.agentsBlock).toContain('- Camadas do time.');
-    expect(out.agentsBlock).not.toContain('Onde criar:');
+    expect(out.agentsBlock).not.toContain('Where to create:');
     expect(out.agentsBlock).not.toContain('`verify <NNNN>`');
     expect(out.agentsBlock).toContain('- Estilo do time.\n- Segunda linha.');
     expect(out.agentsBlock).not.toContain('Testes em português');
-    expect(out.agentsBlock).toContain('### Regras por caminho');
+    expect(out.agentsBlock).toContain('### Rules by path');
     expect(out.agentsBlock.endsWith(BLOCK_END)).toBe(true);
     expect(out.agentsBlock).toMatchSnapshot();
     const skill = out.files.get('.agents/skills/shop-dev/SKILL.md')!;
-    expect(skill).toContain('## Regras do time');
+    expect(skill).toContain('## Team rules');
     expect(skill).toContain('.ai/rules/testes.md');
     expect(skill).not.toContain('.ai/rules/docs.md');
     expect(skill).toMatchSnapshot();
@@ -135,13 +135,13 @@ describe('renderAll', () => {
     };
     const out = renderAll(custom, DEFAULT_OUT, { conventions });
     const skill = out.files.get('.agents/skills/shop-dev/SKILL.md')!;
-    expect(skill).toContain('`src/shop/core/model/<nome>.ts`');
-    expect(skill).toContain('`src/shop/core/model/<agregado>.evt.ts`');
-    expect(skill).toContain('`src/shop/core/application/<nome>.ts`');
+    expect(skill).toContain('`src/shop/core/model/<name>.ts`');
+    expect(skill).toContain('`src/shop/core/model/<aggregate>.evt.ts`');
+    expect(skill).toContain('`src/shop/core/application/<name>.ts`');
     expect(skill).not.toContain('.events.ts');
-    expect(out.agentsBlock).toContain('`<caminho do módulo>/model`');
-    expect(out.agentsBlock).toContain('`<caminho do módulo>/application`');
-    expect(out.agentsBlock).not.toContain('`<caminho do módulo>/domain`');
+    expect(out.agentsBlock).toContain('`<module path>/model`');
+    expect(out.agentsBlock).toContain('`<module path>/application`');
+    expect(out.agentsBlock).not.toContain('`<module path>/domain`');
     expect(skill).toContain('| `entity:Product` | domain |');
     expect(skill).toContain('| `usecase:create_product` | application |');
     expect(skill).toMatchSnapshot();

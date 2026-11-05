@@ -36,7 +36,12 @@ export { itemOfMethod, workItems, type Layer, type WorkItem } from './graph';
 export {
   buildIR,
   irHash,
+  AgenticError,
+  formatCoded,
+  type Coded,
+  ERROR_CODES,
   type CompileError,
+  type ErrorCode,
   type IR,
   type IREntity,
   type IRValueObject,

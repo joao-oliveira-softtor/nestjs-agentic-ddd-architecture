@@ -47,6 +47,7 @@
     "src/elysia/**/*.ts",
     "src/testing/**/*.ts",
     "src/cli/**/*.ts",
-    "src/mcp/**/*.ts"
+    "src/mcp/**/*.ts",
+    "src/auth/**/*.ts"
   ]
 }

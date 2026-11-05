@@ -8,6 +8,7 @@ import { aggregateRoots } from './graph';
 import {
   sourceOf,
   type CompileError,
+  type ErrorCode,
   type IR,
   type IRInvariant,
   type IRMethod,
@@ -18,8 +19,8 @@ const SNAKE = /^[a-z][a-z0-9_]{0,63}$/;
 const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
 const STATIC_BUILTINS = new Set(['length', 'name', 'prototype']);
 
-// Métodos abstratos da classe do @AgentPort, lidos da árvore sintática (o abstract não existe em runtime).
-// Acha a ClassDeclaration pelo decorator que começa na linha do source; null se não achar.
+// Abstract methods of the @AgentPort class, read from the syntax tree (abstract does not exist at runtime).
+// Finds the ClassDeclaration by the decorator that starts on the source line; null if not found.
 function abstractMethods(
   file: string,
   line: number,
@@ -61,19 +62,31 @@ export function validate(
   root: string,
 ): CompileError[] {
   const errors: CompileError[] = [];
-  const err = (message: string, source: string | null): void => {
-    errors.push({ message, source });
+  const err = (
+    code: ErrorCode,
+    message: string,
+    source: string | null,
+  ): void => {
+    errors.push({ code, message, source });
   };
   const required = (value: string, what: string, source: string): void => {
     if (value.trim() === '')
-      err(`${what} é obrigatório e não pode ser vazio`, source);
+      err(
+        'validate.required-empty',
+        `${what} is required and cannot be empty`,
+        source,
+      );
   };
 
   const seen = new Map<string, string>();
   const claim = (id: string, source: string): void => {
     const previous = seen.get(id);
     if (previous)
-      err(`ID duplicado ${id} (também declarado em ${previous})`, source);
+      err(
+        'validate.duplicate-id',
+        `duplicate ID ${id} (also declared in ${previous})`,
+        source,
+      );
     else seen.set(id, source);
   };
 
@@ -82,7 +95,8 @@ export function validate(
     const local = invariant.id.slice(invariant.id.indexOf('/') + 1);
     if (!KEBAB.test(local))
       err(
-        `${invariant.id}: o id da invariante deve ser kebab-case (ex.: total-nao-negativo)`,
+        'validate.invariant-id-format',
+        `${invariant.id}: the invariant id must be kebab-case (e.g. total-not-negative)`,
         invariant.source,
       );
     required(invariant.text, `${invariant.id}: text`, invariant.source);
@@ -95,14 +109,19 @@ export function validate(
   for (const entity of ir.entities) {
     claim(entity.id, entity.source);
     if (!PASCAL.test(entity.name))
-      err(`${entity.id}: o nome da classe deve ser PascalCase`, entity.source);
+      err(
+        'validate.name-pascal-case',
+        `${entity.id}: the class name must be PascalCase`,
+        entity.source,
+      );
     required(entity.description, `${entity.id}: description`, entity.source);
     if (
       entity.methods.some((m) => m.transition) &&
       entity.states.length === 0
     ) {
       err(
-        `${entity.id} tem métodos com transition, mas @AgentEntity não declara states`,
+        'validate.transition-without-states',
+        `${entity.id} has methods with transition, but @AgentEntity declares no states`,
         entity.source,
       );
     }
@@ -110,7 +129,8 @@ export function validate(
       checkInvariant(invariant);
       if (invariant.on !== null && !methodsById.has(invariant.on)) {
         err(
-          `${invariant.id} está num método sem @AgentMethod (${invariant.on})`,
+          'validate.invariant-method-undeclared',
+          `${invariant.id} is on a method without @AgentMethod (${invariant.on})`,
           invariant.source,
         );
       }
@@ -124,12 +144,14 @@ export function validate(
         method.transition.to.trim() === ''
       ) {
         err(
-          `${method.id}: transition precisa de from (não vazio) e to`,
+          'validate.transition-incomplete',
+          `${method.id}: transition needs a non-empty from and a to`,
           method.source,
         );
       } else if (method.transition.from.some((state) => state.trim() === '')) {
         err(
-          `${method.id}: transition não aceita estado vazio em from`,
+          'validate.transition-empty-state',
+          `${method.id}: transition does not accept an empty state in from`,
           method.source,
         );
       }
@@ -137,7 +159,8 @@ export function validate(
       for (const state of [...method.transition.from, method.transition.to]) {
         if (state.trim() !== '' && !entity.states.includes(state)) {
           err(
-            `${method.id}: estado "${state}" não está em states de ${entity.name}`,
+            'validate.transition-state-unknown',
+            `${method.id}: state "${state}" is not in the states of ${entity.name}`,
             method.source,
           );
         }
@@ -151,7 +174,8 @@ export function validate(
     for (const id of entity.references ?? []) {
       if (id.startsWith('valueobject:'))
         err(
-          `${entity.id}: references só aponta para entidade, não para ${id}`,
+          'validate.references-value-object',
+          `${entity.id}: references can only point to an entity, not to ${id}`,
           entity.source,
         );
     }
@@ -161,7 +185,8 @@ export function validate(
       const other = moduleById.get(id);
       if (other !== undefined && other !== entity.module)
         err(
-          `${entity.id}: contains cita ${id}, de outro módulo (${other})`,
+          'validate.contains-cross-module',
+          `${entity.id}: contains cites ${id}, from another module (${other})`,
           entity.source,
         );
     }
@@ -170,20 +195,25 @@ export function validate(
     if (list.length < 2) continue;
     const source = ir.entities.find((e) => e.id === list[0])!.source;
     err(
-      `${child} está no contains de mais de um dono (${list.join(', ')})`,
+      'validate.contains-multiple-owners',
+      `${child} is in the contains of more than one owner (${list.join(', ')})`,
       source,
     );
   }
-  // ciclo: DFS pelas arestas de contains entre entidades (sem ele, as ondas recursam)
+  // cycle: DFS over the contains edges between entities (without it, the waves recurse)
   const state = new Map<string, 'open' | 'done'>();
-  // Erro na entidade cuja aresta cai num nó ainda 'open' (ela fecha o ciclo, e está dentro dele).
+  // Report on the entity whose edge lands on a still-'open' node (it closes the cycle and is inside it).
   const visit = (id: string): void => {
     state.set(id, 'open');
     const entity = ir.entities.find((e) => e.id === id);
     for (const c of entity?.contains ?? []) {
       if (!c.startsWith('entity:')) continue;
       if (state.get(c) === 'open')
-        err(`${id}: ciclo de contains entre entidades`, entity?.source ?? null);
+        err(
+          'validate.contains-cycle',
+          `${id}: contains cycle between entities`,
+          entity?.source ?? null,
+        );
       else if (!state.has(c)) visit(c);
     }
     state.set(id, 'done');
@@ -196,11 +226,16 @@ export function validate(
   for (const vo of ir.valueObjects ?? []) {
     claim(vo.id, vo.source);
     if (!PASCAL.test(vo.name))
-      err(`${vo.id}: o nome da classe deve ser PascalCase`, vo.source);
+      err(
+        'validate.name-pascal-case',
+        `${vo.id}: the class name must be PascalCase`,
+        vo.source,
+      );
     required(vo.description, `${vo.id}: description`, vo.source);
     if (entityNames.has(vo.name))
       err(
-        `${vo.id}: o nome coincide com o da entidade entity:${vo.name} (compartilhariam invariant:${vo.name}/ e a seção do histórico)`,
+        'validate.value-object-name-collision',
+        `${vo.id}: the name matches the entity entity:${vo.name} (they would share invariant:${vo.name}/ and the history section)`,
         vo.source,
       );
     for (const invariant of vo.invariants) checkInvariant(invariant);
@@ -208,7 +243,8 @@ export function validate(
   for (const rec of registry.valueObjects) {
     if (!(rec.target.prototype instanceof ValueObject))
       err(
-        `valueobject:${rec.target.name}: não estende ValueObject de @agentic-ddd/core (projeto e CLI com cópias diferentes do pacote?)`,
+        'validate.value-object-base-missing',
+        `valueobject:${rec.target.name}: does not extend ValueObject from @agentic-ddd/core (project and CLI with different copies of the package?)`,
         sourceOf(root, rec.source),
       );
   }
@@ -216,7 +252,11 @@ export function validate(
   for (const event of ir.events) {
     claim(event.id, event.source);
     if (!PASCAL.test(event.name))
-      err(`${event.id}: o nome da classe deve ser PascalCase`, event.source);
+      err(
+        'validate.name-pascal-case',
+        `${event.id}: the class name must be PascalCase`,
+        event.source,
+      );
     required(event.description, `${event.id}: description`, event.source);
   }
 
@@ -224,7 +264,11 @@ export function validate(
   for (const port of ir.ports ?? []) {
     claim(port.id, port.source);
     if (!PASCAL.test(port.name))
-      err(`${port.id}: o nome da classe deve ser PascalCase`, port.source);
+      err(
+        'validate.name-pascal-case',
+        `${port.id}: the class name must be PascalCase`,
+        port.source,
+      );
     required(port.description, `${port.id}: description`, port.source);
     for (const method of port.methods)
       required(
@@ -234,7 +278,8 @@ export function validate(
       );
     if (!roots.has(port.root))
       err(
-        `${port.id}: root cita ${port.root}, que não é raiz de agregado`,
+        'validate.port-root-not-aggregate',
+        `${port.id}: root cites ${port.root}, which is not an aggregate root`,
         port.source,
       );
   }
@@ -252,20 +297,26 @@ export function validate(
       ast = abstractMethods(rec.source.file, rec.source.line, rec.target.name);
     } catch (error) {
       err(
-        `${id}: não foi possível ler o arquivo de origem (${error instanceof Error ? error.message : String(error)})`,
+        'validate.port-source-unreadable',
+        `${id}: could not read the source file (${error instanceof Error ? error.message : String(error)})`,
         source,
       );
       continue;
     }
     if (ast === null) {
       err(
-        `${id}: classe não encontrada no arquivo de origem para conferir os métodos abstratos`,
+        'validate.port-class-missing',
+        `${id}: class not found in the source file to check the abstract methods`,
         source,
       );
       continue;
     }
     if (!ast.abstract) {
-      err(`${id}: a classe precisa ser abstract`, source);
+      err(
+        'validate.port-not-abstract',
+        `${id}: the class must be abstract`,
+        source,
+      );
       continue;
     }
     const declared = new Set(Object.keys(rec.methods));
@@ -273,12 +324,14 @@ export function validate(
     const extra = [...declared].filter((m) => !ast.methods.has(m)).sort();
     if (missing.length > 0)
       err(
-        `${id}: métodos abstratos sem declaração em methods: ${missing.join(', ')}`,
+        'validate.port-methods-undeclared',
+        `${id}: abstract methods not declared in methods: ${missing.join(', ')}`,
         source,
       );
     if (extra.length > 0)
       err(
-        `${id}: methods declara métodos que a classe não tem abstratos: ${extra.join(', ')}`,
+        'validate.port-methods-extra',
+        `${id}: methods declares methods that the class does not have as abstract: ${extra.join(', ')}`,
         source,
       );
   }
@@ -288,14 +341,16 @@ export function validate(
     claim(adapter.id, adapter.source);
     if (!PASCAL.test(adapter.name))
       err(
-        `${adapter.id}: o nome da classe deve ser PascalCase`,
+        'validate.name-pascal-case',
+        `${adapter.id}: the class name must be PascalCase`,
         adapter.source,
       );
     required(adapter.description, `${adapter.id}: description`, adapter.source);
     const other = adapterOf.get(adapter.implements);
     if (other !== undefined)
       err(
-        `${adapter.id}: o port ${adapter.implements} já tem o adapter ${other}`,
+        'validate.adapter-duplicate',
+        `${adapter.id}: the port ${adapter.implements} already has the adapter ${other}`,
         adapter.source,
       );
     else adapterOf.set(adapter.implements, adapter.id);
@@ -303,7 +358,8 @@ export function validate(
       ir.ports?.find((p) => p.id === adapter.implements)?.methods.length === 0
     )
       err(
-        `${adapter.id}: ${adapter.implements} não declara métodos; adapter ficaria sem obrigações`,
+        'validate.adapter-port-empty',
+        `${adapter.id}: ${adapter.implements} declares no methods; the adapter would have no obligations`,
         adapter.source,
       );
     const rec = registry.adapters.find(
@@ -311,11 +367,12 @@ export function validate(
         `adapter:${r.target.name}` === adapter.id &&
         sourceOf(root, r.source) === adapter.source,
     );
-    // buildIR já resolveu implements sem erro; aqui só confere a herança.
+    // buildIR already resolved implements without error; here only the inheritance is checked.
     const port = rec?.implements();
     if (typeof port === 'function' && !(rec!.target.prototype instanceof port))
       err(
-        `${adapter.id}: não estende ${adapter.implements} (a classe precisa de extends ${port.name} e a mesma cópia do pacote que declarou o port)`,
+        'validate.adapter-not-extending',
+        `${adapter.id}: does not extend ${adapter.implements} (the class needs extends ${port.name} and the same copy of the package that declared the port)`,
         adapter.source,
       );
   }
@@ -324,7 +381,8 @@ export function validate(
     claim(useCase.id, useCase.source);
     if (!SNAKE.test(useCase.name))
       err(
-        `${useCase.id}: name deve ser snake_case (^[a-z][a-z0-9_]{0,63}$)`,
+        'validate.usecase-name-format',
+        `${useCase.id}: name must be snake_case (^[a-z][a-z0-9_]{0,63}$)`,
         useCase.source,
       );
     required(useCase.description, `${useCase.id}: description`, useCase.source);
@@ -335,13 +393,18 @@ export function validate(
     for (const use of useCase.uses) {
       const method = methodsById.get(use);
       if (!method)
-        err(`${useCase.id}: uses cita ${use}, que não existe`, useCase.source);
+        err(
+          'validate.uses-unknown',
+          `${useCase.id}: uses cites ${use}, which does not exist`,
+          useCase.source,
+        );
       else
         for (const emitted of method.emits) {
           reachable.add(emitted);
           if (!declared.has(emitted))
             err(
-              `${useCase.id}: ${method.id} emite ${emitted}, que falta em emits (o runtime recusaria a publicação)`,
+              'validate.emit-undeclared',
+              `${useCase.id}: ${method.id} emits ${emitted}, which is missing from emits (the runtime would refuse to publish it)`,
               useCase.source,
             );
         }
@@ -349,7 +412,8 @@ export function validate(
     for (const emitted of useCase.emits) {
       if (!reachable.has(emitted))
         err(
-          `${useCase.id}: emite ${emitted}, mas nenhum método em uses emite esse evento`,
+          'validate.emit-unreachable',
+          `${useCase.id}: emits ${emitted}, but no method in uses emits that event`,
           useCase.source,
         );
     }
@@ -359,7 +423,8 @@ export function validate(
     claim(operator.id, operator.source);
     if (!KEBAB.test(operator.name) || operator.name.length > 64) {
       err(
-        `${operator.id}: name deve ser kebab-case com até 64 caracteres`,
+        'validate.operator-name-format',
+        `${operator.id}: name must be kebab-case with up to 64 characters`,
         operator.source,
       );
     }
@@ -374,17 +439,23 @@ export function validate(
       operator.source,
     );
     if (operator.useCases.length === 0)
-      err(`${operator.id}: useCases não pode ser vazio`, operator.source);
+      err(
+        'validate.operator-usecases-empty',
+        `${operator.id}: useCases cannot be empty`,
+        operator.source,
+      );
     const limitsProblem = limitsError(operator.limits);
     if (limitsProblem !== null)
       err(
-        `${operator.id}: limits inválidos (${limitsProblem})`,
+        'validate.operator-limits-invalid',
+        `${operator.id}: invalid limits (${limitsProblem})`,
         operator.source,
       );
     for (const approval of operator.requiresApproval) {
       if (!operator.useCases.includes(approval)) {
         err(
-          `${operator.id}: requiresApproval cita ${approval}, que não está em useCases`,
+          'validate.operator-approval-unknown',
+          `${operator.id}: requiresApproval cites ${approval}, which is not in useCases`,
           operator.source,
         );
       }
@@ -395,7 +466,8 @@ export function validate(
   for (const method of registry.methods) {
     if (!entityTargets.has(method.entity)) {
       err(
-        `${method.entity.name}.${method.name} tem @AgentMethod, mas ${method.entity.name} não tem @AgentEntity`,
+        'validate.method-entity-missing',
+        `${method.entity.name}.${method.name} has @AgentMethod, but ${method.entity.name} has no @AgentEntity`,
         sourceOf(root, method.source),
       );
     }
@@ -409,19 +481,22 @@ export function validate(
     const owners = [isEntity, isUseCase, isVo].filter(Boolean).length;
     if (owners > 1) {
       err(
+        'validate.invariant-owner-ambiguous',
         isVo
-          ? `@Invariant ${invariant.id} em ${invariant.entity.name}: a classe tem mais de um entre @AgentEntity, @AgentUseCase e @AgentValueObject, e o dono da invariante fica ambíguo`
-          : `@Invariant ${invariant.id} em ${invariant.entity.name}: a classe tem @AgentEntity e @AgentUseCase, e o dono da invariante fica ambíguo`,
+          ? `@Invariant ${invariant.id} on ${invariant.entity.name}: the class has more than one of @AgentEntity, @AgentUseCase and @AgentValueObject, so the invariant owner is ambiguous`
+          : `@Invariant ${invariant.id} on ${invariant.entity.name}: the class has @AgentEntity and @AgentUseCase, so the invariant owner is ambiguous`,
         sourceOf(root, invariant.source),
       );
     } else if (owners === 0) {
       err(
-        `@Invariant ${invariant.id} em ${invariant.entity.name}, que não tem @AgentEntity, @AgentUseCase nem @AgentValueObject`,
+        'validate.invariant-owner-missing',
+        `@Invariant ${invariant.id} on ${invariant.entity.name}, which has none of @AgentEntity, @AgentUseCase or @AgentValueObject`,
         sourceOf(root, invariant.source),
       );
     } else if (!isEntity && invariant.method !== null) {
       err(
-        `@Invariant ${invariant.id} em ${invariant.entity.name}.${invariant.method}: em ${isVo ? 'value object' : 'use-case'}, @Invariant vai na classe`,
+        'validate.invariant-method-misplaced',
+        `@Invariant ${invariant.id} on ${invariant.entity.name}.${invariant.method}: on a ${isVo ? 'value object' : 'use-case'}, @Invariant goes on the class`,
         sourceOf(root, invariant.source),
       );
     }
@@ -447,7 +522,8 @@ export function validate(
           continue;
         if (!decorated.has(`${isStatic}:${key}`)) {
           err(
-            `${rec.target.name}.${key} é público e não tem @AgentMethod: declare-o ou torne-o privado (#${key})`,
+            'validate.method-undecorated',
+            `${rec.target.name}.${key} is public and has no @AgentMethod: declare it or make it private (#${key})`,
             sourceOf(root, rec.source),
           );
         }
@@ -460,7 +536,7 @@ export function validate(
   return errors;
 }
 
-// Avisos (não erros) de AggregateRoot: raiz sem a classe base e filha que a estende (ADR-0006 D4).
+// AggregateRoot warnings (not errors): a root without the base class and a child that extends it (ADR-0006 D4).
 export function relationWarnings(ir: IR, registry: Registry): string[] {
   if (!ir.entities.some((e) => e.contains || e.references)) return [];
   const roots = aggregateRoots(ir);
@@ -473,9 +549,11 @@ export function relationWarnings(ir: IR, registry: Registry): string[] {
     if (!target) continue;
     const isAggregate = target.prototype instanceof AggregateRoot;
     if (roots.has(entity.id) && !isAggregate)
-      warnings.push(`${entity.id}: raiz de agregado não estende AggregateRoot`);
+      warnings.push(
+        `${entity.id}: aggregate root does not extend AggregateRoot`,
+      );
     if (!roots.has(entity.id) && isAggregate)
-      warnings.push(`${entity.id}: entidade contida estende AggregateRoot`);
+      warnings.push(`${entity.id}: contained entity extends AggregateRoot`);
   }
   return warnings;
 }

@@ -1,4 +1,5 @@
 import { stableStringify } from './canonical';
+import { AgenticError } from './ir';
 import { itemSpecification, type ItemSpecification } from './item-spec';
 import { collectStatus, stateContext } from './project-state';
 import type { WorkItemStatus } from './state';
@@ -25,24 +26,24 @@ export function renderPacket(
 ): string {
   const state =
     mode === 'static'
-      ? `${item.baseState} (estático: testes não executados; nunca certifica done)`
+      ? `${item.baseState} (static: tests not run; never certifies done)`
       : item.state === 'blocked'
         ? `blocked(${item.baseState})`
         : item.state;
   return [
-    '# Identificação',
+    '# Identification',
     '',
     `- ID: \`${item.id}\``,
-    `- Camada: ${item.layer}`,
-    `- Módulo: ${item.module}`,
+    `- Layer: ${item.layer}`,
+    `- Module: ${item.module}`,
     `- source: \`${item.source}\``,
-    `- Estado: ${state}`,
+    `- State: ${state}`,
     `- specHash: \`${item.specHash}\``,
-    `- Dependências: ${item.dependsOn.map((id) => `\`${id}\``).join(', ') || '—'}`,
+    `- Dependencies: ${item.dependsOn.map((id) => `\`${id}\``).join(', ') || '—'}`,
     '',
-    '## Especificação',
+    '## Specification',
     '',
-    'Declaração, regras de construção e contratos referenciados:',
+    'Declaration, construction rules and referenced contracts:',
     '',
     '```json',
     stableStringify({
@@ -51,10 +52,10 @@ export function renderPacket(
     }).trimEnd(),
     '```',
     '',
-    '## Obrigações de teste',
+    '## Test obligations',
     '',
     ...specification.obligations.map(
-      (id) => `- \`${id}\` — teste com \`covers\`.`,
+      (id) => `- \`${id}\` — test with \`covers\`.`,
     ),
     ...specification.criteria.flatMap((c) => [
       '',
@@ -65,15 +66,15 @@ export function renderPacket(
       `Then: ${c.then}`,
     ]),
     '',
-    '## Regras do executor',
+    '## Executor rules',
     '',
     isClassScopeItem(item.id)
-      ? '- Altere só corpos e membros #privados da classe deste item (mesma quantidade de linhas) e arquivos de teste. Não mude extends/implements nem a assinatura pública.'
-      : '- Altere só o corpo deste item e arquivos de teste.',
-    '- Não altere decorators, declarações, propostas nem arquivos gerados.',
-    '- Não implemente outros itens. Preserve os contratos e IDs de invariantes.',
+      ? "- Change only the bodies and #private members of this item's class (same number of lines) and test files. Do not change extends/implements or the public signature."
+      : "- Change only this item's body and test files.",
+    '- Do not change decorators, declarations, proposals or generated files.',
+    '- Do not implement other items. Preserve the contracts and invariant IDs.',
     '',
-    '## Comando de verificação',
+    '## Verification command',
     '',
     '```bash',
     `bun run agentic verify --item ${shellQuote(item.id)} --spec-hash ${item.specHash} --config ${shellQuote(configPath)} --json`,
@@ -88,7 +89,11 @@ export async function packet(options: PacketOptions): Promise<string> {
   const item = (
     await collectStatus(context, staticMode, !staticMode)
   ).items.find((i) => i.id === options.item);
-  if (!item) throw new Error(`work item ${options.item} não encontrado`);
+  if (!item)
+    throw new AgenticError(
+      'state.item-not-found',
+      `work item ${options.item} not found`,
+    );
   return renderPacket(
     item,
     itemSpecification(context.project.ir, item, context.proposals),

@@ -1,6 +1,7 @@
 import { relative, resolve } from 'node:path';
 import { Registry } from '@agentic-ddd/decorators';
 import { canonicalPath, toPosix, type IRModule } from './ir';
+import { isInModule } from './module-path';
 
 /** Isolates declarations by the compiler's complete module paths (no imports/I/O). */
 export function declarationsInModules(
@@ -26,7 +27,7 @@ export function declarationsInModules(
         const file = toPosix(relative(root, record.source.file));
         return modules.some((module) => {
           const path = toPosix(relative(root, resolve(root, module.path)));
-          return file === path || file.startsWith(`${path}/`);
+          return isInModule(file, path);
         });
       }),
     );

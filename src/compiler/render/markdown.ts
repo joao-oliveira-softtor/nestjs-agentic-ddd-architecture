@@ -30,11 +30,11 @@ export function idList(ids: readonly string[]): string {
 }
 
 export function guardedBy(on: string | null): string {
-  return on === null ? 'construção' : code(stripKind(on));
+  return on === null ? 'construction' : code(stripKind(on));
 }
 
 export function typeLabel(schema: JsonSchema): string {
-  if (typeof schema !== 'object' || schema === null) return 'qualquer';
+  if (typeof schema !== 'object' || schema === null) return 'any';
   if (Array.isArray(schema.enum))
     return `enum: ${(schema.enum as unknown[]).map(String).join(', ')}`;
   if ('const' in schema) return `const: ${String(schema.const)}`;
@@ -48,7 +48,7 @@ export function typeLabel(schema: JsonSchema): string {
   if (Array.isArray(schema.type)) return (schema.type as string[]).join(' | ');
   if (Array.isArray(schema.anyOf))
     return (schema.anyOf as JsonSchema[]).map(typeLabel).join(' | ');
-  return 'qualquer';
+  return 'any';
 }
 
 export function parameterRows(schema: JsonSchema): string[][] {
@@ -57,7 +57,7 @@ export function parameterRows(schema: JsonSchema): string[][] {
   return Object.entries(properties).map(([key, property]) => [
     code(key),
     typeLabel(property),
-    required.has(key) ? 'sim' : 'não',
+    required.has(key) ? 'yes' : 'no',
     typeof property.description === 'string' ? property.description : '—',
   ]);
 }

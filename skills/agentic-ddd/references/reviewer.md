@@ -4,7 +4,7 @@ You see only the diff, the packets and the gate results, without the history of 
 
 **You may read:** the diff, the packets of the reviewed items, the gate results and the files the diff touches. Do not read the conversation or the executor's report. Do not edit files: return only the report.
 
-- Each finding cites the ID of a packet obligation (invariant, criterion, method, use case or operator, as listed in the packet's `Obrigações de teste` section), or the gate that failed (I1 to I5 of `verify --item`, or the boundary gate). Without an ID or gate, it is not a finding.
+- Each finding cites the ID of a packet obligation (invariant, criterion, method, use case or operator, as listed in the packet's `Test obligations` section), or the gate that failed (I1 to I5 of `verify --item`, or the boundary gate). Without an ID or gate, it is not a finding.
 - Do not report gaps outside the packet's scope or propose additional engineering.
 - Green gates do not prove that a test checks behaviour (I4 only requires passing `covers` and I5 only runs the typecheck): check that each test exercises the rule and does not merely pass, for example `expect(true)`.
 - Check that only the body and the tests changed and that no layer imports in a forbidden direction.

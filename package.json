@@ -19,6 +19,7 @@
     "test:cov": "bun test --coverage",
     "agentic": "bun src/cli/main.ts",
     "agent-briefs": "bun scripts/agent-briefs.ts",
+    "mcp:demo": "bun scripts/mcp-demo.ts",
     "skills:install": "bun scripts/install-skills.ts",
     "skills:example": "bun scripts/create-skills-example.ts",
     "evals": "bun scripts/evals/main.ts",
@@ -46,6 +47,7 @@
     "@types/node": "^24.0.0",
     "ajv": "8.20.0",
     "elysia": "1.4.30",
+    "jose": "6.2.14",
     "oxlint": "^1.58.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.4.2",
@@ -106,12 +108,15 @@
     "dist/elysia",
     "dist/testing",
     "dist/mcp",
+    "dist/auth",
     "dist/cli",
     "bin/agentic-ddd.js",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
-    "docs/distribution.md"
+    "docs/distribution.md",
+    "skills/agentic-ddd/SKILL.md",
+    "skills/agentic-ddd/references"
   ],
   "engines": {
     "bun": ">=1.4.2"
@@ -126,13 +131,17 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "@modelcontextprotocol/server": "2.3.1",
-    "elysia": "^1.4.30"
+    "elysia": "^1.4.30",
+    "jose": "6.2.14"
   },
   "peerDependenciesMeta": {
     "@modelcontextprotocol/server": {
       "optional": true
     },
     "elysia": {
+      "optional": true
+    },
+    "jose": {
       "optional": true
     }
   }

@@ -33,7 +33,7 @@ test('registration loads matching skill; request uses instructions, allowlist, s
     {
       name: 'tool',
       description:
-        'Do work\nQuando usar: For work\nQuando não usar: For leisure',
+        'Do work\nWhen to use: For work\nWhen not to use: For leisure',
       inputSchema: {
         type: 'object',
         properties: { value: { type: 'string' } },

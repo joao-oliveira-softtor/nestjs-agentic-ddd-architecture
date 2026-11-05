@@ -6,17 +6,12 @@ export function renderStateMachine(
   entities: readonly IREntity[],
   source: string,
 ): string {
-  const lines: string[] = [
-    GENERATED_HEADER(source),
-    '',
-    '# Máquina de estados',
-    '',
-  ];
+  const lines: string[] = [GENERATED_HEADER(source), '', '# State machine', ''];
   for (const entity of entities) {
     lines.push(
       `## ${entity.name}`,
       '',
-      `Estados: ${entity.states.length > 0 ? entity.states.map(code).join(', ') : '—'}`,
+      `States: ${entity.states.length > 0 ? entity.states.map(code).join(', ') : '—'}`,
       '',
     );
     const rows = entity.methods
@@ -29,8 +24,8 @@ export function renderStateMachine(
       ]);
     lines.push(
       rows.length > 0
-        ? table(['Método', 'De', 'Para', 'Emite'], rows)
-        : '_Sem transições declaradas._',
+        ? table(['Method', 'From', 'To', 'Emits'], rows)
+        : '_No transitions declared._',
       '',
     );
   }

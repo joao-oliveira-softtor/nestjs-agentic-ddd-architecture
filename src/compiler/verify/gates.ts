@@ -2,6 +2,7 @@ import { sha256 } from '../canonical';
 import type { Proposal } from '../changes/proposal';
 import { deltaProblems } from '../changes/reconcile';
 import type { DiffItem } from '../diff';
+import type { Coded, ErrorCode } from '../ir';
 import type { DomainLock } from '../lock';
 import type { TestCaseResult, TestRun } from './test-run';
 
@@ -22,6 +23,7 @@ export type GateId =
 export type GateStatus = 'passed' | 'failed' | 'pending';
 
 export interface Finding {
+  readonly code: ErrorCode;
   readonly message: string;
   readonly fix: string | null;
   readonly source: string | null;
@@ -56,7 +58,7 @@ export interface GateInput {
   readonly lock: DomainLock | null;
   readonly diff: readonly DiffItem[];
   readonly checkOk: boolean;
-  readonly checkProblems: readonly string[];
+  readonly checkProblems: readonly Coded[];
   readonly tests: TestRun;
   readonly commands: readonly CommandResult[];
   readonly knownIds: ReadonlySet<string>;
@@ -72,8 +74,12 @@ const RULE_PREFIXES = [
 const at = (testCase: TestCaseResult): string =>
   `${testCase.file}:${testCase.line}`;
 const failure = (testCase: TestCaseResult): Finding => ({
-  message: `teste ${testCase.status === 'skipped' ? 'pulado' : 'falhou'}: ${testCase.name}`,
-  fix: 'corrija o código ou o teste até ele passar',
+  code:
+    testCase.status === 'skipped'
+      ? 'verify.test-skipped'
+      : 'verify.test-failed',
+  message: `test ${testCase.status === 'skipped' ? 'skipped' : 'failed'}: ${testCase.name}`,
+  fix: 'fix the code or the test until it passes',
   source: at(testCase),
 });
 const gate = (
@@ -110,29 +116,33 @@ export function evaluateGates(input: GateInput): VerifyReport {
     );
     if (!recorded) {
       g1.push({
-        message: `a proposta ${proposal.id} está em archive mas não está no lock`,
-        fix: 'restaure o lock pelo git',
+        code: 'proposal.archived-not-in-lock',
+        message: `the proposal ${proposal.id} is in archive but not in the lock`,
+        fix: 'restore the lock from git',
         source: proposal.path,
       });
     } else if (recorded.hash !== sha256(proposal.raw)) {
       g1.push({
-        message: `a proposta ${proposal.id} foi editada depois de aplicada`,
-        fix: 'restaure-a pelo git; propostas arquivadas são imutáveis',
+        code: 'proposal.applied-edited',
+        message: `the proposal ${proposal.id} was edited after being applied`,
+        fix: 'restore it from git; archived proposals are immutable',
         source: proposal.path,
       });
     }
     for (const item of input.diff.filter((i) => i.classification !== 'docs')) {
       g1.push({
-        message: `o código tem mudança de domínio depois da proposta: ${item.kind} ${item.id}`,
-        fix: 'abra uma nova proposta para essa mudança',
+        code: 'verify.domain-changed-after-proposal',
+        message: `the code has a domain change after the proposal: ${item.kind} ${item.id}`,
+        fix: 'open a new proposal for this change',
         source: null,
       });
     }
   } else {
     for (const problem of deltaProblems(proposal, input.diff)) {
       g1.push({
+        code: 'proposal.delta-mismatch',
         message: problem,
-        fix: 'ajuste o delta da proposta ou o código para que coincidam',
+        fix: 'adjust the proposal delta or the code so they match',
         source: proposal.path,
       });
     }
@@ -142,10 +152,16 @@ export function evaluateGates(input: GateInput): VerifyReport {
     ? []
     : (input.checkProblems.length > 0
         ? input.checkProblems
-        : ['compile --check falhou']
-      ).map((message) => ({
+        : [
+            {
+              code: 'verify.docs-outdated' as const,
+              message: 'compile --check failed',
+            },
+          ]
+      ).map(({ code, message }) => ({
+        code,
         message,
-        fix: 'rode `bun run agentic compile` e commite os arquivos gerados',
+        fix: 'run `bun run agentic compile` and commit the generated files',
         source: null,
       }));
 
@@ -155,8 +171,9 @@ export function evaluateGates(input: GateInput): VerifyReport {
     const cases = covering(id);
     if (cases.length === 0) {
       g3.push({
-        message: `critério ${id} sem teste`,
-        fix: `crie um teste com covers(['${id}'], ${JSON.stringify(criterion.then)})`,
+        code: 'verify.criterion-untested',
+        message: `criterion ${id} has no test`,
+        fix: `create a test with covers(['${id}'], ${JSON.stringify(criterion.then)})`,
         source: proposal.path,
       });
     }
@@ -174,15 +191,17 @@ export function evaluateGates(input: GateInput): VerifyReport {
     const cases = covering(id);
     if (cases.length === 0)
       g4.push({
-        message: `${id} não tem teste com covers`,
-        fix: `crie um teste com covers(['${id}'], '…')`,
+        code: 'verify.rule-untested',
+        message: `${id} has no test with covers`,
+        fix: `create a test with covers(['${id}'], '…')`,
         source: null,
       });
     g4.push(...cases.filter((c) => c.status !== 'passed').map(failure));
     if (proposal.delta.modified.includes(id)) {
       for (const c of cases)
         g4Warnings.push({
-          message: `revisar: ${c.name} cobre ${id}, que foi modificado`,
+          code: 'verify.rule-modified-review',
+          message: `review: ${c.name} covers ${id}, which was modified`,
           fix: null,
           source: at(c),
         });
@@ -192,8 +211,9 @@ export function evaluateGates(input: GateInput): VerifyReport {
     for (const id of c.covers) {
       if (!input.knownIds.has(id))
         g4.push({
-          message: `covers cita ${id}, que não existe`,
-          fix: 'corrija o ID no covers do teste',
+          code: 'verify.covers-unknown',
+          message: `covers cites ${id}, which does not exist`,
+          fix: "fix the ID in the test's covers",
           source: at(c),
         });
     }
@@ -202,21 +222,24 @@ export function evaluateGates(input: GateInput): VerifyReport {
   const g5: Finding[] = input.commands
     .filter((c) => c.exitCode !== 0)
     .map((c) => ({
-      message: `${c.name} saiu com ${c.exitCode}`,
-      fix: `rode ${c.command.join(' ')} e corrija`,
+      code: 'verify.command-failed' as const,
+      message: `${c.name} exited with ${c.exitCode}`,
+      fix: `run ${c.command.join(' ')} and fix it`,
       source: null,
     }));
   if (input.tests.collectionError) {
     g5.push({
+      code: 'verify.collection-error',
       message: input.tests.collectionError,
-      fix: 'restaure a coleta JUnit da suíte',
+      fix: "restore the suite's JUnit collection",
       source: null,
     });
   }
   if (input.tests.exitCode !== 0) {
     g5.push({
-      message: `a suíte de testes saiu com ${input.tests.exitCode}`,
-      fix: 'rode bun test e corrija as falhas',
+      code: 'verify.suite-failed',
+      message: `the test suite exited with ${input.tests.exitCode}`,
+      fix: 'run bun test and fix the failures',
       source: null,
     });
   }
@@ -224,17 +247,18 @@ export function evaluateGates(input: GateInput): VerifyReport {
   const g6: Finding[] = proposal.acceptance
     .filter((c) => c.manual)
     .map((c) => ({
-      message: `critério manual pendente: criterion:${proposal.id}/${c.id} — ${c.then}`,
-      fix: 'peça a validação de uma pessoa',
+      code: 'verify.criterion-manual-pending' as const,
+      message: `manual criterion pending: criterion:${proposal.id}/${c.id} — ${c.then}`,
+      fix: 'ask a person to validate it',
       source: proposal.path,
     }));
 
   const gates: GateResult[] = [
     gate('G1', 'Delta', g1),
     gate('G2', 'Docs', g2),
-    gate('G3', 'Critérios', g3),
-    gate('G4', 'Regras', g4, g4Warnings),
-    gate('G5', 'Qualidade', g5),
+    gate('G3', 'Criteria', g3),
+    gate('G4', 'Rules', g4, g4Warnings),
+    gate('G5', 'Quality', g5),
     {
       id: 'G6',
       name: 'Manual',

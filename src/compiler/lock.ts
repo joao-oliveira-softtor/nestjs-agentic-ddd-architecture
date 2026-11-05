@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { stableStringify } from './canonical';
 import type { DiffItem } from './diff';
-import type { IR } from './ir';
+import { AgenticError, type IR } from './ir';
 
 export const LOCK_VERSION = 1;
 
@@ -71,8 +71,9 @@ export function parseLock(text: string, displayPath: string): DomainLock {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new Error(
-      `${displayPath}: lock inválido (JSON malformado); restaure-o pelo git`,
+    throw new AgenticError(
+      'lock.malformed',
+      `${displayPath}: invalid lock (malformed JSON); restore it from git`,
     );
   }
   if (!isValidLockStructure(data)) {
@@ -84,13 +85,15 @@ export function parseLock(text: string, displayPath: string): DomainLock {
           typeof lockVersion === 'number'
             ? lockVersion
             : JSON.stringify(lockVersion);
-        throw new Error(
-          `${displayPath}: lockVersion ${versionStr} não suportada (esperado 1); atualize o @agentic-ddd ou restaure o lock pelo git`,
+        throw new AgenticError(
+          'lock.version-unsupported',
+          `${displayPath}: lockVersion ${versionStr} is not supported (expected 1); update @agentic-ddd or restore the lock from git`,
         );
       }
     }
-    throw new Error(
-      `${displayPath}: lock incompleto (faltam ir ou changes); restaure-o pelo git`,
+    throw new AgenticError(
+      'lock.incomplete',
+      `${displayPath}: incomplete lock (missing ir or changes); restore it from git`,
     );
   }
   return data;

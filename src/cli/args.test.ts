@@ -4,7 +4,7 @@ import { parseArgs } from './args';
 const spec = { booleans: ['--check'], values: ['--config'], positionals: 1 };
 
 describe('parseArgs', () => {
-  test('separa flags, valores e posicionais', () => {
+  test('separates flags, values and positionals', () => {
     const parsed = parseArgs(['0002', '--check', '--config', 'x.ts'], spec);
     expect(typeof parsed).toBe('object');
     if (typeof parsed === 'string') return;
@@ -13,16 +13,18 @@ describe('parseArgs', () => {
     expect(parsed.positionals).toEqual(['0002']);
   });
 
-  test('erros de uso viram mensagem', () => {
+  test('usage errors become messages with a code', () => {
     expect(parseArgs(['0002', '--nada'], spec)).toBe(
-      'opção desconhecida: --nada',
+      'unknown option: --nada [cli.option-unknown]',
     );
     expect(parseArgs(['0002', '--config'], spec)).toBe(
-      '--config exige um valor',
+      '--config requires a value [cli.option-value-required]',
     );
-    expect(parseArgs([], spec)).toBe('esperado 1 argumento(s), recebido 0');
+    expect(parseArgs([], spec)).toBe(
+      'expected 1 argument(s), received 0 [cli.argument-count]',
+    );
     expect(parseArgs(['a', 'b'], spec)).toBe(
-      'esperado 1 argumento(s), recebido 2',
+      'expected 1 argument(s), received 2 [cli.argument-count]',
     );
   });
 });

@@ -59,20 +59,20 @@ const changes: LockChange[] = [
 describe('renderHistory', () => {
   test('sem changes', () => {
     expect(renderHistory(ir, module, [], HISTORY)).toContain(
-      '_Nenhuma mudança registrada._',
+      '_No changes recorded._',
     );
   });
 
   test('agrupa por entidade, ignora outros módulos e linka a proposta arquivada', () => {
     const text = renderHistory(ir, module, changes, HISTORY);
-    expect(text).toContain('# Histórico do módulo `shop`');
+    expect(text).toContain('# Module `shop` history');
     expect(text).toContain(
       '| [0001](../../../../changes/archive/0001-estado-inicial/proposal.md) | estado inicial | added `entity:Product` (behavioral) | Base do histórico. |',
     );
     expect(text).toContain(
       '| [0002](../../../../changes/archive/0002-publicacao-exige-estoque/proposal.md) | Publicação exige estoque | added `invariant:Product/publicacao-exige-estoque` (behavioral) | Evitar vender sem estoque. |',
     );
-    expect(text).toContain('## Eventos, use-cases e operators');
+    expect(text).toContain('## Events, use-cases and operators');
     expect(text).toContain('added `usecase:publish_product` (behavioral)');
     expect(text).not.toContain('entity:Outro');
     expect(text).toMatchSnapshot();
@@ -98,7 +98,7 @@ describe('renderHistory', () => {
     ];
     const text = renderHistory(ir, module, useCaseChange, HISTORY);
     expect(text).not.toContain('## matricular_aluno');
-    expect(text.indexOf('## Eventos, use-cases e operators')).toBeLessThan(
+    expect(text.indexOf('## Events, use-cases and operators')).toBeLessThan(
       text.indexOf(
         'added `invariant:matricular_aluno/aluno-ativo` (behavioral)',
       ),
@@ -124,7 +124,7 @@ describe('renderHistory', () => {
 
   test('value object sem mudança ganha seção própria com "nenhuma mudança"', () => {
     const text = renderHistory(withVo, module, changes, HISTORY);
-    expect(text).toContain('## Dinheiro\n\n_Nenhuma mudança registrada._');
+    expect(text).toContain('## Dinheiro\n\n_No changes recorded._');
   });
 
   test('mudança de value object e de sua invariante vai para a seção do VO', () => {
@@ -156,6 +156,6 @@ describe('renderHistory', () => {
       '| [0004](../../../../changes/archive/0004-dinheiro-nao-negativo/proposal.md) | Dinheiro não negativo | added `valueobject:Dinheiro` (behavioral); added `invariant:Dinheiro/nao-negativo` (behavioral) | Dinheiro nunca negativo. |',
     );
     expect(text.indexOf('## Dinheiro')).toBeLessThan(text.indexOf('| [0004]'));
-    expect(text).not.toContain('## Eventos, use-cases e operators');
+    expect(text).not.toContain('## Events, use-cases and operators');
   });
 });

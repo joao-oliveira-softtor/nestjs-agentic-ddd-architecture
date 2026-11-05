@@ -1,19 +1,19 @@
 // Bun Snapshot v1, https://bun.sh/docs/test/snapshots
 
 exports[`pacotes determinísticos dos quatro tipos compartilham hash e especificação: entity:Product 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`entity:Product\`
-- Camada: domain
-- Módulo: shop
+- Layer: domain
+- Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:26\`
-- Estado: declared
+- State: declared
 - specHash: \`9125c147f4697f0043fa03ffe0da424a4eb7066d23cb7db7680c13d043784c9f\`
-- Dependências: —
+- Dependencies: —
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -69,18 +69,18 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`invariant:Product/preco-positivo\` — teste com \`covers\`.
-- \`method:Product.create\` — teste com \`covers\`.
+- \`invariant:Product/preco-positivo\` — test with \`covers\`.
+- \`method:Product.create\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só o corpo deste item e arquivos de teste.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only this item's body and test files.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item entity:Product --spec-hash 9125c147f4697f0043fa03ffe0da424a4eb7066d23cb7db7680c13d043784c9f --config agentic.config.ts --json
@@ -89,19 +89,19 @@ bun run agentic verify --item entity:Product --spec-hash 9125c147f4697f0043fa03f
 `;
 
 exports[`pacotes determinísticos dos quatro tipos compartilham hash e especificação: method:Product.publish 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`method:Product.publish\`
-- Camada: domain
-- Módulo: shop
+- Layer: domain
+- Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:34\`
-- Estado: blocked(declared)
+- State: blocked(declared)
 - specHash: \`dea0638f0750c08cbfa5f0d5f85beaee72d90bf49408ac76283ef3f1e025caf8\`
-- Dependências: \`entity:Product\`
+- Dependencies: \`entity:Product\`
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -197,18 +197,18 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`invariant:Product/publicacao-exige-estoque\` — teste com \`covers\`.
-- \`method:Product.publish\` — teste com \`covers\`.
+- \`invariant:Product/publicacao-exige-estoque\` — test with \`covers\`.
+- \`method:Product.publish\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só o corpo deste item e arquivos de teste.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only this item's body and test files.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item method:Product.publish --spec-hash dea0638f0750c08cbfa5f0d5f85beaee72d90bf49408ac76283ef3f1e025caf8 --config agentic.config.ts --json
@@ -217,19 +217,19 @@ bun run agentic verify --item method:Product.publish --spec-hash dea0638f0750c08
 `;
 
 exports[`pacotes determinísticos dos quatro tipos compartilham hash e especificação: usecase:publish_product 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`usecase:publish_product\`
-- Camada: application
-- Módulo: shop
+- Layer: application
+- Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:69\`
-- Estado: blocked(declared)
+- State: blocked(declared)
 - specHash: \`b7fa82f53d76777a9e2f90333524c2ed3a1c9e5c90ebb6dec314abdfecf6560f\`
-- Dependências: \`method:Product.publish\`
+- Dependencies: \`method:Product.publish\`
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -369,17 +369,17 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`usecase:publish_product\` — teste com \`covers\`.
+- \`usecase:publish_product\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só o corpo deste item e arquivos de teste.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only this item's body and test files.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item usecase:publish_product --spec-hash b7fa82f53d76777a9e2f90333524c2ed3a1c9e5c90ebb6dec314abdfecf6560f --config agentic.config.ts --json
@@ -388,19 +388,19 @@ bun run agentic verify --item usecase:publish_product --spec-hash b7fa82f53d7677
 `;
 
 exports[`pacotes determinísticos dos quatro tipos compartilham hash e especificação: operator:catalog-operator 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`operator:catalog-operator\`
-- Camada: operators
-- Módulo: shop
+- Layer: operators
+- Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:85\`
-- Estado: blocked(implemented)
+- State: blocked(implemented)
 - specHash: \`d1fb1f6910d00094bb37d30c6d8f61987fec979f0cd7f2eb53d8926990e105f0\`
-- Dependências: \`usecase:create_product\`, \`usecase:publish_product\`
+- Dependencies: \`usecase:create_product\`, \`usecase:publish_product\`
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -649,17 +649,17 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`operator:catalog-operator\` — teste com \`covers\`.
+- \`operator:catalog-operator\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só o corpo deste item e arquivos de teste.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only this item's body and test files.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item operator:catalog-operator --spec-hash d1fb1f6910d00094bb37d30c6d8f61987fec979f0cd7f2eb53d8926990e105f0 --config agentic.config.ts --json
@@ -668,19 +668,19 @@ bun run agentic verify --item operator:catalog-operator --spec-hash d1fb1f6910d0
 `;
 
 exports[`pacote de value object traz declaração e obrigações: valueobject:Dinheiro 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`valueobject:Dinheiro\`
-- Camada: domain
-- Módulo: vo
+- Layer: domain
+- Module: vo
 - source: \`src/compiler/packet.test.ts:157\`
-- Estado: implemented
+- State: implemented
 - specHash: \`c0634298f217a038e048f539defcc47c11de603b62ab37e0b182baaa086e459a\`
-- Dependências: —
+- Dependencies: —
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -701,18 +701,18 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`invariant:Dinheiro/nao-negativo\` — teste com \`covers\`.
-- \`valueobject:Dinheiro\` — teste com \`covers\`.
+- \`invariant:Dinheiro/nao-negativo\` — test with \`covers\`.
+- \`valueobject:Dinheiro\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só corpos e membros #privados da classe deste item (mesma quantidade de linhas) e arquivos de teste. Não mude extends/implements nem a assinatura pública.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only the bodies and #private members of this item's class (same number of lines) and test files. Do not change extends/implements or the public signature.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item valueobject:Dinheiro --spec-hash c0634298f217a038e048f539defcc47c11de603b62ab37e0b182baaa086e459a --config agentic.config.ts --json
@@ -721,19 +721,19 @@ bun run agentic verify --item valueobject:Dinheiro --spec-hash c0634298f217a038e
 `;
 
 exports[`contains e references chegam ao packet da dona, do método e do use-case que o usa: entity:Product com relações 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`entity:Product\`
-- Camada: domain
-- Módulo: shop
+- Layer: domain
+- Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:26\`
-- Estado: blocked(declared)
+- State: blocked(declared)
 - specHash: \`f5a6ff799f7bd305d9366bb5424e71d292c15cc709c2ffbf311eac5872994ce4\`
-- Dependências: \`valueobject:Dinheiro\`
+- Dependencies: \`valueobject:Dinheiro\`
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -811,18 +811,18 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`invariant:Product/preco-positivo\` — teste com \`covers\`.
-- \`method:Product.create\` — teste com \`covers\`.
+- \`invariant:Product/preco-positivo\` — test with \`covers\`.
+- \`method:Product.create\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só o corpo deste item e arquivos de teste.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only this item's body and test files.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item entity:Product --spec-hash f5a6ff799f7bd305d9366bb5424e71d292c15cc709c2ffbf311eac5872994ce4 --config agentic.config.ts --json
@@ -831,19 +831,19 @@ bun run agentic verify --item entity:Product --spec-hash f5a6ff799f7bd305d9366bb
 `;
 
 exports[`contains e references chegam ao packet da dona, do método e do use-case que o usa: method:Product.publish com relações 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`method:Product.publish\`
-- Camada: domain
-- Módulo: shop
+- Layer: domain
+- Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:34\`
-- Estado: blocked(declared)
+- State: blocked(declared)
 - specHash: \`366f379192122898b888637eb37434cb2a232eea40587818886bfb4ff94cad31\`
-- Dependências: \`entity:Product\`
+- Dependencies: \`entity:Product\`
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -961,18 +961,18 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`invariant:Product/publicacao-exige-estoque\` — teste com \`covers\`.
-- \`method:Product.publish\` — teste com \`covers\`.
+- \`invariant:Product/publicacao-exige-estoque\` — test with \`covers\`.
+- \`method:Product.publish\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só o corpo deste item e arquivos de teste.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only this item's body and test files.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item method:Product.publish --spec-hash 366f379192122898b888637eb37434cb2a232eea40587818886bfb4ff94cad31 --config agentic.config.ts --json
@@ -981,19 +981,19 @@ bun run agentic verify --item method:Product.publish --spec-hash 366f37919212289
 `;
 
 exports[`contains e references chegam ao packet da dona, do método e do use-case que o usa: usecase:publish_product com relações 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`usecase:publish_product\`
-- Camada: application
-- Módulo: shop
+- Layer: application
+- Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:69\`
-- Estado: blocked(declared)
+- State: blocked(declared)
 - specHash: \`9b2db32ad779aa544c0c6ee8e1371c3c2d3098c56130e9621e3ca9ed76e955da\`
-- Dependências: \`method:Product.publish\`
+- Dependencies: \`method:Product.publish\`
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -1155,17 +1155,17 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`usecase:publish_product\` — teste com \`covers\`.
+- \`usecase:publish_product\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só o corpo deste item e arquivos de teste.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only this item's body and test files.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item usecase:publish_product --spec-hash 9b2db32ad779aa544c0c6ee8e1371c3c2d3098c56130e9621e3ca9ed76e955da --config agentic.config.ts --json
@@ -1174,19 +1174,19 @@ bun run agentic verify --item usecase:publish_product --spec-hash 9b2db32ad779aa
 `;
 
 exports[`use-case com port traz o port com seus métodos no pacote: usecase com port 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`usecase:publish_product\`
-- Camada: application
-- Módulo: shop
+- Layer: application
+- Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:69\`
-- Estado: blocked(declared)
+- State: blocked(declared)
 - specHash: \`b657bdec6bbc40ad9877332f23ca7aeb299686182133a0b4321224b0361cb894\`
-- Dependências: \`method:Product.publish\`
+- Dependencies: \`method:Product.publish\`
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -1342,17 +1342,17 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`usecase:publish_product\` — teste com \`covers\`.
+- \`usecase:publish_product\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só o corpo deste item e arquivos de teste.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only this item's body and test files.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item usecase:publish_product --spec-hash b657bdec6bbc40ad9877332f23ca7aeb299686182133a0b4321224b0361cb894 --config agentic.config.ts --json
@@ -1361,19 +1361,19 @@ bun run agentic verify --item usecase:publish_product --spec-hash b657bdec6bbc40
 `;
 
 exports[`pacote de adapter traz o escopo de classe; método mantém o de corpo: adapter 1`] = `
-"# Identificação
+"# Identification
 
 - ID: \`adapter:MemoryRepo\`
-- Camada: infrastructure
-- Módulo: shop
+- Layer: infrastructure
+- Module: shop
 - source: \`x.ts:2\`
-- Estado: blocked(declared)
+- State: blocked(declared)
 - specHash: \`f1854fe65801e87987eeb1a97c638cf7527b06d9da843b28174ecd9ba04d5a61\`
-- Dependências: \`entity:Product\`
+- Dependencies: \`entity:Product\`
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -1431,17 +1431,17 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`port:Repo.salvar\` — teste com \`covers\`.
+- \`port:Repo.salvar\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só corpos e membros #privados da classe deste item (mesma quantidade de linhas) e arquivos de teste. Não mude extends/implements nem a assinatura pública.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only the bodies and #private members of this item's class (same number of lines) and test files. Do not change extends/implements or the public signature.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item adapter:MemoryRepo --spec-hash f1854fe65801e87987eeb1a97c638cf7527b06d9da843b28174ecd9ba04d5a61 --config agentic.config.ts --json

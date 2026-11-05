@@ -7,7 +7,10 @@ import {
   renderMarkdown,
   writeReport,
 } from '../scripts/evals/report';
-import { reportSchema } from '../scripts/evals/report-schema';
+import {
+  changeReportSchema,
+  reportSchema,
+} from '../scripts/evals/report-schema';
 import { evalManifest } from './helpers/evals';
 export function reportFixture(cases: CaseResult[]): EvalReport {
   return {
@@ -286,6 +289,18 @@ test('Markdown mostra o modo de prompt efetivo de cada configuração', () => {
   expect(lines.find((l) => l.startsWith('| haiku-brief |'))).toContain(
     'prompt: brief',
   );
+});
+
+test('finding code rejects inherited prototype keys', () => {
+  const finding = changeReportSchema.shape.gates.element.shape.findings.element;
+  expect(
+    finding.safeParse({
+      code: 'toString',
+      message: 'm',
+      fix: null,
+      source: null,
+    }).success,
+  ).toBe(false);
 });
 
 test('benchmark.items aceita só o tamanho de um tutorial (5 ou 7)', async () => {

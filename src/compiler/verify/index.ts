@@ -3,7 +3,13 @@ import { listProposals } from '../changes/proposal';
 import { compile } from '../compile';
 import { workItems } from '../graph';
 import { EMPTY_IR, elementsOf, semanticDiff } from '../diff';
-import type { CompileError } from '../ir';
+import {
+  AgenticError,
+  formatCoded,
+  type Coded,
+  type CompileError,
+} from '../ir';
+import { driftProblem } from '../write';
 import { readLock } from '../lock';
 import { statusFromEvidence } from '../project-state';
 import { workItemFindings } from './work-items';
@@ -16,12 +22,13 @@ export interface VerifyOptions {
 }
 
 const formatErrors = (errors: readonly CompileError[]): string =>
-  errors.map((e) => `- ${e.source ?? '-'}: ${e.message}`).join('\n');
+  errors.map((e) => `- ${e.source ?? '-'}: ${formatCoded(e)}`).join('\n');
 
 export async function verify(options: VerifyOptions): Promise<VerifyReport> {
   if (!/^\d{4}$/.test(options.change))
-    throw new Error(
-      `verify: número de change inválido "${options.change}" (esperado NNNN)`,
+    throw new AgenticError(
+      'state.change-format',
+      `verify: invalid change number "${options.change}" (expected NNNN)`,
     );
   const check = await compile({
     configPath: options.configPath,
@@ -29,7 +36,10 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
   });
   const { config } = check;
   if (check.ir === null)
-    throw new Error('verify: não foi possível analisar o domínio');
+    throw new AgenticError(
+      'verify.domain-unanalyzable',
+      'verify: could not analyze the domain',
+    );
   const lock = await readLock(
     join(config.outRoot, config.out.lock),
     config.out.lock,
@@ -39,20 +49,21 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
     config.changesDir,
   );
   if (proposalErrors.length > 0)
-    throw new Error(
-      `verify: há propostas inválidas em ${config.changesDir}/:\n${formatErrors(proposalErrors)}`,
+    throw new AgenticError(
+      'state.proposals-invalid',
+      `verify: invalid proposals in ${config.changesDir}/:\n${formatErrors(proposalErrors)}`,
     );
-  const domainErrors = check.errors.filter(
-    (e) => !e.message.startsWith('lint: '),
-  );
+  const domainErrors = check.errors.filter((e) => !e.code.startsWith('lint.'));
   if (domainErrors.length > 0)
-    throw new Error(
-      `verify: o domínio não compila:\n${formatErrors(domainErrors)}`,
+    throw new AgenticError(
+      'state.domain-invalid',
+      `verify: the domain does not compile:\n${formatErrors(domainErrors)}`,
     );
   const proposal = proposals.find((p) => p.id === options.change);
   if (!proposal) {
-    throw new Error(
-      `verify: proposta ${options.change} não encontrada em ${config.changesDir}/ nem em ${config.changesDir}/archive/`,
+    throw new AgenticError(
+      'verify.proposal-not-found',
+      `verify: proposal ${options.change} not found in ${config.changesDir}/ or in ${config.changesDir}/archive/`,
     );
   }
   const tests = await runTests(config.verify.test, config.root);
@@ -66,9 +77,12 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
     });
     commands.push({ name, command, exitCode: await proc.exited });
   }
-  const checkProblems = [
-    ...check.errors.map((e) => `${e.source ?? '-'}: ${e.message}`),
-    ...check.drift.map((d) => `desatualizado (${d.reason}): ${d.path}`),
+  const checkProblems: Coded[] = [
+    ...check.errors.map((e) => ({
+      code: e.code,
+      message: `${e.source ?? '-'}: ${e.message}`,
+    })),
+    ...check.drift.map(driftProblem),
     ...check.pending,
   ];
   const knownIds = new Set([

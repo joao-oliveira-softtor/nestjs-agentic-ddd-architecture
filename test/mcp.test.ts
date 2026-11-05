@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parseLock } from '../src/compiler/lock';
 import { SNAPSHOT_PATH, writeSnapshot } from '../src/compiler/snapshot';
+import { DEFAULT_CONVENTIONS } from '../src/compiler/conventions';
 
 const REPO = resolve(import.meta.dir, '..');
 const LOCK = '.agentic/domain.lock.json';
@@ -24,6 +25,7 @@ describe('agentic mcp (subprocesso)', () => {
         config: 'agentic.config.ts',
         lock: LOCK,
         rulesDir: '.ai/rules',
+        conventions: DEFAULT_CONVENTIONS,
         rules: [
           {
             key: 'r',
@@ -101,9 +103,11 @@ describe('agentic mcp (subprocesso)', () => {
         annotations: { readOnlyHint: boolean };
       }[];
       expect(tools.map((t) => t.name).sort()).toEqual([
+        'authoring_guide',
         'domain_changes',
         'domain_element',
         'domain_overview',
+        'domain_source',
         'rules_for_path',
       ]);
       for (const t of tools) expect(t.annotations.readOnlyHint).toBe(true);
@@ -129,7 +133,7 @@ describe('agentic mcp (subprocesso)', () => {
       const outside = (await call('rules_for_path', { path: '/etc/passwd' }))
         .result;
       expect(outside.isError).toBe(true);
-      expect(outside.content[0].text).toContain('fora da raiz');
+      expect(outside.content[0].text).toContain('[mcp.path-outside-root]');
       // Separador do Windows, `./` inicial e `..` interno também não escapam da raiz (#128).
       for (const path of [
         '..\\fora\\a.ts',
@@ -143,14 +147,14 @@ describe('agentic mcp (subprocesso)', () => {
       await writeFile(join(tmp, LOCK), `${lockText} `);
       const stale = (await call('domain_overview')).result;
       expect(stale.isError).toBe(true);
-      expect(stale.content[0].text).toContain('rode `bun run agentic compile`');
+      expect(stale.content[0].text).toContain('[snapshot.stale]');
 
       await writeFile(join(tmp, LOCK), lockText);
       expect((await call('domain_overview')).result.isError).toBeFalsy();
       const unknown = (await call('domain_element', { id: 'entity:Nope' }))
         .result;
       expect(unknown.isError).toBe(true);
-      expect(unknown.content[0].text).toContain('id desconhecido');
+      expect(unknown.content[0].text).toContain('[mcp.element-unknown]');
 
       await writeFile(join(tmp, 'examples/orders/a.ts'), 'changed\n');
       expect((await call('domain_overview')).result.isError).toBe(true);

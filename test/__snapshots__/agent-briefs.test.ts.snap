@@ -26,19 +26,19 @@ Final answer: only a JSON object, no prose, in the format of the example: \`{"it
 
 ## Packet
 
-# Identificação
+# Identification
 
 - ID: \`entity:Order\`
-- Camada: domain
-- Módulo: orders
+- Layer: domain
+- Module: orders
 - source: \`examples/orders/domain/order.ts:N\`
-- Estado: <volátil>
+- State: <volátil>
 - specHash: \`89abc8a155a93b8f48100662ddb343809e87e80467a777dcfc54b3ce38b0b1b2\`
-- Dependências: —
+- Dependencies: —
 
-## Especificação
+## Specification
 
-Declaração, regras de construção e contratos referenciados:
+Declaration, construction rules and referenced contracts:
 
 \`\`\`json
 {
@@ -108,19 +108,19 @@ Declaração, regras de construção e contratos referenciados:
 }
 \`\`\`
 
-## Obrigações de teste
+## Test obligations
 
-- \`invariant:Order/ao-menos-um-item\` — teste com \`covers\`.
-- \`invariant:Order/total-nao-negativo\` — teste com \`covers\`.
-- \`method:Order.create\` — teste com \`covers\`.
+- \`invariant:Order/ao-menos-um-item\` — test with \`covers\`.
+- \`invariant:Order/total-nao-negativo\` — test with \`covers\`.
+- \`method:Order.create\` — test with \`covers\`.
 
-## Regras do executor
+## Executor rules
 
-- Altere só o corpo deste item e arquivos de teste.
-- Não altere decorators, declarações, propostas nem arquivos gerados.
-- Não implemente outros itens. Preserve os contratos e IDs de invariantes.
+- Change only this item's body and test files.
+- Do not change decorators, declarations, proposals or generated files.
+- Do not implement other items. Preserve the contracts and invariant IDs.
 
-## Comando de verificação
+## Verification command
 
 \`\`\`bash
 bun run agentic verify --item entity:Order --spec-hash 89abc8a155a93b8f48100662ddb343809e87e80467a777dcfc54b3ce38b0b1b2 --config agentic.config.ts --json

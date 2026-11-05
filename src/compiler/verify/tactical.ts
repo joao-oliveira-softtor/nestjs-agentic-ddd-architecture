@@ -3,16 +3,17 @@ import ts from 'typescript';
 import type { EntityRecord } from '@agentic-ddd/decorators';
 import { findDecoratedClass } from '../ast';
 import { aggregateRoots } from '../graph';
-import { sourceOf, type IR } from '../ir';
+import { sourceOf, type ErrorCode, type IR } from '../ir';
 import type { Finding } from './gates';
 
 export interface TacticalFinding {
+  readonly code: ErrorCode;
   readonly message: string;
   readonly fix: string;
   readonly line: number;
 }
 
-// Contêineres nativos cujos argumentos de tipo guardam o valor; genéricos do usuário (Ref<Aluno>) não.
+// Native containers whose type arguments hold the value; user generics (Ref<Student>) do not.
 const CONTAINERS = new Set([
   'Array',
   'ReadonlyArray',
@@ -135,15 +136,16 @@ export function tacticalFindings(args: {
   const out: TacticalFinding[] = [];
   for (const f of fieldsOf(sf, cls, kind === 'valueobject')) {
     const line = sf.getLineAndCharacterOfPosition(f.node.getStart(sf)).line + 1;
-    const add = (message: string, fix: string) =>
-      out.push({ message, fix, line });
+    const add = (code: ErrorCode, message: string, fix: string) =>
+      out.push({ code, message, fix, line });
     for (const n of new Set(typeNames(f.type))) {
       switch (kind) {
         case 'valueobject':
           if (entities.has(n))
             add(
-              `T2: campo ${f.name} do VO referencia a entidade ${n}`,
-              `guarde só o id de ${n}; se o campo ou a prop é declarada, o gerente ajusta a declaração`,
+              'verify.tactical-vo-references-entity',
+              `T2: field ${f.name} of the VO references the entity ${n}`,
+              `store only the id of ${n}; if the field or prop is declared, the manager adjusts the declaration`,
             );
           break;
         case 'entity':
@@ -153,22 +155,25 @@ export function tacticalFindings(args: {
               break;
             if (roots.has(n))
               add(
-                `T1: campo ${f.name} guarda a raiz ${n} de outro agregado`,
-                `guarde só o id de ${n} (id primitivo ou VO de id no contains de ${x}); se o campo é declarado, o gerente ajusta a declaração`,
+                'verify.tactical-foreign-root',
+                `T1: field ${f.name} holds the root ${n} of another aggregate`,
+                `store only the id of ${n} (primitive id or id VO in the contains of ${x}); if the field is declared, the manager adjusts the declaration`,
               );
             else
               add(
-                `T3: campo ${f.name} usa ${n}, filha de outro agregado`,
-                `guarde só o id de ${n} ou passe pela raiz dela; se o campo é declarado, o gerente ajusta a declaração`,
+                'verify.tactical-foreign-child',
+                `T3: field ${f.name} uses ${n}, a child of another aggregate`,
+                `store only the id of ${n} or go through its root; if the field is declared, the manager adjusts the declaration`,
               );
           } else if (vos.has(n) && !ownContains.has(n))
             add(
-              `T3: campo ${f.name} usa o VO ${n} fora do contains de ${x}`,
-              `declare ${n} no contains de ${x} ou troque o tipo do campo; ambos são declaração, ajustados pelo gerente`,
+              'verify.tactical-vo-outside-contains',
+              `T3: field ${f.name} uses the VO ${n} outside the contains of ${x}`,
+              `declare ${n} in the contains of ${x} or change the field type; both are declarations, adjusted by the manager`,
             );
           break;
         default:
-          throw new Error(`Caso não tratado: ${String(kind satisfies never)}`);
+          throw new Error(`Unhandled case: ${String(kind satisfies never)}`);
       }
     }
   }
@@ -189,8 +194,8 @@ export function tacticalGate(args: {
   const { ir, record, root, owner, kind } = args;
   const name = record.target.name;
   const source = sourceOf(root, record.source);
-  const failClosed = (message: string): Finding[] => [
-    { message, fix: 'confira o decorator na linha do source', source },
+  const failClosed = (code: ErrorCode, message: string): Finding[] => [
+    { code, message, fix: 'check the decorator on the source line', source },
   ];
   let sf: ts.SourceFile;
   try {
@@ -205,13 +210,18 @@ export function tacticalGate(args: {
       (e as NodeJS.ErrnoException).code ??
       (e instanceof Error ? e.message : String(e));
     return failClosed(
-      `T: não foi possível ler ${source.split(':')[0]}: ${why}`,
+      'verify.tactical-source-unreadable',
+      `T: could not read ${source.split(':')[0]}: ${why}`,
     );
   }
   const cls = findDecoratedClass(sf, record.source.line, name);
   if (cls === null)
-    return failClosed(`T: classe ${name} não encontrada em ${source}`);
+    return failClosed(
+      'verify.tactical-class-missing',
+      `T: class ${name} not found in ${source}`,
+    );
   return tacticalFindings({ sf, cls, owner, kind, ir }).map((f) => ({
+    code: f.code,
     message: f.message,
     fix: f.fix,
     source: sourceOf(root, { file: record.source.file, line: f.line }),

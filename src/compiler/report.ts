@@ -1,3 +1,4 @@
+import { formatCoded } from '../contracts/codes';
 import type { LintFinding } from './lint';
 import { approxTokens } from './lint';
 import { code, table } from './render/markdown';
@@ -14,16 +15,14 @@ export function formatReport(
     return [code(path), String(lines), String(approxTokens(content))];
   });
   const lines = [
-    '# agentic-ddd — relatório',
+    '# agentic-ddd — report',
     '',
-    table(['Arquivo', 'Linhas', '≈tokens'], rows),
+    table(['File', 'Lines', '≈tokens'], rows),
     '',
   ];
-  if (findings.length === 0) lines.push('Lint: nenhum problema.');
+  if (findings.length === 0) lines.push('Lint: no problems.');
   else
     for (const f of findings)
-      lines.push(
-        `- [${f.severity === 'error' ? 'erro' : 'aviso'}] ${f.path}: ${f.message}`,
-      );
+      lines.push(`- [${f.severity}] ${f.path}: ${formatCoded(f)}`);
   return `${lines.join('\n')}\n`;
 }

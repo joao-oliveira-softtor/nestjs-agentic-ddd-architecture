@@ -44,17 +44,17 @@ test('pacotes determinísticos dos quatro tipos compartilham hash e especificaç
   }
 });
 
-test('modo estático rotula o estado, não promete done e mantém o restante do pacote', () => {
+test('static mode labels the state, never promises done and keeps the rest of the packet', () => {
   const item = report.items.find((i) => i.id === 'method:Product.publish')!;
   const spec = itemSpecification(ir, item, []);
   const dynamic = renderPacket(item, spec, 'agentic.config.ts');
   const staticPacket = renderPacket(item, spec, 'agentic.config.ts', 'static');
   expect(staticPacket).toContain(
-    `Estado: ${item.baseState} (estático: testes não executados; nunca certifica done)`,
+    `State: ${item.baseState} (static: tests not run; never certifies done)`,
   );
-  expect(staticPacket).not.toContain('Estado: blocked');
+  expect(staticPacket).not.toContain('State: blocked');
   const strip = (text: string) =>
-    text.split('\n').filter((l) => !l.startsWith('- Estado:'));
+    text.split('\n').filter((l) => !l.startsWith('- State:'));
   expect(strip(staticPacket)).toEqual(strip(dynamic));
 });
 
@@ -371,9 +371,9 @@ test('pacote de adapter traz o escopo de classe; método mantém o de corpo', ()
     ],
   } as typeof ir;
   const packet = packetOf(adapterIr, 'adapter:MemoryRepo');
-  expect(packet).toContain('da classe deste item');
+  expect(packet).toContain("this item's class");
   expect(packet).toMatchSnapshot('adapter');
   expect(packetOf(adapterIr, 'method:Product.publish')).toContain(
-    'Altere só o corpo deste item',
+    "Change only this item's body",
   );
 });

@@ -24,11 +24,11 @@ const hash = (id: string) =>
   Bun.CryptoHasher.hash('sha256', id, 'hex') as string;
 function packetOf(id: string): string {
   return [
-    '# Identificação',
+    '# Identification',
     '',
     `- ID: \`${id}\``,
-    '- Camada: domain',
-    '- Módulo: tasks',
+    '- Layer: domain',
+    '- Module: tasks',
     `- source: \`app/${id.replace(/\W+/g, '-')}.ts:3\``,
     `- specHash: \`${hash(id)}\``,
     '',
@@ -291,9 +291,7 @@ test('ciclos: um resumo por ciclo e o agregado; braço com relato do autor receb
     ['autoral', 2, 2],
     ['autoral', 'all', 4],
   ]);
-  expect(clean.briefs.some((b) => b.includes('Executor report'))).toBe(
-    false,
-  );
+  expect(clean.briefs.some((b) => b.includes('Executor report'))).toBe(false);
   expect(authored.briefs.every((b) => b.includes('Executor report'))).toBe(
     true,
   );
