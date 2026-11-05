@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { changeReportSchema } from './report-schema';
+import { isCertified, rate, tallyItems } from './item-tally';
 
 /**
  * The per-run record of the bundle measurement (#122, `evals/campaigns/cycle-23-bundle/PREREGISTRATION.md`):
@@ -17,49 +18,60 @@ const attempt = z.strictObject({
 const itemRun = z.strictObject({
   item: z.string().min(1),
   specHash: hash,
-  state: z.enum(['accepted', 'failed']),
   attempts: z.array(attempt).min(1),
 });
-export const bundleRunSchema = z.strictObject({
-  configuration: z.string().min(1),
-  repetition: z.number().int().positive(),
-  bundleHash: hash,
-  baseRef: z.string().min(1),
-  items: z.array(itemRun).min(1),
-  finalVerification: changeReportSchema,
-});
+export const bundleRunSchema = z
+  .strictObject({
+    configuration: z.string().min(1),
+    repetition: z.number().int().positive(),
+    bundleHash: hash,
+    baseRef: z.string().min(1),
+    /** Items the bundle plans; a run that stops early has fewer `items`, and the rates divide by this. */
+    plannedItems: z.number().int().positive(),
+    /** Fingerprints of the origin project before and after the run (`fingerprintOrigin`). */
+    originBefore: hash,
+    originAfter: hash,
+    items: z.array(itemRun).min(1),
+    finalVerification: changeReportSchema,
+  })
+  .refine((r) => r.items.length <= r.plannedItems, {
+    message: 'more items than planned',
+  });
 export type BundleRun = z.infer<typeof bundleRunSchema>;
 export type BundleItemRun = BundleRun['items'][number];
 
-const rate = (numerator: number, denominator: number) => ({
-  numerator,
-  denominator,
-});
-
-/** The pre-registration metrics of one run; `certifiedRuns` is 1 only when `verify NNNN` said `done`. */
-export function summarizeBundleRun(
-  items: readonly BundleItemRun[],
-  finalStatus: BundleRun['finalVerification']['status'],
-) {
-  const attempts = items.flatMap((i) => i.attempts);
+/**
+ * The pre-registration metrics of one run, counted as the cycle-21 aggregate counts them (`tallyItems`,
+ * `isCertified`): an item is accepted when its last attempt is, and the run is certified only when every
+ * planned item is accepted, `verify NNNN` said `done` and the origin is unchanged.
+ */
+export function summarizeBundleRun(run: BundleRun) {
+  const tally = tallyItems(run.items, (a) => a?.accepted === true);
   return {
-    initial: rate(
-      items.filter((i) => i.attempts[0]!.accepted).length,
-      items.length,
-    ),
-    final: rate(
-      items.filter((i) => i.state === 'accepted').length,
-      items.length,
-    ),
-    corrections: attempts.length - items.length,
-    certifiedRuns: finalStatus === 'done' ? 1 : 0,
-    timeouts: attempts.filter((a) => a.transport === 'timeout').length,
+    initial: rate(tally.initial, run.plannedItems),
+    final: rate(tally.final, run.plannedItems),
+    corrections: tally.corrections,
+    certifiedRuns: isCertified({
+      finalItems: tally.final,
+      plannedItems: run.plannedItems,
+      verifiedDone: run.finalVerification.status === 'done',
+      originUnchanged: run.originBefore === run.originAfter,
+    })
+      ? 1
+      : 0,
+    timeouts: run.items
+      .flatMap((i) => i.attempts)
+      .filter((a) => a.transport === 'timeout').length,
   };
 }
 
 const CREDENTIAL = /key|token|secret|password|credential/i;
 
-/** The environment for every child of the rehearsal: the caller's, minus anything that looks like a credential. */
+/**
+ * The caller's environment minus every variable whose name looks like a credential. A name-based denylist:
+ * it keeps the rest (HOME included) and does nothing about the network; the rehearsal gives it to the
+ * `agentic` children it spawns, and the executor sandbox has its own empty environment and no network.
+ */
 export const offlineEnv = (
   env: Readonly<Record<string, string | undefined>>,
 ): Record<string, string> =>

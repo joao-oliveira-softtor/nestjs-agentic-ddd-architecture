@@ -11,15 +11,23 @@ import {
   offlineEnv,
   summarizeBundleRun,
   type BundleItemRun,
+  type BundleRun,
 } from '../scripts/evals/bundle-rehearsal';
 import { parseFinalReport } from '../scripts/evals/final-verification';
-import { createAttemptWorkspace } from '../scripts/evals/isolation';
+import {
+  createAttemptWorkspace,
+  fingerprintOrigin,
+} from '../scripts/evals/isolation';
 import { implementShopItem } from '../scripts/evals/solutions/shop';
 import { PROPOSAL, applyFixture, cloneAt } from './helpers/apply-fixture';
 
 /**
  * Offline rehearsal of the bundle measurement (#122, ADR-0007 D14): propose, apply, implement with the
- * scripted adapter, verify. No model, no network, no credentials.
+ * scripted adapter, verify. No model is called. What it checks about isolation: the `agentic` children get
+ * `offlineEnv`, and the sandboxed executor process has an empty environment and loopback only. What it does
+ * not check: each item's code is written by the adapter's `before` callback here in the test process (full
+ * environment, network, outside the sandbox) from a fixed solution, not from the packet, and the harness's own
+ * git and tar helpers inherit this process's environment.
  */
 const ROOT = resolve(import.meta.dir, '..');
 const CLI = join(ROOT, 'src/cli/main.ts');
@@ -74,12 +82,27 @@ const run = (
 ): BundleItemRun => ({
   item,
   specHash: 'a'.repeat(64),
-  state: outcomes.at(-1)![1] ? 'accepted' : 'failed',
   attempts: outcomes.map(([transport, accepted], i) => ({
     number: i + 1,
     transport: transport as 'finished' | 'timeout',
     accepted,
   })),
+});
+const ORIGIN = 'b'.repeat(64);
+const runOf = (
+  items: BundleItemRun[],
+  over: Partial<BundleRun> = {},
+): BundleRun => ({
+  configuration: 'b0-rehearsal',
+  repetition: 1,
+  bundleHash: 'c'.repeat(64),
+  baseRef: 'main',
+  plannedItems: items.length,
+  originBefore: ORIGIN,
+  originAfter: ORIGIN,
+  items,
+  finalVerification: { change: '0001', title: 't', status: 'done', gates: [] },
+  ...over,
 });
 
 bunTest(
@@ -96,14 +119,69 @@ bunTest(
         ['timeout', false],
       ]),
     ];
-    expect(summarizeBundleRun(items, 'done')).toEqual({
-      initial: { numerator: 1, denominator: 3 },
-      final: { numerator: 2, denominator: 3 },
-      corrections: 2,
-      certifiedRuns: 1,
-      timeouts: 2,
+    const s = summarizeBundleRun(runOf(items, { plannedItems: 3 }));
+    expect(s.initial).toMatchObject({ numerator: 1, denominator: 3 });
+    expect(s.final).toMatchObject({ numerator: 2, denominator: 3 });
+    expect([s.corrections, s.timeouts, s.certifiedRuns]).toEqual([2, 2, 0]);
+  },
+);
+
+bunTest(
+  'a run that stops early is counted over the planned items and is never certified',
+  () => {
+    const s = summarizeBundleRun(
+      runOf([run('entity:A', [['finished', true]])], { plannedItems: 4 }),
+    );
+    expect(s.initial).toMatchObject({ numerator: 1, denominator: 4 });
+    expect(s.final).toMatchObject({ numerator: 1, denominator: 4 });
+    expect(s.certifiedRuns).toBe(0);
+  },
+);
+
+bunTest(
+  'a run is certified only with every item accepted, verify done and the origin unchanged',
+  () => {
+    const items = [
+      run('entity:A', [['finished', true]]),
+      run('entity:B', [
+        ['finished', false],
+        ['finished', true],
+      ]),
+    ];
+    expect(summarizeBundleRun(runOf(items)).certifiedRuns).toBe(1);
+    const failed = runOf(items, {
+      finalVerification: {
+        ...runOf(items).finalVerification,
+        status: 'failed',
+      },
     });
-    expect(summarizeBundleRun(items, 'failed').certifiedRuns).toBe(0);
+    expect(summarizeBundleRun(failed).certifiedRuns).toBe(0);
+    const moved = runOf(items, { originAfter: 'd'.repeat(64) });
+    expect(summarizeBundleRun(moved).certifiedRuns).toBe(0);
+    const unaccepted = runOf([
+      ...items,
+      run('entity:C', [['finished', false]]),
+    ]);
+    expect(summarizeBundleRun(unaccepted).certifiedRuns).toBe(0);
+  },
+);
+
+bunTest(
+  'the record has no item state of its own: acceptance comes from the attempts',
+  () => {
+    const item = run('entity:A', [['finished', false]]);
+    expect(
+      bundleRunSchema.safeParse(
+        runOf([{ ...item, state: 'accepted' } as never]),
+      ).success,
+    ).toBe(false);
+    expect(
+      bundleRunSchema.safeParse(runOf([item], { plannedItems: 0 })).success,
+    ).toBe(false);
+    expect(
+      bundleRunSchema.safeParse(runOf([item, item], { plannedItems: 1 }))
+        .success,
+    ).toBe(false);
   },
 );
 
@@ -121,7 +199,7 @@ bunTest(
   },
 );
 
-// shortcut: measured 15 to 33 s on the native filesystem of WSL2 (compile, apply, 4 scripted runs, 9
+// shortcut: measured 22 to 46 s on the native filesystem of WSL2 (compile, apply, 4 scripted runs, 9
 // verifies); 120 s is a margin for CI, and a checkout on a Windows mount took minutes. Bun 1.4.4 ignores
 // `[test] timeout` in bunfig.toml, so the 5 s default is overridden here.
 bunTest.skipIf(!sandboxed)(
@@ -166,12 +244,13 @@ export default defineConfig({ mirrors: [], modules: [{ name: 'shop', path: 'src/
       );
 
       // The executors work on a copy of the applied project, as the harness gives them.
+      const originBefore = await fingerprintOrigin(target);
       const workspace = await createAttemptWorkspace(
         {
           originRoot: target,
           commit: fx.ref,
           runnerCommit: fx.ref,
-          fingerprint: fx.bundle.manifest.hash,
+          fingerprint: originBefore,
           root: sandboxRoot,
           snapshotRoot: target,
           frameworkRoot: ROOT,
@@ -195,6 +274,7 @@ export default defineConfig({ mirrors: [], modules: [{ name: 'shop', path: 'src/
         { argv: [process.execPath, '-e', probe] },
         ...order.map(() => ({
           finalText: '{"status":"done","summary":"scripted"}',
+          // The solution is fixed per item; the prompt is the packet and is not what drives the edit.
           before: async (r: { cwd: string; id: string }) =>
             implementShopItem(r.cwd, r.id),
         })),
@@ -260,7 +340,6 @@ export default defineConfig({ mirrors: [], modules: [{ name: 'shop', path: 'src/
         items.push({
           item: id,
           specHash,
-          state: accepted ? 'accepted' : 'failed',
           attempts: [
             { number: 1, transport: result.transport as 'finished', accepted },
           ],
@@ -280,19 +359,21 @@ export default defineConfig({ mirrors: [], modules: [{ name: 'shop', path: 'src/
         repetition: 1,
         bundleHash: fx.bundle.manifest.hash,
         baseRef: fx.ref,
+        plannedItems: order.length,
+        originBefore,
+        originAfter: await fingerprintOrigin(target),
         items,
         finalVerification,
       });
       expect(record.items.map((i) => i.item)).toEqual(order);
-      expect(
-        summarizeBundleRun(record.items, record.finalVerification.status),
-      ).toEqual({
-        initial: { numerator: 4, denominator: 4 },
-        final: { numerator: 4, denominator: 4 },
-        corrections: 0,
-        certifiedRuns: 1,
-        timeouts: 0,
-      });
+      const summary = summarizeBundleRun(record);
+      expect(summary.initial).toMatchObject({ numerator: 4, denominator: 4 });
+      expect(summary.final).toMatchObject({ numerator: 4, denominator: 4 });
+      expect([
+        summary.corrections,
+        summary.certifiedRuns,
+        summary.timeouts,
+      ]).toEqual([0, 1, 0]);
       expect(JSON.stringify(record)).not.toContain('sentinel');
     } finally {
       for (const k of Object.keys(SECRETS)) delete process.env[k];
