@@ -9,7 +9,7 @@ import {
 } from 'bun:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { EMPTY_IR } from '../../compiler/diff';
 import {
   createPublishedLock,
@@ -85,6 +85,32 @@ describe('mcpCommand', () => {
       Promise.reject(new Error('boom')),
     ).catch((e: Error) => e);
     expect((failure as Error).message).toBe('boom');
+  });
+
+  test.each([
+    [
+      'the given --config, resolved',
+      ['--config', 'sub/a.config.ts'],
+      'sub/a.config.ts',
+    ],
+    ['agentic.config.ts under --root by default', [], 'agentic.config.ts'],
+  ])('stdio hands the server %s', async (_, extra, file) => {
+    const starts: unknown[] = [];
+    const stop = setTimeout(() => process.stdin.emit('end'), 0);
+    const code = await mcpCommand(['--root', dir, ...extra], () =>
+      Promise.resolve({
+        startMcpServer: (options: unknown) => {
+          starts.push(options);
+          return { close: () => {} };
+        },
+        startMcpHttpServer: () => Promise.reject(new Error('unused')),
+      }),
+    );
+    clearTimeout(stop);
+    expect(code).toBe(0);
+    expect(starts[0]).toMatchObject({
+      config: file === 'agentic.config.ts' ? join(dir, file) : resolve(file),
+    });
   });
 
   test('--http starts on 127.0.0.1:3333 with the config mcp section', async () => {
