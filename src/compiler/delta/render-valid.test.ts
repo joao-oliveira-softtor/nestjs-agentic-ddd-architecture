@@ -236,6 +236,32 @@ const rejects: Reject[] = [
     path: 'ports[0].root',
   },
   {
+    title: 'a file that already exists in the module, spelled with a double slash',
+    mutate: () => {},
+    existing: ['domain//product.ts'],
+    code: 'delta.path-collision',
+    path: 'entities[0]',
+  },
+  {
+    title: 'a file that already exists in the module, spelled with dot segments',
+    mutate: () => {},
+    existing: ['domain/./product.ts', 'x/../domain/money.ts'],
+    code: 'delta.path-collision',
+    path: 'entities[0]',
+  },
+  {
+    title: 'an event named like the props interface the renderer adds to a value object',
+    mutate: (d) => (d.events[0]!.name = 'MoneyProps'),
+    code: 'delta.name-collision',
+    path: 'events[0].name',
+  },
+  {
+    title: 'an event named like the input type the renderer adds to a use case',
+    mutate: (d) => (d.events[0]!.name = 'PublishProductInput'),
+    code: 'delta.name-collision',
+    path: 'useCases[0].name',
+  },
+  {
     title: 'a file that already exists in the module, in another case',
     mutate: () => {},
     existing: ['Domain/PRODUCT.ts'],
@@ -293,6 +319,18 @@ const valid: [string, (d: Delta) => void][] = [
       d.events = [];
       d.useCases = [];
       d.ports = [];
+    },
+  ],
+  [
+    'keyword-like method and field names, and port methods named like AggregateRoot members',
+    (d) => {
+      d.entities[0]!.methods[1]!.name = 'delete';
+      d.useCases[0]!.uses = ['method:Product.delete'];
+      d.valueObjects[0]!.fields.push({ name: 'default', type: 'string' });
+      d.events[0]!.payload.push({ name: 'type', type: 'string' });
+      d.useCases[0]!.input.push({ name: 'from', type: 'string' });
+      d.ports[0]!.methods[0]!.name = 'record';
+      d.ports[0]!.methods[1]!.name = 'equals';
     },
   ],
   [

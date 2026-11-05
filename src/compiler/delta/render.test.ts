@@ -167,10 +167,16 @@ describe('renderDelta output', () => {
     d.entities.forEach((e) => {
       e.methods.reverse();
       e.invariants.reverse();
-      e.states?.reverse();
     });
     d.valueObjects.forEach((v) => v.fields.reverse());
     expect(JSON.stringify(render(d))).toBe(a);
+  });
+
+  test('states keep the declared lifecycle order', () => {
+    const d = sampleDelta();
+    d.entities[0]!.states = ['published', 'draft'];
+    const product = render(d).find((f) => f.path === 'domain/product.ts')!;
+    expect(product.content).toContain("states: ['published', 'draft']");
   });
 
   test('optional markers and void render as TypeScript and zod', () => {
@@ -405,6 +411,30 @@ describe('additions to existing items', () => {
       }
     },
   );
+
+  test('appends new events to the file where the base says the entity events live', () => {
+    const ir = baseIR();
+    const base = {
+      ...ir,
+      events: ir.events.map((ev) => ({ ...ev, source: 'src/shop/domain/order-events.ts:3' })),
+    };
+    const r = renderDelta(additionDelta(), {
+      conventions,
+      base,
+      existingFiles: ['domain/order.ts', 'domain/order-events.ts', 'application/pay-order.ts'],
+    });
+    if (!r.ok) throw new Error(JSON.stringify(r.errors));
+    expect(r.files).toEqual([]);
+    const paths = r.fragments.map((f) => f.path);
+    expect(paths).toContain('domain/order-events.ts');
+    expect(paths).not.toContain('domain/order.events.ts');
+    const useCase = r.fragments.find((f) => f.path === 'application/pay-order.ts');
+    expect(useCase?.imports).toContainEqual({
+      spec: '../domain/order-events',
+      name: 'OrderRefunded',
+      typeOnly: false,
+    });
+  });
 
   test('refuses to redeclare an existing member or to touch an unknown entity', () => {
     const d = additionDelta();
