@@ -152,6 +152,31 @@ function routesToMount<
   return mounted;
 }
 
+/** The `@AgentUseCase` record of an instance, which must be keyed by that record's name. */
+function mountedUseCase(
+  runtime: OperatorRuntime,
+  name: string,
+  instance: UseCase<unknown, unknown>,
+) {
+  let record: ReturnType<OperatorRuntime['useCase']>;
+  // Like Nest's useClass, an instance of a subclass of the declared class is accepted.
+  for (
+    let cls: unknown = instance.constructor;
+    !record && typeof cls === 'function';
+    cls = Object.getPrototypeOf(cls)
+  )
+    record = runtime.useCase(cls as ClassRef);
+  if (!record)
+    throw new Error(
+      `Use-case ${name} is not an @AgentUseCase of the configured modules`,
+    );
+  if (record.name !== name)
+    throw new Error(
+      `Use-case key ${name} must match its @AgentUseCase name ${record.name}`,
+    );
+  return { record, instance };
+}
+
 /**
  * Mounts the same decorated domain as `AgenticModule`: registers the operators
  * and decorates the app with the runtime as `agentic`. Operators get no HTTP
@@ -175,25 +200,9 @@ export function agentic<const U extends UseCases>(
 ): Promise<Base>;
 export async function agentic(options: AgenticOptions): Promise<Base> {
   const runtime = createRuntime(options);
-  const mounted = Object.entries(options.useCases).map(([name, instance]) => {
-    let record: ReturnType<OperatorRuntime['useCase']>;
-    // Like Nest's useClass, an instance of a subclass of the declared class is accepted.
-    for (
-      let cls: unknown = instance.constructor;
-      !record && typeof cls === 'function';
-      cls = Object.getPrototypeOf(cls)
-    )
-      record = runtime.useCase(cls as ClassRef);
-    if (!record)
-      throw new Error(
-        `Use-case ${name} is not an @AgentUseCase of the configured modules`,
-      );
-    if (record.name !== name)
-      throw new Error(
-        `Use-case key ${name} must match its @AgentUseCase name ${record.name}`,
-      );
-    return { record, instance: instance as UseCase<unknown, unknown> };
-  });
+  const mounted = Object.entries(options.useCases).map(([name, instance]) =>
+    mountedUseCase(runtime, name, instance),
+  );
   const routes = options.http ? routesToMount(options, mounted) : [];
   const instances = new Map(
     mounted.map(({ record, instance }) => [record.target, instance]),

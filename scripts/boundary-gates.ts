@@ -232,6 +232,7 @@ const FRAMEWORK_RUNTIME = new Set([
   '@agentic-ddd/elysia',
   'elysia',
 ]);
+const FRAMEWORK_PREFIX = /^(?:@nestjs\/|elysia\/|@elysiajs\/)/;
 /** Pastas que a camada não pode importar, a partir das convenções. */
 export function outerFolders(
   conventions: ResolvedConventions,
@@ -286,9 +287,7 @@ export function importDirectionFindings(
       const outers = outerFolders(conventions, layer);
       for (const specifier of specifiers) {
         if (
-          specifier.startsWith('@nestjs/') ||
-          specifier.startsWith('elysia/') ||
-          specifier.startsWith('@elysiajs/') ||
+          FRAMEWORK_PREFIX.test(specifier) ||
           FRAMEWORK_RUNTIME.has(specifier)
         ) {
           findings.push(
