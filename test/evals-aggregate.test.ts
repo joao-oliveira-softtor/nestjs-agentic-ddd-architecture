@@ -471,6 +471,19 @@ test('item completion and certification derive from executed gates and both test
     certifiedRuns: 1,
   });
   await mutate(f, (report) => {
+    report.provenance.originAfter = available('moved', 'fixture');
+  });
+  expect((await aggregateCampaign(f.path)).configurations[0]).toMatchObject({
+    finalItems: 5,
+    certifiedRuns: 0,
+  });
+  await mutate(f, (report) => {
+    report.provenance.originAfter = available(
+      report.provenance.originBefore,
+      'fixture',
+    );
+  });
+  await mutate(f, (report) => {
     const v = report.benchmarks[0]!.items[0]!.attempts[0]!.verification!;
     v.referenceTests = { ...v.referenceTests!, exitCode: 1 };
   });
