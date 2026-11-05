@@ -154,15 +154,24 @@ const takenNames = (
 const declaresName = (node: ts.Statement, name: string): boolean =>
   declaredNames(node).includes(name);
 
+type NamedDeclaration =
+  | ts.ClassDeclaration
+  | ts.FunctionDeclaration
+  | ts.InterfaceDeclaration
+  | ts.TypeAliasDeclaration
+  | ts.EnumDeclaration;
+
+const isNamedDeclaration = (node: ts.Statement): node is NamedDeclaration =>
+  [
+    ts.isClassDeclaration,
+    ts.isFunctionDeclaration,
+    ts.isInterfaceDeclaration,
+    ts.isTypeAliasDeclaration,
+    ts.isEnumDeclaration,
+  ].some((is) => is(node));
+
 function declaredNames(node: ts.Statement): string[] {
-  if (
-    ts.isClassDeclaration(node) ||
-    ts.isFunctionDeclaration(node) ||
-    ts.isInterfaceDeclaration(node) ||
-    ts.isTypeAliasDeclaration(node) ||
-    ts.isEnumDeclaration(node)
-  )
-    return node.name ? [node.name.text] : [];
+  if (isNamedDeclaration(node)) return node.name ? [node.name.text] : [];
   if (ts.isVariableStatement(node))
     return node.declarationList.declarations.flatMap((d) =>
       bindingNames(d.name),
