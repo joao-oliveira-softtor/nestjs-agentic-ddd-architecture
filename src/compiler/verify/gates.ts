@@ -99,7 +99,7 @@ const gate = (
 const failingTestsSuffix = (failing: TestCaseResult[]): string => {
   const named = failing
     .slice(0, MAX_FAILING_NAMED)
-    .map((c) => `${c.file}:${c.line} ${c.name.replace(/\s+/g, ' ')}`);
+    .map((c) => `${at(c)} ${c.name.replace(/\s+/g, ' ').trim()}`);
   const more = failing.length - named.length;
   return named.length
     ? `; failing: ${named.join('; ')}${more > 0 ? `; and ${more} more` : ''}`

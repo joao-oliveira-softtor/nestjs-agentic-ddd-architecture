@@ -2,6 +2,7 @@ import { afterEach, beforeAll, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { CLI_TEST_TIMEOUT_MS } from './helpers/timeouts';
 import {
   CORE_RULES,
   approxTokens,
@@ -37,18 +38,20 @@ async function fetchPacket(item: string): Promise<string> {
   if (code !== 0) throw new Error(`packet ${item} exited ${code}: ${stderr}`);
   return text;
 }
+const PREFETCHED_ITEMS = [
+  'entity:Order',
+  'method:Order.cancel',
+  'usecase:create_order',
+  'operator:order-operator',
+] as const;
 // Prefetch in parallel so no test pays for the spawns.
 beforeAll(async () => {
   await Promise.all(
-    [
-      'entity:Order',
-      'method:Order.cancel',
-      'usecase:create_order',
-      'operator:order-operator',
-    ].map(async (item) => packets.set(item, await fetchPacket(item))),
+    PREFETCHED_ITEMS.map(async (item) =>
+      packets.set(item, await fetchPacket(item)),
+    ),
   );
-  // shortcut: 30 s covers four parallel CLI spawns on a loaded machine; raise only if measured slower.
-}, 30_000);
+}, CLI_TEST_TIMEOUT_MS);
 function packet(item: string): string {
   const text = packets.get(item);
   if (text === undefined) throw new Error(`packet ${item} was not prefetched`);
@@ -138,12 +141,7 @@ test('conteúdo fora do packet fica em seção própria com hash próprio', () =
 test('orçamento de tokens: núcleos curtos e brief acima do limite falha', () => {
   for (const core of Object.values(ROLE_CORES))
     expect(approxTokens(core)).toBeLessThan(600);
-  for (const item of [
-    'entity:Order',
-    'method:Order.cancel',
-    'usecase:create_order',
-    'operator:order-operator',
-  ])
+  for (const item of PREFETCHED_ITEMS)
     expect(approxTokens(renderBrief({ packet: packet(item) }))).toBeLessThan(
       6000,
     );

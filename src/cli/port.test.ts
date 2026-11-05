@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { MOTIVO_PLACEHOLDER } from '@agentic-ddd/compiler';
+import { CLI_TEST_TIMEOUT_MS } from '../../test/helpers/timeouts';
 
 const ROOT = resolve(import.meta.dir, '../..');
 
@@ -115,4 +116,4 @@ test('port: appears in the packet, changing the description requires a proposal 
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-}, 30_000); // shortcut: ~8 serial CLI spawns (3.5 s alone); 30 s absorbs machine load
+}, CLI_TEST_TIMEOUT_MS);

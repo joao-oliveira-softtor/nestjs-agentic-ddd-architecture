@@ -115,6 +115,11 @@ const statusOf = (report: ReturnType<typeof evaluateGates>) =>
   Object.fromEntries(report.gates.map((g) => [g.id, g.status]));
 
 describe('evaluateGates', () => {
+  const suiteFailedMessage = (cases: TestCaseResult[]): string =>
+    evaluateGates(input({ tests: { exitCode: 1, cases } }))
+      .gates.find((g) => g.id === 'G5')!
+      .findings.find((f) => f.code === 'verify.suite-failed')!.message;
+
   test('everything covered and no manual criterion → done', () => {
     const report = evaluateGates(
       input({ proposal: automaticOnly, lock: lock(automaticOnly.raw) }),
@@ -309,28 +314,17 @@ describe('evaluateGates', () => {
     const failing = [10, 20, 30, 40, 50].map((line) =>
       testCase([], 'failed', line),
     );
-    const finding = evaluateGates(
-      input({ tests: { exitCode: 1, cases: [...goodTests, ...failing] } }),
-    )
-      .gates.find((g) => g.id === 'G5')!
-      .findings.find((f) => f.code === 'verify.suite-failed')!;
-    expect(finding.message).toContain(
-      'the test suite exited with 1; failing: ',
-    );
+    const text = suiteFailedMessage([...goodTests, ...failing]);
+    expect(text).toContain('the test suite exited with 1; failing: ');
     for (const t of failing.slice(0, 3))
-      expect(finding.message).toContain(`${t.file}:${t.line} ${t.name}`);
-    expect(finding.message).not.toContain(`${failing[3]!.file}:40`);
-    expect(finding.message).toContain('and 2 more');
+      expect(text).toContain(`${t.file}:${t.line} ${t.name}`);
+    expect(text).not.toContain(`${failing[3]!.file}:40`);
+    expect(text).toContain('and 2 more');
   });
 
   test('G5: exactly three failing tests are all named, with no "more" suffix', () => {
     const failing = [10, 20, 30].map((line) => testCase([], 'failed', line));
-    const finding = evaluateGates(
-      input({ tests: { exitCode: 1, cases: [...goodTests, ...failing] } }),
-    )
-      .gates.find((g) => g.id === 'G5')!
-      .findings.find((f) => f.code === 'verify.suite-failed')!;
-    expect(finding.message).toBe(
+    expect(suiteFailedMessage([...goodTests, ...failing])).toBe(
       `the test suite exited with 1; failing: ${failing
         .map((t) => `${t.file}:${t.line} ${t.name}`)
         .join('; ')}`,
@@ -339,12 +333,7 @@ describe('evaluateGates', () => {
 
   test('G5: exactly four failing tests name three and end with "and 1 more"', () => {
     const failing = [10, 20, 30, 40].map((line) => testCase([], 'failed', line));
-    const finding = evaluateGates(
-      input({ tests: { exitCode: 1, cases: [...goodTests, ...failing] } }),
-    )
-      .gates.find((g) => g.id === 'G5')!
-      .findings.find((f) => f.code === 'verify.suite-failed')!;
-    expect(finding.message).toBe(
+    expect(suiteFailedMessage([...goodTests, ...failing])).toBe(
       `the test suite exited with 1; failing: ${failing
         .slice(0, 3)
         .map((t) => `${t.file}:${t.line} ${t.name}`)
@@ -356,13 +345,11 @@ describe('evaluateGates', () => {
     const failing = [50, 10, 40, 20, 30].map((line) =>
       testCase([], 'failed', line),
     );
-    const message = (cases: TestCaseResult[]) =>
-      evaluateGates(input({ tests: { exitCode: 1, cases } }))
-        .gates.find((g) => g.id === 'G5')!
-        .findings.find((f) => f.code === 'verify.suite-failed')!.message;
-    expect(message(failing)).toBe(message([...failing].reverse()));
-    expect(message(failing)).toContain(':10 ');
-    expect(message(failing)).not.toContain(':50 ');
+    expect(suiteFailedMessage(failing)).toBe(
+      suiteFailedMessage([...failing].reverse()),
+    );
+    expect(suiteFailedMessage(failing)).toContain(':10 ');
+    expect(suiteFailedMessage(failing)).not.toContain(':50 ');
   });
 
   test('G5: a multi-line test title stays on one line of the message', () => {
@@ -370,13 +357,19 @@ describe('evaluateGates', () => {
       ...testCase([], 'failed', 5),
       name: 'first line\n  second\tline',
     };
-    const message = evaluateGates(
-      input({ tests: { exitCode: 1, cases: [multiline] } }),
-    )
-      .gates.find((g) => g.id === 'G5')!
-      .findings.find((f) => f.code === 'verify.suite-failed')!.message;
-    expect(message).toContain(`${multiline.file}:5 first line second line`);
-    expect(message).not.toMatch(/\n/);
+    const text = suiteFailedMessage([multiline]);
+    expect(text).toContain(`${multiline.file}:5 first line second line`);
+    expect(text).not.toMatch(/\n/);
+  });
+
+  test('G5: surrounding whitespace of a test title is dropped from the named failure', () => {
+    const padded = {
+      ...testCase([], 'failed', 5),
+      name: '\n  rejects cancel\n',
+    };
+    expect(suiteFailedMessage([padded])).toBe(
+      `the test suite exited with 1; failing: ${padded.file}:5 rejects cancel`,
+    );
   });
 
   test('G4: findings of tests with unknown covers come out in stable order (file, line, name)', () => {
