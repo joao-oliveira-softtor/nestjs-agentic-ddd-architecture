@@ -98,3 +98,18 @@ test('main reports a bad option with exit code 2 before touching docker', async 
     error.mockRestore();
   }
 });
+
+test('dockerRunArgv falls back to the defaults for empty resource variables', () => {
+  const argv = dockerRunArgv('img:1', '/repo', 'echo', {
+    CI_DOCKER_CPUS: '',
+    CI_DOCKER_MEMORY: '',
+  });
+  expect(
+    argv.slice(argv.indexOf('--cpus'), argv.indexOf('--cpus') + 4),
+  ).toEqual(['--cpus', '4', '--memory', '8g']);
+});
+
+test('parseArgs keeps a one-word command and containerScript does not swap an empty one for the gate', () => {
+  expect(parseArgs(['--', 'bash']).command).toBe('bash');
+  expect(containerScript('')).not.toContain(gateScript());
+});
