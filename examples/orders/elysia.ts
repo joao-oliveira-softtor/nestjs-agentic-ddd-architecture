@@ -27,7 +27,8 @@ export async function createOrdersApp(options: OrdersAppOptions) {
         confirm_order: new ConfirmOrder(orders),
         cancel_order: new CancelOrder(orders),
       },
-      http: {},
+      // cancel_order needs the operator's approval, so it gets no route unless listed here.
+      http: { routes: ['create_order', 'confirm_order'] },
     }),
   );
   return { app, orders };

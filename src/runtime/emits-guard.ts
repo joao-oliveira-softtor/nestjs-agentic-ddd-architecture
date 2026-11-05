@@ -16,6 +16,9 @@ export function guardEmits(
 ): EmitsGuard {
   let active = true;
   let undeclared = false;
+  const assertActive = () => {
+    if (!active) throw new Error('Use-case execution already ended');
+  };
   return {
     get undeclared() {
       return undeclared;
@@ -25,7 +28,7 @@ export function guardEmits(
     },
     async publish(batch) {
       check();
-      if (!active) throw new Error('Use-case execution already ended');
+      assertActive();
       // By name, like the IR and skills: identity breaks when a module is loaded twice.
       const refused = batch.find(
         (event) => !record.emits.some((cls) => cls.name === event.name),
@@ -38,6 +41,8 @@ export function guardEmits(
       }
       for (const event of batch) {
         check();
+        // An un-awaited batch must not keep delivering after the execution ended.
+        assertActive();
         // Earlier, or concurrently while this batch awaited the bus.
         if (undeclared)
           throw new Error(

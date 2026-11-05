@@ -7,7 +7,15 @@ import {
 } from '@agentic-ddd/core';
 import type { UseCaseRecord } from '@agentic-ddd/decorators';
 import { InMemoryEventBus } from './event-bus';
+import type { EventBus } from './ports';
 import { executeUseCase } from './execute-use-case';
+
+// `await expect(...).rejects` trips the await-thenable lint, so settle to the message instead.
+const rejection = (promise: Promise<unknown>) =>
+  promise.then(
+    () => 'resolved',
+    (error: Error) => error.message,
+  );
 
 class Rang extends DomainEvent<object> {}
 class Other extends DomainEvent<object> {}
@@ -25,13 +33,14 @@ const recordFor = (target: UseCaseRecord['target']): UseCaseRecord => ({
   source: { file: 'x.ts', line: 1 },
 });
 
-test('publishes declared events stamped with one id per call and validates the output', async () => {
-  class Ring implements UseCase<{ times: number }, { ok: true }> {
-    async execute(_: { times: number }, ctx: UseCaseContext) {
-      await ctx.publish([new Rang({})]);
-      return { ok: true as const };
-    }
+class Ring implements UseCase<{ times: number }, { ok: true }> {
+  async execute(_: { times: number }, ctx: UseCaseContext) {
+    await ctx.publish([new Rang({})]);
+    return { ok: true as const };
   }
+}
+
+test('publishes declared events stamped with one id per call and validates the output', async () => {
   const bus = new InMemoryEventBus();
   expect(
     await executeUseCase(recordFor(Ring), new Ring(), { times: 1 }, bus),
@@ -42,12 +51,6 @@ test('publishes declared events stamped with one id per call and validates the o
 });
 
 test('each call gets a fresh UUID, with correlationId equal to causationId', async () => {
-  class Ring implements UseCase<{ times: number }, { ok: true }> {
-    async execute(_: { times: number }, ctx: UseCaseContext) {
-      await ctx.publish([new Rang({})]);
-      return { ok: true as const };
-    }
-  }
   const bus = new InMemoryEventBus();
   for (let i = 0; i < 2; i++)
     await executeUseCase(recordFor(Ring), new Ring(), { times: 1 }, bus);
@@ -63,14 +66,15 @@ test('an output outside its schema rejects the execution', async () => {
       return { ok: false };
     }
   }
-  expect(
+  const outcome = await rejection(
     executeUseCase(
       recordFor(Wrong),
       new Wrong(),
       { times: 1 },
       new InMemoryEventBus(),
     ),
-  ).rejects.toThrow();
+  );
+  expect(outcome).not.toBe('resolved');
 });
 
 test('an event outside emits fails the execution even if the use-case swallows the error', async () => {
@@ -82,7 +86,35 @@ test('an event outside emits fails the execution even if the use-case swallows t
   }
   const bus = new InMemoryEventBus();
   expect(
-    executeUseCase(recordFor(Sneaky), new Sneaky(), { times: 1 }, bus),
-  ).rejects.toThrow('Use-case ring published an undeclared event');
+    await rejection(
+      executeUseCase(recordFor(Sneaky), new Sneaky(), { times: 1 }, bus),
+    ),
+  ).toBe('Use-case ring published an undeclared event');
   expect(bus.events).toEqual([]);
+});
+
+test('an un-awaited batch stops delivering once the execution ended', async () => {
+  const delivered: string[] = [];
+  const slowBus: EventBus = {
+    publish: async (events) => {
+      await Bun.sleep(5);
+      delivered.push(...events.map((event) => event.name));
+    },
+    subscribe: () => () => {},
+  };
+  let batch!: Promise<void>;
+  class Forgetful implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      batch = ctx.publish([new Rang({}), new Rang({})]);
+      return { ok: true as const };
+    }
+  }
+  await executeUseCase(
+    recordFor(Forgetful),
+    new Forgetful(),
+    { times: 1 },
+    slowBus,
+  );
+  expect(await rejection(batch)).toBe('Use-case execution already ended');
+  expect(delivered).toEqual(['Rang']);
 });
