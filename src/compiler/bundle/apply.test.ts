@@ -5,6 +5,7 @@ import {
   readFile,
   readdir,
   rm,
+  stat,
   symlink,
   writeFile,
 } from 'node:fs/promises';
@@ -67,6 +68,11 @@ const refused = async (
   expect(await snapshot(t)).toEqual(before);
   return result;
 };
+const exists = (path: string) =>
+  stat(path).then(
+    () => true,
+    () => false,
+  );
 const noTemp = async (t: string) =>
   expect(await readdir(join(t, '.tmp')).catch(() => [])).toEqual([]);
 
@@ -122,6 +128,7 @@ describe('applyBundle', () => {
     const before = await snapshot(t);
     expect((await failure(apply(t))).code).toBe('apply.base-mismatch');
     expect(await snapshot(t)).toEqual(before);
+    expect(await exists(join(t, '.tmp'))).toBe(false);
   }, 60_000);
 
   test('refuses a locally modified target file with apply.base-mismatch, naming it', async () => {
@@ -181,6 +188,32 @@ describe('applyBundle', () => {
     }
     expect(await snapshot(t)).toEqual(before);
     await noTemp(t);
+  }, 60_000);
+
+  test('keeps the stage with the backups and names it when the rollback itself fails', async () => {
+    const t = await fresh();
+    const script = join(t, '.tmp-fail-cli.ts');
+    await writeFile(
+      script,
+      [
+        "import { readdirSync, rmSync } from 'node:fs';",
+        "for (const d of readdirSync('.tmp')) if (d.startsWith('apply-')) rmSync(`.tmp/${d}/backup`, { recursive: true, force: true });",
+        'process.exit(1);',
+        '',
+      ].join('\n'),
+    );
+    let result;
+    try {
+      result = await failure(apply(t, { cliEntry: script }));
+    } finally {
+      await rm(script);
+    }
+    expect(result.code).toBe('apply.rollback-failed');
+    const stages = (await readdir(join(t, '.tmp'))).filter((d) =>
+      d.startsWith('apply-'),
+    );
+    expect(stages).toHaveLength(1);
+    expect(result.message).toContain(stages[0]!);
   }, 60_000);
 
   test('writes the skeleton, the proposal and examples.json, then compiles; no bundle-only files', async () => {
@@ -305,7 +338,11 @@ describe('applyBundle confirmation', () => {
     expect(message).toContain(
       'Integrity check only: the hash proves the bundle is unchanged, not who made it. Compare the hash with the sender before passing --yes.',
     );
+    expect(message).toContain(
+      "Applying runs the bundle's code (compile imports its modules) with your privileges: apply only bundles you trust.",
+    );
     await noTemp(t);
+    expect(await exists(join(t, '.tmp'))).toBe(false);
   }, 60_000);
 });
 

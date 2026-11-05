@@ -145,4 +145,15 @@ describe('run', () => {
     expect(result.timedOut).toBe(false);
     expect(Date.now() - started).toBeLessThan(30_000);
   });
+
+  test('a signal that is already aborted stops the child before it can do anything', async () => {
+    const started = Date.now();
+    const result = await run(
+      [process.execPath, '-e', 'setTimeout(() => {}, 60000)'],
+      tmpdir(),
+      { signal: AbortSignal.abort() },
+    );
+    expect(result.code).not.toBe(0);
+    expect(Date.now() - started).toBeLessThan(30_000);
+  });
 });

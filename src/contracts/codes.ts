@@ -19,6 +19,8 @@ export const ERROR_CODES = {
   'apply.path-escape': 'A bundle path resolves outside the project.',
   'apply.path-forbidden':
     'A bundle path is outside the module paths and the change directory, or inside .git, .github, node_modules or .tmp.',
+  'apply.rollback-failed':
+    'The rollback could not restore every file; the originals are kept in the .tmp stage folder named in the message.',
   'apply.write-failed':
     'A file of the bundle could not be written; every write was rolled back.',
 

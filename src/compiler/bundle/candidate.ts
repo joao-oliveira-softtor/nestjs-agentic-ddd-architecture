@@ -22,6 +22,9 @@ export async function run(
     signal?: AbortSignal;
   } = {},
 ): Promise<Run> {
+  // Already aborted: the caller wants nothing to run, so nothing is spawned.
+  if (options.signal?.aborted)
+    return { code: null, stdout: '', stderr: '', timedOut: false };
   const child = Bun.spawn([...cmd], {
     cwd,
     env: options.env,
