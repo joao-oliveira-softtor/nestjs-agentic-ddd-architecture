@@ -67,6 +67,22 @@ test('containerScript sets up the snapshot, then runs the command or the gate', 
   expect(containerScript(undefined)).toContain(gateScript());
 });
 
+test('the install log is printed only when the install fails', () => {
+  const install = containerScript('true')
+    .split(' && ')
+    .find((s) => s.includes('bun install'))!;
+  const run = (bun: string) =>
+    Bun.spawnSync(['bash', '-c', `bun() { ${bun}; }\n${install}`]);
+  const ok = run('echo noisy-package-list');
+  expect(ok.exitCode).toBe(0);
+  expect(ok.stdout.toString() + ok.stderr.toString()).not.toContain(
+    'noisy-package-list',
+  );
+  const failed = run('echo lockfile-mismatch; return 1');
+  expect(failed.exitCode).toBe(1);
+  expect(failed.stderr.toString()).toContain('lockfile-mismatch');
+});
+
 test('dockerRunArgv applies the resource defaults and the env overrides', () => {
   const defaults = dockerRunArgv('img:1', '/repo', 'echo', {});
   expect(

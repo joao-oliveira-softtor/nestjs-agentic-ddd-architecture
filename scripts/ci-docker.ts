@@ -67,7 +67,8 @@ export function containerScript(command: string | undefined): string {
     'git init -q',
     'git add -A',
     'git commit -qm snapshot',
-    'bun install --frozen-lockfile',
+    // The package list is noise on every run; it is shown only when the install fails.
+    '{ bun install --frozen-lockfile > /tmp/bun-install.log 2>&1 || { cat /tmp/bun-install.log >&2; exit 1; }; }',
   ].join(' && ');
   return `${setup} && {\n${command ?? gateScript()}\n}`;
 }
