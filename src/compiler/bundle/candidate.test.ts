@@ -1,6 +1,13 @@
 import { afterAll, describe, expect, test } from 'bun:test';
 import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readdir,
+  rm,
+  utimes,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { git } from '../../../test/helpers/shop-repo';
@@ -176,8 +183,11 @@ describe('minimalEnv', () => {
       const env = minimalEnv();
       expect(env.BUN_INSTALL).toBe('/bun');
       expect(Object.keys(env)).not.toContain('AGENTIC_TEST_SECRET');
-      expect(Object.keys(env).some((k) => k.toUpperCase() === 'PATH')).toBe(true);
-      for (const [key, value] of Object.entries(env)) expect(value).toBe(process.env[key]!);
+      expect(Object.keys(env).some((k) => k.toUpperCase() === 'PATH')).toBe(
+        true,
+      );
+      for (const [key, value] of Object.entries(env))
+        expect(value).toBe(process.env[key]!);
     } finally {
       delete process.env.AGENTIC_TEST_SECRET;
       delete process.env.BUN_INSTALL;
@@ -218,6 +228,7 @@ describe('run', () => {
       { signal: AbortSignal.abort() },
     );
     expect(result.code).not.toBe(0);
+    expect(result.timedOut).toBe(false);
     expect(Date.now() - started).toBeLessThan(30_000);
   });
 });
