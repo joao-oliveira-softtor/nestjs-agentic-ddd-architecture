@@ -4,7 +4,16 @@ import { mkdir, mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { git } from '../../../test/helpers/shop-repo';
-import { minimalEnv, pruneStale, quote, resolveBase, run, runCandidateCli, withWorktree } from './candidate';
+import {
+  minimalEnv,
+  pruneStale,
+  quote,
+  redact,
+  resolveBase,
+  run,
+  runCandidateCli,
+  withWorktree,
+} from './candidate';
 
 const dirs: string[] = [];
 afterAll(async () => {
@@ -37,6 +46,25 @@ describe('quote', () => {
 
   test('escapes control characters', () => {
     expect(quote('x\n\u001b')).toBe('"x\\n\\u001b"');
+  });
+});
+
+describe('redact', () => {
+  test('hides a path in both slash forms, whatever its case', () => {
+    const text = String.raw`at C:\Srv\app\x and c:/srv/APP/y and /srv/app/z`;
+    expect(redact(text, [['C:/Srv/app', '<base>']])).toBe(
+      String.raw`at <base>\x and <base>/y and /srv/app/z`,
+    );
+    expect(redact('/srv/app/z', [['/srv/app', '<base>']])).toBe('<base>/z');
+  });
+
+  test('replaces the longer path first, so a nested one is not left half hidden', () => {
+    expect(
+      redact('/srv/app/.tmp/bundle-1/f', [
+        ['/srv/app/.tmp/bundle-1', '<candidate>'],
+        ['/srv/app', '<base>'],
+      ]),
+    ).toBe('<candidate>/f');
   });
 });
 
@@ -83,7 +111,43 @@ describe('withWorktree', () => {
   });
 });
 
+describe('withWorktree after a timeout', () => {
+  test('rejects with the timeout, not with a cleanup error, and removes the directory', async () => {
+    const { root, work, sha } = await repo();
+    const script = join(root, 'hang.ts');
+    await writeFile(script, 'await Bun.sleep(60_000);\n');
+    let seen = '';
+    const error = await withWorktree(root, work, sha, 1000, async (dir) => {
+      seen = dir;
+      return runCandidateCli(dir, script, [], 500, 'probe');
+    }).catch((e: Error) => e);
+    expect(error).toMatchObject({ code: 'bundle.compile-timeout' });
+    expect(existsSync(seen)).toBe(false);
+  }, 30_000);
+});
+
 describe('runCandidateCli', () => {
+  test('hides the base path and the candidate path in the failure message', async () => {
+    const { root } = await repo();
+    const script = join(root, 'fail.ts');
+    await writeFile(
+      script,
+      'console.error("cwd " + process.cwd() + " arg " + process.argv[2]);\nprocess.exit(1);\n',
+    );
+    const secret = join(tmpdir(), 'agentic-secret');
+    const error = await runCandidateCli(
+      root,
+      script,
+      [join(secret, 'x').replaceAll('\\', '/')],
+      30_000,
+      'probe',
+      [secret],
+    ).catch((e: Error) => e);
+    expect(error).toMatchObject({ code: 'bundle.compile-failed' });
+    expect((error as Error).message).toContain('cwd <candidate>');
+    expect((error as Error).message).toContain('arg <base>/x');
+  });
+
   test('runs the child with a scrubbed environment: the allowed variables only', async () => {
     const { root } = await repo();
     const script = join(root, 'env.ts');
@@ -143,6 +207,17 @@ describe('run', () => {
     );
     expect(result.code).not.toBe(0);
     expect(result.timedOut).toBe(false);
+    expect(Date.now() - started).toBeLessThan(30_000);
+  });
+
+  test('a signal that is already aborted stops the child before it can do anything', async () => {
+    const started = Date.now();
+    const result = await run(
+      [process.execPath, '-e', 'setTimeout(() => {}, 60000)'],
+      tmpdir(),
+      { signal: AbortSignal.abort() },
+    );
+    expect(result.code).not.toBe(0);
     expect(Date.now() - started).toBeLessThan(30_000);
   });
 });

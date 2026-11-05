@@ -117,13 +117,15 @@ describe('agentic mcp (subprocesso)', () => {
         'publish_change',
         'rules_for_path',
       ]);
-      // publish_change is the one tool with a side effect (a pull request on the Git host).
+      // propose_change creates a worktree and runs processes on the server; publish_change opens a pull request on the Git host: neither is read-only.
       for (const t of tools)
-        expect(t.annotations.readOnlyHint).toBe(t.name !== 'publish_change');
+        expect(t.annotations.readOnlyHint).toBe(
+          t.name !== 'propose_change' && t.name !== 'publish_change',
+        );
       // The same Delta on the same base gives the same bundle, so a retry is safe.
       expect(
         tools.find((t) => t.name === 'propose_change')?.annotations,
-      ).toMatchObject({ idempotentHint: true });
+      ).toMatchObject({ idempotentHint: true, destructiveHint: false });
       // A published branch exists afterwards: never idempotent, not destructive, talks to the Git host.
       expect(
         tools.find((t) => t.name === 'publish_change')?.annotations,

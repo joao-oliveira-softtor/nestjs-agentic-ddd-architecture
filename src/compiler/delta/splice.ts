@@ -1,6 +1,7 @@
 import ts from 'typescript';
 import type { Coded } from '../ir';
 import { literal } from './render';
+import { compareText as cmp } from './schema';
 
 export interface FragmentImport {
   readonly spec: string;
@@ -62,8 +63,6 @@ const unexpected = (m: string): never => {
   throw new Refusal('delta.splice-unexpected-shape', m);
 };
 
-const cmp = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
-
 /**
  * Pure: inserts the fragment into the source through the TypeScript AST and returns the new text.
  * It refuses, with a stable code, whenever the anchor is not found or the file is not shaped as
@@ -78,19 +77,17 @@ export function splice(source: string, fragment: Fragment): SpliceResult {
       true,
       ts.ScriptKind.TS,
     );
-    // shortcut: second parse via transpileModule for public syntax diagnostics; switch to a single parse if large target files make splice slow.
-    // transpileModule reports syntactic diagnostics through the public API.
-    const syntax = ts.transpileModule(source, {
-      fileName: 'target.ts',
-      reportDiagnostics: true,
-    }).diagnostics;
-    if ((syntax ?? []).length > 0)
+    // shortcut: parseDiagnostics is not public API; replace it if a TypeScript upgrade drops it (the broken-file tests fail then).
+    const syntax = (file as unknown as { parseDiagnostics: readonly unknown[] })
+      .parseDiagnostics;
+    if (syntax.length > 0)
       unexpected(`${fragment.path} does not parse as TypeScript`);
     const eol = dominantEol(source);
+    const bound = importBindings(file);
     const edits = [
-      ...importEdits(file, fragment.imports),
+      ...importEdits(file, fragment.imports, bound),
       ...targetEdits(file, source, fragment),
-      ...appendEdits(file, source, fragment),
+      ...appendEdits(file, source, fragment, bound),
     ].map((e) => ({ ...e, text: e.text.replace(/\r?\n/g, eol) }));
     // Applied from the end so earlier offsets stay valid; ties keep their creation order.
     const ordered = edits
@@ -123,6 +120,7 @@ function appendEdits(
   file: ts.SourceFile,
   source: string,
   fragment: Fragment,
+  bound: ReadonlyMap<string, Binding>,
 ): Edit[] {
   const blocks = fragment.appended ?? [];
   if (blocks.length === 0) return [];
@@ -133,7 +131,7 @@ function appendEdits(
     ts.ScriptTarget.Latest,
     true,
   );
-  const taken = takenNames(file);
+  const taken = takenNames(file, bound);
   for (const name of mine.statements.flatMap(declaredNames))
     if (taken.has(name))
       unexpected(`${name} is already declared in ${fragment.path}`);
@@ -147,11 +145,11 @@ function appendEdits(
 }
 
 /** Every name the file declares at the top level or imports. */
-const takenNames = (file: ts.SourceFile): Set<string> =>
-  new Set([
-    ...file.statements.flatMap(declaredNames),
-    ...importBindings(file).keys(),
-  ]);
+const takenNames = (
+  file: ts.SourceFile,
+  bound: ReadonlyMap<string, Binding>,
+): Set<string> =>
+  new Set([...file.statements.flatMap(declaredNames), ...bound.keys()]);
 
 const declaresName = (node: ts.Statement, name: string): boolean =>
   declaredNames(node).includes(name);
@@ -167,17 +165,33 @@ function declaredNames(node: ts.Statement): string[] {
     return node.name ? [node.name.text] : [];
   if (ts.isVariableStatement(node))
     return node.declarationList.declarations.flatMap((d) =>
-      ts.isIdentifier(d.name) ? [d.name.text] : [],
+      bindingNames(d.name),
     );
+  if (ts.isModuleDeclaration(node) && ts.isIdentifier(node.name))
+    return [node.name.text];
+  if (ts.isImportEqualsDeclaration(node)) return [node.name.text];
   return [];
 }
+
+/** The names a variable declaration binds, destructuring patterns included. */
+const bindingNames = (name: ts.BindingName): string[] =>
+  ts.isIdentifier(name)
+    ? [name.text]
+    : name.elements.flatMap((el) =>
+        ts.isOmittedExpression(el) ? [] : bindingNames(el.name),
+      );
 
 // --- Imports ---
 
 interface Binding {
   readonly spec: string;
+  /** The export the local name binds: a name, `default` or `*` (namespace import). */
+  readonly imported: string;
   readonly typeOnly: boolean;
 }
+
+/** A module specifier without its runtime extension (`./a.js` and `./a` name one module). */
+const specKey = (spec: string): string => spec.replace(/\.[cm]?[jt]s$/, '');
 
 const specOf = (d: ts.ImportDeclaration): string =>
   (d.moduleSpecifier as ts.StringLiteral).text;
@@ -192,7 +206,7 @@ function clauseBindings(d: ts.ImportDeclaration): [string, Binding][] {
   const spec = specOf(d);
   const whole = clause.isTypeOnly;
   const def: [string, Binding][] = clause.name
-    ? [[clause.name.text, { spec, typeOnly: whole }]]
+    ? [[clause.name.text, { spec, imported: 'default', typeOnly: whole }]]
     : [];
   return [...def, ...namedBindings(clause.namedBindings, spec, whole)];
 }
@@ -203,19 +217,24 @@ function namedBindings(
   whole: boolean,
 ): [string, Binding][] {
   if (!nb) return [];
-  if (ts.isNamespaceImport(nb)) return [[nb.name.text, { spec, typeOnly: whole }]];
+  if (ts.isNamespaceImport(nb)) return [[nb.name.text, { spec, imported: '*', typeOnly: whole }]];
   return nb.elements.map((el): [string, Binding] => [
     el.name.text,
-    { spec, typeOnly: whole || el.isTypeOnly },
+    {
+      spec,
+      imported: (el.propertyName ?? el.name).text,
+      typeOnly: whole || el.isTypeOnly,
+    },
   ]);
 }
 
 function importEdits(
   file: ts.SourceFile,
   wanted: readonly FragmentImport[],
+  bound: ReadonlyMap<string, Binding>,
 ): Edit[] {
   const decls = file.statements.filter(ts.isImportDeclaration);
-  const pending = pendingImports(file, wanted);
+  const pending = pendingImports(file, wanted, bound);
   const edits: Edit[] = [];
   const fresh: string[] = [];
   for (const spec of [...pending.keys()].sort(cmp)) {
@@ -238,8 +257,8 @@ const importText = (i: FragmentImport): string =>
 function pendingImports(
   file: ts.SourceFile,
   wanted: readonly FragmentImport[],
+  bound: ReadonlyMap<string, Binding>,
 ): Map<string, FragmentImport[]> {
-  const bound = importBindings(file);
   const pending = new Map<string, FragmentImport[]>();
   const sortedWanted = [...wanted].sort(
     (a, b) => cmp(a.spec, b.spec) || cmp(a.name, b.name),
@@ -259,9 +278,9 @@ function alreadyImported(
   have: Binding | undefined,
 ): boolean {
   if (!have) return false;
-  if (have.spec !== imp.spec)
+  if (specKey(have.spec) !== specKey(imp.spec) || have.imported !== imp.name)
     unexpected(
-      `${imp.name} is already imported from another module (${have.spec})`,
+      `${imp.name} is already imported from another module or as another export (${have.spec})`,
     );
   if (have.typeOnly && !imp.typeOnly)
     unexpected(
@@ -277,7 +296,7 @@ const namedHost = (
 ): ts.ImportDeclaration | undefined =>
   decls.find(
     (d) =>
-      specOf(d) === spec &&
+      specKey(specOf(d)) === specKey(spec) &&
       d.importClause &&
       !d.importClause.isTypeOnly &&
       d.importClause.namedBindings &&
@@ -335,8 +354,21 @@ function newImportsEdit(
   if (last)
     return { start: last.end, end: last.end, text: `\n${fresh.join('\n')}` };
   // Leading comments, a shebang and the BOM stay above the new imports.
-  const at = file.statements[0]?.getStart(file) ?? file.end;
+  const first = file.statements[0];
+  const at = first ? afterHeader(file, first) : file.end;
   return { start: at, end: at, text: `${fresh.join('\n')}\n\n` };
+}
+
+/** Where the first statement starts, or where its attached JSDoc does (no blank line between). */
+function afterHeader(file: ts.SourceFile, first: ts.Statement): number {
+  const start = first.getStart(file);
+  const text = file.text;
+  const doc = ts.getLeadingCommentRanges(text, first.pos)?.at(-1);
+  const attached =
+    doc &&
+    text.startsWith('/**', doc.pos) &&
+    !/\n\s*\n/.test(text.slice(doc.end, start));
+  return attached ? doc.pos : start;
 }
 
 // --- Edits inside the target class ---
@@ -507,23 +539,57 @@ function arrayEdits(
   const opts = useCaseOptions(cls, t.name)!;
   return arrays.flatMap((a): Edit[] => {
     const prop = property(opts, a.property);
-    if (!prop || !ts.isArrayLiteralExpression(prop.initializer))
+    if (!prop) return addProperty(opts, a.property, a.elements);
+    if (!ts.isArrayLiteralExpression(prop.initializer))
       return missing(
         `use-case ${JSON.stringify(t.name)} has no ${a.property} array`,
       );
     const arr = prop.initializer;
-    const present = new Set(arr.elements.map((e) => e.getText()));
-    const fresh = a.elements.filter((e) => !present.has(e));
+    const present = new Set(arr.elements.map(elementKey));
+    const fresh = a.elements.filter(
+      (e) => !present.has(elementKey(parseElement(e))),
+    );
     if (fresh.length === 0) return [];
     const last = arr.elements.at(-1);
-    return last
-      ? [{ start: last.end, end: last.end, text: `, ${fresh.join(', ')}` }]
-      : [
-          {
-            start: arr.getStart() + 1,
-            end: arr.end - 1,
-            text: fresh.join(', '),
-          },
-        ];
+    if (last)
+      return [
+        { start: last.end, end: last.end, text: `, ${fresh.join(', ')}` },
+      ];
+    // Only a bare `[]` is rewritten: a comment inside stays.
+    const bare = arr.getText().slice(1, -1).trim() === '';
+    const start = bare ? arr.getStart() + 1 : arr.end - 1;
+    return [{ start, end: arr.end - 1, text: fresh.join(', ') }];
   });
+}
+
+/** The option is optional in `@AgentUseCase`: it is added after the last property. */
+function addProperty(
+  opts: ts.ObjectLiteralExpression,
+  name: string,
+  elements: readonly string[],
+): Edit[] {
+  const last = opts.properties.at(-1);
+  if (!last) return unexpected('the use-case options are empty');
+  return [
+    {
+      start: last.end,
+      end: last.end,
+      text: `, ${name}: [${elements.join(', ')}]`,
+    },
+  ];
+}
+
+/** Strings compare by value, so `'a'` and `"a"` are one element; other code by its text. */
+const elementKey = (e: ts.Expression): string =>
+  ts.isStringLiteralLike(e) ? `s:${e.text}` : `n:${e.getText()}`;
+
+function parseElement(text: string): ts.Expression {
+  const file = ts.createSourceFile(
+    'element.ts',
+    `[${text}]`,
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const stmt = file.statements[0] as ts.ExpressionStatement;
+  return (stmt.expression as ts.ArrayLiteralExpression).elements[0]!;
 }

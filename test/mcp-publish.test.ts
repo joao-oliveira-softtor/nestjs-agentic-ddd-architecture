@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { loadConfig } from '../src/compiler/config';
 import { SignJWT } from 'jose';
 import { GitHubChangeSink } from '../src/publish/github-sink';
 import { startMcpHttpServer, withPublishSlot } from '../src/mcp/index';
@@ -74,13 +76,16 @@ describe('agentic mcp --http publish_change', () => {
       port: 0,
       host: '127.0.0.1',
       mcp,
-      sink: new GitHubChangeSink({
-        token: TOKEN,
-        owner: 'acme',
-        repo: 'shop',
-        allowedPrefixes: ['src/shop/', 'changes/'],
-        fetch: host.fetch,
-      }),
+      publish: {
+        config: await loadConfig(join(repo.root, 'agentic.config.ts')),
+        sink: new GitHubChangeSink({
+          token: TOKEN,
+          owner: 'acme',
+          repo: 'shop',
+          allowedPrefixes: ['src/shop/', 'changes/'],
+          fetch: host.fetch,
+        }),
+      },
     });
     withoutSink = await startMcpHttpServer({
       root: repo.root,
@@ -153,45 +158,42 @@ describe('agentic mcp --http publish_change', () => {
     expect(host.requests.length).toBe(before);
   });
 
-  test('an oversized input is refused before any work, without echoing it', async () => {
+  test('a body past the transport limit never reaches the host', async () => {
     const before = host.requests.length;
     const big = bundleOf({
       ...GOOD,
-      'neutral/big.md': 'SECRET-MARKER'.repeat(30_000),
+      'neutral/big.md': 'SECRET-MARKER'.repeat(100_000),
     });
-    const r = await publish('change:publish', big);
-    expect(r.isError).toBe(true);
-    expect(r.content[0]!.text).toEndWith('[mcp.input-too-large]');
-    expect(r.content[0]!.text).not.toContain('SECRET-MARKER');
+    // Bun drops the connection past maxRequestBodySize, which is also the publish_change input cap.
+    const status = await fetch(`http://127.0.0.1:${withSink.port}/mcp`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json, text/event-stream',
+        authorization: `Bearer ${await mint('change:publish')}`,
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'publish_change', arguments: big },
+      }),
+    }).then(
+      (r) => r.status,
+      () => 'closed',
+    );
+    expect(status).not.toBe(200);
     expect(host.requests.length).toBe(before);
   });
 
-  test('an input of exactly 256 KiB serialized passes the size check; one byte more is refused', async () => {
-    const sized = (bytes: number) => {
-      const base = bundleOf(GOOD);
-      const empty = {
-        ...base,
-        files: [...base.files, { path: 'p', content: '' }],
-      };
-      return {
-        ...base,
-        files: [
-          ...base.files,
-          {
-            path: 'p',
-            content: 'x'.repeat(
-              bytes - Buffer.byteLength(JSON.stringify(empty)),
-            ),
-          },
-        ],
-      };
-    };
-    const limit = 256 * 1024;
-    // The server without a sink answers right after the size check.
-    const at = await call(withoutSink, 'change:publish', sized(limit));
-    expect(at.content[0]!.text).toEndWith('[mcp.publish-unavailable]');
-    const over = await call(withoutSink, 'change:publish', sized(limit + 1));
-    expect(over.content[0]!.text).toEndWith('[mcp.input-too-large]');
+  // propose_change returns the whole bundle (packets and neutral model included), which can pass 256 KiB.
+  test('a bundle larger than the 256 KiB propose input is still admitted', async () => {
+    const big = bundleOf({
+      ...GOOD,
+      'neutral/big.md': 'x'.repeat(300 * 1024),
+    });
+    const r = await call(withoutSink, 'change:publish', big);
+    expect(r.content[0]!.text).toEndWith('[mcp.publish-unavailable]');
   });
 
   test('a tampered bundle and a forbidden path are refused before the host is called', async () => {

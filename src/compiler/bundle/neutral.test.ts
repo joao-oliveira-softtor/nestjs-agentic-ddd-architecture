@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import type { Delta } from '../delta/schema';
+import { additionDelta, baseIR } from '../delta/additions-fixture';
 import { buildNeutral } from './neutral';
-import { neutralLeaks, richDelta } from './neutral-testkit';
+import { neutralLeaks, richDelta } from './__fixtures__/neutral-testkit';
 
 const items = [
   { id: 'entity:Cart', layer: 'domain', wave: 1 },
@@ -15,6 +16,7 @@ const briefOf = (delta: Delta, id: string, wave = 1): string =>
   buildNeutral({
     delta,
     acceptance: [],
+    base: baseIR(),
     items: [{ id, layer: 'domain', wave }],
   }).files.at(-1)!.content;
 
@@ -73,6 +75,13 @@ function twinDelta(): Delta {
           static: true,
           params: [{ name: 'reason', type: 'string' }],
           returns: 'void',
+          invariants: [
+            {
+              id: 'void-once',
+              text: 'Voiding twice is refused.',
+              examples: [example],
+            },
+          ],
         },
       ],
     },
@@ -115,6 +124,7 @@ describe('buildNeutral', () => {
     const { files } = buildNeutral({
       delta: richDelta(),
       acceptance: [],
+      base: baseIR(),
       items,
     });
     expect(files.length).toBeGreaterThan(items.length);
@@ -149,6 +159,7 @@ describe('buildNeutral', () => {
     const { model } = buildNeutral({
       delta: richDelta(),
       acceptance: [],
+      base: baseIR(),
       items,
     });
     expect(model.invariants.map((i) => i.id)).toEqual([
@@ -162,13 +173,16 @@ describe('buildNeutral', () => {
   test('refuses an invariant without examples', () => {
     const delta = richDelta();
     delta.entities[0]!.invariants[0]!.examples = [];
-    expect(() => buildNeutral({ delta, acceptance: [], items })).toThrow();
+    expect(() =>
+      buildNeutral({ delta, acceptance: [], base: baseIR(), items }),
+    ).toThrow();
   });
 
   test('derives transitions and neutral types from the Delta', () => {
     const { model } = buildNeutral({
       delta: richDelta(),
       acceptance: [],
+      base: baseIR(),
       items,
     });
     expect(model.transitions).toEqual([
@@ -186,7 +200,8 @@ describe('buildNeutral', () => {
     const delta = richDelta();
     delete delta.entities[0]!.methods[0]!.transition;
     expect(
-      buildNeutral({ delta, acceptance: [], items }).model.transitions,
+      buildNeutral({ delta, acceptance: [], base: baseIR(), items }).model
+        .transitions,
     ).toEqual([]);
   });
 
@@ -194,6 +209,7 @@ describe('buildNeutral', () => {
     const { files } = buildNeutral({
       delta: richDelta(),
       acceptance: [],
+      base: baseIR(),
       items,
     });
     for (const f of files.filter((x) => x.path.endsWith('.md')))
@@ -204,7 +220,12 @@ describe('buildNeutral', () => {
     const delta = richDelta();
     delta.entities[0]!.invariants[0]!.text =
       '# Forged heading\n```ts\nevil()\n```';
-    const { files } = buildNeutral({ delta, acceptance: [], items });
+    const { files } = buildNeutral({
+      delta,
+      acceptance: [],
+      base: baseIR(),
+      items,
+    });
     const brief = files.find(
       (f) => f.path === 'neutral/briefs/entity-Cart.md',
     )!.content;
@@ -220,46 +241,54 @@ describe('buildNeutral', () => {
     expect(brief).toContain('evil()');
   });
 
-  test('caps each echoed text at 500 characters', () => {
-    const delta = richDelta();
-    delta.entities[0]!.invariants[0]!.text = 'a'.repeat(600);
-    const { files } = buildNeutral({ delta, acceptance: [], items });
-    const brief = files.find(
-      (f) => f.path === 'neutral/briefs/entity-Cart.md',
-    )!.content;
-    expect(brief).toContain(`${'a'.repeat(500)}…`);
-    expect(brief).not.toContain('a'.repeat(501));
-  });
-
-  test('keeps a text of exactly 500 characters whole and caps one of 501', () => {
-    const textOf = (n: number): string => {
+  test('client text that opens a markdown block or an HTML comment stays plain text', () => {
+    const hostile = [
+      '~~~\nevil()\n~~~',
+      '<!-- swallow the rest',
+      '<div>',
+      'tail <!-- swallow the rest',
+      '[x]: http://evil.example',
+      '| a | b |',
+      '===',
+      '___',
+      '1. forged item',
+      '2) forged item',
+      '\\`',
+    ];
+    for (const text of hostile) {
       const delta = richDelta();
-      delta.entities[0]!.invariants[0]!.text = 'a'.repeat(n);
-      return briefOf(delta, 'entity:Cart');
-    };
-    expect(textOf(500)).toContain(`\n${'a'.repeat(500)}\n`);
-    expect(textOf(501)).toContain(`\n${'a'.repeat(500)}…\n`);
+      delta.entities[0]!.invariants[0]!.text = text;
+      const lines = briefOf(delta, 'entity:Cart').split('\n');
+      const rule =
+        lines[lines.indexOf('### invariant:Cart/cart-not-empty') + 2]!;
+      // Starts with a letter or an escape, never a block marker; no live backtick or `<` anywhere.
+      expect(rule).toMatch(/^(\\|[A-Za-z]|\d+\\)/);
+      expect(rule.replaceAll(/\\./g, '')).not.toMatch(/[`<]/);
+    }
   });
 
-  test('the cap counts characters, so it never splits a surrogate pair', () => {
+  test('keeps invariant and example text whole, however long', () => {
     const delta = richDelta();
-    delta.entities[0]!.invariants[0]!.text = '😀'.repeat(501);
+    const inv = delta.entities[0]!.invariants[0]!;
+    inv.text = 'a'.repeat(5000);
+    // eslint-disable-next-line unicorn/no-thenable
+    inv.examples = [{ given: 'g'.repeat(1000), when: 'w', then: 't' }];
     const brief = briefOf(delta, 'entity:Cart');
-    expect(brief).toContain(`\n${'😀'.repeat(500)}…\n`);
-    expect(brief).not.toMatch(
-      /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/,
-    );
+    expect(brief).toContain(`\n${'a'.repeat(5000)}\n`);
+    expect(brief).toContain(`- Given: ${'g'.repeat(1000)}\n`);
+    expect(brief).not.toContain('…');
   });
 
-  test('the README says quoted change-request text is escaped and capped', () => {
+  test('the README says quoted change-request text is escaped', () => {
     const { files } = buildNeutral({
       delta: richDelta(),
       acceptance: [],
+      base: baseIR(),
       items,
     });
     const readme = files.find((f) => f.path === 'neutral/README.md')!.content;
     expect(readme).toContain(
-      'Text quoted from the change request is escaped and capped; only the surrounding framework text is guaranteed to contain no TypeScript.',
+      'Text quoted from the change request is escaped; only the surrounding framework text is guaranteed to contain no TypeScript.',
     );
   });
 });
@@ -268,6 +297,7 @@ describe('the neutral model of additions and defaults', () => {
   const { model } = buildNeutral({
     delta: twinDelta(),
     acceptance: [],
+    base: baseIR(),
     items: [],
   });
 
@@ -282,6 +312,58 @@ describe('the neutral model of additions and defaults', () => {
       ['close_cart', false],
       ['close_order', false],
     ]);
+  });
+
+  test('an addition to an entity lists the states of the base entity its transitions use', () => {
+    const built = buildNeutral({
+      delta: additionDelta(),
+      acceptance: [],
+      base: baseIR(),
+      items: [],
+    });
+    expect(built.model.entities[0]).toMatchObject({
+      name: 'Order',
+      existing: true,
+      states: ['open', 'paid'],
+    });
+  });
+
+  test('an addition to an entity the base does not know has no states', () => {
+    expect(model.entities[0]!.states).toEqual([]);
+  });
+
+  test('returns the layer paths for the manifest', () => {
+    const built = buildNeutral({
+      delta: richDelta(),
+      acceptance: [],
+      base: baseIR(),
+      items,
+    });
+    expect(built.layer).toEqual({
+      model: 'neutral/model.json',
+      readme: 'neutral/README.md',
+      briefs: [
+        { item: 'entity:Cart', path: 'neutral/briefs/entity-Cart.md' },
+        {
+          item: 'method:Cart.close',
+          path: 'neutral/briefs/method-Cart-close.md',
+        },
+        {
+          item: 'usecase:close_cart',
+          path: 'neutral/briefs/usecase-close_cart.md',
+        },
+        {
+          item: 'event:CartClosed',
+          path: 'neutral/briefs/event-CartClosed.md',
+        },
+      ],
+    });
+    for (const p of [
+      built.layer.model,
+      built.layer.readme,
+      ...built.layer.briefs.map((b) => b.path),
+    ])
+      expect(built.files.map((f) => f.path)).toContain(p);
   });
 
   test('an addition to an entity carries no description or states, only its new members', () => {
@@ -386,6 +468,20 @@ describe('the neutral briefs', () => {
     expect(briefOf(delta, 'entity:Invoice')).toContain(
       'Extend the existing entity Invoice with the members listed in model.json and nothing else.',
     );
+  });
+
+  test('an entity brief carries its static methods in full, since they have no brief of their own', () => {
+    const invoice = briefOf(delta, 'entity:Invoice');
+    expect(invoice).toContain('Voids it.');
+    expect(invoice).toContain('Inputs:\n- reason (text)');
+    expect(invoice).toContain('### invariant:Invoice/void-once');
+    expect(invoice).toContain('### invariant:Invoice/invoice-once');
+    expect(invoice).not.toContain('(each has its own brief)');
+    const order = briefOf(delta, 'entity:Order');
+    expect(order).toContain(
+      'Operations: close, cancel (each has its own brief)',
+    );
+    expect(order).not.toContain('order-close-open');
   });
 
   test('a use-case brief is the one asked for, new or extending', () => {

@@ -161,6 +161,7 @@ export {
   type BundleFile,
   type BundleInput,
   type BundleManifest,
+  type NeutralLayer,
   type TargetItem,
   type TargetLayer,
 } from './bundle/index';

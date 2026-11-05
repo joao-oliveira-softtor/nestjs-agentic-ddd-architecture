@@ -126,8 +126,8 @@ describe('splice', () => {
       'delta.splice-anchor-missing',
     ],
     [
-      'the array property is missing',
-      USE_CASE.replace("  emits: [],\n", ''),
+      'the array property is not an array literal',
+      USE_CASE.replace('emits: []', 'emits: shared'),
       { path: 'p', imports: [], target: { kind: 'use-case', name: 'pay_order' }, arrays: [{ property: 'emits', elements: ['X'] }] },
       'delta.splice-anchor-missing',
     ],
@@ -275,5 +275,91 @@ describe('splice', () => {
   test('never touches the source on refusal', () => {
     const r = splice('export class Other {}\n', member);
     expect(r.ok).toBe(false);
+  });
+});
+
+describe('splice review findings', () => {
+  const ucFrag = (
+    property: string,
+    elements: string[],
+    imports: Fragment['imports'] = [],
+  ): Fragment => ({
+    path: 'application/x.ts',
+    imports,
+    target: { kind: 'use-case', name: 'x' },
+    arrays: [{ property, elements }],
+  });
+  const uc = (opts: string): string =>
+    `@AgentUseCase({ name: 'x', ${opts} })\nexport class X {}\n`;
+  const importOnly = (...imports: Fragment['imports'][number][]): Fragment => ({
+    ...member,
+    imports,
+    classDecorators: [],
+    members: [],
+  });
+
+  test('adds an optional array property the use-case does not declare yet', () => {
+    const f = ucFrag('emits', ['OrderRefunded']);
+    const out = ok(uc("uses: ['a']"), f);
+    expect(out).toContain("uses: ['a'], emits: [OrderRefunded] })");
+    expect(ok(out, f)).toBe(out);
+  });
+
+  test('recognizes an import whose specifier differs only by a runtime extension', () => {
+    const src = `import { OrderCreated } from './order.events.js';\n${ENTITY}`;
+    expect(ok(src, importOnly(imp('./order.events', 'OrderCreated')))).toBe(src);
+  });
+
+  test('refuses a name declared by a destructuring, a namespace or an import-equals', () => {
+    const f = (code: string): Fragment => ({
+      path: 'e.ts',
+      imports: [],
+      target: null,
+      appended: [code],
+    });
+    for (const taken of [
+      'const { aPayload } = schemas;\n',
+      'const [aPayload] = schemas;\n',
+      'const { x: { aPayload } } = schemas;\n',
+      'declare namespace aPayload {}\n',
+      "import aPayload = require('x');\n",
+    ])
+      expect(refused(taken, f('const aPayload = 1;')).code as string).toBe(
+        'delta.splice-unexpected-shape',
+      );
+  });
+
+  test('does not re-add a string element that is present with other quotes', () => {
+    const src = uc('uses: ["method:A.b"], emits: []');
+    expect(ok(src, ucFrag('uses', ["'method:A.b'"]))).toBe(src);
+  });
+
+  test('keeps a comment inside an empty array', () => {
+    const out = ok(
+      uc('uses: [ /* none yet */ ], emits: []'),
+      ucFrag('uses', ["'a'"]),
+    );
+    expect(out).toContain("uses: [ /* none yet */ 'a'],");
+  });
+
+  test('refuses an import that binds the wanted local name to another export', () => {
+    for (const have of [
+      "import { Foo as Bar } from './x';",
+      "import Bar from './x';",
+      "import * as Bar from './x';",
+    ])
+      expect(
+        refused(`${have}\n${ENTITY}`, importOnly(imp('./x', 'Bar'))).code as string,
+      ).toBe('delta.splice-unexpected-shape');
+  });
+
+  test('keeps the JSDoc of the first statement attached when it creates the first import', () => {
+    const out = ok(
+      '/** The order. */\nexport class Order {\n  a() {}\n}\n',
+      importOnly(imp('./x', 'X')),
+    );
+    expect(
+      out.startsWith("import { X } from './x';\n\n/** The order. */\nexport class Order"),
+    ).toBe(true);
   });
 });
