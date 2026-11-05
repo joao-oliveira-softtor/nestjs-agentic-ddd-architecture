@@ -9,11 +9,16 @@ const change = {
   slug: 'refund-window',
   title: 'Add refund window',
   body: 'Body',
+  changesDir: 'changes',
   files: [{ path: 'changes/0007-refund-window/proposal.md', content: '# hi' }],
 };
 
 function setup(
-  host: { defaultBranch?: string; existingBranches?: string[] } = {},
+  host: {
+    defaultBranch?: string;
+    existingBranches?: string[];
+    dirs?: Record<string, string[]>;
+  } = {},
 ) {
   const fake = createFakeGitHost({
     owner: 'acme',
@@ -71,6 +76,8 @@ describe('GitHubChangeSink', () => {
     const r = '/repos/acme/shop';
     expect(fake.requests).toEqual([
       `GET ${r}`,
+      `GET ${r}/contents/changes`,
+      `GET ${r}/contents/changes/archive`,
       `GET ${r}/git/ref/heads/main`,
       `GET ${r}/git/ref/heads/changes/0007-refund-window`,
       `GET ${r}/git/commits/sha-base`,
@@ -300,6 +307,16 @@ describe('GitHubChangeSink', () => {
     { allowedPrefixes: [] },
     { allowedPrefixes: ['../'] },
     { allowedPrefixes: ['changes'] },
+    {
+      token: `${TOKEN}
+`,
+    },
+    {
+      token: `${TOKEN}
+`,
+    },
+    { token: `${TOKEN} x` },
+    { token: 'tökén' },
   ])('rejects a bad configuration %j', (bad) => {
     expect(
       () =>
@@ -311,6 +328,42 @@ describe('GitHubChangeSink', () => {
           ...bad,
         }),
     ).toThrow(AgenticError);
+  });
+
+  test.each([
+    ['changes', ['0007-other-slug']],
+    ['changes/archive', ['0007-refund-window']],
+    ['changes', ['0007']],
+  ])(
+    'refuses a number already used in %s with publish.change-exists before creating anything',
+    async (dir, names) => {
+      const { fake, sink } = setup({ dirs: { [dir]: names } });
+      expect((await failure(sink.publish(change))).code).toBe(
+        'publish.change-exists',
+      );
+      expect(fake.requests.some((q) => q.startsWith('POST'))).toBe(false);
+    },
+  );
+
+  test('an answer that is not a directory listing fails closed', async () => {
+    const { fake, sink } = setup();
+    fake.failWith = { match: '/contents/changes', status: 200 };
+    expect((await failure(sink.publish(change))).code).toBe(
+      'publish.host-failed',
+    );
+    expect(fake.requests.some((q) => q.startsWith('POST'))).toBe(false);
+  });
+
+  test('a number that only shares a prefix with an existing one is free', async () => {
+    const { sink } = setup({
+      dirs: {
+        changes: ['00070-x', '0008-refund-window'],
+        'changes/archive': [],
+      },
+    });
+    expect((await sink.publish(change)).branch).toBe(
+      'changes/0007-refund-window',
+    );
   });
 
   test.each([

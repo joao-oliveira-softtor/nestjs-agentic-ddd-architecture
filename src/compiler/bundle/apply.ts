@@ -156,21 +156,23 @@ export function splitBundleEntries(
 export async function splitBundleFiles(
   dir: string,
 ): Promise<{ manifestText: string; files: Map<string, string> }> {
+  // Only a directory that is not there is "missing"; EACCES, ENOTDIR and the like are reported as they are.
   const entries = await readdir(dir, {
     recursive: true,
     withFileTypes: true,
-  }).catch(() => []);
-  const all = await Promise.all(
-    entries
-      .filter((e) => e.isFile())
-      .map(async (e) => {
-        const abs = join(e.parentPath, e.name);
-        return {
-          path: toPosix(relative(dir, abs)),
-          content: await readFile(abs, 'utf8'),
-        };
-      }),
-  );
+  }).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== 'ENOENT') throw error;
+    return [];
+  });
+  // One file at a time: a bundle is many small files, and this never opens them all at once.
+  const all: { path: string; content: string }[] = [];
+  for (const e of entries.filter((entry) => entry.isFile())) {
+    const abs = join(e.parentPath, e.name);
+    all.push({
+      path: toPosix(relative(dir, abs)),
+      content: await readFile(abs, 'utf8'),
+    });
+  }
   return splitBundleEntries(all);
 }
 
@@ -494,7 +496,7 @@ async function writeAndCompile(
   }
 }
 
-const relTo = (root: string, abs: string): string =>
+export const relTo = (root: string, abs: string): string =>
   toPosix(relative(root, abs));
 
 /** Project-relative directories a bundle may write under: the module paths and its one change directory. */

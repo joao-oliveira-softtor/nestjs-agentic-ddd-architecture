@@ -22,6 +22,8 @@ const NUMBER = /^\d{4}$/;
 // Same slug shape as the `changes/NNNN-<slug>/` proposal folders (src/compiler/changes/proposal.ts).
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const NAME = /^[A-Za-z0-9_.-]+$/;
+// A token goes into an Authorization header: visible ASCII only (a trailing newline would make fetch throw).
+const TOKEN_CHARS = /^[!-~]+$/;
 const TIMEOUT_MS = 30_000;
 const MAX_TITLE = 256;
 const MAX_BODY = 60_000;
@@ -100,6 +102,11 @@ function checkedTitle(change: PublishableChange): string {
       'publish.path-invalid',
       `a change carries between 1 and ${MAX_FILES} files`,
     );
+  if (shapeError(`${change.changesDir}/x`) !== null)
+    throw new AgenticError(
+      'publish.change-invalid',
+      'the changes directory is not a relative POSIX path',
+    );
   const title = capTitle(change.title);
   if (title === '')
     throw new AgenticError(
@@ -156,7 +163,7 @@ export class GitHubChangeSink implements ChangeSink {
 
   constructor(opts: GitHubSinkOptions) {
     const bad =
-      !opts.token ||
+      !TOKEN_CHARS.test(opts.token) ||
       !NAME.test(opts.owner) ||
       !NAME.test(opts.repo) ||
       opts.allowedPrefixes.length === 0 ||
@@ -181,6 +188,7 @@ export class GitHubChangeSink implements ChangeSink {
     const { default_branch: base } = await this.#call<{
       default_branch: string;
     }>('GET', repo, undefined, 'repository');
+    await this.#assertNumberFree(repo, base, change);
     const head = await this.#call<{ object: { sha: string } }>(
       'GET',
       `${repo}/git/ref/heads/${base}`,
@@ -241,6 +249,40 @@ export class GitHubChangeSink implements ChangeSink {
       return { branch, url: pr.html_url };
     } catch (e) {
       throw await this.#cleanup(e, repo, branch);
+    }
+  }
+
+  /** Refuses a number already used in the changes directory or its `archive/` on the default branch (`apply` checks the same on a working copy). */
+  async #assertNumberFree(
+    repo: string,
+    ref: string,
+    change: PublishableChange,
+  ): Promise<void> {
+    // shortcut: one page of each listing (GitHub caps it at 1000 entries), upgrade when a changes directory outgrows it
+    for (const dir of [change.changesDir, `${change.changesDir}/archive`]) {
+      const path = dir.split('/').map(encodeURIComponent).join('/');
+      const res = await this.#send(
+        'GET',
+        `${repo}/contents/${path}?ref=${encodeURIComponent(ref)}`,
+        undefined,
+      );
+      if (res.status === 404) continue;
+      this.#check(res, 'changes listing');
+      const entries = await res.json().catch(() => undefined);
+      // Fail closed: an answer that is not a listing cannot prove the number is free.
+      if (!Array.isArray(entries))
+        throw new AgenticError(
+          'publish.host-failed',
+          'GitHub changes listing failed: the answer was not a directory listing',
+        );
+      const taken = (e: { name?: unknown }) =>
+        e.name === change.number ||
+        String(e.name).startsWith(`${change.number}-`);
+      if (entries.some(taken))
+        throw new AgenticError(
+          'publish.change-exists',
+          `change ${change.number} already exists in ${dir}`,
+        );
     }
   }
 

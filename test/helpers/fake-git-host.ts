@@ -29,6 +29,8 @@ export function createFakeGitHost(opts: {
   defaultBranch?: string;
   token: string;
   existingBranches?: readonly string[];
+  /** Directory listings the contents endpoint answers with, by repo-relative path; any other path is a 404. */
+  dirs?: Readonly<Record<string, readonly string[]>>;
 }): FakeGitHost {
   const base = opts.defaultBranch ?? 'main';
   const prefix = `/repos/${opts.owner}/${opts.repo}`;
@@ -68,6 +70,16 @@ export function createFakeGitHost(opts: {
       const body = init?.body ? JSON.parse(init.body) : {};
       if (method === 'GET' && path === '')
         return json(200, { default_branch: base });
+      const dir = /^\/contents\/(.+)$/.exec(path);
+      if (method === 'GET' && dir) {
+        const names = opts.dirs?.[decodeURIComponent(dir[1]!)];
+        return names
+          ? json(
+              200,
+              names.map((name) => ({ name, type: 'dir' })),
+            )
+          : json(404, {});
+      }
       const ref = /^\/git\/ref\/(heads\/.+)$/.exec(path);
       if (method === 'GET' && ref) {
         const s = host.refs.get(ref[1]!);

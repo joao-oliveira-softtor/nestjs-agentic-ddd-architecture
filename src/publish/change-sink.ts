@@ -11,6 +11,8 @@ export interface PublishableChange {
   readonly slug: string;
   readonly title: string;
   readonly body: string;
+  /** Repository-relative POSIX directory of the `NNNN-slug` folders; the sink refuses a number already used there or in its `archive/`. */
+  readonly changesDir: string;
   readonly files: readonly ChangeFile[];
 }
 

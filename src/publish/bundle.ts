@@ -1,16 +1,29 @@
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 import {
   checkedWrites,
   plan,
+  relTo,
   splitBundleEntries,
   verifyBundle,
   writableDirs,
 } from '../compiler/bundle/apply';
 import { loadConfig, type ResolvedConfig } from '../compiler/config';
 import { AgenticError } from '../contracts/codes';
-import { toPosix } from '../contracts/ir';
+import { canonicalPath } from '../contracts/ir';
+import { coversModule } from '../mcp/scope';
 import type { ChangeSink, PublishedChange } from './change-sink';
 import { GitHubChangeSink } from './github-sink';
+
+export type PublishConfig = Pick<
+  ResolvedConfig,
+  'root' | 'outRoot' | 'changesDir' | 'modules'
+>;
+
+/** Where publish_change sends a bundle: the sink, and the project config it was built from (loaded once). */
+export interface PublishTarget {
+  readonly sink: ChangeSink;
+  readonly config: ResolvedConfig;
+}
 
 export interface PublishInput {
   /** A bundle as `propose_change` returned it: `hash` and every file, `bundle.json` included. */
@@ -22,10 +35,7 @@ export interface PublishInput {
     }[];
   };
   readonly root: string;
-  readonly config: Pick<
-    ResolvedConfig,
-    'root' | 'outRoot' | 'changesDir' | 'modules'
-  >;
+  readonly config: PublishConfig;
   /** The modules the token may publish, from `change:publish[:<module>]`. */
   readonly access: 'all' | ReadonlySet<string>;
   readonly sink: ChangeSink;
@@ -57,25 +67,22 @@ export async function publishBundle(
       'apply.hash-mismatch',
       'the bundle is not intact: the hash sent is not the hash of its files',
     );
-  const { root, config, access } = input;
-  if (access !== 'all') {
-    const module = recordedModule(files.get('neutral/model.json'));
-    if (module === undefined || !access.has(module))
-      throw new AgenticError(
-        'auth.scope-missing',
-        'the change:publish scope for the module of the bundle is needed',
-      );
-  }
+  const { config, access } = input;
+  // The config paths are canonical (8.3 names expanded); the root must be too for relative paths to agree.
+  const root = canonicalPath(input.root);
+  if (
+    access !== 'all' &&
+    !coversModule(access, recordedModule(files.get('neutral/model.json')))
+  )
+    throw new AgenticError(
+      'auth.scope-missing',
+      'the change:publish scope for the module of the bundle is needed',
+    );
   const changesAbs = join(config.outRoot, config.changesDir);
-  const { planned, change } = plan(
-    manifest,
-    files,
-    toPosix(relative(root, changesAbs)),
-  );
+  const changesRel = relTo(root, changesAbs);
+  const { planned, change } = plan(manifest, files, changesRel);
   // A module-scoped grant narrows the module paths; the change directory is always allowed.
-  const granted = config.modules.filter(
-    (m) => access === 'all' || access.has(m.name),
-  );
+  const granted = config.modules.filter((m) => coversModule(access, m.name));
   checkedWrites(
     planned,
     writableDirs(root, { ...config, modules: granted }, changesAbs, change),
@@ -84,32 +91,60 @@ export async function publishBundle(
     number: change.slice(0, 4),
     slug: change.slice(5),
     title: `Change ${change}`,
+    changesDir: changesRel,
     body: `Published from a compiled bundle through the Domain MCP.\n\nBundle hash: ${manifest.hash}\nBase ref: ${manifest.baseRef}\n\nThe hash proves the bundle is unchanged, not who made it: review the files before merging.`,
     files: planned.map((p) => ({ path: p.rel, content: p.content })),
   });
 }
 
+// The project's path below the git toplevel (`a/b/`, or `` at the toplevel or outside a repository):
+// GitHub paths are relative to the repository, the bundle's to the project.
+async function repoPrefix(project: string): Promise<string> {
+  const git = Bun.spawn(['git', 'rev-parse', '--show-prefix'], {
+    cwd: project,
+    stdout: 'pipe',
+    stderr: 'ignore',
+  });
+  const out = await new Response(git.stdout).text();
+  return (await git.exited) === 0 ? out.trim() : '';
+}
+
+// Maps the project-relative paths of a change to repository-relative ones.
+const inRepo = (sink: ChangeSink, prefix: string): ChangeSink =>
+  prefix === ''
+    ? sink
+    : {
+        publish: (change) =>
+          sink.publish({
+            ...change,
+            changesDir: prefix + change.changesDir,
+            files: change.files.map((f) => ({ ...f, path: prefix + f.path })),
+          }),
+      };
+
 /**
  * `sinkFromEnv` limited to what a bundle may write in this project (the module paths and the
- * changes directory). Reads the config only when the environment asks for a sink.
+ * changes directory), with the config it read. Reads the config only when the environment asks
+ * for a sink.
  */
-export async function sinkFromProject(
+export async function publishTargetFromProject(
   root: string,
   configPath: string,
   env: Readonly<Record<string, string | undefined>>,
-): Promise<ChangeSink | undefined> {
+  fetchImpl?: typeof fetch,
+): Promise<PublishTarget | undefined> {
   if (!env.AGENTIC_GITHUB_TOKEN && !env.AGENTIC_GITHUB_REPO) return undefined;
   const config = await loadConfig(configPath);
+  const project = canonicalPath(root);
+  const prefix = await repoPrefix(project);
   const allowed = writableDirs(
-    root,
+    project,
     config,
     join(config.outRoot, config.changesDir),
     '',
-  );
-  return sinkFromEnv(
-    env,
-    allowed.map((d) => (d.endsWith('/') ? d : `${d}/`)),
-  );
+  ).map((d) => `${prefix}${d.endsWith('/') ? d : `${d}/`}`);
+  const sink = sinkFromEnv(env, allowed, fetchImpl);
+  return sink && { sink: inRepo(sink, prefix), config };
 }
 
 /**

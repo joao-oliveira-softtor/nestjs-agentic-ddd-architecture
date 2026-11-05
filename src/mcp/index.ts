@@ -6,21 +6,21 @@ import {
   getOAuthProtectedResourceMetadataUrl,
 } from '@modelcontextprotocol/server';
 import { serveStdio } from '@modelcontextprotocol/server/stdio';
-import { isAbsolute, join, posix, relative } from 'node:path';
+import { isAbsolute, posix, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
 import { compileBundle, type Bundle } from '../compiler/bundle/index';
 import { moduleAccess, type ModuleAccess } from '../auth/scopes';
-import { loadConfig, type McpConfig } from '../compiler/config';
+import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
 import type { ResolvedConventions } from '../compiler/conventions';
 import type { PublishedLock } from '../compiler/published';
 import type { Rule } from '../compiler/rules';
 import { checkSnapshot } from '../compiler/snapshot';
-import { publishBundle } from '../publish/bundle';
-import type { ChangeSink, PublishedChange } from '../publish/change-sink';
+import { publishBundle, type PublishTarget } from '../publish/bundle';
+import type { PublishedChange } from '../publish/change-sink';
 import { coversModule, narrowRuleGlobs, pathModule, scopeLock } from './scope';
 import {
   authoringCatalogue,
@@ -38,8 +38,12 @@ const CAPABILITY = 'domain:read';
 const SKILL_CAPABILITY = 'skill:read';
 const PROPOSE_CAPABILITY = 'change:propose';
 const PUBLISH_CAPABILITY = 'change:publish';
-// Room for a large Delta plus its proposal.md, or a bundle to publish; anything bigger is refused before any work.
+// Room for a large Delta plus its proposal.md; anything bigger is refused before any work.
 const MAX_INPUT_BYTES = 256 * 1024;
+const MAX_BODY_BYTES = 1024 * 1024;
+// publish_change takes what propose_change returned (skeleton, packets and neutral model, well past its own input),
+// so it gets the largest body the HTTP transport accepts.
+const MAX_PUBLISH_BYTES = MAX_BODY_BYTES;
 
 // One call at a time per server process, fail fast, no queue: a compile is a git checkout plus two
 // child processes, a publish is a burst of requests with the server token.
@@ -67,11 +71,11 @@ export const withPublishSlot = oneAtATime('mcp.publish-busy', 'publish_change');
 
 const noGrant = (access: ModuleAccess) => access !== 'all' && access.size === 0;
 
-function assertInputSize(args: unknown): void {
-  if (Buffer.byteLength(JSON.stringify(args)) > MAX_INPUT_BYTES)
+function assertInputSize(args: unknown, max = MAX_INPUT_BYTES): void {
+  if (Buffer.byteLength(JSON.stringify(args)) > max)
     throw new AgenticError(
       'mcp.input-too-large',
-      `the input exceeds ${MAX_INPUT_BYTES} bytes`,
+      `the input exceeds ${max} bytes`,
     );
 }
 
@@ -136,7 +140,7 @@ type PublishArgs = { hash: string; files: { path: string; content: string }[] };
 // Scope, size and source are checked before any work; the module of the bundle is checked in publishBundle.
 async function publishChange(
   source: Source,
-  sink: ChangeSink | undefined,
+  publish: PublishTarget | undefined,
   access: ModuleAccess,
   args: PublishArgs,
 ): Promise<PublishedChange> {
@@ -145,31 +149,31 @@ async function publishChange(
       'auth.scope-missing',
       `the ${PUBLISH_CAPABILITY} scope is needed to publish a change`,
     );
-  assertInputSize(args);
-  if (!sink || 'published' in source)
+  assertInputSize(args, MAX_PUBLISH_BYTES);
+  if (!publish || 'published' in source)
     throw new AgenticError(
       'mcp.publish-unavailable',
       'this server has no Git host configured for publishing, or serves a published lock',
     );
   const { root } = source;
-  return withPublishSlot(async () =>
+  return withPublishSlot(() =>
     publishBundle({
       bundle: args,
       root,
-      config: await loadConfig(join(root, 'agentic.config.ts')),
+      config: publish.config,
       access,
-      sink,
+      sink: publish.sink,
     }),
   );
 }
 
 // The tools and skill documents, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
-// `sink` is where publish_change sends a bundle; without one that tool answers `mcp.publish-unavailable`.
+// `publish` is where publish_change sends a bundle (its sink and the project config); without it that tool answers `mcp.publish-unavailable`.
 export function createDomainServer(
   source: Source,
   remote: boolean,
   authoringDir = AUTHORING_DIR,
-  sink?: ChangeSink,
+  publish?: PublishTarget,
 ): McpServer {
   // The skill comes from the installed package, not from the project: read once per server, in both modes.
   const authoringDocs = authoringLoader(authoringDir);
@@ -491,7 +495,7 @@ export function createDomainServer(
     },
     (args: PublishArgs, ctx?: Ctx) =>
       respond(() =>
-        publishChange(source, sink, accessOf(ctx, PUBLISH_CAPABILITY), args),
+        publishChange(source, publish, accessOf(ctx, PUBLISH_CAPABILITY), args),
       ),
   );
   server.registerResource(
@@ -529,20 +533,18 @@ const sourceOf = (root: string, published?: PublishedLock): Source =>
 export function startMcpServer({
   root,
   published,
-  sink,
+  publish,
 }: {
   root: string;
   published?: PublishedLock;
-  sink?: ChangeSink;
+  publish?: PublishTarget;
 }): {
   close(): Promise<void>;
 } {
   return serveStdio(() =>
-    createDomainServer(sourceOf(root, published), false, undefined, sink),
+    createDomainServer(sourceOf(root, published), false, undefined, publish),
   );
 }
-
-const MAX_BODY_BYTES = 1024 * 1024;
 
 const trimSlash = (path: string) =>
   path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
@@ -592,14 +594,14 @@ export async function startMcpHttpServer({
   port,
   host,
   mcp,
-  sink,
+  publish,
 }: {
   root: string;
   published?: PublishedLock;
   port: number;
   host: string;
   mcp: McpConfig;
-  sink?: ChangeSink;
+  publish?: PublishTarget;
 }): Promise<{ close(): Promise<void>; port: number }> {
   // Loaded here so the stdio server does not need `jose`.
   const { createResourceServer } = await import('../auth/resource-server');
@@ -620,9 +622,10 @@ export async function startMcpHttpServer({
   const metadataPath = trimSlash(
     new URL(getOAuthProtectedResourceMetadataUrl(resource)).pathname,
   );
-  // Stateless: the tools are read-only, so a fresh server per request is enough.
+  // Stateless: no session state (publish_change keeps only a per-process busy flag), so a fresh server per request is enough.
   const handler = createMcpHandler(
-    () => createDomainServer(sourceOf(root, published), true, undefined, sink),
+    () =>
+      createDomainServer(sourceOf(root, published), true, undefined, publish),
     {
       maxRequestBodySize: MAX_BODY_BYTES,
     },

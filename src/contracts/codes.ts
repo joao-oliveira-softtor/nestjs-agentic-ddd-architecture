@@ -258,6 +258,8 @@ export const ERROR_CODES = {
   // publish
   'publish.branch-exists':
     'The change branch already exists on the Git host; it is never updated.',
+  'publish.change-exists':
+    'The change number is already used in the target repository changes directory.',
   'publish.change-invalid':
     'The change number or slug is not NNNN and a kebab-case slug.',
   'publish.config-invalid':

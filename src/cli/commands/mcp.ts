@@ -9,8 +9,10 @@ import {
   type PublishedLock,
 } from '../../compiler/published';
 import { AgenticError, formatCoded } from '../../contracts/codes';
-import { sinkFromProject } from '../../publish/bundle';
-import type { ChangeSink } from '../../publish/change-sink';
+import {
+  publishTargetFromProject,
+  type PublishTarget,
+} from '../../publish/bundle';
 import { parseArgs } from '../args';
 import { USAGE } from '../usage';
 
@@ -18,7 +20,7 @@ type Load = () => Promise<{
   startMcpServer(options: {
     root: string;
     published?: PublishedLock;
-    sink?: ChangeSink;
+    publish?: PublishTarget;
   }): {
     close(): unknown;
   };
@@ -28,7 +30,7 @@ type Load = () => Promise<{
     port: number;
     host: string;
     mcp: McpConfig;
-    sink?: ChangeSink;
+    publish?: PublishTarget;
   }): Promise<{ close(): unknown; port: number }>;
 }>;
 
@@ -60,14 +62,16 @@ const configPathOf = (values: ReadonlyMap<string, string>, root: string) =>
   values.get('--config') ?? resolve(root, 'agentic.config.ts');
 
 // publish_change needs a working copy (a published lock has no files to publish from) and a Git host in the environment.
-async function sinkFor(
+async function publishFor(
   published: PublishedLock | undefined,
   root: string,
   configPath: string,
-): Promise<{ sink: ChangeSink | undefined } | { error: AgenticError }> {
-  if (published !== undefined) return { sink: undefined };
+): Promise<{ publish: PublishTarget | undefined } | { error: AgenticError }> {
+  if (published !== undefined) return { publish: undefined };
   try {
-    return { sink: await sinkFromProject(root, configPath, process.env) };
+    return {
+      publish: await publishTargetFromProject(root, configPath, process.env),
+    };
   } catch (error) {
     if (!(error instanceof AgenticError)) throw error;
     return { error };
@@ -153,16 +157,13 @@ export async function mcpCommand(
       return 1;
     }
   }
-  const made = await sinkFor(
-    published,
-    root,
-    configPathOf(parsed.values, root),
-  );
+  const configPath = configPathOf(parsed.values, root);
+  const made = await publishFor(published, root, configPath);
   if ('error' in made) {
     console.error(formatCoded(made.error));
     return 1;
   }
-  const { sink } = made;
+  const { publish } = made;
   // Printed only once the server is up, never before a failure.
   const announce = () => {
     if (published !== undefined)
@@ -171,11 +172,10 @@ export async function mcpCommand(
       );
   };
   if (http) {
-    const configPath = configPathOf(parsed.values, root);
     // A published host may have no module sources, so skip the module-path checks.
     const mcp =
       published === undefined
-        ? (await loadConfig(configPath)).mcp
+        ? (publish?.config ?? (await loadConfig(configPath))).mcp
         : await loadMcpConfig(configPath);
     if (mcp === undefined) {
       console.error(
@@ -194,7 +194,7 @@ export async function mcpCommand(
         port: Number(port),
         host,
         mcp,
-        sink,
+        publish,
       });
     } catch (error) {
       const { code, message } = error as { code?: string; message?: string };
@@ -237,7 +237,7 @@ export async function mcpCommand(
     await handle.close();
     return 0;
   }
-  const handle = mod.startMcpServer({ root, published, sink });
+  const handle = mod.startMcpServer({ root, published, publish });
   announce();
   const { stdin } = process;
   if (!stdin.readableEnded && !stdin.destroyed)
