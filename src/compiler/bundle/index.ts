@@ -9,7 +9,7 @@ import { parseLock, type DomainLock } from '../lock';
 import { renderDelta, type RenderResult } from '../delta/render';
 import { validateDelta, type Delta } from '../delta/schema';
 import { splice, type Fragment } from '../delta/splice';
-import { parseProposal } from '../changes/proposal';
+import { parseProposal, type AcceptanceCriterion } from '../changes/proposal';
 import { analysisSchema, type CandidateAnalysis } from './analysis';
 import {
   DEFAULT_TIMEOUT_MS,
@@ -19,10 +19,11 @@ import {
   runCandidateCli,
   withWorktree,
 } from './candidate';
-import { buildNeutral, type NeutralBuild } from './neutral';
+import { buildNeutral } from './neutral';
 import {
   buildManifest,
   byPath,
+  fileName,
   renderBundleMd,
   toLf,
   type BundleFile,
@@ -69,9 +70,6 @@ export interface Bundle {
 }
 
 const CONFIG = 'agentic.config.ts';
-
-const fileName = (id: string): string =>
-  `${id.replaceAll(/[^a-zA-Z0-9_]+/g, '-')}.md`;
 
 /** A bundle file; every text that feeds a hash is LF. */
 const lf = (path: string, content: string): BundleFile => ({
@@ -208,9 +206,29 @@ export function nextChangeId(names: readonly string[]): string {
 
 const KEBAB_CASE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-type NumberedProposal = BundleInput['proposal'] & { readonly id: string };
+type NumberedProposal = BundleInput['proposal'] & {
+  readonly id: string;
+  /** Read once, strictly, before anything is compiled. */
+  readonly acceptance: readonly AcceptanceCriterion[];
+};
 
-/** Numbers the proposal against the base and writes it to `changes/<id>-<slug>/` of the candidate. */
+/** The acceptance criteria of the proposal, through the strict parser: a parse error is the caller's invalid proposal. */
+export function parseAcceptance(
+  id: string,
+  slug: string,
+  markdown: string,
+): readonly AcceptanceCriterion[] {
+  const dir = `${id}-${slug}`;
+  const parsed = parseProposal(markdown, dir, `${dir}/proposal.md`, false);
+  if (!parsed.proposal)
+    throw new AgenticError(
+      'bundle.proposal-invalid',
+      `the proposal is invalid: ${quote(parsed.errors.map((e) => e.message).join('; '), 500)}`,
+    );
+  return parsed.proposal.acceptance;
+}
+
+/** Numbers the proposal against the base, validates it and writes it to `changes/<id>-<slug>/` of the candidate. */
 async function writeProposal(
   base: Base,
   proposal: BundleInput['proposal'],
@@ -220,10 +238,11 @@ async function writeProposal(
     ...base.lock.changes.map((c) => c.id),
     ...(await readdir(changesDir).catch(() => [])),
   ]);
+  const acceptance = parseAcceptance(id, proposal.slug, proposal.markdown);
   const target = inside(changesDir, `${id}-${proposal.slug}/proposal.md`);
   await mkdir(dirname(target), { recursive: true });
   await writeFile(target, proposal.markdown);
-  return { ...proposal, id };
+  return { ...proposal, id, acceptance };
 }
 
 /** Compiles the candidate and analyzes it; candidate code runs only in these children (killable, no network, scrubbed env). */
@@ -319,34 +338,6 @@ function itemEntries(analysis: CandidateAnalysis): {
   return { items, files };
 }
 
-/**
- * The neutral files from the validated Delta and the numbered proposal, read back through the strict
- * parser: the proposal was just written by us, so a parse error is the caller's invalid proposal.
- */
-export function neutralLayer(
-  delta: Delta,
-  proposal: NumberedProposal,
-  items: readonly TargetItem[],
-): NeutralBuild {
-  const dir = `${proposal.id}-${proposal.slug}`;
-  const parsed = parseProposal(
-    proposal.markdown,
-    dir,
-    `${dir}/proposal.md`,
-    false,
-  );
-  if (!parsed.proposal)
-    throw new AgenticError(
-      'bundle.proposal-invalid',
-      `the proposal is invalid: ${quote(parsed.errors.map((e) => e.message).join('; '), 500)}`,
-    );
-  return buildNeutral({
-    delta,
-    acceptance: parsed.proposal.acceptance,
-    items: items.map(({ id, layer, wave }) => ({ id, layer, wave })),
-  });
-}
-
 /** The manifest, its hash and every file, from what the candidate produced. */
 async function assemble(parts: {
   baseRef: string;
@@ -358,7 +349,12 @@ async function assemble(parts: {
   const { base, rendered, proposal, analysis } = parts;
   const skeleton = await skeletonFiles(base, rendered);
   const entries = itemEntries(analysis);
-  const neutral = neutralLayer(rendered.delta, proposal, entries.items);
+  const neutral = buildNeutral({
+    delta: rendered.delta,
+    acceptance: proposal.acceptance,
+    base: base.lock.ir,
+    items: entries.items.map(({ id, layer, wave }) => ({ id, layer, wave })),
+  });
   const files = [
     ...skeleton.files,
     lf(
@@ -380,11 +376,7 @@ async function assemble(parts: {
           items: entries.items,
           skeleton: skeleton.skeleton,
         },
-        neutral: {
-          model: 'neutral/model.json',
-          readme: 'neutral/README.md',
-          briefs: neutral.briefs,
-        },
+        neutral: neutral.layer,
       },
       examples: rendered.examples,
     },

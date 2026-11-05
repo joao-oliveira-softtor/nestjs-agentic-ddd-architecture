@@ -4,6 +4,10 @@ import { shellQuote } from '../packet';
 
 export const BUNDLE_VERSION = 1 as const;
 
+/** The file name of an item's packet and briefs: its id with every non-word run as `-`. */
+export const fileName = (id: string): string =>
+  `${id.replaceAll(/[^a-zA-Z0-9_]+/g, '-')}.md`;
+
 export interface BundleFile {
   /** Bundle-relative, forward slashes. */
   readonly path: string;
