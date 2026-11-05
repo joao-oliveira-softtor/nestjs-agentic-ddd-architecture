@@ -245,14 +245,14 @@ export function plan(
   return { planned, change: change! };
 }
 
-async function checkBase(
+const mismatch = (why: string) => new AgenticError('apply.base-mismatch', why);
+
+/** The base ref is a commit here and HEAD still carries the lock the bundle was compiled against. */
+async function checkLock(
   root: string,
   manifest: BundleManifest,
   lockRel: string,
-  planned: readonly Planned[],
-): Promise<Set<string>> {
-  const mismatch = (why: string) =>
-    new AgenticError('apply.base-mismatch', why);
+): Promise<void> {
   const ref = manifest.baseRef;
   const known =
     !ref.startsWith('-') &&
@@ -266,6 +266,14 @@ async function checkBase(
     throw mismatch(
       `the committed ${lockRel} at HEAD is not the lock the bundle was compiled against`,
     );
+}
+
+/** Every target file equals its content at `ref`; returns the ones already on disk. */
+async function checkTargets(
+  root: string,
+  ref: string,
+  planned: readonly Planned[],
+): Promise<Set<string>> {
   const present = new Set<string>();
   // Bounded batches of parallel `git show`; the first offending path in plan order is named.
   for (let i = 0; i < planned.length; i += GIT_BATCH) {
@@ -285,6 +293,16 @@ async function checkBase(
       );
   }
   return present;
+}
+
+async function checkBase(
+  root: string,
+  manifest: BundleManifest,
+  lockRel: string,
+  planned: readonly Planned[],
+): Promise<Set<string>> {
+  await checkLock(root, manifest, lockRel);
+  return checkTargets(root, manifest.baseRef, planned);
 }
 
 /** What a transaction changed so far: files put in place (with the backup of the one they replaced) and directories created. */
