@@ -38,12 +38,13 @@ export async function analyzeCandidate(
   const context = await stateContext(configPath);
   const report = await collectStatus(context, true);
   const { ir } = context.project;
-  const diff = semanticDiff(base.ir, ir).filter((d) => d.module === module);
-  const ids = (added: boolean) =>
-    diff.filter((d) => (d.kind === 'added') === added).map((d) => d.id);
+  const touched = semanticDiff(base.ir, ir)
+    .filter((d) => d.module === module)
+    .map((d) => d.id);
+  // selectChange treats added and modified ids alike, and a removed id has no owner in the candidate.
   const { items: selected } = selectChange(report, ir, {
     id: 'bundle',
-    delta: { added: ids(true), modified: ids(false), removed: [] },
+    delta: { added: [], modified: touched, removed: [] },
   });
   const order = waves({ ...report, items: selected }).waves;
   return {
