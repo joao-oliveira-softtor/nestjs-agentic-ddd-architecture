@@ -2,8 +2,9 @@
 # The Bun version matches .github/workflows/ci.yml. Run it through `bun run ci:docker`.
 FROM oven/bun:1.4.4
 
+# nodejs and npm: test:package packs and installs with npm and runs its consumer on node, as the CI runner does.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git python3 python3-venv ca-certificates \
+ && apt-get install -y --no-install-recommends git nodejs npm python3 python3-venv ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.5 /uv /usr/local/bin/uv
