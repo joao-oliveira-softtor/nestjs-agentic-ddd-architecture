@@ -799,20 +799,35 @@ class SemanticChecks {
 
   /** As validate.ts checks it: emits is exactly the events of the methods in uses. */
   emitsMatchUses(uc: Delta['useCases'][number], path: string): void {
-    const reachable = new Set<string>();
-    for (const u of uc.uses) {
+    this.matchEmits(path, uc.uses, uc.uses, uc.emits, uc.emits);
+  }
+
+  /**
+   * `checkUses` must have every event they emit in `allEmits`; every `added` emit must be emitted
+   * by some method in `allUses`. A new use-case passes the same lists; an addition passes the
+   * added entries as `checkUses` and `added` and the base's plus the added ones as `all*`.
+   */
+  matchEmits(
+    path: string,
+    checkUses: readonly string[],
+    allUses: readonly string[],
+    allEmits: readonly string[],
+    added: readonly string[],
+  ): void {
+    const emittedBy = (u: string): readonly string[] => {
       const m = USES.exec(u);
-      for (const ev of (m && this.#methodEmits.get(`${m[1]}.${m[2]}`)) || []) {
-        reachable.add(ev);
-        if (!uc.emits.includes(ev))
+      return (m && this.#methodEmits.get(`${m[1]}.${m[2]}`)) || [];
+    };
+    for (const u of checkUses)
+      for (const ev of emittedBy(u))
+        if (!allEmits.includes(ev))
           this.add(
             'delta.reference-unknown',
             `${path}.emits`,
             `${show(u)} emits ${show(ev)}, which is missing from emits`,
           );
-      }
-    }
-    uc.emits.forEach((ev, i) => {
+    const reachable = new Set(allUses.flatMap(emittedBy));
+    added.forEach((ev, i) => {
       if (!reachable.has(ev))
         this.add(
           'delta.reference-unknown',
@@ -891,6 +906,13 @@ class SemanticChecks {
       e.replace(/^event:/, ''),
     );
     this.alreadyListed(`${p}.uses`, ua.uses, target?.uses, 'used');
+    this.matchEmits(
+      p,
+      ua.uses,
+      [...orEmpty(target?.uses), ...ua.uses],
+      [...existingEmits, ...ua.emits],
+      ua.emits,
+    );
     this.alreadyListed(
       `${p}.emits`,
       ua.emits,

@@ -698,6 +698,42 @@ describe('additions to existing items', () => {
     expect(errorsOf(d, base)).toEqual([]);
   });
 
+  describe('emits rule on use-case additions (#117 rule applied to #144)', () => {
+    const emitting = (): Delta => {
+      const d = addition();
+      d.events = [{ name: 'OrderRefunded', entity: 'Order', description: 'd', payload: [] }];
+      d.entityAdditions![0]!.methods[0]!.emits = ['OrderRefunded'];
+      d.useCaseAdditions![0]!.emits = ['OrderRefunded'];
+      return d;
+    };
+
+    test('accepts added emits that match the events of the added uses', () => {
+      expect(errorsOf(emitting(), base)).toEqual([]);
+    });
+
+    test('an added use whose method emits an event missing from the emits is refused', () => {
+      const d = emitting();
+      d.useCaseAdditions![0]!.emits = [];
+      expect(errorsOf(d, base)).toContainEqual(
+        expect.objectContaining({
+          code: 'delta.reference-unknown',
+          path: 'useCaseAdditions[0].emits',
+        }),
+      );
+    });
+
+    test('an added emit that no method in the existing and added uses emits is refused', () => {
+      const d = emitting();
+      d.entityAdditions![0]!.methods[0]!.emits = [];
+      expect(errorsOf(d, base)).toContainEqual(
+        expect.objectContaining({
+          code: 'delta.reference-unknown',
+          path: 'useCaseAdditions[0].emits[0]',
+        }),
+      );
+    });
+  });
+
   test('every new invariant needs at least one example', () => {
     const d = addition();
     d.entityAdditions![0]!.invariants[0]!.examples = [];
