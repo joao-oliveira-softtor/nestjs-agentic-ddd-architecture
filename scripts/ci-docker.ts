@@ -164,22 +164,23 @@ export function missingBinary(error: unknown): string | undefined {
   return `${path ?? 'a required program'} was not found in PATH; ci:docker needs docker and git`;
 }
 
-async function exec(command: string[]): Promise<number> {
+type Env = Record<string, string | undefined>;
+
+// Every spawn gets the caller's env: without it Bun resolves programs with the env the process started with.
+async function exec(command: string[], env: Env): Promise<number> {
   const child = Bun.spawn(command, {
     cwd: repo,
+    env,
     stdout: 'inherit',
     stderr: 'inherit',
   });
   return child.exited;
 }
 
-async function git(
-  args: string[],
-  env: Record<string, string | undefined> = {},
-): Promise<string> {
+async function git(args: string[], env: Env): Promise<string> {
   const child = Bun.spawn(['git', ...args], {
     cwd: repo,
-    env: { ...process.env, ...env },
+    env,
     stdout: 'pipe',
     stderr: 'inherit',
   });
@@ -193,13 +194,13 @@ async function git(
 
 // The working tree as a tree object, built in a copy of the real index (so only changed files are
 // rehashed) and never in the real one, which stays untouched.
-export async function snapshotTree(): Promise<string> {
+export async function snapshotTree(base: Env = process.env): Promise<string> {
   const dir = mkdtempSync(join(tmpdir(), 'ci-docker-index-'));
-  const env = { GIT_INDEX_FILE: join(dir, 'index') };
+  const env = { ...base, GIT_INDEX_FILE: join(dir, 'index') };
   try {
     const index = resolve(
       repo,
-      await git(['rev-parse', '--git-path', 'index']),
+      await git(['rev-parse', '--git-path', 'index'], base),
     );
     if (existsSync(index)) copyFileSync(index, env.GIT_INDEX_FILE);
     await git(['-c', 'core.autocrlf=input', 'add', '-A'], env);
@@ -209,23 +210,23 @@ export async function snapshotTree(): Promise<string> {
   }
 }
 
-async function ensureImage(tag: string, force: boolean): Promise<number> {
+async function ensureImage(
+  tag: string,
+  force: boolean,
+  env: Env,
+): Promise<number> {
   if (!force) {
     const probe = Bun.spawn(['docker', 'image', 'inspect', tag], {
+      env,
       stdout: 'ignore',
       stderr: 'ignore',
     });
     if ((await probe.exited) === 0) return 0;
   }
-  return exec([
-    'docker',
-    'build',
-    '-f',
-    dockerfile,
-    '-t',
-    tag,
-    join(repo, 'docker'),
-  ]);
+  return exec(
+    ['docker', 'build', '-f', dockerfile, '-t', tag, join(repo, 'docker')],
+    env,
+  );
 }
 
 // Ctrl+C reaches docker's CLI, but a SIGTERM to this process would not: kill the container by name.
@@ -233,9 +234,11 @@ async function runContainer(
   argv: string[],
   name: string,
   archive: Bun.Subprocess<'ignore', 'pipe', 'inherit'>,
+  env: Env,
 ): Promise<number> {
   const kill = () =>
     Bun.spawnSync(['docker', 'kill', name], {
+      env,
       stdout: 'ignore',
       stderr: 'ignore',
     });
@@ -243,6 +246,7 @@ async function runContainer(
   process.on('SIGTERM', kill);
   try {
     const container = Bun.spawn(argv, {
+      env,
       stdin: archive.stdout,
       stdout: 'inherit',
       stderr: 'inherit',
@@ -263,16 +267,16 @@ async function runGate(
   env: Record<string, string | undefined>,
 ): Promise<number> {
   const tag = imageTag(readFileSync(dockerfile, 'utf8'));
-  const built = await ensureImage(tag, options.build);
+  const built = await ensureImage(tag, options.build, env);
   if (built !== 0) return built;
 
   const body =
     options.command ?? gateScript(readFileSync(workflowFile, 'utf8'));
-  const treeish = options.head ? 'HEAD' : await snapshotTree();
+  const treeish = options.head ? 'HEAD' : await snapshotTree(env);
   mkdirSync(join(repo, '.tmp', 'ci-docker'), { recursive: true });
   const archive = Bun.spawn(
     ['git', '-c', 'core.autocrlf=false', 'archive', treeish],
-    { cwd: repo, stdout: 'pipe', stderr: 'inherit' },
+    { cwd: repo, env, stdout: 'pipe', stderr: 'inherit' },
   );
   const name = `agentic-ddd-ci-${process.pid}`;
   const owner = hostOwner(process.platform, process.getuid, process.getgid);
@@ -280,7 +284,7 @@ async function runGate(
     name,
     owner,
   });
-  return runContainer(argv, name, archive);
+  return runContainer(argv, name, archive, env);
 }
 
 export async function main(
