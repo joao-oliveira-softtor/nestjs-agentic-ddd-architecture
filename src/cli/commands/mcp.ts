@@ -140,9 +140,9 @@ export async function mcpCommand(
         `agentic-ddd serving published lock ${published.version} (digest ${published.digest.slice(0, 12)})`,
       );
   };
+  const configPath =
+    parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts');
   if (http) {
-    const configPath =
-      parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts');
     // A published host may have no module sources, so skip the module-path checks.
     const mcp =
       published === undefined
@@ -208,11 +208,10 @@ export async function mcpCommand(
     await handle.close();
     return 0;
   }
-  const configArg = parsed.values.get('--config');
   const handle = mod.startMcpServer({
     root,
     published,
-    config: configArg === undefined ? undefined : resolve(configArg),
+    config: resolve(configPath),
   });
   announce();
   const { stdin } = process;
