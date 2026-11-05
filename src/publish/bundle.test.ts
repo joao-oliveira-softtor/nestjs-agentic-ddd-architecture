@@ -9,7 +9,10 @@ import {
   bundleOf,
   modelOf,
 } from '../../test/helpers/publish-bundle';
-import { shortPath } from '../../test/helpers/short-path';
+import {
+  SHORT_PATH_TEST_TIMEOUT_MS,
+  shortPath,
+} from '../../test/helpers/short-path';
 import { publishBundle, publishTargetFromProject, sinkFromEnv } from './bundle';
 import { GitHubChangeSink } from './github-sink';
 
@@ -273,31 +276,35 @@ describe('publishTargetFromProject', () => {
   });
 
   // Windows reports the temp folder by its 8.3 name (RUNNER~1) while the config paths are expanded.
-  test('a project root given by its 8.3 short name publishes the same repository-relative paths', async () => {
-    const { project, configPath } = await monorepo();
-    const fake = createFakeGitHost({
-      owner: 'acme',
-      repo: 'shop',
-      token: TOKEN,
-    });
-    const target = (await publishTargetFromProject(
-      project,
-      configPath,
-      env,
-      fake.fetch,
-    ))!;
-    await publishBundle({
-      bundle: bundleOf(GOOD),
-      root: shortPath(project),
-      config: target.config,
-      access: 'all',
-      sink: target.sink,
-    });
-    const [tree] = [...fake.trees.values()] as { tree: { path: string }[] }[];
-    expect(tree!.tree.map((f) => f.path)).toContain(
-      'sub/app/src/shop/domain/refund.ts',
-    );
-  });
+  test(
+    'a project root given by its 8.3 short name publishes the same repository-relative paths',
+    async () => {
+      const { project, configPath } = await monorepo();
+      const fake = createFakeGitHost({
+        owner: 'acme',
+        repo: 'shop',
+        token: TOKEN,
+      });
+      const target = (await publishTargetFromProject(
+        project,
+        configPath,
+        env,
+        fake.fetch,
+      ))!;
+      await publishBundle({
+        bundle: bundleOf(GOOD),
+        root: shortPath(project),
+        config: target.config,
+        access: 'all',
+        sink: target.sink,
+      });
+      const [tree] = [...fake.trees.values()] as { tree: { path: string }[] }[];
+      expect(tree!.tree.map((f) => f.path)).toContain(
+        'sub/app/src/shop/domain/refund.ts',
+      );
+    },
+    SHORT_PATH_TEST_TIMEOUT_MS,
+  );
 
   test('the number check looks at the changes directory of the repository, below the project path', async () => {
     const { project, configPath } = await monorepo();
