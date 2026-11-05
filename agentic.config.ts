@@ -16,6 +16,7 @@ export default defineConfig({
       './test/architecture.test.ts',
       './test/auth-resource-server.test.ts',
       './test/boundary-gates.test.ts',
+      './test/ci-docker.test.ts',
       './test/evals.test.ts',
       './test/executor-roles.test.ts',
       './test/mcp-http.test.ts',
