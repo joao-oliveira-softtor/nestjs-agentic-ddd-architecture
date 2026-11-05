@@ -230,16 +230,18 @@ Exits: `0` para avaliação concluída, inclusive erros do agente; `1` para infr
 ```bash
 bun run ci:docker                          # typecheck, lint, tests, verify 0001, build, test:package, compile --check, skills:install --check
 bun run ci:docker -- bun test src/cli      # any command, run in /work
+bun run ci:docker -- bun test -t 'parse args'  # each word is quoted for the shell
 bun run ci:docker -- crapper --help
 bun run ci:docker -- 'dryer . | head -20'  # quote pipes and redirects
 bun run ci:docker --head                   # snapshot HEAD instead of the working tree
 bun run ci:docker --build                  # rebuild the image
 ```
 
-- The snapshot is the working tree with uncommitted and untracked (not ignored) files, line endings normalised to LF, taken through a temporary git index, so yours is untouched. It is unpacked into a throwaway container, committed there (the tests need a git repo) and installed with `bun install --frozen-lockfile`; the host `node_modules` is never used. Nothing is written back except under `.tmp/ci-docker`, mounted as `/out` (for example `crapper ... > /out/crapper.txt`).
+- The snapshot is the working tree with uncommitted and untracked (not ignored) files, line endings normalised to LF, taken through a temporary git index, so yours is untouched. It is unpacked into a throwaway container, committed there (the tests need a git repo) and installed with `bun install --frozen-lockfile`; the host `node_modules` is never used. Nothing is written back except under `.tmp/ci-docker`, mounted as `/out` (for example `crapper ... > /out/crapper.txt`); on Linux and macOS hosts it is handed back to your user when the container ends. Paths ignored by git (`.claude/worktrees/`, `.metrics/`, `target/`, `coverage/`) are not in the snapshot.
+- With several words after `--`, each one is quoted for the shell, so `-- bun test -t 'parse args'` keeps `parse args` as one argument. A single word is passed raw, so quote the whole command to use pipes and redirects (`-- 'dryer . | head -20'`).
 - The image is tagged with a hash of the Dockerfile and built on first use. The Bun download cache lives in the `agentic-ddd-bun-cache` volume.
-- The exit code is the container's. `test/ci-docker.test.ts` checks the default gate steps against `.github/workflows/ci.yml`.
-- Limits: `CI_DOCKER_CPUS` (default `4`) and `CI_DOCKER_MEMORY` (default `8g`). On Windows, Docker Desktop runs containers inside the WSL2 VM, so they cannot exceed what that VM has (`.wslconfig`).
+- The default gate is read from the `ci` job of `.github/workflows/ci.yml` when it runs (the steps after `bun install`, with each step's `env` exported; `${{ runner.temp }}` becomes `/tmp` and any other `${{ }}` expression is refused). The exit code is the container's. Ctrl+C stops the container (`--init`, plus a `docker kill` on SIGINT/SIGTERM).
+- Limits: `CI_DOCKER_CPUS` (default `4`, or fewer when the host has fewer CPUs) and `CI_DOCKER_MEMORY` (default `8g`). On Windows, Docker Desktop runs containers inside the WSL2 VM, so they cannot exceed what that VM has (`.wslconfig`).
 - Not covered: the `evals` job (it needs bubblewrap with a uid map) and `ci-windows`.
 
 ## Estrutura
