@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test';
 import { z } from 'zod';
 import {
+  DomainError,
   DomainEvent,
   type UseCase,
   type UseCaseContext,
@@ -117,4 +118,37 @@ test('an un-awaited batch stops delivering once the execution ended', async () =
   );
   expect(await rejection(batch)).toBe('Use-case execution already ended');
   expect(delivered).toEqual(['Rang']);
+});
+
+test('an error from the use-case propagates as is, and an undeclared event wins over it', async () => {
+  const failure = new DomainError('RING_BROKEN', 'The bell broke');
+  class Broken implements UseCase<{ times: number }, { ok: true }> {
+    async execute(): Promise<{ ok: true }> {
+      throw failure;
+    }
+  }
+  const caught = await executeUseCase(
+    recordFor(Broken),
+    new Broken(),
+    { times: 1 },
+    new InMemoryEventBus(),
+  ).catch((error: unknown) => error);
+  expect(caught).toBe(failure);
+
+  class Both implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      await ctx.publish([new Other({})]);
+      return { ok: true as const };
+    }
+  }
+  expect(
+    await rejection(
+      executeUseCase(
+        recordFor(Both),
+        new Both(),
+        { times: 1 },
+        new InMemoryEventBus(),
+      ),
+    ),
+  ).toBe('Use-case ring published an undeclared event');
 });
