@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import type { Coded, ErrorCode, IR, IREntity, IRUseCase } from '../ir';
+import { KEBAB, PASCAL } from '../validate';
 import {
   INSTANCE_MEMBERS,
+  PORT_MEMBERS,
   RENDERER_IMPORT_NAMES,
   STATIC_MEMBERS,
 } from './names';
@@ -35,11 +37,12 @@ export const LIMITS = {
 } as const;
 
 // Business text must carry something, as validate.ts `required` demands (non-empty after trim).
-const text = z
-  .string()
-  .max(10_000)
-  .refine((s) => s.trim() !== '', 'must not be empty or whitespace only');
+const notBlank = (s: string): boolean => s.trim() !== '';
+const blankMessage = 'must not be empty or whitespace only';
+const text = z.string().max(10_000).refine(notBlank, blankMessage);
 const name = z.string().min(1).max(200);
+// validate.ts refuses a blank state (transition-empty-state).
+const state = name.refine(notBlank, blankMessage);
 const list = <T extends z.ZodType>(item: T, max: number) =>
   z.array(item).max(max);
 
@@ -69,8 +72,8 @@ const method = z.strictObject({
   emits: list(name, LIMITS.references).optional(),
   transition: z
     .strictObject({
-      from: list(name, LIMITS.references).min(1),
-      to: name,
+      from: list(state, LIMITS.references).min(1),
+      to: state,
     })
     .optional(),
   invariants: list(invariant, LIMITS.invariants).optional(),
@@ -100,7 +103,7 @@ export const deltaSchema = z.strictObject({
     z.strictObject({
       name,
       description: text,
-      states: list(name, LIMITS.states).optional(),
+      states: list(state, LIMITS.states).optional(),
       invariants: list(invariant, LIMITS.invariants),
       methods: list(method, LIMITS.methods),
     }),
@@ -165,13 +168,11 @@ export function splitOptional(raw: string): { id: string; optional: boolean } {
 
 export type Delta = z.infer<typeof deltaSchema>;
 
-// Same patterns as validate.ts, plus camelCase for methods, params and fields.
-const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// KEBAB and PASCAL come from validate.ts; the rest are Delta-only.
 // snake_case, at most 64 characters, no leading, trailing or doubled underscore (`foo-.ts`, class clashes).
 const USE_CASE = /^(?=.{1,64}$)[a-z][a-z0-9]*(_[a-z0-9]+)*$/;
 // Windows reserves these as file names whatever the extension; names are ASCII-only, so no ¹²³ variants.
 const DEVICE = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/;
-const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
 const CAMEL = /^[a-z][A-Za-z0-9]*$/;
 const FIELD = /^[a-z][A-Za-z0-9_]*$/;
 const USES = /^method:([A-Z][A-Za-z0-9]*)\.([a-z][A-Za-z0-9]*)$/;
@@ -215,6 +216,8 @@ export function parseType(source: string): TypeExpr | null {
   for (let i = 0; i < depth; i++) base = { kind: 'array', of: base };
   return base;
 }
+
+export const lcFirst = (s: string): string => s[0]!.toLowerCase() + s.slice(1);
 
 export function kebab(pascal: string): string {
   return pascal
@@ -277,8 +280,6 @@ export function validateDelta(
 const show = (v: string): string =>
   JSON.stringify(v.length > 80 ? `${v.slice(0, 80)}...` : v);
 
-const lcFirst = (s: string): string => s[0]!.toLowerCase() + s.slice(1);
-
 function pathOf(path: readonly PropertyKey[]): string {
   return path.reduce<string>(
     (acc, k) =>
@@ -322,16 +323,10 @@ function baseClassNames(base: IR | null): Set<string> {
   );
 }
 
-function baseItemIds(base: IR | null): Set<string> {
-  if (base === null) return new Set();
-  return new Set([
-    ...base.useCases.map((u) => u.id),
-    ...base.entities.flatMap((e) => [
-      ...e.invariants.map((i) => i.id),
-      ...e.methods.map((m) => m.id),
-    ]),
-  ]);
-}
+// Entity, invariant and method ids need no entry: a Delta entity named like a base one already
+// fails `claimClass`, and invariant and method ids are scoped by the entity name.
+const baseUseCaseIds = (base: IR | null): Set<string> =>
+  new Set(base?.useCases.map((u) => u.id));
 
 interface BaseIndex {
   /** Entities of the Delta's module. */
@@ -341,7 +336,8 @@ interface BaseIndex {
   readonly events: ReadonlySet<string>;
   readonly typeNames: readonly string[];
   readonly portNames: readonly string[];
-  readonly methodIds: readonly string[];
+  /** `Entity.method` -> names of the events it emits. */
+  readonly methodEmits: ReadonlyMap<string, readonly string[]>;
   readonly classes: ReadonlySet<string>;
   readonly ids: ReadonlySet<string>;
   /** `entity:Name` of every entity another entity contains. */
@@ -359,11 +355,16 @@ function indexBase(base: IR | null, module: string): BaseIndex {
       ...inModule(base?.valueObjects, module).map((v) => v.name),
     ],
     portNames: inModule(base?.ports, module).map((p) => p.name),
-    methodIds: entities.flatMap((e) =>
-      e.methods.map((m) => m.id.replace(/^method:/, '')),
+    methodEmits: new Map(
+      entities.flatMap((e) =>
+        e.methods.map((m): [string, string[]] => [
+          m.id.replace(/^method:/, ''),
+          m.emits.map((ev) => ev.replace(/^event:/, '')),
+        ]),
+      ),
     ),
     classes: baseClassNames(base),
-    ids: baseItemIds(base),
+    ids: baseUseCaseIds(base),
     contained: new Set(base?.entities.flatMap((e) => orEmpty(e.contains))),
   };
 }
@@ -374,6 +375,8 @@ interface EntityScope {
   readonly states: ReadonlySet<string>;
   readonly invariants: Set<string>;
   readonly methods: Set<string>;
+  /** Ids already taken by this entity in the base (empty for a new entity). */
+  readonly taken: ReadonlySet<string>;
 }
 
 /** The semantic checks, one method per kind of declaration; every problem lands in `#errors`. */
@@ -390,7 +393,7 @@ class SemanticChecks {
   readonly #entityNames: ReadonlySet<string>;
   readonly #eventNames: ReadonlySet<string>;
   readonly #typeNames: ReadonlySet<string>;
-  readonly #methodIds: ReadonlySet<string>;
+  readonly #methodEmits: ReadonlyMap<string, readonly string[]>;
   readonly #portNames: ReadonlySet<string>;
 
   constructor(delta: Delta, base: IR | null) {
@@ -403,14 +406,20 @@ class SemanticChecks {
       ...delta.valueObjects.map((v) => v.name),
       ...this.#base.typeNames,
     ]);
-    this.#methodIds = new Set([
+    this.#methodEmits = new Map([
+      ...this.#base.methodEmits,
       ...delta.entities.flatMap((e) =>
-        e.methods.map((m) => `${e.name}.${m.name}`),
+        e.methods.map((m): [string, readonly string[]] => [
+          `${e.name}.${m.name}`,
+          m.emits ?? [],
+        ]),
       ),
       ...orEmpty(delta.entityAdditions).flatMap((e) =>
-        e.methods.map((m) => `${e.entity}.${m.name}`),
+        e.methods.map((m): [string, readonly string[]] => [
+          `${e.entity}.${m.name}`,
+          m.emits ?? [],
+        ]),
       ),
-      ...this.#base.methodIds,
     ]);
     this.#portNames = new Set([
       ...delta.ports.map((p) => p.name),
@@ -435,8 +444,15 @@ class SemanticChecks {
     this.#errors.push({ code, path, message });
   }
 
-  ident(path: string, value: string, re: RegExp, label: string): void {
-    if (!re.test(value) || RESERVED.has(value))
+  /** `binding`: the name becomes a class or a parameter, so a reserved word cannot be used. */
+  ident(
+    path: string,
+    value: string,
+    re: RegExp,
+    label: string,
+    binding = false,
+  ): void {
+    if (!re.test(value) || (binding && RESERVED.has(value)))
       this.add(
         'delta.invalid-identifier',
         path,
@@ -453,14 +469,20 @@ class SemanticChecks {
       );
   }
 
-  claim(scope: Set<string>, key: string, path: string, id = key): void {
+  claim(
+    scope: Set<string>,
+    key: string,
+    path: string,
+    id = key,
+    taken: ReadonlySet<string> = this.#base.ids,
+  ): void {
     if (scope.has(key))
       this.add(
         'delta.name-collision',
         path,
         `${show(id)} is declared twice in the Delta`,
       );
-    else if (this.#base.ids.has(id))
+    else if (taken.has(id))
       this.add(
         'delta.name-collision',
         path,
@@ -526,7 +548,7 @@ class SemanticChecks {
     let optionalSeen = false;
     fields.forEach((f, i) => {
       const { id, optional } = splitOptional(f.name);
-      this.ident(`${path}[${i}].name`, id, re, label);
+      this.ident(`${path}[${i}].name`, id, re, label, params);
       this.type(`${path}[${i}].type`, f.type);
       this.claim(seen, id, `${path}[${i}].name`);
       if (params) {
@@ -572,10 +594,11 @@ class SemanticChecks {
     members: ReadonlySet<string>,
     scope: Set<string>,
     id: string,
+    taken?: ReadonlySet<string>,
   ): void {
     this.ident(`${path}.name`, m.name, CAMEL, 'camelCase method name');
     this.member(`${path}.name`, m.name, members);
-    this.claim(scope, m.name, `${path}.name`, id);
+    this.claim(scope, m.name, `${path}.name`, id, taken);
     this.fields(
       `${path}.params`,
       m.params,
@@ -598,13 +621,20 @@ class SemanticChecks {
         inv.id,
         `${path}[${ii}].id`,
         `invariant:${scope.name}/${inv.id}`,
+        scope.taken,
       );
     });
   }
 
   entity(entity: EntityDecl, ei: number): void {
     const ep = `entities[${ei}]`;
-    this.ident(`${ep}.name`, entity.name, PASCAL, 'PascalCase entity name');
+    this.ident(
+      `${ep}.name`,
+      entity.name,
+      PASCAL,
+      'PascalCase entity name',
+      true,
+    );
     this.fileName(`${ep}.name`, kebab(entity.name));
     this.claimClass(entity.name, `${ep}.name`, `entity:${entity.name}`);
     this.noDuplicates(`${ep}.states`, entity.states);
@@ -623,7 +653,12 @@ class SemanticChecks {
       `entity ${show(add.entity)} does not exist in module ${show(this.#delta.module)} of the base (new entities go in entities)`,
       `entity ${show(add.entity)} has more than one addition entry`,
     );
-    this.members(p, add.entity, new Set(orEmpty(target?.states)), add);
+    const taken = new Set([
+      ...this.#base.ids,
+      ...orEmpty(target?.invariants).map((v) => v.id),
+      ...orEmpty(target?.methods).map((m) => m.id),
+    ]);
+    this.members(p, add.entity, new Set(orEmpty(target?.states)), add, taken);
   }
 
   baseEntity(name: string): IREntity | undefined {
@@ -636,12 +671,14 @@ class SemanticChecks {
     name: string,
     states: ReadonlySet<string>,
     entity: Pick<EntityDecl, 'invariants' | 'methods'>,
+    taken: ReadonlySet<string> = this.#base.ids,
   ): void {
     const scope: EntityScope = {
       name,
       states,
       invariants: new Set(),
       methods: new Set(),
+      taken,
     };
     this.invariants(scope, `${ep}.invariants`, entity.invariants);
     entity.methods.forEach((m, mi) =>
@@ -656,6 +693,7 @@ class SemanticChecks {
       m.static ? STATIC_MEMBERS : INSTANCE_MEMBERS,
       scope.methods,
       `method:${scope.name}.${m.name}`,
+      scope.taken,
     );
     this.emits(`${mp}.emits`, m.emits);
     this.noDuplicates(`${mp}.emits`, m.emits);
@@ -687,21 +725,29 @@ class SemanticChecks {
 
   valueObject(vo: Delta['valueObjects'][number], vi: number): void {
     const vp = `valueObjects[${vi}]`;
-    this.ident(`${vp}.name`, vo.name, PASCAL, 'PascalCase value object name');
+    this.ident(
+      `${vp}.name`,
+      vo.name,
+      PASCAL,
+      'PascalCase value object name',
+      true,
+    );
     this.fileName(`${vp}.name`, kebab(vo.name));
     this.claimClass(vo.name, `${vp}.name`, `valueobject:${vo.name}`);
+    // The renderer declares the props interface next to the imports of the file.
+    this.claimClass(`${vo.name}Props`, `${vp}.name`, `valueobject:${vo.name}`);
     this.fields(`${vp}.fields`, vo.fields, FIELD, 'field name');
   }
 
   port(port: PortDecl, i: number): void {
     const p = `ports[${i}]`;
-    this.ident(`${p}.name`, port.name, PASCAL, 'PascalCase port name');
+    this.ident(`${p}.name`, port.name, PASCAL, 'PascalCase port name', true);
     this.fileName(`${p}.name`, kebab(port.name));
     this.claimClass(port.name, `${p}.name`, `port:${port.name}`);
     this.portRoot(port.root, `${p}.root`);
     const methods = new Set<string>();
     port.methods.forEach((m, mi) =>
-      this.signature(`${p}.methods[${mi}]`, m, INSTANCE_MEMBERS, methods, m.name),
+      this.signature(`${p}.methods[${mi}]`, m, PORT_MEMBERS, methods, m.name),
     );
   }
 
@@ -723,7 +769,7 @@ class SemanticChecks {
 
   event(ev: Delta['events'][number], i: number): void {
     const p = `events[${i}]`;
-    this.ident(`${p}.name`, ev.name, PASCAL, 'PascalCase event name');
+    this.ident(`${p}.name`, ev.name, PASCAL, 'PascalCase event name', true);
     this.claimClass(ev.name, `${p}.name`, `event:${ev.name}`);
     if (!this.#entityNames.has(ev.entity) && !this.baseEntity(ev.entity))
       this.add(
@@ -747,7 +793,33 @@ class SemanticChecks {
     this.fields(`${p}.output`, uc.output, FIELD, 'field name');
     this.uses(`${p}.uses`, uc.uses);
     this.emits(`${p}.emits`, uc.emits);
+    this.emitsMatchUses(uc, p);
     uc.ports?.forEach((port, pi) => this.useCasePort(port, `${p}.ports[${pi}]`));
+  }
+
+  /** As validate.ts checks it: emits is exactly the events of the methods in uses. */
+  emitsMatchUses(uc: Delta['useCases'][number], path: string): void {
+    const reachable = new Set<string>();
+    for (const u of uc.uses) {
+      const m = USES.exec(u);
+      for (const ev of (m && this.#methodEmits.get(`${m[1]}.${m[2]}`)) || []) {
+        reachable.add(ev);
+        if (!uc.emits.includes(ev))
+          this.add(
+            'delta.reference-unknown',
+            `${path}.emits`,
+            `${show(u)} emits ${show(ev)}, which is missing from emits`,
+          );
+      }
+    }
+    uc.emits.forEach((ev, i) => {
+      if (!reachable.has(ev))
+        this.add(
+          'delta.reference-unknown',
+          `${path}.emits[${i}]`,
+          `event ${show(ev)} is not emitted by any method in uses`,
+        );
+    });
   }
 
   /** The class is declared next to what the file imports, so it must not shadow any of it. */
@@ -759,7 +831,10 @@ class SemanticChecks {
         path,
         `class ${show(cls)} would shadow a name the generated file uses`,
       );
-    else this.claimClass(cls, path, `usecase:${name}`);
+    else
+      // The renderer also declares the Input and Output types next to the imports of the file.
+      for (const c of [cls, `${cls}Input`, `${cls}Output`])
+        this.claimClass(c, path, `usecase:${name}`);
   }
 
   uses(path: string, items: readonly string[]): void {
@@ -774,7 +849,7 @@ class SemanticChecks {
         path,
         `${show(u)} must look like method:Entity.method`,
       );
-    else if (!this.#methodIds.has(`${m[1]}.${m[2]}`))
+    else if (!this.#methodEmits.has(`${m[1]}.${m[2]}`))
       this.add(
         'delta.reference-unknown',
         path,
@@ -812,11 +887,14 @@ class SemanticChecks {
     this.noDuplicates(`${p}.emits`, ua.emits);
     this.uses(`${p}.uses`, ua.uses);
     this.emits(`${p}.emits`, ua.emits);
+    const existingEmits = orEmpty(target?.emits).map((e) =>
+      e.replace(/^event:/, ''),
+    );
     this.alreadyListed(`${p}.uses`, ua.uses, target?.uses, 'used');
     this.alreadyListed(
       `${p}.emits`,
       ua.emits,
-      target?.emits.map((e) => e.replace(/^event:/, '')),
+      existingEmits,
       'emitted',
     );
   }

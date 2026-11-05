@@ -7,6 +7,7 @@ import {
   compareErrors,
   compareText,
   kebab,
+  lcFirst,
   orEmpty,
   parseType,
   pascalOfSnake,
@@ -107,7 +108,6 @@ const sortedImports = (imports: Imports): FragmentImport[] =>
     .sort((a, b) => cmp(a.spec, b.spec) || cmp(a.name, b.name));
 const sorted = (list: readonly string[] | undefined): string[] =>
   [...(list ?? [])].sort(cmp);
-const lcFirst = (s: string): string => s[0]!.toLowerCase() + s.slice(1);
 const camelOfSnake = (s: string): string => lcFirst(pascalOfSnake(s));
 const list = (items: readonly string[]): string => `[${items.join(', ')}]`;
 
@@ -272,7 +272,7 @@ const eventsFile = (layers: Layers, suffix: string, entity: string): string =>
   `${layers.domain}/${kebab(entity)}${suffix}`;
 
 const pathKey = (path: string): string =>
-  path.replace(/\\/g, '/').replace(/^\.\//, '').toLowerCase();
+  posix.normalize(path.replace(/\\/g, '/')).toLowerCase();
 
 /**
  * Existing files are never overwritten: the caller lists every file in the module, and the
@@ -498,7 +498,8 @@ class Renderer {
     if (entity.invariants.length > 0)
       imports.add('@agentic-ddd/decorators', 'Invariant');
 
-    const states = sorted(entity.states);
+    // The declared order is the lifecycle order shown in the dev skill, so it is not sorted.
+    const states = entity.states ?? [];
     const head = [
       `@AgentEntity({\n  description: ${literal(entity.description)},${
         states.length > 0 ? `\n  states: ${list(states.map(literal))},` : ''
