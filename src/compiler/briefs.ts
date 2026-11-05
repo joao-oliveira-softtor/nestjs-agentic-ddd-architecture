@@ -109,6 +109,25 @@ function field(packet: string, label: string): string {
   return match[1]!.trim();
 }
 
+/** `_` é válido em IDs (ex.: `usecase:a_b`) e fica; o resto vira `-`, para não colidir. */
+export function briefFileName(id: string): string {
+  return `${id.replaceAll(/[^a-zA-Z0-9_]+/g, '-')}.md`;
+}
+
+/** O primeiro item cujo arquivo de brief já é de outro item, ou `undefined`. */
+export function firstBriefClash(
+  ids: readonly string[],
+): { id: string; other: string; name: string } | undefined {
+  const names = new Map<string, string>();
+  for (const id of ids) {
+    const name = briefFileName(id);
+    const other = names.get(name);
+    if (other !== undefined) return { id, other, name };
+    names.set(name, id);
+  }
+  return undefined;
+}
+
 export function parsePacket(packet: string): PacketFacts {
   const id = field(packet, 'ID');
   const specHash = field(packet, 'specHash');

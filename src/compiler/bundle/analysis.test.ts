@@ -34,6 +34,7 @@ describe('analyzeCandidate on the shop project', () => {
     const analysis = await analyzeCandidate(
       join(repo.root, 'agentic.config.ts'),
       await baseLockWithout(),
+      'shop',
     );
     expect(analysis).toEqual({ waves: [], items: [] });
   }, 60_000);
@@ -42,6 +43,7 @@ describe('analyzeCandidate on the shop project', () => {
     const analysis = await analyzeCandidate(
       join(repo.root, 'agentic.config.ts'),
       await baseLockWithout('entities', 'useCases'),
+      'shop',
     );
     expect(analysis.items.map((i) => i.id)).toEqual(analysis.waves.flat());
     const byId = new Map(analysis.items.map((i) => [i.id, i]));
@@ -55,5 +57,14 @@ describe('analyzeCandidate on the shop project', () => {
       expect(item.packet).toContain(item.id);
       expect(item.specHash).toMatch(/^[0-9a-f]{64}$/);
     }
+  }, 60_000);
+
+  test('lists nothing of a module other than the one asked for, even when its lock drifted', async () => {
+    const analysis = await analyzeCandidate(
+      join(repo.root, 'agentic.config.ts'),
+      await baseLockWithout('entities', 'useCases'),
+      'billing',
+    );
+    expect(analysis).toEqual({ waves: [], items: [] });
   }, 60_000);
 });

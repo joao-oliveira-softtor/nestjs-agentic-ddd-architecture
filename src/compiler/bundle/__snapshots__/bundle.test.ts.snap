@@ -8,7 +8,7 @@ A skeleton, per-item packets and the module skill for one proposed change, compi
 - Bundle version: 1
 - Base ref: \`<baseRef>\`
 - Base lock hash: \`99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc\`
-- Bundle hash: \`2afae9dd7f95129af725e4b7cb81d8515c244e379bacaaa511d8aa163a49f0f7\`
+- Bundle hash: \`c1291b3ded6247221932e10a1a5406841472fe073b837f0ab8888dd8dd75fed9\`
 
 ## Apply the bundle
 
@@ -31,6 +31,12 @@ Finish every item of a wave before the next. A task is complete only when \`veri
   \`\`\`
 
 ### Wave 2
+
+- \`method:Order.pay\` (domain), executor brief: \`target/briefs/method-Order-pay.md\`
+  \`\`\`bash
+  bun run agentic packet method:Order.pay
+  bun run agentic verify --item method:Order.pay --spec-hash ad9064e22d5f240912d07146ff815837ba7ba2eb23dda8adc0a66d125346002d
+  \`\`\`
 
 - \`method:Order.refund\` (domain), executor brief: \`target/briefs/method-Order-refund.md\`
   \`\`\`bash
@@ -72,6 +78,10 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "a51be333db93eca74237aa054aeed896a99aa7c31135cf64fac975e2b25a8496",
     },
     {
+      "path": "target/briefs/method-Order-pay.md",
+      "sha256": "30dda7077776267653381559da963c3f166a674be2067f10cd984e8543707ead",
+    },
+    {
       "path": "target/briefs/method-Order-refund.md",
       "sha256": "e403c74a1092fd2ceaad34177a53a319735f310e49c54c8edf93d94f683c8a5c",
     },
@@ -104,6 +114,10 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "e87d3737af5283315e93fc133e31774cd3c691b467f66b80345abc1ff673f08b",
     },
     {
+      "path": "target/packets/method-Order-pay.md",
+      "sha256": "0aff11959f73513c70b2220179e0558cf64e8717f46acc5fc84a8ec6eff69f7b",
+    },
+    {
       "path": "target/packets/method-Order-refund.md",
       "sha256": "bb64b676c469867dc3fac7c7b5635db84d77a04f28af04315f0666ea77cb64cf",
     },
@@ -124,7 +138,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "3b9e9284f7c4b4076ec457d52e840e0d24800d99192d2edae572764b8a6c83a8",
     },
   ],
-  "hash": "2afae9dd7f95129af725e4b7cb81d8515c244e379bacaaa511d8aa163a49f0f7",
+  "hash": "c1291b3ded6247221932e10a1a5406841472fe073b837f0ab8888dd8dd75fed9",
   "layers": {
     "target": {
       "items": [
@@ -136,6 +150,15 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
           "specHash": "01bdc3919c88391c3c4ad85cb2c535b85451fe80d21d9e5e84ffb74cf8ca7c8b",
           "state": "implemented",
           "wave": 1,
+        },
+        {
+          "brief": "target/briefs/method-Order-pay.md",
+          "id": "method:Order.pay",
+          "layer": "domain",
+          "packet": "target/packets/method-Order-pay.md",
+          "specHash": "ad9064e22d5f240912d07146ff815837ba7ba2eb23dda8adc0a66d125346002d",
+          "state": "declared",
+          "wave": 2,
         },
         {
           "brief": "target/briefs/method-Order-refund.md",
@@ -167,6 +190,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
           "entity:Order",
         ],
         [
+          "method:Order.pay",
           "method:Order.refund",
         ],
         [
@@ -184,6 +208,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
   "BUNDLE.md",
   "bundle.json",
   "target/briefs/entity-Order.md",
+  "target/briefs/method-Order-pay.md",
   "target/briefs/method-Order-refund.md",
   "target/briefs/usecase-pay_order.md",
   "target/changes/0001-refund-order/proposal.md",
@@ -192,6 +217,7 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
   "target/dev-skill/references/schemas.json",
   "target/dev-skill/references/state-machine.md",
   "target/packets/entity-Order.md",
+  "target/packets/method-Order-pay.md",
   "target/packets/method-Order-refund.md",
   "target/packets/usecase-pay_order.md",
   "target/skeleton/src/shop/application/pay-order.ts",

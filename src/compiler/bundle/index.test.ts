@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { inside, nextChangeId } from './index';
+import { configInRepo, inside, nextChangeId } from './index';
 
 describe('nextChangeId', () => {
   test('the first change is 0001', () => {
@@ -37,5 +37,39 @@ describe('inside', () => {
   test('refuses the base itself and every way out of it', () => {
     for (const rel of ['', '.', '../x', 'a/../../x', join(tmpdir(), 'other')])
       expect(code(rel)).toBe('bundle.path-escape');
+  });
+});
+
+describe('configInRepo', () => {
+  const top = tmpdir();
+  const code = (call: () => string): string | undefined => {
+    try {
+      call();
+    } catch (error) {
+      return (error as { code?: string }).code;
+    }
+  };
+
+  test('maps the config of a project below the repository top, as in the worktree', () => {
+    expect(configInRepo(top, join(top, 'apps', 'api'))).toBe(
+      'apps/api/agentic.config.ts',
+    );
+    expect(configInRepo(top, top)).toBe('agentic.config.ts');
+  });
+
+  test('honors a config path, absolute or relative to the project', () => {
+    const api = join(top, 'apps', 'api');
+    expect(configInRepo(top, api, 'conf/x.config.ts')).toBe(
+      'apps/api/conf/x.config.ts',
+    );
+    expect(configInRepo(top, api, join(api, 'y.config.ts'))).toBe(
+      'apps/api/y.config.ts',
+    );
+  });
+
+  test('refuses a config outside the repository', () => {
+    expect(code(() => configInRepo(join(top, 'a'), join(top, 'b')))).toBe(
+      'bundle.config-missing',
+    );
   });
 });
