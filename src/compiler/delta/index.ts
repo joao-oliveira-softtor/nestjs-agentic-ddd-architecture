@@ -12,5 +12,12 @@ export {
   renderDelta,
   type RenderOptions,
   type RenderResult,
+  type RenderedExample,
   type RenderedFile,
 } from './render';
+export {
+  splice,
+  type Fragment,
+  type FragmentImport,
+  type SpliceResult,
+} from './splice';

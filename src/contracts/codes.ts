@@ -88,6 +88,10 @@ export const ERROR_CODES = {
     'A Delta uses, emits, ports, owner, state or type reference points to something not declared.',
   'delta.schema-invalid':
     'The Delta does not match the schema (wrong shape, missing field or unknown key).',
+  'delta.splice-anchor-missing':
+    'A Delta fragment cannot be spliced: the class, decorator or array it extends is not in the target file.',
+  'delta.splice-unexpected-shape':
+    'A Delta fragment cannot be spliced: the target file does not parse, or a member or import conflicts with it.',
   'delta.type-invalid':
     'A Delta type is outside the allowed grammar (string, number, boolean, Date, a declared name, or T[]).',
 

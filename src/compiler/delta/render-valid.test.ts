@@ -5,9 +5,16 @@ import ts from 'typescript';
 import { analyzeProject } from '../compile';
 import { DEFAULT_CONVENTIONS } from '../conventions';
 import type { IR } from '../ir';
+import {
+  additionDelta,
+  baseIR,
+  HOSTILE,
+  spliceScenario,
+} from './additions-fixture';
 import { renderDelta, type RenderedFile } from './render';
 import { sampleDelta } from './sample';
 import type { Delta } from './schema';
+import { splice } from './splice';
 
 // The anchor for "a Delta that validates must render code that compiles": every case is either
 // rejected with an expected coded error and path, or rendered, type-checked with semantic
@@ -334,6 +341,79 @@ const valid: [string, (d: Delta) => void][] = [
   ],
 ];
 
+const spliced: [string, Delta][] = [
+  ['additions spliced into an existing module', additionDelta()],
+  ['hostile client strings in spliced additions', additionDelta(HOSTILE)],
+];
+
+const SAME_FILE = 'an emitted event declared in the entity file';
+
+// A hand-written base where the entity and the event it emits share one file: the fragment must
+// not import `OrderPaid` from the file it is spliced into.
+function sameFileScenario(): RenderedFile[] {
+  const original = `import { AggregateRoot, DomainEvent, notImplemented } from '@agentic-ddd/core';
+import { AgentEntity, AgentEvent, AgentMethod } from '@agentic-ddd/decorators';
+import { z } from 'zod';
+
+const orderPaidPayload = z.object({});
+
+@AgentEvent({ description: 'Paid.', payload: orderPaidPayload })
+export class OrderPaid extends DomainEvent<z.infer<typeof orderPaidPayload>> {}
+
+@AgentEntity({ description: 'An order.', states: ['open', 'paid'] })
+export class Order extends AggregateRoot<string> {
+  @AgentMethod({
+    description: 'Pays the order.',
+    transition: { from: ['open'], to: 'paid' },
+    emits: [OrderPaid],
+  })
+  pay(): void {
+    return notImplemented();
+  }
+}
+`;
+  const ir = baseIR();
+  const base: IR = {
+    ...ir,
+    events: [{ ...ir.events[0]!, source: 'src/shop/domain/order.ts:3' }],
+  };
+  const r = renderDelta(
+    {
+      module: 'shop',
+      entityAdditions: [
+        {
+          entity: 'Order',
+          invariants: [],
+          methods: [
+            {
+              name: 'settle',
+              description: 'Settles it.',
+              params: [],
+              returns: 'void',
+              transition: { from: ['paid'], to: 'open' },
+              emits: ['OrderPaid'],
+            },
+          ],
+        },
+      ],
+      entities: [],
+      valueObjects: [],
+      ports: [],
+      events: [],
+      useCases: [],
+    },
+    { conventions, base, existingFiles: ['domain/order.ts'] },
+  );
+  if (!r.ok) throw new Error(JSON.stringify(r.errors));
+  let content = original;
+  for (const frag of r.fragments) {
+    const s = splice(content, frag);
+    if (!s.ok) throw new Error(JSON.stringify(s.error));
+    content = s.source;
+  }
+  return [{ path: 'domain/order.ts', content }];
+}
+
 const written: string[] = [];
 afterAll(async () => {
   for (const dir of written) await rm(dir, { recursive: true, force: true });
@@ -399,6 +479,17 @@ describe('renderDelta output type-checks and passes the validator', () => {
       if (!r.ok) throw new Error(`${title}: ${JSON.stringify(r.errors)}`);
       cases.push({ title, files: r.files, ...(await project(r.files)) });
     }
+    // Spliced files (additions to existing files) join the same batched program.
+    for (const [title, delta] of spliced) {
+      const files = spliceScenario(delta).spliced;
+      cases.push({ title, files, ...(await project(files)) });
+    }
+    const sameFile = sameFileScenario();
+    cases.push({
+      title: SAME_FILE,
+      files: sameFile,
+      ...(await project(sameFile)),
+    });
     const diagnostics = semanticDiagnostics(cases);
     for (const [i, c] of cases.entries()) {
       const { errors } = await analyzeProject({ configPath: c.configPath });
@@ -406,7 +497,7 @@ describe('renderDelta output type-checks and passes the validator', () => {
     }
   }, 120_000);
 
-  test.each(valid.map(([title]) => [title] as const))('%s', (title) => {
+  test.each([...valid.map(([title]) => title), ...spliced.map(([t]) => t), SAME_FILE].map((t) => [t] as const))('%s', (title) => {
     expect(results.get(title)).toEqual({ diagnostics: [], errors: [] });
   });
 });

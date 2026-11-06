@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Coded, ErrorCode, IR, IREntity } from '../ir';
+import type { Coded, ErrorCode, IR, IREntity, IRUseCase } from '../ir';
 import { KEBAB, PASCAL } from '../validate';
 import {
   INSTANCE_MEMBERS,
@@ -30,6 +30,10 @@ export const LIMITS = {
   /** emits, transition.from and use-case ports. */
   references: 100,
   uses: 100,
+  /** given/when/then examples per invariant. */
+  examples: 20,
+  /** Characters of one given, when or then. */
+  exampleText: 1_000,
 } as const;
 
 // Business text must carry something, as validate.ts `required` demands (non-empty after trim).
@@ -43,7 +47,22 @@ const list = <T extends z.ZodType>(item: T, max: number) =>
   z.array(item).max(max);
 
 const field = z.strictObject({ name, type: name });
-const invariant = z.strictObject({ id: name, text });
+const exampleText = text.refine(
+  (s) => s.length <= LIMITS.exampleText,
+  `must have at most ${LIMITS.exampleText} characters`,
+);
+const example = z.strictObject({
+  given: exampleText,
+  when: exampleText,
+  // eslint-disable-next-line unicorn/no-thenable
+  then: exampleText,
+});
+// Every new invariant carries acceptance examples (ADR-0007 D10); they ride in the neutral layer.
+const invariant = z.strictObject({
+  id: name,
+  text,
+  examples: list(example, LIMITS.examples).min(1),
+});
 const method = z.strictObject({
   name,
   description: text,
@@ -62,6 +81,24 @@ const method = z.strictObject({
 
 export const deltaSchema = z.strictObject({
   module: name,
+  /** Additions to entities that already exist in the base. Removing or renaming is not supported. */
+  entityAdditions: list(
+    z.strictObject({
+      entity: name,
+      invariants: list(invariant, LIMITS.invariants),
+      methods: list(method, LIMITS.methods),
+    }),
+    LIMITS.entities,
+  ).optional(),
+  /** `uses` and `emits` added to use-cases that already exist in the base. */
+  useCaseAdditions: list(
+    z.strictObject({
+      useCase: name,
+      uses: list(name, LIMITS.uses),
+      emits: list(name, LIMITS.references),
+    }),
+    LIMITS.useCases,
+  ).optional(),
   entities: list(
     z.strictObject({
       name,
@@ -257,6 +294,8 @@ function pathOf(path: readonly PropertyKey[]): string {
 
 type EntityDecl = Delta['entities'][number];
 type EntityMethodDecl = EntityDecl['methods'][number];
+type EntityAdditionDecl = NonNullable<Delta['entityAdditions']>[number];
+type UseCaseAdditionDecl = NonNullable<Delta['useCaseAdditions']>[number];
 type PortDecl = Delta['ports'][number];
 type FieldDecl = { name: string; type: string };
 
@@ -292,6 +331,8 @@ const baseUseCaseIds = (base: IR | null): Set<string> =>
 interface BaseIndex {
   /** Entities of the Delta's module. */
   readonly entities: readonly IREntity[];
+  /** Use-cases of the Delta's module. */
+  readonly useCases: readonly IRUseCase[];
   readonly events: ReadonlySet<string>;
   readonly typeNames: readonly string[];
   readonly portNames: readonly string[];
@@ -307,6 +348,7 @@ function indexBase(base: IR | null, module: string): BaseIndex {
   const entities = inModule(base?.entities, module);
   return {
     entities,
+    useCases: inModule(base?.useCases, module),
     events: new Set(inModule(base?.events, module).map((e) => e.name)),
     typeNames: [
       ...entities.map((e) => e.name),
@@ -333,6 +375,8 @@ interface EntityScope {
   readonly states: ReadonlySet<string>;
   readonly invariants: Set<string>;
   readonly methods: Set<string>;
+  /** Ids already taken by this entity in the base (empty for a new entity). */
+  readonly taken: ReadonlySet<string>;
 }
 
 /** The semantic checks, one method per kind of declaration; every problem lands in `#errors`. */
@@ -343,6 +387,9 @@ class SemanticChecks {
   // One class-name namespace for the module: entities, value objects, ports, events, use-case classes.
   readonly #classes = new Set<string>();
   readonly #useCaseNames = new Set<string>();
+  // Targets of additions seen so far: each existing item takes one addition entry.
+  readonly #entityTargets = new Set<string>();
+  readonly #useCaseTargets = new Set<string>();
   readonly #entityNames: ReadonlySet<string>;
   readonly #eventNames: ReadonlySet<string>;
   readonly #typeNames: ReadonlySet<string>;
@@ -367,6 +414,12 @@ class SemanticChecks {
           m.emits ?? [],
         ]),
       ),
+      ...orEmpty(delta.entityAdditions).flatMap((e) =>
+        e.methods.map((m): [string, readonly string[]] => [
+          `${e.entity}.${m.name}`,
+          m.emits ?? [],
+        ]),
+      ),
     ]);
     this.#portNames = new Set([
       ...delta.ports.map((p) => p.name),
@@ -378,10 +431,12 @@ class SemanticChecks {
     const d = this.#delta;
     this.ident('module', d.module, KEBAB, 'kebab-case module name');
     d.entities.forEach((e, i) => this.entity(e, i));
+    orEmpty(d.entityAdditions).forEach((a, i) => this.entityAddition(a, i));
     d.valueObjects.forEach((v, i) => this.valueObject(v, i));
     d.ports.forEach((p, i) => this.port(p, i));
     d.events.forEach((e, i) => this.event(e, i));
     d.useCases.forEach((u, i) => this.useCase(u, i));
+    orEmpty(d.useCaseAdditions).forEach((u, i) => this.useCaseAddition(u, i));
     return this.#errors.sort(compareErrors);
   }
 
@@ -414,18 +469,24 @@ class SemanticChecks {
       );
   }
 
-  claim(scope: Set<string>, key: string, path: string, id = key): void {
+  claim(
+    scope: Set<string>,
+    key: string,
+    path: string,
+    id = key,
+    taken: ReadonlySet<string> = this.#base.ids,
+  ): void {
     if (scope.has(key))
       this.add(
         'delta.name-collision',
         path,
         `${show(id)} is declared twice in the Delta`,
       );
-    else if (this.#base.ids.has(id))
+    else if (taken.has(id))
       this.add(
         'delta.name-collision',
         path,
-        `${show(id)} already exists in the base; additions to existing items are not supported yet`,
+        `${show(id)} already exists in the base; removing or redeclaring existing items is not supported`,
       );
     scope.add(key);
   }
@@ -441,7 +502,7 @@ class SemanticChecks {
       this.add(
         'delta.name-collision',
         path,
-        `class ${show(cls)} (${show(id)}) already exists in the base; additions to existing items are not supported yet`,
+        `class ${show(cls)} (${show(id)}) already exists in the base; removing or renaming existing items is not supported`,
       );
     this.#classes.add(cls);
   }
@@ -533,10 +594,11 @@ class SemanticChecks {
     members: ReadonlySet<string>,
     scope: Set<string>,
     id: string,
+    taken?: ReadonlySet<string>,
   ): void {
     this.ident(`${path}.name`, m.name, CAMEL, 'camelCase method name');
     this.member(`${path}.name`, m.name, members);
-    this.claim(scope, m.name, `${path}.name`, id);
+    this.claim(scope, m.name, `${path}.name`, id, taken);
     this.fields(
       `${path}.params`,
       m.params,
@@ -559,6 +621,7 @@ class SemanticChecks {
         inv.id,
         `${path}[${ii}].id`,
         `invariant:${scope.name}/${inv.id}`,
+        scope.taken,
       );
     });
   }
@@ -575,11 +638,47 @@ class SemanticChecks {
     this.fileName(`${ep}.name`, kebab(entity.name));
     this.claimClass(entity.name, `${ep}.name`, `entity:${entity.name}`);
     this.noDuplicates(`${ep}.states`, entity.states);
+    this.members(ep, entity.name, new Set(orEmpty(entity.states)), entity);
+  }
+
+  /** Invariants and methods added to an entity the base already has; its states come from the base. */
+  entityAddition(add: EntityAdditionDecl, i: number): void {
+    const p = `entityAdditions[${i}]`;
+    const target = this.baseEntity(add.entity);
+    this.additionTarget(
+      this.#entityTargets,
+      target !== undefined,
+      add.entity,
+      `${p}.entity`,
+      `entity ${show(add.entity)} does not exist in module ${show(this.#delta.module)} of the base (new entities go in entities)`,
+      `entity ${show(add.entity)} has more than one addition entry`,
+    );
+    const taken = new Set([
+      ...this.#base.ids,
+      ...orEmpty(target?.invariants).map((v) => v.id),
+      ...orEmpty(target?.methods).map((m) => m.id),
+    ]);
+    this.members(p, add.entity, new Set(orEmpty(target?.states)), add, taken);
+  }
+
+  baseEntity(name: string): IREntity | undefined {
+    return this.#base.entities.find((e) => e.name === name);
+  }
+
+  /** Shared by new entities and additions: invariant ids and method names are claimed per entity. */
+  members(
+    ep: string,
+    name: string,
+    states: ReadonlySet<string>,
+    entity: Pick<EntityDecl, 'invariants' | 'methods'>,
+    taken: ReadonlySet<string> = this.#base.ids,
+  ): void {
     const scope: EntityScope = {
-      name: entity.name,
-      states: new Set(orEmpty(entity.states)),
+      name,
+      states,
       invariants: new Set(),
       methods: new Set(),
+      taken,
     };
     this.invariants(scope, `${ep}.invariants`, entity.invariants);
     entity.methods.forEach((m, mi) =>
@@ -594,6 +693,7 @@ class SemanticChecks {
       m.static ? STATIC_MEMBERS : INSTANCE_MEMBERS,
       scope.methods,
       `method:${scope.name}.${m.name}`,
+      scope.taken,
     );
     this.emits(`${mp}.emits`, m.emits);
     this.noDuplicates(`${mp}.emits`, m.emits);
@@ -671,11 +771,11 @@ class SemanticChecks {
     const p = `events[${i}]`;
     this.ident(`${p}.name`, ev.name, PASCAL, 'PascalCase event name', true);
     this.claimClass(ev.name, `${p}.name`, `event:${ev.name}`);
-    if (!this.#entityNames.has(ev.entity))
+    if (!this.#entityNames.has(ev.entity) && !this.baseEntity(ev.entity))
       this.add(
         'delta.reference-unknown',
         `${p}.entity`,
-        `entity ${show(ev.entity)} is not declared in this Delta`,
+        `entity ${show(ev.entity)} is not declared in this Delta or in module ${show(this.#delta.module)} of the base`,
       );
     this.fields(`${p}.payload`, ev.payload, FIELD, 'field name');
   }
@@ -691,7 +791,7 @@ class SemanticChecks {
     this.noDuplicates(`${p}.ports`, uc.ports);
     this.fields(`${p}.input`, uc.input, FIELD, 'field name');
     this.fields(`${p}.output`, uc.output, FIELD, 'field name');
-    uc.uses.forEach((u, ui) => this.use(u, `${p}.uses[${ui}]`));
+    this.uses(`${p}.uses`, uc.uses);
     this.emits(`${p}.emits`, uc.emits);
     this.emitsMatchUses(uc, p);
     uc.ports?.forEach((port, pi) => this.useCasePort(port, `${p}.ports[${pi}]`));
@@ -699,20 +799,35 @@ class SemanticChecks {
 
   /** As validate.ts checks it: emits is exactly the events of the methods in uses. */
   emitsMatchUses(uc: Delta['useCases'][number], path: string): void {
-    const reachable = new Set<string>();
-    for (const u of uc.uses) {
+    this.matchEmits(path, uc.uses, uc.uses, uc.emits, uc.emits);
+  }
+
+  /**
+   * `checkUses` must have every event they emit in `allEmits`; every `added` emit must be emitted
+   * by some method in `allUses`. A new use-case passes the same lists; an addition passes the
+   * added entries as `checkUses` and `added` and the base's plus the added ones as `all*`.
+   */
+  matchEmits(
+    path: string,
+    checkUses: readonly string[],
+    allUses: readonly string[],
+    allEmits: readonly string[],
+    added: readonly string[],
+  ): void {
+    const emittedBy = (u: string): readonly string[] => {
       const m = USES.exec(u);
-      for (const ev of (m && this.#methodEmits.get(`${m[1]}.${m[2]}`)) || []) {
-        reachable.add(ev);
-        if (!uc.emits.includes(ev))
+      return (m && this.#methodEmits.get(`${m[1]}.${m[2]}`)) || [];
+    };
+    for (const u of checkUses)
+      for (const ev of emittedBy(u))
+        if (!allEmits.includes(ev))
           this.add(
             'delta.reference-unknown',
             `${path}.emits`,
             `${show(u)} emits ${show(ev)}, which is missing from emits`,
           );
-      }
-    }
-    uc.emits.forEach((ev, i) => {
+    const reachable = new Set(allUses.flatMap(emittedBy));
+    added.forEach((ev, i) => {
       if (!reachable.has(ev))
         this.add(
           'delta.reference-unknown',
@@ -735,6 +850,10 @@ class SemanticChecks {
       // The renderer also declares the Input and Output types next to the imports of the file.
       for (const c of [cls, `${cls}Input`, `${cls}Output`])
         this.claimClass(c, path, `usecase:${name}`);
+  }
+
+  uses(path: string, items: readonly string[]): void {
+    items.forEach((u, ui) => this.use(u, `${path}[${ui}]`));
   }
 
   use(u: string, path: string): void {
@@ -766,5 +885,70 @@ class SemanticChecks {
         path,
         `port ${show(port)} is not declared in module ${show(this.#delta.module)}`,
       );
+  }
+
+  useCaseAddition(ua: UseCaseAdditionDecl, i: number): void {
+    const p = `useCaseAdditions[${i}]`;
+    const target = this.#base.useCases.find((u) => u.name === ua.useCase);
+    this.additionTarget(
+      this.#useCaseTargets,
+      target !== undefined,
+      ua.useCase,
+      `${p}.useCase`,
+      `use-case ${show(ua.useCase)} does not exist in module ${show(this.#delta.module)} of the base (new use-cases go in useCases)`,
+      `use-case ${show(ua.useCase)} has more than one addition entry`,
+    );
+    this.noDuplicates(`${p}.uses`, ua.uses);
+    this.noDuplicates(`${p}.emits`, ua.emits);
+    this.uses(`${p}.uses`, ua.uses);
+    this.emits(`${p}.emits`, ua.emits);
+    const existingEmits = orEmpty(target?.emits).map((e) =>
+      e.replace(/^event:/, ''),
+    );
+    this.alreadyListed(`${p}.uses`, ua.uses, target?.uses, 'used');
+    this.matchEmits(
+      p,
+      ua.uses,
+      [...orEmpty(target?.uses), ...ua.uses],
+      [...existingEmits, ...ua.emits],
+      ua.emits,
+    );
+    this.alreadyListed(
+      `${p}.emits`,
+      ua.emits,
+      existingEmits,
+      'emitted',
+    );
+  }
+
+  /** An addition names an item the base already has; each item takes one entry. */
+  additionTarget(
+    seen: Set<string>,
+    exists: boolean,
+    name: string,
+    path: string,
+    missing: string,
+    twice: string,
+  ): void {
+    if (!exists) this.add('delta.reference-unknown', path, missing);
+    else if (seen.has(name)) this.add('delta.name-collision', path, twice);
+    seen.add(name);
+  }
+
+  /** A `uses` or `emits` entry the base use-case already lists would be written twice. */
+  alreadyListed(
+    path: string,
+    items: readonly string[],
+    existing: readonly string[] | undefined,
+    verb: string,
+  ): void {
+    items.forEach((item, i) => {
+      if (existing?.includes(item))
+        this.add(
+          'delta.name-collision',
+          `${path}[${i}]`,
+          `${show(item)} is already ${verb} by the base use-case`,
+        );
+    });
   }
 }

@@ -2,6 +2,7 @@ import { posix } from 'node:path';
 import type { ResolvedConventions } from '../conventions';
 import type { IR } from '../ir';
 import { RENDERER_IMPORTS } from './names';
+import type { Fragment, FragmentImport } from './splice';
 import {
   compareErrors,
   compareText,
@@ -23,8 +24,24 @@ export interface RenderedFile {
   readonly content: string;
 }
 
+/** A given/when/then acceptance example of a new invariant, for the neutral layer (not TypeScript). */
+export interface RenderedExample {
+  /** `invariant:<Entity>/<id>`. */
+  readonly invariant: string;
+  readonly given: string;
+  readonly when: string;
+  readonly then: string;
+}
+
 export type RenderResult =
-  | { readonly ok: true; readonly files: RenderedFile[] }
+  | {
+      readonly ok: true;
+      /** New files; never an existing one. */
+      readonly files: RenderedFile[];
+      /** Additions to existing files, for `splice`; sorted by path. */
+      readonly fragments: Fragment[];
+      readonly examples: RenderedExample[];
+    }
   | { readonly ok: false; readonly errors: DeltaError[] };
 
 export interface RenderOptions {
@@ -68,13 +85,27 @@ const escapeUnits = (ch: string): string =>
 const unicode = (c: number): string => `\\u${c.toString(16).padStart(4, '0')}`;
 
 /** Items with their input index, by name, so errors keep pointing at the caller's array. */
-const ordered = <T extends { name: string }>(
+function ordered<T extends { name: string }>(
   items: readonly T[],
-): { item: T; i: number }[] =>
-  items
+): { item: T; i: number }[];
+function ordered<T>(
+  items: readonly T[],
+  by: keyof T & string,
+): { item: T; i: number }[];
+function ordered<T>(
+  items: readonly T[],
+  by = 'name',
+): { item: T; i: number }[] {
+  const keyOf = (t: T): string => (t as Record<string, string>)[by]!;
+  return items
     .map((item, i) => ({ item, i }))
-    .sort((a, b) => cmp(a.item.name, b.item.name) || a.i - b.i);
+    .sort((a, b) => cmp(keyOf(a.item), keyOf(b.item)) || a.i - b.i);
+}
 const cmp = compareText;
+const sortedImports = (imports: Imports): FragmentImport[] =>
+  imports
+    .entries()
+    .sort((a, b) => cmp(a.spec, b.spec) || cmp(a.name, b.name));
 const sorted = (list: readonly string[] | undefined): string[] =>
   [...(list ?? [])].sort(cmp);
 const camelOfSnake = (s: string): string => lcFirst(pascalOfSnake(s));
@@ -94,6 +125,12 @@ class Imports {
     const names = this.#specs.get(spec) ?? new Map<string, boolean>();
     names.set(name, (names.get(name) ?? true) && typeOnly);
     this.#specs.set(spec, names);
+  }
+
+  entries(): FragmentImport[] {
+    return [...this.#specs.entries()].flatMap(([spec, names]) =>
+      [...names.entries()].map(([name, typeOnly]) => ({ spec, name, typeOnly })),
+    );
   }
 
   render(): string {
@@ -158,6 +195,10 @@ const invariantDecorators = (
     );
 
 type EntityDecl = Delta['entities'][number];
+type EntityMethodDecl = EntityDecl['methods'][number];
+type InvariantDecl = EntityDecl['invariants'][number];
+type EntityAdditionDecl = NonNullable<Delta['entityAdditions']>[number];
+type UseCaseAdditionDecl = NonNullable<Delta['useCaseAdditions']>[number];
 type EventDecl = Delta['events'][number];
 type UseCaseDecl = Delta['useCases'][number];
 type Layers = ResolvedConventions['layers'];
@@ -176,7 +217,8 @@ function moduleRelative(
 /** Where every symbol the Delta declares lives, relative to the module root. */
 function declaredLocations(
   delta: Delta,
-  { layers, suffixes }: ResolvedConventions,
+  { layers }: ResolvedConventions,
+  eventsFileOf: (entity: string) => string,
 ): Map<string, string> {
   const where = new Map<string, string>();
   const domain = (name: string): string =>
@@ -184,7 +226,7 @@ function declaredLocations(
   for (const e of delta.entities) where.set(e.name, domain(e.name));
   for (const v of delta.valueObjects) where.set(v.name, domain(v.name));
   for (const ev of delta.events)
-    where.set(ev.name, eventsFile(layers, suffixes.events, ev.entity));
+    where.set(ev.name, eventsFileOf(ev.entity));
   for (const p of delta.ports) where.set(p.name, domain(p.name));
   return where;
 }
@@ -207,6 +249,23 @@ function addBaseLocations(
     const file = moduleRelative(item.source, modulePath);
     if (file !== null) where.set(item.name, file);
   }
+}
+
+/** The file the base declares the events of an entity in (read from what its methods emit), or null. */
+function baseEventsFile(
+  base: IR | null,
+  module: string,
+  modulePath: string | undefined,
+  entity: string,
+): string | null {
+  const owner = base?.entities.find(
+    (e) => e.name === entity && e.module === module,
+  );
+  const emitted = new Set(owner?.methods.flatMap((m) => m.emits));
+  const files = (base?.events ?? [])
+    .filter((ev) => ev.module === module && emitted.has(ev.id))
+    .flatMap((ev) => moduleRelative(ev.source, modulePath) ?? []);
+  return files.sort(cmp)[0] ?? null;
 }
 
 const eventsFile = (layers: Layers, suffix: string, entity: string): string =>
@@ -249,9 +308,46 @@ const relativeSpec = (from: string, to: string): string => {
   return rel.startsWith('.') ? rel : `./${rel}`;
 };
 
-const declaresInvariants = (entity: EntityDecl): boolean =>
-  entity.invariants.length > 0 ||
-  entity.methods.some((m) => (m.invariants ?? []).length > 0);
+/** The file of a use-case the base declares in this module, or null when it cannot be located. */
+function baseUseCaseFile(
+  base: IR | null,
+  module: string,
+  modulePath: string | undefined,
+  name: string,
+): string | null {
+  const target = base?.useCases.find(
+    (u) => u.module === module && u.name === name,
+  );
+  return target ? moduleRelative(target.source, modulePath) : null;
+}
+
+const exampleRows = (
+  entity: string,
+  invariants: readonly InvariantDecl[] | undefined,
+): RenderedExample[] =>
+  orEmpty(invariants).flatMap((inv) =>
+    inv.examples.map((e) => ({
+      invariant: `invariant:${entity}/${inv.id}`,
+      given: e.given,
+      when: e.when,
+      // eslint-disable-next-line unicorn/no-thenable
+      then: e.then,
+    })),
+  );
+
+/** The acceptance examples of every new invariant, ordered by invariant. */
+function collectExamples(delta: Delta): RenderedExample[] {
+  const owners = [
+    ...delta.entities,
+    ...orEmpty(delta.entityAdditions).map((a) => ({ ...a, name: a.entity })),
+  ];
+  return owners
+    .flatMap((o) => [
+      ...exampleRows(o.name, o.invariants),
+      ...o.methods.flatMap((m) => exampleRows(o.name, m.invariants)),
+    ])
+    .sort((a, b) => cmp(a.invariant, b.invariant));
+}
 
 /** Events are grouped per owning entity, one file each. */
 function groupByOwner(
@@ -294,15 +390,25 @@ class Renderer {
   readonly #conventions: ResolvedConventions;
   readonly #where: Map<string, string>;
   readonly #taken: Set<string>;
+  readonly #base: IR | null;
+  readonly #modulePath: string | undefined;
   readonly #errors: DeltaError[] = [];
   readonly #files = new Map<string, { path: string; content: string }>();
+  readonly #fragments: Fragment[] = [];
 
   constructor(delta: Delta, options: RenderOptions) {
     const base = options.base ?? null;
     const modulePath = base?.modules.find((m) => m.name === delta.module)?.path;
     this.#delta = delta;
+    this.#base = base;
+    this.#modulePath = modulePath;
     this.#conventions = options.conventions;
-    this.#where = declaredLocations(delta, options.conventions);
+    const { layers, suffixes } = options.conventions;
+    this.#where = declaredLocations(delta, options.conventions, (entity) =>
+      (!delta.entities.some((e) => e.name === entity)
+        ? baseEventsFile(base, delta.module, modulePath, entity)
+        : null) ?? eventsFile(layers, suffixes.events, entity),
+    );
     if (base) addBaseLocations(this.#where, base, delta.module, modulePath);
     this.#taken = takenPaths(options.existingFiles, base, modulePath);
   }
@@ -310,6 +416,9 @@ class Renderer {
   render(): RenderResult {
     const d = this.#delta;
     ordered(d.entities).forEach(({ item, i }) => this.entity(item, i));
+    ordered(orEmpty(d.entityAdditions), 'entity').forEach(({ item, i }) =>
+      this.entityAddition(item, i),
+    );
     ordered(d.valueObjects).forEach(({ item, i }) =>
       this.valueObject(item, i),
     );
@@ -318,11 +427,16 @@ class Renderer {
     for (const owner of [...byOwner.keys()].sort(cmp))
       this.eventFile(owner, byOwner.get(owner)!);
     ordered(d.useCases).forEach(({ item, i }) => this.useCase(item, i));
+    ordered(orEmpty(d.useCaseAdditions), 'useCase').forEach(({ item, i }) =>
+      this.useCaseAddition(item, i),
+    );
     if (this.#errors.length > 0)
       return { ok: false, errors: this.#errors.sort(compareErrors) };
     return {
       ok: true,
       files: [...this.#files.values()].sort((a, b) => cmp(a.path, b.path)),
+      fragments: this.#fragments.sort((a, b) => cmp(a.path, b.path)),
+      examples: collectExamples(d),
     };
   }
 
@@ -346,7 +460,9 @@ class Renderer {
     typeOnly = false,
   ): void {
     const to = this.locate(name, path);
-    if (to !== null) imports.add(relativeSpec(from, to), name, typeOnly);
+    // A name declared in the very file being written is in scope already: no self-import.
+    if (to !== null && to !== from)
+      imports.add(relativeSpec(from, to), name, typeOnly);
   }
 
   /** Imports the declared type a type text refers to, except `self`. */
@@ -379,12 +495,8 @@ class Renderer {
     const imports = new Imports();
     imports.add('@agentic-ddd/core', 'AggregateRoot');
     imports.add('@agentic-ddd/decorators', 'AgentEntity');
-    if (declaresInvariants(entity))
+    if (entity.invariants.length > 0)
       imports.add('@agentic-ddd/decorators', 'Invariant');
-    if (entity.methods.length > 0) {
-      imports.add('@agentic-ddd/core', 'notImplemented');
-      imports.add('@agentic-ddd/decorators', 'AgentMethod');
-    }
 
     // The declared order is the lifecycle order shown in the dev skill, so it is not sorted.
     const states = entity.states ?? [];
@@ -405,13 +517,45 @@ class Renderer {
     );
   }
 
+  /** Additions to an existing entity become a fragment: its file is never re-rendered. */
+  entityAddition(add: EntityAdditionDecl, ai: number): void {
+    const at = `entityAdditions[${ai}]`;
+    const file = this.locate(add.entity, `${at}.entity`);
+    if (file === null) return;
+    const imports = new Imports();
+    if (add.invariants.length > 0)
+      imports.add('@agentic-ddd/decorators', 'Invariant');
+    const members = ordered(add.methods).map(({ item: m, i: mi }) => ({
+      name: m.name,
+      text: this.entityMethod(
+        imports,
+        file,
+        add.entity,
+        m,
+        `${at}.methods[${mi}]`,
+      ),
+    }));
+    this.#fragments.push({
+      path: file,
+      imports: sortedImports(imports),
+      target: { kind: 'class', name: add.entity },
+      classDecorators: invariantDecorators(add.invariants, ''),
+      members,
+    });
+  }
+
+  /** One method with its decorators; imports what it needs into `imports` (the file it lands in). */
   entityMethod(
     imports: Imports,
     file: string,
     entityName: string,
-    m: EntityDecl['methods'][number],
+    m: EntityMethodDecl,
     mAt: string,
   ): string {
+    imports.add('@agentic-ddd/core', 'notImplemented');
+    imports.add('@agentic-ddd/decorators', 'AgentMethod');
+    if (orEmpty(m.invariants).length > 0)
+      imports.add('@agentic-ddd/decorators', 'Invariant');
     const opts = [`    description: ${literal(m.description)},`];
     if (m.transition)
       opts.push(
@@ -505,11 +649,28 @@ class Renderer {
         const payload = `${lcFirst(ev.name)}Payload`;
         return `const ${payload} = ${zodObject(ev.payload)};\n\n@AgentEvent({\n  description: ${literal(ev.description)},\n  payload: ${payload},\n})\nexport class ${ev.name} extends DomainEvent<z.infer<typeof ${payload}>> {}`;
       });
-    const { layers, suffixes } = this.#conventions;
-    this.put(
-      eventsFile(layers, suffixes.events, owner),
-      `${imports.render()}\n\n${blocks.join('\n\n')}\n`,
-      `events[${Math.min(...group.map((g) => g.i))}]`,
+    const path = this.#where.get(group[0]!.item.name)!;
+    // Events of an entity that already has an events file are appended to it.
+    if (this.appendsToExisting(owner, path))
+      this.#fragments.push({
+        path,
+        imports: sortedImports(imports),
+        target: null,
+        appended: blocks,
+      });
+    else
+      this.put(
+        path,
+        `${imports.render()}\n\n${blocks.join('\n\n')}\n`,
+        `events[${Math.min(...group.map((g) => g.i))}]`,
+      );
+  }
+
+  /** The owner is not declared by this Delta and its events file already exists. */
+  appendsToExisting(owner: string, path: string): boolean {
+    return (
+      !this.#delta.entities.some((e) => e.name === owner) &&
+      this.#taken.has(pathKey(path))
     );
   }
 
@@ -537,6 +698,33 @@ class Renderer {
       `${imports.render()}\n\nexport const ${stem}Input = ${zodObject(uc.input)};\nexport const ${stem}Output = ${zodObject(uc.output)};\nexport type ${cls}Input = z.infer<typeof ${stem}Input>;\nexport type ${cls}Output = z.infer<typeof ${stem}Output>;\n\n@AgentUseCase({\n${opts.join('\n')}\n})\nexport class ${cls} implements UseCase<${cls}Input, ${cls}Output> {\n${ctor ? `  constructor(${ctor}) {}\n\n` : ''}  async execute(_input: ${cls}Input, _ctx: UseCaseContext): Promise<${cls}Output> {\n    return notImplemented();\n  }\n}\n`,
       at,
     );
+  }
+
+  /** `uses` and `emits` added to an existing use-case become a fragment of its file. */
+  useCaseAddition(add: UseCaseAdditionDecl, ai: number): void {
+    const at = `useCaseAdditions[${ai}]`;
+    const { module } = this.#delta;
+    const file = baseUseCaseFile(this.#base, module, this.#modulePath, add.useCase);
+    if (file === null) {
+      this.#errors.push({
+        code: 'delta.reference-unknown',
+        path: `${at}.useCase`,
+        message: `${add.useCase} cannot be located in module ${module}`,
+      });
+      return;
+    }
+    const imports = new Imports();
+    const emits = sorted(add.emits);
+    emits.forEach((ev) => this.importName(imports, file, ev, `${at}.emits`));
+    this.#fragments.push({
+      path: file,
+      imports: sortedImports(imports),
+      target: { kind: 'use-case', name: add.useCase },
+      arrays: [
+        { property: 'uses', elements: sorted(add.uses).map(literal) },
+        { property: 'emits', elements: emits },
+      ].filter((a) => a.elements.length > 0),
+    });
   }
 }
 
