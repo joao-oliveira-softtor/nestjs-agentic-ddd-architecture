@@ -11,6 +11,26 @@ export const ERROR_CODES = {
     'The access token is malformed, unsigned or fails verification.',
   'auth.token-missing': 'The request carries no Bearer access token.',
 
+  // bundle
+  'bundle.base-lock-missing':
+    'The base ref has no domain lock to compare the proposal against.',
+  'bundle.base-unknown': 'The base ref is not a commit of the base repository.',
+  'bundle.brief-invalid':
+    'An executor brief cannot be rendered for an item (for example the team rules exceed their token budget).',
+  'bundle.compile-failed':
+    'The compile of the candidate tree failed (the message carries its output).',
+  'bundle.compile-timeout':
+    'The compile of the candidate tree did not finish in time and was stopped.',
+  'bundle.config-missing':
+    'The project config is not committed in the base ref, or is outside the base repository.',
+  'bundle.delta-invalid':
+    'The Delta does not render against the base (the message lists the Delta errors).',
+  'bundle.module-unknown':
+    'The Delta module is not configured in the base project.',
+  'bundle.path-escape':
+    'A rendered or proposal path resolves outside the module or the changes directory.',
+  'bundle.proposal-invalid': 'The proposal slug is not kebab-case.',
+
   // cli
   'cli.argument-count':
     'The command received the wrong number of positional arguments.',
@@ -144,10 +164,15 @@ export const ERROR_CODES = {
   'mcp.doc-unknown':
     'The requested document does not exist or is not readable by this token.',
   'mcp.element-unknown': 'The requested element id does not exist.',
+  'mcp.input-too-large': 'The tool input is larger than the server accepts.',
   'mcp.host-denied': 'The request Host header is not allowed.',
   'mcp.skills-unavailable':
     'The authoring skill directory is not available on this server.',
   'mcp.origin-denied': 'The request Origin header is not allowed.',
+  'mcp.propose-busy':
+    'Another propose_change is running on this server; retry shortly.',
+  'mcp.propose-unavailable':
+    'propose_change needs a working copy with a git history; this server serves a published lock.',
   'mcp.path-out-of-scope':
     'The requested path is outside the modules the token may read.',
   'mcp.path-outside-root': 'The requested path is outside the project root.',

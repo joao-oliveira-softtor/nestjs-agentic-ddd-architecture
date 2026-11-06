@@ -13,6 +13,8 @@ import {
   startAuthServer,
 } from './helpers/auth-server';
 import { DEFAULT_CONVENTIONS } from '../src/compiler/conventions';
+import { additionDelta } from '../src/compiler/delta/additions-fixture';
+import { leftovers, shopProposal, shopRepo } from './helpers/shop-repo';
 
 const REPO = resolve(import.meta.dir, '..');
 const LOCK = '.agentic/domain.lock.json';
@@ -306,4 +308,157 @@ describe('agentic mcp --http endpoint path', () => {
       }
     },
   );
+});
+
+describe('agentic mcp --http propose_change', () => {
+  let repo: Awaited<ReturnType<typeof shopRepo>>;
+  let signer: Signer;
+  let auth: TestAuthServer;
+  let handle: Awaited<ReturnType<typeof startMcpHttpServer>>;
+
+  const mint = async (scope: string): Promise<string> => {
+    const now = Math.floor(Date.now() / 1000);
+    return new SignJWT({ scope, client_id: 'client-1' })
+      .setProtectedHeader({ alg: signer.alg, kid: signer.kid })
+      .setIssuer(auth.issuer)
+      .setAudience(RESOURCE)
+      .setIssuedAt(now - 600)
+      .setExpirationTime(now + 300)
+      .sign(signer.privateKey);
+  };
+  const raw = async (scope: string, args: unknown, path = '/mcp') =>
+    fetch(`http://127.0.0.1:${handle.port}${path}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json, text/event-stream',
+        authorization: `Bearer ${await mint(scope)}`,
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'propose_change', arguments: args },
+      }),
+    });
+  const propose = async (scope: string, args: unknown) => {
+    const response = await raw(scope, args);
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    const line = body.split('\n').find((l) => l.startsWith('data:'));
+    return JSON.parse(line ? line.slice(5) : body).result as {
+      isError?: boolean;
+      content: { text: string }[];
+    };
+  };
+
+  beforeAll(async () => {
+    repo = await shopRepo();
+    signer = await makeSigner('RS256', 'k1');
+    auth = startAuthServer('oauth');
+    auth.published.push(signer.jwk);
+    handle = await startMcpHttpServer({
+      root: repo.root,
+      port: 0,
+      host: '127.0.0.1',
+      mcp: { issuer: auth.issuer, resource: RESOURCE },
+    });
+  }, 120_000);
+
+  afterAll(async () => {
+    await handle?.close();
+    auth?.stop();
+    await rm(repo.root, { recursive: true, force: true });
+  });
+
+  test('change:propose returns the bundle, the same one twice, and leaves nothing behind', async () => {
+    const before = await leftovers(repo);
+    const args = { delta: additionDelta(), proposal: shopProposal() };
+    const a = await propose('change:propose', args);
+    const b = await propose('change:propose:shop', args);
+    expect(a.isError).toBeUndefined();
+    const first = JSON.parse(a.content[0]!.text);
+    expect(first.hash).toBe(JSON.parse(b.content[0]!.text).hash);
+    expect(first.manifest.hash).toBe(first.hash);
+    const paths = first.files.map((f: { path: string }) => f.path);
+    expect(paths).toContain('BUNDLE.md');
+    expect(paths).toContain('target/changes/0001-refund-order/proposal.md');
+    expect(await leftovers(repo)).toEqual(before);
+  }, 180_000);
+
+  test('a token without change:propose, or scoped to another module, is denied', async () => {
+    const args = { delta: additionDelta(), proposal: shopProposal() };
+    for (const scope of ['domain:read', 'change:propose:billing']) {
+      const r = await propose(scope, args);
+      expect(r.isError).toBe(true);
+      expect(r.content[0]!.text).toEndWith('[auth.scope-missing]');
+    }
+  });
+
+  test('the client cannot set the base, conventions or timeout', async () => {
+    for (const extra of [
+      { baseRef: 'HEAD' },
+      { baseRoot: '/tmp' },
+      { conventions: {} },
+      { existingFiles: [] },
+      { timeoutMs: 1 },
+    ]) {
+      const r = await propose('change:propose', {
+        delta: additionDelta(),
+        proposal: shopProposal(),
+        ...extra,
+      });
+      expect(r.isError).toBe(true);
+    }
+  });
+
+  test('an oversized input is refused before any work, without echoing it', async () => {
+    const before = await leftovers(repo);
+    const r = await propose('change:propose', {
+      delta: additionDelta(),
+      proposal: { slug: 'big', markdown: 'SECRET-MARKER'.repeat(30_000) },
+    });
+    expect(r.isError).toBe(true);
+    expect(r.content[0]!.text).toEndWith('[mcp.input-too-large]');
+    expect(r.content[0]!.text).not.toContain('SECRET-MARKER');
+    expect(await leftovers(repo)).toEqual(before);
+  });
+
+  test('an input of exactly 256 KiB serialized is still accepted', async () => {
+    const small = { delta: additionDelta(), proposal: shopProposal() };
+    const pad = 256 * 1024 - Buffer.byteLength(JSON.stringify(small));
+    const r = await propose('change:propose', {
+      ...small,
+      proposal: {
+        ...small.proposal,
+        markdown: small.proposal.markdown + 'x'.repeat(pad),
+      },
+    });
+    expect(r.isError).toBeUndefined();
+  }, 180_000);
+
+  test('a body above the transport cap is refused', async () => {
+    // Bun either answers 413 or drops the connection; both mean the body never reached the handler.
+    const outcome = await raw('change:propose', {
+      delta: additionDelta(),
+      proposal: { slug: 'big', markdown: 'x'.repeat(2 * 1024 * 1024) },
+    }).then(
+      (r) => r.status,
+      () => 'reset',
+    );
+    expect(outcome).not.toBe(200);
+  });
+
+  test('delta errors come back as a coded tool error with the offending path', async () => {
+    const before = await leftovers(repo);
+    const bad = additionDelta() as unknown as Record<string, unknown>;
+    const r = await propose('change:propose', {
+      delta: { ...bad, entities: [{ name: 'not valid' }] },
+      proposal: shopProposal(),
+    });
+    expect(r.isError).toBe(true);
+    expect(r.content[0]!.text).toEndWith('[delta.schema-invalid]');
+    expect(r.content[0]!.text).toContain('entities[0]');
+    expect(await leftovers(repo)).toEqual(before);
+  });
 });

@@ -1,0 +1,227 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`compileBundle on the shop project returns the bundle, its manifest and BUNDLE.md as a snapshot: BUNDLE.md 1`] = `
+"# Compiled bundle
+
+A skeleton, per-item packets and the module skill for one proposed change, compiled against a base commit. Reply to the user in the user's language; never translate identifiers, invariant ids or business text.
+
+- Bundle version: 1
+- Base ref: \`<baseRef>\`
+- Base lock hash: \`99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc\`
+- Bundle hash: \`c1291b3ded6247221932e10a1a5406841472fe073b837f0ab8888dd8dd75fed9\`
+
+## Apply the bundle
+
+Run from the base checkout, at the base ref above. It refuses on a base mismatch, writes the skeleton and runs \`compile\`. (requires \`agentic apply\`, issue #120: it does not exist yet)
+
+\`\`\`bash
+bun run agentic apply <path-to-this-bundle>
+\`\`\`
+
+## Items in wave order
+
+Finish every item of a wave before the next. A task is complete only when \`verify\` returns \`done\`. The reviewer brief is not bundled: it is generated at review time from the diff and the gate results (\`bun scripts/orchestrate.ts\` renders it in the review step).
+
+### Wave 1
+
+- \`entity:Order\` (domain), executor brief: \`target/briefs/entity-Order.md\`
+  \`\`\`bash
+  bun run agentic packet entity:Order
+  bun run agentic verify --item entity:Order --spec-hash 01bdc3919c88391c3c4ad85cb2c535b85451fe80d21d9e5e84ffb74cf8ca7c8b
+  \`\`\`
+
+### Wave 2
+
+- \`method:Order.pay\` (domain), executor brief: \`target/briefs/method-Order-pay.md\`
+  \`\`\`bash
+  bun run agentic packet method:Order.pay
+  bun run agentic verify --item method:Order.pay --spec-hash ad9064e22d5f240912d07146ff815837ba7ba2eb23dda8adc0a66d125346002d
+  \`\`\`
+
+- \`method:Order.refund\` (domain), executor brief: \`target/briefs/method-Order-refund.md\`
+  \`\`\`bash
+  bun run agentic packet method:Order.refund
+  bun run agentic verify --item method:Order.refund --spec-hash c8617ba562d330858286b3b8f67784c89b3b4e4f5beff617c4d5773da30c0b63
+  \`\`\`
+
+### Wave 3
+
+- \`usecase:pay_order\` (application), executor brief: \`target/briefs/usecase-pay_order.md\`
+  \`\`\`bash
+  bun run agentic packet usecase:pay_order
+  bun run agentic verify --item usecase:pay_order --spec-hash 69a43b679712547c5929ccd839be47bdf2d900fc05862f35f5106c65fc4a2d6f
+  \`\`\`
+"
+`;
+
+exports[`compileBundle on the shop project returns the bundle, its manifest and BUNDLE.md as a snapshot: bundle.json 1`] = `
+{
+  "baseLockHash": "99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc",
+  "baseRef": "<baseRef>",
+  "examples": [
+    {
+      "given": "Refunds a paid order.",
+      "invariant": "invariant:Order/paid-once",
+      "then": "Refunds a paid order.",
+      "when": "Refunds a paid order.",
+    },
+    {
+      "given": "g",
+      "invariant": "invariant:Order/refund-needs-paid",
+      "then": "t",
+      "when": "w",
+    },
+  ],
+  "files": [
+    {
+      "path": "target/briefs/entity-Order.md",
+      "sha256": "a51be333db93eca74237aa054aeed896a99aa7c31135cf64fac975e2b25a8496",
+    },
+    {
+      "path": "target/briefs/method-Order-pay.md",
+      "sha256": "30dda7077776267653381559da963c3f166a674be2067f10cd984e8543707ead",
+    },
+    {
+      "path": "target/briefs/method-Order-refund.md",
+      "sha256": "e403c74a1092fd2ceaad34177a53a319735f310e49c54c8edf93d94f683c8a5c",
+    },
+    {
+      "path": "target/briefs/usecase-pay_order.md",
+      "sha256": "fab5300c930008138006f07493d68d2905c256c51451f9ca1f7ac6ffce6e4d50",
+    },
+    {
+      "path": "target/changes/0001-refund-order/proposal.md",
+      "sha256": "723ec8b4b252479c089fbb1af6c580764e850d2e9beb43220c7c5a4b4f43581f",
+    },
+    {
+      "path": "target/dev-skill/SKILL.md",
+      "sha256": "9a47ae2bb0ec2bdbaf71ae07ebafe4561be10eedf2db6f8de8a0393f2b5342cc",
+    },
+    {
+      "path": "target/dev-skill/references/history.md",
+      "sha256": "66b30fcc67efd94c39f62e36a4697c39436ae35592eb8a0e46afeae2aad649a4",
+    },
+    {
+      "path": "target/dev-skill/references/schemas.json",
+      "sha256": "9f44b87d8ea84b1d8ccef5878785b687504d3137ccb3c47ef070463eaa225aaa",
+    },
+    {
+      "path": "target/dev-skill/references/state-machine.md",
+      "sha256": "ea01ba0dd43806d4752e93b0ff7c1e52a33ec1908ef7a52a4c7ac3d3bc4d8862",
+    },
+    {
+      "path": "target/packets/entity-Order.md",
+      "sha256": "e87d3737af5283315e93fc133e31774cd3c691b467f66b80345abc1ff673f08b",
+    },
+    {
+      "path": "target/packets/method-Order-pay.md",
+      "sha256": "0aff11959f73513c70b2220179e0558cf64e8717f46acc5fc84a8ec6eff69f7b",
+    },
+    {
+      "path": "target/packets/method-Order-refund.md",
+      "sha256": "bb64b676c469867dc3fac7c7b5635db84d77a04f28af04315f0666ea77cb64cf",
+    },
+    {
+      "path": "target/packets/usecase-pay_order.md",
+      "sha256": "a737bbb9da594f6ff11cc8d0aae4cbf213653ecbf9c51a4a306851a4d8738d50",
+    },
+    {
+      "path": "target/skeleton/src/shop/application/pay-order.ts",
+      "sha256": "c8961c259b40211467cf34bad19fd6222c7d8e0e8daffa7f9c414d85f0fa7831",
+    },
+    {
+      "path": "target/skeleton/src/shop/domain/order.events.ts",
+      "sha256": "c912c1b888ba4d4e7bff76ace97ee351eb2889217bf4fdb5605ce4f8e6780325",
+    },
+    {
+      "path": "target/skeleton/src/shop/domain/order.ts",
+      "sha256": "3b9e9284f7c4b4076ec457d52e840e0d24800d99192d2edae572764b8a6c83a8",
+    },
+  ],
+  "hash": "c1291b3ded6247221932e10a1a5406841472fe073b837f0ab8888dd8dd75fed9",
+  "layers": {
+    "target": {
+      "items": [
+        {
+          "brief": "target/briefs/entity-Order.md",
+          "id": "entity:Order",
+          "layer": "domain",
+          "packet": "target/packets/entity-Order.md",
+          "specHash": "01bdc3919c88391c3c4ad85cb2c535b85451fe80d21d9e5e84ffb74cf8ca7c8b",
+          "state": "implemented",
+          "wave": 1,
+        },
+        {
+          "brief": "target/briefs/method-Order-pay.md",
+          "id": "method:Order.pay",
+          "layer": "domain",
+          "packet": "target/packets/method-Order-pay.md",
+          "specHash": "ad9064e22d5f240912d07146ff815837ba7ba2eb23dda8adc0a66d125346002d",
+          "state": "declared",
+          "wave": 2,
+        },
+        {
+          "brief": "target/briefs/method-Order-refund.md",
+          "id": "method:Order.refund",
+          "layer": "domain",
+          "packet": "target/packets/method-Order-refund.md",
+          "specHash": "c8617ba562d330858286b3b8f67784c89b3b4e4f5beff617c4d5773da30c0b63",
+          "state": "declared",
+          "wave": 2,
+        },
+        {
+          "brief": "target/briefs/usecase-pay_order.md",
+          "id": "usecase:pay_order",
+          "layer": "application",
+          "packet": "target/packets/usecase-pay_order.md",
+          "specHash": "69a43b679712547c5929ccd839be47bdf2d900fc05862f35f5106c65fc4a2d6f",
+          "state": "declared",
+          "wave": 3,
+        },
+      ],
+      "name": "nestjs-ts",
+      "skeleton": [
+        "src/shop/application/pay-order.ts",
+        "src/shop/domain/order.events.ts",
+        "src/shop/domain/order.ts",
+      ],
+      "waves": [
+        [
+          "entity:Order",
+        ],
+        [
+          "method:Order.pay",
+          "method:Order.refund",
+        ],
+        [
+          "usecase:pay_order",
+        ],
+      ],
+    },
+  },
+  "version": 1,
+}
+`;
+
+exports[`compileBundle on the shop project returns the bundle, its manifest and BUNDLE.md as a snapshot: paths 1`] = `
+[
+  "BUNDLE.md",
+  "bundle.json",
+  "target/briefs/entity-Order.md",
+  "target/briefs/method-Order-pay.md",
+  "target/briefs/method-Order-refund.md",
+  "target/briefs/usecase-pay_order.md",
+  "target/changes/0001-refund-order/proposal.md",
+  "target/dev-skill/SKILL.md",
+  "target/dev-skill/references/history.md",
+  "target/dev-skill/references/schemas.json",
+  "target/dev-skill/references/state-machine.md",
+  "target/packets/entity-Order.md",
+  "target/packets/method-Order-pay.md",
+  "target/packets/method-Order-refund.md",
+  "target/packets/usecase-pay_order.md",
+  "target/skeleton/src/shop/application/pay-order.ts",
+  "target/skeleton/src/shop/domain/order.events.ts",
+  "target/skeleton/src/shop/domain/order.ts",
+]
+`;

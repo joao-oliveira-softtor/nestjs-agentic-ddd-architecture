@@ -13,12 +13,17 @@ import { parseArgs } from '../args';
 import { USAGE } from '../usage';
 
 type Load = () => Promise<{
-  startMcpServer(options: { root: string; published?: PublishedLock }): {
+  startMcpServer(options: {
+    root: string;
+    published?: PublishedLock;
+    config?: string;
+  }): {
     close(): unknown;
   };
   startMcpHttpServer(options: {
     root: string;
     published?: PublishedLock;
+    config?: string;
     port: number;
     host: string;
     mcp: McpConfig;
@@ -135,9 +140,9 @@ export async function mcpCommand(
         `agentic-ddd serving published lock ${published.version} (digest ${published.digest.slice(0, 12)})`,
       );
   };
+  const configPath =
+    parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts');
   if (http) {
-    const configPath =
-      parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts');
     // A published host may have no module sources, so skip the module-path checks.
     const mcp =
       published === undefined
@@ -157,6 +162,7 @@ export async function mcpCommand(
       handle = await mod.startMcpHttpServer({
         root,
         published,
+        config: resolve(configPath),
         port: Number(port),
         host,
         mcp,
@@ -202,7 +208,11 @@ export async function mcpCommand(
     await handle.close();
     return 0;
   }
-  const handle = mod.startMcpServer({ root, published });
+  const handle = mod.startMcpServer({
+    root,
+    published,
+    config: resolve(configPath),
+  });
   announce();
   const { stdin } = process;
   if (!stdin.readableEnded && !stdin.destroyed)

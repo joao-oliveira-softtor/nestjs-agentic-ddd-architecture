@@ -85,6 +85,13 @@ export function scopeLock(lock: DomainLock, access: ModuleAccess): DomainLock {
   };
 }
 
+/** Whether `access` covers `module`; anything that is not a module name (the client's text) is never covered. */
+export function coversModule(access: ModuleAccess, module: unknown): boolean {
+  return (
+    access === 'all' || (typeof module === 'string' && access.has(module))
+  );
+}
+
 /** The module whose `path` is the longest posix prefix of `relPath` (equal, or followed by `/`). */
 export function pathModule(
   lock: DomainLock,

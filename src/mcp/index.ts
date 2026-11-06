@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
+import { compileBundle, type Bundle } from '../compiler/bundle/index';
 import { moduleAccess, type ModuleAccess } from '../auth/scopes';
 import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
@@ -18,7 +19,7 @@ import type { ResolvedConventions } from '../compiler/conventions';
 import type { PublishedLock } from '../compiler/published';
 import type { Rule } from '../compiler/rules';
 import { checkSnapshot } from '../compiler/snapshot';
-import { narrowRuleGlobs, pathModule, scopeLock } from './scope';
+import { coversModule, narrowRuleGlobs, pathModule, scopeLock } from './scope';
 import {
   authoringCatalogue,
   authoringLoader,
@@ -33,6 +34,25 @@ import { changes, element, overview, rulesForPath } from './tools';
 // The scopes the per-module filter narrows: `domain:read` for the domain tools, `skill:read` for the skill documents.
 const CAPABILITY = 'domain:read';
 const SKILL_CAPABILITY = 'skill:read';
+const PROPOSE_CAPABILITY = 'change:propose';
+// Room for a large Delta plus its proposal.md; anything bigger is refused before any work.
+const MAX_PROPOSE_BYTES = 256 * 1024;
+
+// One compile per server process: each is a git checkout plus two child processes. Fail fast, no queue.
+let proposing = false;
+export async function withProposeSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (proposing)
+    throw new AgenticError(
+      'mcp.propose-busy',
+      'another propose_change is running on this server; retry shortly',
+    );
+  proposing = true;
+  try {
+    return await work();
+  } finally {
+    proposing = false;
+  }
+}
 
 // The authoring skill ships next to `src` and `dist`: the same relative path resolves from both.
 const AUTHORING_DIR = fileURLToPath(
@@ -41,7 +61,7 @@ const AUTHORING_DIR = fileURLToPath(
 const INSTRUCTIONS = `${LANGUAGE_RULE} This server serves a domain contract. Before proposing a change, call authoring_guide (or read the skill:// resources): it explains how to write the proposal and the dev skill of each module.`;
 
 // Where the answers come from: the compiled working copy (revalidated per call) or a published lock (fixed).
-type Source = { root: string } | { published: PublishedLock };
+type Source = { root: string; config?: string } | { published: PublishedLock };
 
 // `lock` is already filtered to what the caller may read; `fullLock` is for server-side decisions only.
 // `root` is absent for a published lock: it has no filesystem.
@@ -55,6 +75,45 @@ type Scoped = {
 };
 
 type Ctx = { http?: { authInfo?: { scopes: string[] } } };
+
+type ProposeArgs = {
+  delta: Record<string, unknown>;
+  proposal: { slug: string; markdown: string };
+};
+
+// Scope, size and source are checked before any work; a published lock has no working copy to compile against.
+async function proposeChange(
+  source: Source,
+  access: ModuleAccess,
+  args: ProposeArgs,
+): Promise<Bundle> {
+  if (!coversModule(access, args.delta.module))
+    throw new AgenticError(
+      'auth.scope-missing',
+      `the ${PROPOSE_CAPABILITY} scope for the module of the Delta is needed`,
+    );
+  if (Buffer.byteLength(JSON.stringify(args)) > MAX_PROPOSE_BYTES)
+    throw new AgenticError(
+      'mcp.input-too-large',
+      `the input exceeds ${MAX_PROPOSE_BYTES} bytes`,
+    );
+  if ('published' in source)
+    throw new AgenticError(
+      'mcp.propose-unavailable',
+      'this server serves a published lock; propose_change needs a working copy',
+    );
+  // The base is the HEAD commit (lock, conventions, `changes/`): compileBundle validates,
+  // numbers and renders against it, never against the served working copy.
+  return withProposeSlot(() =>
+    compileBundle({
+      delta: args.delta,
+      baseRoot: source.root,
+      configPath: source.config,
+      baseRef: 'HEAD',
+      proposal: args.proposal,
+    }),
+  );
+}
 
 // The read-only tools and skill documents, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
 export function createDomainServer(
@@ -343,6 +402,28 @@ export function createDomainServer(
         return found.content;
       }),
   );
+  server.registerTool(
+    'propose_change',
+    {
+      title: 'Propose a change',
+      description: `${LANGUAGE_RULE} Renders a Delta (the domain change as JSON) onto the served project, compiles it in a temporary worktree and returns the compiled bundle: manifest, hash and files (BUNDLE.md first). The proposal (a kebab-case slug and the proposal.md text) is required: the bundle carries it as changes/NNNN-slug/proposal.md. The base, conventions and limits are fixed by the server; nothing is stored.`,
+      inputSchema: z.strictObject({
+        delta: z.record(z.string(), z.unknown()),
+        proposal: z.strictObject({ slug: z.string(), markdown: z.string() }),
+      }),
+      // Not read-only: it creates a git worktree and runs processes on the server (gone on return).
+      annotations: {
+        ...annotations,
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+    },
+    (args: ProposeArgs, ctx?: Ctx) =>
+      respond(() =>
+        proposeChange(source, accessOf(ctx, PROPOSE_CAPABILITY), args),
+      ),
+  );
   server.registerResource(
     'skill',
     new ResourceTemplate('skill://{+path}', {
@@ -372,19 +453,26 @@ export function createDomainServer(
 }
 
 // `published`, when given, replaces the working copy: `root` is then unused.
-const sourceOf = (root: string, published?: PublishedLock): Source =>
-  published ? { published } : { root };
+const sourceOf = (
+  root: string,
+  published?: PublishedLock,
+  config?: string,
+): Source => (published ? { published } : { root, config });
 
 export function startMcpServer({
   root,
   published,
+  config,
 }: {
   root: string;
   published?: PublishedLock;
+  config?: string;
 }): {
   close(): Promise<void>;
 } {
-  return serveStdio(() => createDomainServer(sourceOf(root, published), false));
+  return serveStdio(() =>
+    createDomainServer(sourceOf(root, published, config), false),
+  );
 }
 
 const MAX_BODY_BYTES = 1024 * 1024;
@@ -434,12 +522,14 @@ function rejectHostOrigin(
 export async function startMcpHttpServer({
   root,
   published,
+  config,
   port,
   host,
   mcp,
 }: {
   root: string;
   published?: PublishedLock;
+  config?: string;
   port: number;
   host: string;
   mcp: McpConfig;
@@ -451,7 +541,7 @@ export async function startMcpHttpServer({
     resource: mcp.resource,
     jwksUri: mcp.jwksUri,
     requiredScopes: [],
-    anyOfScopes: [CAPABILITY, SKILL_CAPABILITY],
+    anyOfScopes: [CAPABILITY, SKILL_CAPABILITY, PROPOSE_CAPABILITY],
   });
   const resource = new URL(mcp.resource);
   const mcpPath = trimSlash(resource.pathname);
@@ -460,7 +550,7 @@ export async function startMcpHttpServer({
   );
   // Stateless: the tools are read-only, so a fresh server per request is enough.
   const handler = createMcpHandler(
-    () => createDomainServer(sourceOf(root, published), true),
+    () => createDomainServer(sourceOf(root, published, config), true),
     {
       maxRequestBodySize: MAX_BODY_BYTES,
     },
@@ -470,8 +560,9 @@ export async function startMcpHttpServer({
     hostname: host,
     port,
     maxRequestBodySize: MAX_BODY_BYTES,
-    // Tool calls revalidate the snapshot on each request, so they can outlast Bun's 10 s default.
-    idleTimeout: 120,
+    // A propose_change compile runs up to its 120 s budget plus the worktree setup, with nothing on the
+    // connection meanwhile: stay above it (255 s is Bun's maximum).
+    idleTimeout: 255,
     async fetch(request) {
       const pathname = trimSlash(new URL(request.url).pathname);
       if (pathname !== metadataPath && pathname !== mcpPath)

@@ -187,6 +187,36 @@ describe('validateDelta', () => {
     expect(e.message).toContain('removing or renaming existing items');
   });
 
+  test('a collision with another module names neither that module nor its elements', () => {
+    // Ids and class names are one project-wide namespace, so the collision is real; the message
+    // must stay generic for a caller scoped to a single module.
+    const base = {
+      irVersion: 1,
+      modules: [],
+      entities: [
+        {
+          id: 'entity:Product',
+          name: 'Product',
+          module: 'billing-secret',
+          invariants: [],
+          methods: [],
+          source: 'src/billing-secret/domain/product.ts:1',
+        },
+      ],
+      events: [],
+      useCases: [],
+      operators: [],
+    } as unknown as IR;
+    const found = errorsOf(sampleDelta(), base).filter(
+      (x) => x.code === 'delta.name-collision',
+    );
+    expect(found.length).toBeGreaterThan(0);
+    for (const e of found) {
+      expect(`${e.path} ${e.message}`).not.toContain('billing-secret');
+      expect(e.message).not.toContain('product.ts');
+    }
+  });
+
   test.each<[string, (d: Delta) => void, ErrorCode]>([
     [
       'use_case',
