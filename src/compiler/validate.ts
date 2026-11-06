@@ -14,9 +14,9 @@ import {
   type IRMethod,
 } from './ir';
 
-const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+export const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SNAKE = /^[a-z][a-z0-9_]{0,63}$/;
-const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
+export const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
 const STATIC_BUILTINS = new Set(['length', 'name', 'prototype']);
 
 // Abstract methods of the @AgentPort class, read from the syntax tree (abstract does not exist at runtime).

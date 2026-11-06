@@ -136,3 +136,17 @@ export {
   rulesFor,
   type Rule,
 } from './rules';
+export {
+  LIMITS as DELTA_LIMITS,
+  deltaSchema,
+  literal,
+  parseType,
+  renderDelta,
+  validateDelta,
+  type Delta as ModuleDelta,
+  type DeltaError,
+  type RenderOptions as RenderDeltaOptions,
+  type RenderResult as RenderDeltaResult,
+  type RenderedFile,
+  type TypeExpr,
+} from './delta/index';
