@@ -14,8 +14,9 @@ import { AgenticError, canonicalPath, toPosix } from '../ir';
 import { parseLock, type DomainLock } from '../lock';
 import { briefRules, loadRules, type Rule } from '../rules';
 import { renderDelta, type RenderResult } from '../delta/render';
-import { validateDelta } from '../delta/schema';
+import { validateDelta, type Delta } from '../delta/schema';
 import { splice, type Fragment } from '../delta/splice';
+import { parseProposal, type AcceptanceCriterion } from '../changes/proposal';
 import { analysisSchema, type CandidateAnalysis } from './analysis';
 import {
   DEFAULT_TIMEOUT_MS,
@@ -26,6 +27,7 @@ import {
   runCandidateCli,
   withWorktree,
 } from './candidate';
+import { buildNeutral } from './neutral';
 import {
   buildManifest,
   byPath,
@@ -40,6 +42,7 @@ export {
   BUNDLE_VERSION,
   type BundleFile,
   type BundleManifest,
+  type NeutralLayer,
   type TargetItem,
   type TargetLayer,
 } from './manifest';
@@ -172,7 +175,10 @@ async function loadBase(
   };
 }
 
-type Rendered = Extract<RenderResult, { ok: true }>;
+/** The render result plus the validated Delta it came from, which the neutral layer reads. */
+type Rendered = Extract<RenderResult, { ok: true }> & {
+  readonly delta: Delta;
+};
 
 /** One source of truth: the base commit (lock, conventions, `changes/`), never the working copy. */
 async function renderOnBase(delta: unknown, base: Base): Promise<Rendered> {
@@ -195,7 +201,7 @@ async function renderOnBase(delta: unknown, base: Base): Promise<Rendered> {
       'bundle.delta-invalid',
       `the Delta does not render against the base: ${quote(JSON.stringify(rendered.errors), 4000)}`,
     );
-  return rendered;
+  return { ...rendered, delta: checked.delta };
 }
 
 async function extendFile(
@@ -240,9 +246,29 @@ export function nextChangeId(names: readonly string[]): string {
 
 const KEBAB_CASE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-type NumberedProposal = BundleInput['proposal'] & { readonly id: string };
+type NumberedProposal = BundleInput['proposal'] & {
+  readonly id: string;
+  /** Read once, strictly, before anything is compiled. */
+  readonly acceptance: readonly AcceptanceCriterion[];
+};
 
-/** Numbers the proposal against the base and writes it to `changes/<id>-<slug>/` of the candidate. */
+/** The acceptance criteria of the proposal, through the strict parser: a parse error is the caller's invalid proposal. */
+export function parseAcceptance(
+  id: string,
+  slug: string,
+  markdown: string,
+): readonly AcceptanceCriterion[] {
+  const dir = `${id}-${slug}`;
+  const parsed = parseProposal(markdown, dir, `${dir}/proposal.md`, false);
+  if (!parsed.proposal)
+    throw new AgenticError(
+      'bundle.proposal-invalid',
+      `the proposal is invalid: ${quote(parsed.errors.map((e) => e.message).join('; '), 500)}`,
+    );
+  return parsed.proposal.acceptance;
+}
+
+/** Numbers the proposal against the base, validates it and writes it to `changes/<id>-<slug>/` of the candidate. */
 async function writeProposal(
   base: Base,
   proposal: BundleInput['proposal'],
@@ -252,10 +278,11 @@ async function writeProposal(
     ...base.lock.changes.map((c) => c.id),
     ...(await readdir(changesDir).catch(() => [])),
   ]);
+  const acceptance = parseAcceptance(id, proposal.slug, proposal.markdown);
   const target = inside(changesDir, `${id}-${proposal.slug}/proposal.md`);
   await mkdir(dirname(target), { recursive: true });
   await writeFile(target, proposal.markdown);
-  return { ...proposal, id };
+  return { ...proposal, id, acceptance };
 }
 
 /** Compiles the candidate and analyzes it; candidate code runs only in these children (killable, no network, scrubbed env). */
@@ -406,6 +433,12 @@ async function assemble(parts: {
   const { base, rendered, proposal, analysis } = parts;
   const skeleton = await skeletonFiles(base, rendered);
   const entries = itemEntries(base, analysis);
+  const neutral = buildNeutral({
+    delta: rendered.delta,
+    acceptance: proposal.acceptance,
+    base: base.lock.ir,
+    items: entries.items.map(({ id, layer, wave }) => ({ id, layer, wave })),
+  });
   const files = [
     ...skeleton.files,
     lf(
@@ -414,6 +447,7 @@ async function assemble(parts: {
     ),
     ...(await devSkillFiles(base)),
     ...entries.files,
+    ...neutral.files.map((f) => lf(f.path, f.content)),
   ];
   const manifest = buildManifest(
     {
@@ -426,6 +460,7 @@ async function assemble(parts: {
           items: entries.items,
           skeleton: skeleton.skeleton,
         },
+        neutral: neutral.layer,
       },
       examples: rendered.examples,
     },

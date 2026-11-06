@@ -30,11 +30,21 @@ export interface TargetLayer {
   readonly skeleton: readonly string[];
 }
 
+export interface NeutralLayer {
+  /** Language-neutral model, briefs and README; never certified `done` (ADR-0007 D12). */
+  readonly model: string;
+  readonly readme: string;
+  readonly briefs: readonly { readonly item: string; readonly path: string }[];
+}
+
 export interface BundleManifest {
   readonly version: typeof BUNDLE_VERSION;
   readonly baseRef: string;
   readonly baseLockHash: string;
-  readonly layers: { readonly target: TargetLayer };
+  readonly layers: {
+    readonly target: TargetLayer;
+    readonly neutral: NeutralLayer;
+  };
   /** The given/when/then examples of the new invariants, as the Delta renderer returned them. */
   readonly examples: readonly RenderedExample[];
   /** Every file of the bundle except `BUNDLE.md` and `bundle.json`, which are derived from these. */
@@ -69,7 +79,10 @@ export function renderBundleMd(m: BundleManifest): string {
   return [
     '# Compiled bundle',
     '',
-    "A skeleton, per-item packets and the module skill for one proposed change, compiled against a base commit. Reply to the user in the user's language; never translate identifiers, invariant ids or business text.",
+    "Two layers for one proposed change, compiled against a base commit. Reply to the user in the user's language; never translate identifiers, invariant ids or business text.",
+    '',
+    '- Layer `target/` is nestjs-ts: skeleton, packets, executor briefs and the module skill, for an executor in this repository. Only this layer is certified: a task is `done` only when `verify` says so.',
+    '- Layer `neutral/`: model, invariants with given/when/then examples, acceptance criteria and briefs with no TypeScript, for a team in any language. It is not certified: only the target layer is certified `done`.',
     '',
     `- Bundle version: ${m.version}`,
     `- Base ref: \`${m.baseRef}\``,

@@ -19,7 +19,8 @@ import {
   shopProposal,
   shopRepo as sharedShopRepo,
 } from '../../../test/helpers/shop-repo';
-import { compileBundle } from './index';
+import { compileBundle, type Bundle } from './index';
+import { neutralLeaks } from './__fixtures__/neutral-testkit';
 
 const ROOT = resolve(import.meta.dir, '../../..');
 const dirs: string[] = [];
@@ -55,9 +56,13 @@ const input = () => ({
   proposal: shopProposal(),
 });
 
+/** One compile of the shared input, for the tests that only read the bundle. */
+let first: Promise<Bundle> | undefined;
+const firstBundle = (): Promise<Bundle> => (first ??= compileBundle(input()));
+
 describe('compileBundle on the shop project', () => {
   test('returns the bundle, its manifest and BUNDLE.md as a snapshot', async () => {
-    const bundle = await compileBundle(input());
+    const bundle = await firstBundle();
     const file = (p: string) =>
       bundle.files.find((f) => f.path === p)?.content ?? '';
     expect(bundle.manifest.baseRef).toBe(repo.ref);
@@ -69,6 +74,52 @@ describe('compileBundle on the shop project', () => {
       JSON.parse(file('bundle.json').replaceAll(repo.ref, '<baseRef>')),
     ).toMatchSnapshot('bundle.json');
     expect(bundle.files.map((f) => f.path)).toMatchSnapshot('paths');
+  }, 120_000);
+
+  test('the neutral layer is free of TypeScript, covers every invariant and is hashed', async () => {
+    const bundle = await firstBundle();
+    const neutral = bundle.files.filter((f) => f.path.startsWith('neutral/'));
+    expect(neutral.map((f) => f.path)).toContain('neutral/model.json');
+    expect(neutralLeaks(neutral)).toEqual([]);
+    const model = JSON.parse(
+      neutral.find((f) => f.path === 'neutral/model.json')!.content,
+    );
+    expect(model.invariants.length).toBeGreaterThan(0);
+    for (const inv of model.invariants)
+      expect(inv.examples.length).toBeGreaterThan(0);
+    for (const f of neutral)
+      expect(bundle.manifest.files.map((x) => x.path)).toContain(f.path);
+    expect(bundle.manifest.layers.neutral.briefs.length).toBe(
+      bundle.manifest.layers.target.items.length,
+    );
+    expect(bundle.files.find((f) => f.path === 'BUNDLE.md')!.content).toContain(
+      'only the target layer is certified',
+    );
+  }, 120_000);
+
+  test('the neutral layer of an addition holds only the added members of the existing entity', async () => {
+    const bundle = await firstBundle();
+    const model = JSON.parse(
+      bundle.files.find((f) => f.path === 'neutral/model.json')!.content,
+    );
+    expect(model.entities).toHaveLength(1);
+    const order = model.entities[0];
+    expect(order.name).toBe('Order');
+    expect(order.existing).toBe(true);
+    expect(order.states).toEqual(['open', 'paid']);
+    expect(order.methods.map((m: { name: string }) => m.name)).toEqual([
+      'refund',
+    ]);
+    expect(order.invariants).toEqual(['invariant:Order/paid-once']);
+    expect(model.transitions).toEqual([
+      { entity: 'Order', method: 'refund', from: ['paid'], to: 'open' },
+    ]);
+  }, 120_000);
+
+  test('the neutral layer is a snapshot on the shop project', async () => {
+    const bundle = await firstBundle();
+    const neutral = bundle.files.filter((f) => f.path.startsWith('neutral/'));
+    expect(neutral).toMatchSnapshot('neutral');
   }, 120_000);
 
   test('the same Delta on the same base gives a byte-identical bundle and hash', async () => {
@@ -238,8 +289,9 @@ describe('compileBundle on the shop project', () => {
       'entity:Refund',
     );
     expect(
-      bundle.files.find((f) => f.path === 'target/skeleton/src/shop/domain/refund.ts')
-        ?.content,
+      bundle.files.find(
+        (f) => f.path === 'target/skeleton/src/shop/domain/refund.ts',
+      )?.content,
     ).toContain('class Refund');
   }, 120_000);
 
@@ -327,7 +379,6 @@ await Bun.sleep(60_000);
     expect(alive(pid)).toBe(false);
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
   }, 60_000);
-
 });
 
 describe('the project config and the team rules', () => {
