@@ -61,14 +61,14 @@ export async function cloneAt(from: string, ref: string): Promise<string> {
 }
 
 /** A shop base repo, its bundle written to a directory, and a fresh clone at the base ref. */
-export async function applyFixture() {
+export async function applyFixture(proposal = PROPOSAL) {
   const repo = await shopRepo();
   const ref = git(repo.root, 'rev-parse', 'HEAD');
   const bundle: Bundle = await compileBundle({
     delta: additionDelta(),
     baseRoot: repo.root,
     baseRef: ref,
-    proposal: PROPOSAL,
+    proposal,
   });
   const dir = await mkdtemp(join(ROOT, '.tmp', 'bundle-dir-'));
   await writeBundle(dir, bundle);
