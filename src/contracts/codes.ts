@@ -196,6 +196,10 @@ export const ERROR_CODES = {
     'Another propose_change is running on this server; retry shortly.',
   'mcp.propose-unavailable':
     'propose_change needs a working copy with a git history; this server serves a published lock.',
+  'mcp.publish-busy':
+    'Another publish_change is running on this server; retry shortly.',
+  'mcp.publish-unavailable':
+    'publish_change needs a working copy and a Git host configured on the server (AGENTIC_GITHUB_TOKEN and AGENTIC_GITHUB_REPO).',
   'mcp.path-out-of-scope':
     'The requested path is outside the modules the token may read.',
   'mcp.path-outside-root': 'The requested path is outside the project root.',
@@ -255,6 +259,25 @@ export const ERROR_CODES = {
   'proposal.slug-invalid': 'The --draft-change slug is not kebab-case.',
   'proposal.status-invalid': 'status is not proposed or applied.',
   'proposal.title-missing': 'The proposal has no title.',
+
+  // publish
+  'publish.branch-exists':
+    'The change branch already exists on the Git host; it is never updated.',
+  'publish.change-exists':
+    'The change number is already used in the target repository changes directory.',
+  'publish.change-invalid':
+    'The change number or slug is not NNNN and a kebab-case slug.',
+  'publish.config-invalid':
+    'The sink configuration (token, owner, repo or path prefixes) is not valid.',
+  'publish.host-denied':
+    'The Git host refused the server token (HTTP 401 or 403).',
+  'publish.host-failed':
+    'The Git host answered with an unexpected HTTP status.',
+  'publish.host-rate-limited':
+    'The Git host rate-limited the server token (HTTP 429, or 403 with no quota left).',
+  'publish.host-unreachable': 'The Git host could not be reached.',
+  'publish.path-invalid':
+    'A file path is not relative POSIX, or is outside the allowed prefixes.',
 
   // published
   'published.digest-mismatch':

@@ -190,6 +190,25 @@ describe('splitBundleFiles', () => {
   });
 });
 
+describe('splitBundleFiles errors', () => {
+  test('a missing directory is a bundle without bundle.json', async () => {
+    const error = await splitBundleFiles(join(await tempDir(), 'nope')).catch(
+      (e: { message: string }) => e,
+    );
+    expect((error as { message: string }).message).toContain(
+      'bundle.json is missing',
+    );
+  });
+
+  test('any other read failure is reported as it is, not as a missing bundle.json', async () => {
+    const file = join(await tempDir(), 'a-file');
+    await writeFile(file, 'x');
+    const error = await splitBundleFiles(file).catch((e: Error) => e);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).not.toContain('bundle.json is missing');
+  });
+});
+
 describe('writableDirs', () => {
   test('lists the module paths relative to the project, then the change directory', () => {
     const root = join(tmpdir(), 'proj');

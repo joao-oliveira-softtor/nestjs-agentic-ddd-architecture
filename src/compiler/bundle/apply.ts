@@ -132,21 +132,42 @@ const text = (path: string): Promise<string | null> =>
 const notIntact = (why: string) =>
   new AgenticError('apply.hash-mismatch', `the bundle is not intact: ${why}`);
 
-/** The text of `bundle.json` and every other file of the bundle directory (LF, the derived ones left out). */
+/** The text of `bundle.json` and every other file of a bundle held as entries (LF, the derived ones left out). */
+export function splitBundleEntries(
+  all: readonly { readonly path: string; readonly content: string }[],
+): { manifestText: string; files: Map<string, string> } {
+  const manifest = all.find((e) => e.path === 'bundle.json');
+  if (manifest === undefined) throw notIntact('bundle.json is missing');
+  const files = new Map(
+    all
+      .filter((e) => !DERIVED.has(e.path))
+      .map((e) => [e.path, toLf(e.content)] as const),
+  );
+  return { manifestText: toLf(manifest.content), files };
+}
+
+/** `splitBundleEntries` for the files of a bundle directory. */
 export async function splitBundleFiles(
   dir: string,
 ): Promise<{ manifestText: string; files: Map<string, string> }> {
-  const manifestText = await text(join(dir, 'bundle.json'));
-  if (manifestText === null) throw notIntact('bundle.json is missing');
-  const files = new Map<string, string>();
-  const entries = await readdir(dir, { recursive: true, withFileTypes: true });
-  for (const e of entries) {
-    if (!e.isFile()) continue;
-    const rel = toPosix(relative(dir, join(e.parentPath, e.name)));
-    if (!DERIVED.has(rel))
-      files.set(rel, toLf(await readFile(join(e.parentPath, e.name), 'utf8')));
+  // Only a directory that is not there is "missing"; EACCES, ENOTDIR and the like are reported as they are.
+  const entries = await readdir(dir, {
+    recursive: true,
+    withFileTypes: true,
+  }).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== 'ENOENT') throw error;
+    return [];
+  });
+  // One file at a time: a bundle is many small files, and this never opens them all at once.
+  const all: { path: string; content: string }[] = [];
+  for (const e of entries.filter((entry) => entry.isFile())) {
+    const abs = join(e.parentPath, e.name);
+    all.push({
+      path: toPosix(relative(dir, abs)),
+      content: await readFile(abs, 'utf8'),
+    });
   }
-  return { manifestText, files };
+  return splitBundleEntries(all);
 }
 
 /** The manifest the text declares, the hashes it lists and the manifest rebuilt from the files; `apply.hash-mismatch` for text that is not a manifest. */
@@ -523,7 +544,7 @@ async function writeAndCompile(
   }
 }
 
-const relTo = (root: string, abs: string): string =>
+export const relTo = (root: string, abs: string): string =>
   toPosix(relative(root, abs));
 
 /** Project-relative directories a bundle may write under: the module paths and its one change directory. */

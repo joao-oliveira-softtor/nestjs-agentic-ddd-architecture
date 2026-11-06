@@ -15,6 +15,10 @@ import {
   createPublishedLock,
   serializePublishedLock,
 } from '../../compiler/published';
+import {
+  SHORT_PATH_TEST_TIMEOUT_MS,
+  shortPath,
+} from '../../../test/helpers/short-path';
 import { mcpCommand } from './mcp';
 import { DEFAULT_CONVENTIONS } from '../../compiler/conventions';
 
@@ -231,6 +235,20 @@ describe('mcpCommand', () => {
     expect(messages).toContain(
       '--http needs an mcp section in agentic.config.ts. [cli.mcp-config-missing]',
     );
+    expect(calls).toEqual([]);
+  });
+
+  test('an explicit empty --config is used as given, not replaced by the default', async () => {
+    await configFile(MCP);
+    const calls: unknown[] = [];
+    const outcome = await mcpCommand(
+      ['--http', '--root', dir, '--config', ''],
+      httpLoad(calls),
+    ).then(
+      () => 'ran',
+      () => 'failed',
+    );
+    expect(outcome).toBe('failed');
     expect(calls).toEqual([]);
   });
 
@@ -543,5 +561,97 @@ describe('mcpCommand --published', () => {
     error.mockRestore();
     expect(failure).toBeInstanceOf(Error);
     expect(messages).not.toContain('serving published lock');
+  });
+});
+
+describe('mcpCommand publish sink', () => {
+  const KEYS = ['AGENTIC_GITHUB_TOKEN', 'AGENTIC_GITHUB_REPO'] as const;
+  const saved = KEYS.map((k) => process.env[k]);
+  afterEach(() => {
+    KEYS.forEach((k, i) => {
+      if (saved[i] === undefined) delete process.env[k];
+      else process.env[k] = saved[i];
+    });
+  });
+
+  const run = async (calls: unknown[], root = dir, config?: string) => {
+    const error = captureErrors();
+    const code = await mcpCommand(
+      ['--http', '--root', root, '--config', config ?? (await configFile(MCP))],
+      httpLoad(calls),
+    );
+    const messages = error.mock.calls.flat().join('\n');
+    error.mockRestore();
+    return { code, messages };
+  };
+
+  test('without the GitHub variables no sink is passed', async () => {
+    for (const k of KEYS) delete process.env[k];
+    const calls: { publish?: unknown }[] = [];
+    expect((await run(calls)).code).toBe(0);
+    expect(calls[0]!.publish).toBeUndefined();
+  });
+
+  test('with both variables a sink is passed, limited to the module paths and the changes directory', async () => {
+    process.env.AGENTIC_GITHUB_TOKEN = 'ghp_SECRET_TOKEN_123';
+    process.env.AGENTIC_GITHUB_REPO = 'acme/shop';
+    const calls: {
+      publish?: { sink: { publish(c: unknown): Promise<unknown> } };
+    }[] = [];
+    expect((await run(calls)).code).toBe(0);
+    const outside = await calls[0]!
+      .publish!.sink.publish({
+        number: '0001',
+        slug: 'x',
+        title: 't',
+        body: 'b',
+        changesDir: 'changes',
+        files: [{ path: 'elsewhere/a.ts', content: 'x' }],
+      })
+      .catch((e: { code: string }) => e.code);
+    expect(outside).toBe('publish.path-invalid');
+  });
+
+  // Windows reports the temp folder by its 8.3 name (RUNNER~1); the config root is expanded, so the two must still agree.
+  test(
+    'a root given by its 8.3 short name still yields the module prefixes',
+    async () => {
+      process.env.AGENTIC_GITHUB_TOKEN = 'ghp_SECRET_TOKEN_123';
+      process.env.AGENTIC_GITHUB_REPO = 'acme/shop';
+      const short = shortPath(dir);
+      const calls: unknown[] = [];
+      const { code, messages } = await run(calls, short);
+      expect(messages).not.toContain('publish.config-invalid');
+      expect(code).toBe(0);
+    },
+    SHORT_PATH_TEST_TIMEOUT_MS,
+  );
+
+  test('the publish config is the one of --config, loaded once for the server', async () => {
+    process.env.AGENTIC_GITHUB_TOKEN = 'ghp_SECRET_TOKEN_123';
+    process.env.AGENTIC_GITHUB_REPO = 'acme/shop';
+    const custom = join(dir, 'custom.config.ts');
+    await writeFile(
+      custom,
+      `export default { modules: [{ name: 'other', path: 'models' }], mcp: ${MCP} };
+`,
+    );
+    const calls: { publish?: { config: { modules: { name: string }[] } } }[] =
+      [];
+    expect((await run(calls, dir, custom)).code).toBe(0);
+    expect(calls[0]!.publish!.config.modules.map((m) => m.name)).toEqual([
+      'other',
+    ]);
+  });
+
+  test('a half configuration exits 1 with publish.config-invalid and never prints the token', async () => {
+    process.env.AGENTIC_GITHUB_TOKEN = 'ghp_SECRET_TOKEN_123';
+    delete process.env.AGENTIC_GITHUB_REPO;
+    const calls: unknown[] = [];
+    const { code, messages } = await run(calls);
+    expect(code).toBe(1);
+    expect(messages).toContain('[publish.config-invalid]');
+    expect(messages).not.toContain('ghp_SECRET_TOKEN_123');
+    expect(calls).toEqual([]);
   });
 });
