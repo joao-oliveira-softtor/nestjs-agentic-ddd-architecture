@@ -94,7 +94,7 @@ export {
   type ReconcileInput,
   type ReconcilePlan,
 } from './changes/reconcile';
-export { archiveProposal } from './changes/apply';
+export { archiveProposal } from './changes/archive';
 export { writeDraft } from './changes/draft';
 export { verify, type VerifyOptions } from './verify/index';
 export {

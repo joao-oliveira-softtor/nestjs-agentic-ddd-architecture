@@ -1,14 +1,23 @@
 import { afterAll, describe, expect, test } from 'bun:test';
 import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readdir,
+  rm,
+  utimes,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { git } from '../../../test/helpers/shop-repo';
 import {
+  minimalEnv,
   pruneStale,
   quote,
   redact,
   resolveBase,
+  run,
   runCandidateCli,
   withWorktree,
 } from './candidate';
@@ -163,5 +172,63 @@ describe('runCandidateCli', () => {
     const keys = (JSON.parse(out) as string[]).map((k) => k.toUpperCase());
     expect(keys).not.toContain('AGENTIC_TEST_SECRET');
     expect(keys).toContain('PATH');
+  });
+});
+
+describe('minimalEnv', () => {
+  test('keeps PATH and the platform variables that are set, and nothing else', () => {
+    process.env.AGENTIC_TEST_SECRET = 'x';
+    process.env.BUN_INSTALL = '/bun';
+    try {
+      const env = minimalEnv();
+      expect(env.BUN_INSTALL).toBe('/bun');
+      expect(Object.keys(env)).not.toContain('AGENTIC_TEST_SECRET');
+      expect(Object.keys(env).some((k) => k.toUpperCase() === 'PATH')).toBe(
+        true,
+      );
+      for (const [key, value] of Object.entries(env))
+        expect(value).toBe(process.env[key]!);
+    } finally {
+      delete process.env.AGENTIC_TEST_SECRET;
+      delete process.env.BUN_INSTALL;
+    }
+  });
+
+  test('leaves out a variable that is not set', () => {
+    const saved = process.env.BUN_INSTALL;
+    delete process.env.BUN_INSTALL;
+    try {
+      expect(Object.keys(minimalEnv())).not.toContain('BUN_INSTALL');
+    } finally {
+      if (saved !== undefined) process.env.BUN_INSTALL = saved;
+    }
+  });
+});
+
+describe('run', () => {
+  test('an aborted signal kills the child before its own time is up', async () => {
+    const abort = new AbortController();
+    const started = Date.now();
+    setTimeout(() => abort.abort(), 200);
+    const result = await run(
+      [process.execPath, '-e', 'setTimeout(() => {}, 60000)'],
+      tmpdir(),
+      { signal: abort.signal },
+    );
+    expect(result.code).not.toBe(0);
+    expect(result.timedOut).toBe(false);
+    expect(Date.now() - started).toBeLessThan(30_000);
+  });
+
+  test('a signal that is already aborted stops the child before it can do anything', async () => {
+    const started = Date.now();
+    const result = await run(
+      [process.execPath, '-e', 'setTimeout(() => {}, 60000)'],
+      tmpdir(),
+      { signal: AbortSignal.abort() },
+    );
+    expect(result.code).not.toBe(0);
+    expect(result.timedOut).toBe(false);
+    expect(Date.now() - started).toBeLessThan(30_000);
   });
 });

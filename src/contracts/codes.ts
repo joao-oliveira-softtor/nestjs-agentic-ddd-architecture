@@ -1,6 +1,29 @@
 // Stable error codes for CLI, compile, verify and MCP output. Codes are part of the public
 // surface: tests and tooling match on them, so reword messages freely but never rename a code.
 export const ERROR_CODES = {
+  // apply
+  'apply.base-mismatch':
+    'The project is not at the bundle base: another lock or base ref, or a target file changed locally.',
+  'apply.change-exists': 'The change directory for the bundle already exists.',
+  'apply.change-invalid':
+    'The bundle does not carry exactly one NNNN-slug change directory.',
+  'apply.compile-failed':
+    'The compile after writing the bundle failed; the bundle files were restored.',
+  'apply.compile-timeout':
+    'The compile after writing the bundle did not finish in time and was stopped; the bundle files were restored.',
+  'apply.confirmation-required':
+    'apply lists the files it would write and needs --yes before writing.',
+  'apply.hash-mismatch':
+    'The bundle is not intact: a file is tampered, missing or extra.',
+  'apply.locked': 'Another apply holds the lock file.',
+  'apply.path-escape': 'A bundle path resolves outside the project.',
+  'apply.path-forbidden':
+    'A bundle path is outside the module paths and the change directory, or inside .git, .github, node_modules or .tmp.',
+  'apply.rollback-failed':
+    'The rollback could not restore every file; the originals are kept in the .tmp stage folder named in the message.',
+  'apply.write-failed':
+    'A file of the bundle could not be written; every write was rolled back.',
+
   // auth
   'auth.audience-mismatch':
     'The token audience does not include this resource.',
