@@ -92,6 +92,7 @@ export async function publishBundle(
     slug: change.slice(5),
     title: `Change ${change}`,
     changesDir: changesRel,
+    baseRef: manifest.baseRef,
     body: `Published from a compiled bundle through the Domain MCP.\n\nBundle hash: ${manifest.hash}\nBase ref: ${manifest.baseRef}\n\nThe hash proves the bundle is unchanged, not who made it: review the files before merging.`,
     files: planned.map((p) => ({ path: p.rel, content: p.content })),
   });

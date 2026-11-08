@@ -261,6 +261,10 @@ export const ERROR_CODES = {
   'proposal.title-missing': 'The proposal has no title.',
 
   // publish
+  'publish.base-mismatch':
+    'A target file changed on the default branch since the bundle base ref; publishing would overwrite it.',
+  'publish.base-unknown':
+    'The bundle base ref is not a commit on the Git host (it was never pushed).',
   'publish.branch-exists':
     'The change branch already exists on the Git host; it is never updated.',
   'publish.change-exists':

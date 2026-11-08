@@ -10,6 +10,7 @@ const change = {
   title: 'Add refund window',
   body: 'Body',
   changesDir: 'changes',
+  baseRef: 'sha-base',
   files: [{ path: 'changes/0007-refund-window/proposal.md', content: '# hi' }],
 };
 
@@ -117,6 +118,95 @@ describe('GitHubChangeSink', () => {
       expect(fake.requests).toEqual([]);
     },
   );
+
+  describe('base ref', () => {
+    const file = 'examples/orders/domain/order.ts';
+    const based = {
+      ...change,
+      baseRef: 'sha-old',
+      files: [{ path: file, content: 'v1' }],
+    };
+    const withHistory = (
+      head: Record<string, string>,
+      old: Record<string, string> = { [file]: 'v1' },
+    ) => {
+      const s = setup();
+      s.fake.history.set('sha-old', old);
+      s.fake.history.set('sha-base', head);
+      return s;
+    };
+    const nothingCreated = (fake: { requests: string[] }) =>
+      expect(fake.requests.some((r) => r.startsWith('POST'))).toBe(false);
+
+    test('publishes when the targets are the same at the base ref and at the default branch head', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1', 'other.md': 'moved' });
+      await sink.publish(based);
+      expect(fake.pulls).toHaveLength(1);
+    });
+
+    test('compares the trees with one listing per ref', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      await sink.publish(based);
+      const r = '/repos/acme/shop';
+      expect(fake.requests.filter((q) => q.includes('/git/trees/'))).toEqual([
+        `GET ${r}/git/trees/tree-of-sha-old`,
+        `GET ${r}/git/trees/tree-of-sha-base`,
+      ]);
+    });
+
+    test.each([
+      ['changed', { [file]: 'v2' }],
+      ['deleted', {}],
+    ])(
+      'refuses a target %s on the default branch since the base ref',
+      async (_, head) => {
+        const { fake, sink } = withHistory(head);
+        const e = await failure(sink.publish(based));
+        expect(e.code).toBe('publish.base-mismatch');
+        expect(e.message).toContain(file);
+        expect(e.message).toContain('main moved');
+        nothingCreated(fake);
+      },
+    );
+
+    test('refuses a target added on the default branch since the base ref', async () => {
+      const { fake, sink } = withHistory({ [file]: 'new' }, {});
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.base-mismatch',
+      );
+      nothingCreated(fake);
+    });
+
+    test('names the first offending file in bundle order', async () => {
+      const { sink } = withHistory(
+        { 'examples/orders/a.ts': '2', 'examples/orders/b.ts': '2' },
+        { 'examples/orders/a.ts': '1', 'examples/orders/b.ts': '1' },
+      );
+      const files = ['b', 'a'].map((n) => ({
+        path: `examples/orders/${n}.ts`,
+        content: 'x',
+      }));
+      const e = await failure(sink.publish({ ...based, files }));
+      expect(e.message).toContain('examples/orders/b.ts');
+    });
+
+    test('refuses a base ref the host does not know, whatever else is true', async () => {
+      const { fake, sink } = setup();
+      const e = await failure(
+        sink.publish({ ...change, baseRef: 'never-pushed' }),
+      );
+      expect(e.code).toBe('publish.base-unknown');
+      expect(e.message).toContain('never-pushed');
+      nothingCreated(fake);
+    });
+
+    test('keeps the token out of the refusal', async () => {
+      const { sink } = withHistory({ [file]: 'v2' });
+      expect(JSON.stringify(await failure(sink.publish(based)))).not.toContain(
+        TOKEN,
+      );
+    });
+  });
 
   test('refuses an existing branch and writes nothing', async () => {
     const { fake, sink } = setup({

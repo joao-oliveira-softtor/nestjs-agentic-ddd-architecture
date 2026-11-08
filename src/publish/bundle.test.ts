@@ -71,7 +71,25 @@ describe('publishBundle', () => {
     ]);
     expect(fake.pulls[0]!.head).toBe(CHANGE);
     expect(fake.pulls[0]!.body).toContain(bundleOf(GOOD).hash);
-    expect(fake.pulls[0]!.body).toContain('abc123');
+    expect(fake.pulls[0]!.body).toContain('sha-base');
+  });
+
+  test('refuses with publish.base-mismatch when main changed a target since the bundle base, and creates nothing', async () => {
+    const { fake, publish } = setup();
+    fake.history.set('old', { 'src/shop/domain/refund.ts': 'v1' });
+    fake.history.set('sha-base', { 'src/shop/domain/refund.ts': 'v2' });
+    expect(await code(publish(bundleOf(GOOD, 'old')))).toBe(
+      'publish.base-mismatch',
+    );
+    expect(fake.requests.some((r) => r.startsWith('POST'))).toBe(false);
+  });
+
+  test('refuses a bundle whose base ref the host never saw', async () => {
+    const { fake, publish } = setup();
+    expect(await code(publish(bundleOf(GOOD, 'never-pushed')))).toBe(
+      'publish.base-unknown',
+    );
+    expect(fake.pulls).toEqual([]);
   });
 
   test('refuses a changed file with apply.hash-mismatch and calls no host', async () => {
@@ -202,6 +220,7 @@ describe('sinkFromEnv', () => {
       title: 't',
       body: 'b',
       changesDir: 'changes',
+      baseRef: 'sha-base',
       files: [{ path: `${CHANGE}/proposal.md`, content: 'x' }],
     });
     expect(fake.auth.every((a) => a === `Bearer ${TOKEN}`)).toBe(true);
@@ -269,6 +288,7 @@ describe('publishTargetFromProject', () => {
         title: 't',
         body: 'b',
         changesDir: 'changes',
+        baseRef: 'sha-base',
         files: [{ path: 'elsewhere/a.ts', content: 'x' }],
       })
       .catch((e: { code: string }) => e.code);

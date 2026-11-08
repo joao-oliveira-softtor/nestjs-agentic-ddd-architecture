@@ -206,6 +206,13 @@ export class GitHubChangeSink implements ChangeSink {
       undefined,
       'base commit',
     );
+    await this.#assertBaseUnmoved(
+      repo,
+      base,
+      head.object.sha,
+      baseCommit.tree.sha,
+      change,
+    );
     // Contents go inline: one request instead of one blob per file. Mode 100644 makes every file regular.
     const tree = change.files.map((f) => ({
       path: f.path,
@@ -250,6 +257,65 @@ export class GitHubChangeSink implements ChangeSink {
     } catch (e) {
       throw await this.#cleanup(e, repo, branch);
     }
+  }
+
+  /** Refuses a bundle whose target files changed on the default branch since its base ref (`apply` checks the same locally). */
+  async #assertBaseUnmoved(
+    repo: string,
+    branch: string,
+    headSha: string,
+    headTree: string,
+    change: PublishableChange,
+  ): Promise<void> {
+    if (change.baseRef === headSha) return;
+    const res = await this.#send(
+      'GET',
+      `${repo}/git/commits/${encodeURIComponent(change.baseRef)}`,
+      undefined,
+    );
+    if (res.status === 404)
+      throw new AgenticError(
+        'publish.base-unknown',
+        `the bundle's base ref ${JSON.stringify(change.baseRef)} is not a commit on the Git host (push it first)`,
+      );
+    this.#check(res, 'bundle base commit');
+    const atBase = await this.#blobs(
+      repo,
+      (await res.json().catch(() => undefined))?.tree?.sha,
+    );
+    const atHead = await this.#blobs(repo, headTree);
+    const moved = change.files.find(
+      (f) => atBase.get(f.path) !== atHead.get(f.path),
+    );
+    if (moved)
+      throw new AgenticError(
+        'publish.base-mismatch',
+        `${JSON.stringify(moved.path)} changed on ${branch} since the bundle's base ref ${JSON.stringify(change.baseRef)} (main moved; publishing would overwrite it)`,
+      );
+  }
+
+  /** Blob SHA by path of a whole tree; fails closed when GitHub truncates the listing. */
+  async #blobs(repo: string, tree: unknown): Promise<Map<string, string>> {
+    if (typeof tree !== 'string')
+      throw new AgenticError(
+        'publish.host-failed',
+        'GitHub bundle base commit failed: the answer had no tree',
+      );
+    const listing = await this.#call<{
+      truncated?: boolean;
+      tree?: { path: string; sha: string }[];
+    }>(
+      'GET',
+      `${repo}/git/trees/${tree}?recursive=1`,
+      undefined,
+      'tree listing',
+    );
+    if (listing.truncated !== false || !Array.isArray(listing.tree))
+      throw new AgenticError(
+        'publish.host-failed',
+        'GitHub tree listing failed: the tree is too large to compare',
+      );
+    return new Map(listing.tree.map((e) => [e.path, e.sha]));
   }
 
   /** Refuses a number already used in the changes directory or its `archive/` on the default branch (`apply` checks the same on a working copy). */

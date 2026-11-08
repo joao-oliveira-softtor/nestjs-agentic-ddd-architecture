@@ -10,6 +10,8 @@ export interface FakeGitHost {
     { message: string; tree: string; parents: string[] }
   >;
   readonly trees: Map<string, unknown>;
+  /** Known commits (a ref's SHA, or a bundle base) and the files in each one, by path; the default branch head is `sha-base`. */
+  readonly history: Map<string, Record<string, string>>;
   /** Every Authorization header seen. */
   readonly auth: string[];
   /** Answers with this status to any request whose "METHOD path" ends with `match`. */
@@ -44,6 +46,7 @@ export function createFakeGitHost(opts: {
     pulls: [],
     commits: new Map(),
     trees: new Map(),
+    history: new Map([['sha-base', {}]]),
     auth: [],
     failWith: undefined,
     fetch: (async (
@@ -87,7 +90,22 @@ export function createFakeGitHost(opts: {
       }
       const commit = /^\/git\/commits\/(.+)$/.exec(path);
       if (method === 'GET' && commit)
-        return json(200, { tree: { sha: `tree-of-${commit[1]}` } });
+        return host.history.has(commit[1]!)
+          ? json(200, { tree: { sha: `tree-of-${commit[1]}` } })
+          : json(404, {});
+      const tree = /^\/git\/trees\/tree-of-(.+)$/.exec(path);
+      if (method === 'GET' && tree)
+        return json(200, {
+          truncated: false,
+          // The blob SHA is the content itself: equal content, equal SHA.
+          tree: Object.entries(host.history.get(tree[1]!) ?? {}).map(
+            ([p, content]) => ({
+              path: p,
+              type: 'blob',
+              sha: `blob:${content}`,
+            }),
+          ),
+        });
       if (method === 'POST' && path === '/git/trees') {
         const s = sha();
         host.trees.set(s, body);
