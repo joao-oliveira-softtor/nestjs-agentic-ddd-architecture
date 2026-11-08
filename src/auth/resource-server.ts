@@ -139,11 +139,14 @@ function isIssuerFailure(error: unknown): boolean {
 }
 
 // decodeProtectedHeader throws a plain TypeError for a non-JWT token, not a JOSEError.
+// Any other error is a real fault and must stay a 500.
 function protectedHeader(token: string) {
   try {
     return decodeProtectedHeader(token);
-  } catch {
-    throw new errors.JWSInvalid('Malformed token');
+  } catch (cause) {
+    if (cause instanceof TypeError || cause instanceof errors.JOSEError)
+      throw new errors.JWSInvalid('Malformed token', { cause });
+    throw cause;
   }
 }
 
