@@ -9,6 +9,7 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
+import { CLI_TEST_TIMEOUT_MS } from '../../test/helpers/timeouts';
 
 const ROOT = resolve(import.meta.dir, '../..');
 export async function queryFixture() {
@@ -188,7 +189,7 @@ test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relac
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, CLI_TEST_TIMEOUT_MS);
 
 test('status and verifyItem refuse partial JUnit on a collection error', async () => {
   const { dir, run } = await queryFixture();
@@ -287,4 +288,4 @@ test('project without tests allows status, next and packet, but does not certify
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, CLI_TEST_TIMEOUT_MS);
