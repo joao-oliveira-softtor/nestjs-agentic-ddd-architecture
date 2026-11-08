@@ -200,6 +200,48 @@ describe('GitHubChangeSink', () => {
       nothingCreated(fake);
     });
 
+    // The fake host cannot shape a 200 answer, so the sink gets a fetch that rewrites one.
+    const answeringWith = (suffix: string, answer: string) => {
+      const { fake } = withHistory({ [file]: 'v1' });
+      const sink = new GitHubChangeSink({
+        token: TOKEN,
+        owner: 'acme',
+        repo: 'shop',
+        allowedPrefixes: ['changes/', 'examples/orders/'],
+        fetch: ((url: string, init?: RequestInit) =>
+          url.endsWith(suffix)
+            ? Promise.resolve(new Response(answer))
+            : fake.fetch(url, init)) as typeof fetch,
+      });
+      return { fake, sink };
+    };
+
+    test.each([
+      ['truncated', { truncated: true, tree: [] }],
+      ['without a truncated flag', { tree: [] }],
+      ['without a tree array', { truncated: false }],
+    ])('fails closed when a tree listing comes back %s', async (_, listing) => {
+      const { fake, sink } = answeringWith(
+        '/git/trees/tree-of-sha-old?recursive=1',
+        JSON.stringify(listing),
+      );
+      const e = await failure(sink.publish(based));
+      expect(e.code).toBe('publish.host-failed');
+      expect(e.message).toContain('too large to compare');
+      nothingCreated(fake);
+    });
+
+    test.each([
+      ['an object without a tree', '{}'],
+      ['not JSON', '<html>bad gateway</html>'],
+    ])('fails closed when the base commit answer is %s', async (_, answer) => {
+      const { fake, sink } = answeringWith('/git/commits/sha-old', answer);
+      const e = await failure(sink.publish(based));
+      expect(e.code).toBe('publish.host-failed');
+      expect(e.message).toContain('no tree');
+      nothingCreated(fake);
+    });
+
     test('keeps the token out of the refusal', async () => {
       const { sink } = withHistory({ [file]: 'v2' });
       expect(JSON.stringify(await failure(sink.publish(based)))).not.toContain(
