@@ -30,11 +30,21 @@ export interface TargetLayer {
   readonly skeleton: readonly string[];
 }
 
+export interface NeutralLayer {
+  /** Language-neutral model, briefs and README; never certified `done` (ADR-0007 D12). */
+  readonly model: string;
+  readonly readme: string;
+  readonly briefs: readonly { readonly item: string; readonly path: string }[];
+}
+
 export interface BundleManifest {
   readonly version: typeof BUNDLE_VERSION;
   readonly baseRef: string;
   readonly baseLockHash: string;
-  readonly layers: { readonly target: TargetLayer };
+  readonly layers: {
+    readonly target: TargetLayer;
+    readonly neutral: NeutralLayer;
+  };
   /** The given/when/then examples of the new invariants, as the Delta renderer returned them. */
   readonly examples: readonly RenderedExample[];
   /** Every file of the bundle except `BUNDLE.md` and `bundle.json`, which are derived from these. */
@@ -69,7 +79,10 @@ export function renderBundleMd(m: BundleManifest): string {
   return [
     '# Compiled bundle',
     '',
-    "A skeleton, per-item packets and the module skill for one proposed change, compiled against a base commit. Reply to the user in the user's language; never translate identifiers, invariant ids or business text.",
+    "Two layers for one proposed change, compiled against a base commit. Reply to the user in the user's language; never translate identifiers, invariant ids or business text.",
+    '',
+    '- Layer `target/` is nestjs-ts: skeleton, packets, executor briefs and the module skill, for an executor in this repository. Only this layer is certified: a task is `done` only when `verify` says so.',
+    '- Layer `neutral/`: model, invariants with given/when/then examples, acceptance criteria and briefs with no TypeScript, for a team in any language. It is not certified: only the target layer is certified `done`.',
     '',
     `- Bundle version: ${m.version}`,
     `- Base ref: \`${m.baseRef}\``,
@@ -78,10 +91,11 @@ export function renderBundleMd(m: BundleManifest): string {
     '',
     '## Apply the bundle',
     '',
-    'Run from the base checkout, at the base ref above. It refuses on a base mismatch, writes the skeleton and runs `compile`. (requires `agentic apply`, issue #120: it does not exist yet)',
+    'Run from the base checkout, at the base ref above. It refuses on a base mismatch, writes the skeleton and runs `compile`. The bundle hash proves the bundle is unchanged, not who made it (integrity, not authenticity): compare the hash above with the sender before confirming. It writes only under a module path and one `changes/NNNN-slug/` directory; without `--yes` it lists the files and writes nothing.',
     '',
     '```bash',
     'bun run agentic apply <path-to-this-bundle>',
+    'bun run agentic apply <path-to-this-bundle> --yes',
     '```',
     '',
     '## Items in wave order',

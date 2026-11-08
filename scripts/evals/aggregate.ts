@@ -19,6 +19,7 @@ import { readPrivateBytes } from './private-files';
 import { parseImplementationReply, verdictOf } from './judge';
 import { finalVerificationState } from './final-verification';
 import { TUTORIALS } from './tutorials';
+import { isCertified, rate, tallyItems } from './item-tally';
 import { oracleGreen } from './reference';
 import {
   deriveCost,
@@ -294,13 +295,6 @@ function accepted(attempt: ItemAttempt | undefined) {
     )
   );
 }
-const rate = (numerator: number, denominator: number) => ({
-  numerator,
-  denominator,
-  value: denominator
-    ? available(numerator / denominator, 'evidence_counts')
-    : unavailable<number>('zero_denominator'),
-});
 function sumUsage(usage: Usage[], complete: boolean): Usage {
   const token = (
     key: 'inputTokens' | 'cachedInputTokens' | 'outputTokens',
@@ -679,14 +673,11 @@ function summarize(
       (b) => b.configuration === slot.configuration,
     )!;
     if (b.review?.execution) usage.push(b.review.execution.usage);
-    let final = 0;
+    const tally = tallyItems(b.items, accepted);
+    initialItems += tally.initial;
+    finalItems += tally.final;
+    corrections += tally.corrections;
     for (const i of b.items) {
-      if (accepted(i.attempts[0])) initialItems++;
-      if (accepted(i.attempts.at(-1))) {
-        finalItems++;
-        final++;
-      }
-      corrections += Math.max(0, i.attempts.length - 1);
       for (const a of i.attempts) {
         usage.push(a.execution.usage);
         if (
@@ -728,11 +719,17 @@ function summarize(
     if (finalVerificationState(b.finalVerification) === 'infra_error')
       infrastructureFailures++;
     if (
-      final === TUTORIALS[report.manifest.benchmark].items.length &&
-      finalVerificationState(b.finalVerification) === 'verified' &&
-      b.finalVerification?.report?.status === 'done' &&
-      report.provenance.originAfter.status === 'available' &&
-      report.provenance.originBefore === report.provenance.originAfter.value
+      isCertified({
+        finalItems: tally.final,
+        plannedItems: TUTORIALS[report.manifest.benchmark].items.length,
+        verifiedDone:
+          finalVerificationState(b.finalVerification) === 'verified' &&
+          b.finalVerification?.report?.status === 'done',
+        originUnchanged:
+          report.provenance.originAfter.status === 'available' &&
+          report.provenance.originBefore ===
+            report.provenance.originAfter.value,
+      })
     )
       certifiedRuns++;
   }

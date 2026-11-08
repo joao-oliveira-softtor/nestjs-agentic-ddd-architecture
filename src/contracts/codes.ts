@@ -1,6 +1,29 @@
 // Stable error codes for CLI, compile, verify and MCP output. Codes are part of the public
 // surface: tests and tooling match on them, so reword messages freely but never rename a code.
 export const ERROR_CODES = {
+  // apply
+  'apply.base-mismatch':
+    'The project is not at the bundle base: another lock or base ref, or a target file changed locally.',
+  'apply.change-exists': 'The change directory for the bundle already exists.',
+  'apply.change-invalid':
+    'The bundle does not carry exactly one NNNN-slug change directory.',
+  'apply.compile-failed':
+    'The compile after writing the bundle failed; the bundle files were restored.',
+  'apply.compile-timeout':
+    'The compile after writing the bundle did not finish in time and was stopped; the bundle files were restored.',
+  'apply.confirmation-required':
+    'apply lists the files it would write and needs --yes before writing.',
+  'apply.hash-mismatch':
+    'The bundle is not intact: a file is tampered, missing or extra.',
+  'apply.locked': 'Another apply holds the lock file.',
+  'apply.path-escape': 'A bundle path resolves outside the project.',
+  'apply.path-forbidden':
+    'A bundle path is outside the module paths and the change directory, or inside .git, .github, node_modules or .tmp.',
+  'apply.rollback-failed':
+    'The rollback could not restore every file; the originals are kept in the .tmp stage folder named in the message.',
+  'apply.write-failed':
+    'A file of the bundle could not be written; every write was rolled back.',
+
   // auth
   'auth.audience-mismatch':
     'The token audience does not include this resource.',
@@ -173,6 +196,10 @@ export const ERROR_CODES = {
     'Another propose_change is running on this server; retry shortly.',
   'mcp.propose-unavailable':
     'propose_change needs a working copy with a git history; this server serves a published lock.',
+  'mcp.publish-busy':
+    'Another publish_change is running on this server; retry shortly.',
+  'mcp.publish-unavailable':
+    'publish_change needs a working copy and a Git host configured on the server (AGENTIC_GITHUB_TOKEN and AGENTIC_GITHUB_REPO).',
   'mcp.path-out-of-scope':
     'The requested path is outside the modules the token may read.',
   'mcp.path-outside-root': 'The requested path is outside the project root.',
@@ -232,6 +259,25 @@ export const ERROR_CODES = {
   'proposal.slug-invalid': 'The --draft-change slug is not kebab-case.',
   'proposal.status-invalid': 'status is not proposed or applied.',
   'proposal.title-missing': 'The proposal has no title.',
+
+  // publish
+  'publish.branch-exists':
+    'The change branch already exists on the Git host; it is never updated.',
+  'publish.change-exists':
+    'The change number is already used in the target repository changes directory.',
+  'publish.change-invalid':
+    'The change number or slug is not NNNN and a kebab-case slug.',
+  'publish.config-invalid':
+    'The sink configuration (token, owner, repo or path prefixes) is not valid.',
+  'publish.host-denied':
+    'The Git host refused the server token (HTTP 401 or 403).',
+  'publish.host-failed':
+    'The Git host answered with an unexpected HTTP status.',
+  'publish.host-rate-limited':
+    'The Git host rate-limited the server token (HTTP 429, or 403 with no quota left).',
+  'publish.host-unreachable': 'The Git host could not be reached.',
+  'publish.path-invalid':
+    'A file path is not relative POSIX, or is outside the allowed prefixes.',
 
   // published
   'published.digest-mismatch':

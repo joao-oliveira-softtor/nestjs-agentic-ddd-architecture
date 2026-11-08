@@ -96,6 +96,7 @@ A linha de base do critério de sucesso é o A0 do piloto cycle-21 (Sonnet mediu
 1. Épico #105: começam em paralelo #109, #110, #111, #112, #115, #117 e #123; as dependências estão nas próprias issues.
 2. Em paralelo, a frente de runtime: decidir o provider no [ADR-0004](adr/ADR-0004.md), depois #7 (com os requisitos F8 do runtime) e #8. A parte offline da #8 (CLI, aprovação e `FakeLlm`) não depende da #7.
 3. O ciclo 22 (pré-registrado em `evals/campaigns/cycle-22-control/`) aguarda orçamento autorizado.
+4. A medição do bundle (#122, ADR-0007 D14) tem pré-registro proposto em `evals/campaigns/cycle-23-bundle/PREREGISTRATION.md`; os limites e o orçamento aguardam aprovação do dono.
 
 ## Backlog — Extensões e distribuição
 

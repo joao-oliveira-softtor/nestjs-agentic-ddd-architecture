@@ -3,19 +3,23 @@
 exports[`compileBundle on the shop project returns the bundle, its manifest and BUNDLE.md as a snapshot: BUNDLE.md 1`] = `
 "# Compiled bundle
 
-A skeleton, per-item packets and the module skill for one proposed change, compiled against a base commit. Reply to the user in the user's language; never translate identifiers, invariant ids or business text.
+Two layers for one proposed change, compiled against a base commit. Reply to the user in the user's language; never translate identifiers, invariant ids or business text.
+
+- Layer \`target/\` is nestjs-ts: skeleton, packets, executor briefs and the module skill, for an executor in this repository. Only this layer is certified: a task is \`done\` only when \`verify\` says so.
+- Layer \`neutral/\`: model, invariants with given/when/then examples, acceptance criteria and briefs with no TypeScript, for a team in any language. It is not certified: only the target layer is certified \`done\`.
 
 - Bundle version: 1
 - Base ref: \`<baseRef>\`
 - Base lock hash: \`99f8849ee3d00aeda9202706323884a5514e84ffad84c3c3d828c3826f0b9edc\`
-- Bundle hash: \`c1291b3ded6247221932e10a1a5406841472fe073b837f0ab8888dd8dd75fed9\`
+- Bundle hash: \`45527d9713aee39ad3331dcb9e103efc5743d262c4c2598e155fac62d06377ba\`
 
 ## Apply the bundle
 
-Run from the base checkout, at the base ref above. It refuses on a base mismatch, writes the skeleton and runs \`compile\`. (requires \`agentic apply\`, issue #120: it does not exist yet)
+Run from the base checkout, at the base ref above. It refuses on a base mismatch, writes the skeleton and runs \`compile\`. The bundle hash proves the bundle is unchanged, not who made it (integrity, not authenticity): compare the hash above with the sender before confirming. It writes only under a module path and one \`changes/NNNN-slug/\` directory; without \`--yes\` it lists the files and writes nothing.
 
 \`\`\`bash
 bun run agentic apply <path-to-this-bundle>
+bun run agentic apply <path-to-this-bundle> --yes
 \`\`\`
 
 ## Items in wave order
@@ -73,6 +77,30 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
     },
   ],
   "files": [
+    {
+      "path": "neutral/README.md",
+      "sha256": "9f59bb478b3ae0a1f96c34d4901135eafee872f6d75c419b0dd9a94b2c4d979d",
+    },
+    {
+      "path": "neutral/briefs/entity-Order.md",
+      "sha256": "df2f668ea84b45940be247bd136a185c156451b0cfa58ae1ff245f5c2779d930",
+    },
+    {
+      "path": "neutral/briefs/method-Order-pay.md",
+      "sha256": "65b1f79f3d6a56841d5501573f1409c704de15c97651cb250231190739cea1b5",
+    },
+    {
+      "path": "neutral/briefs/method-Order-refund.md",
+      "sha256": "abb9b91673a993bcc22e7bf843fd9814d5605b6d39d864f867fad12fb45c2e18",
+    },
+    {
+      "path": "neutral/briefs/usecase-pay_order.md",
+      "sha256": "629fefc46049856aad5f25b44bcbe029e34d8c476e25dae3e654b4454cdeab5c",
+    },
+    {
+      "path": "neutral/model.json",
+      "sha256": "98b4ee867d796f4fb1c100aa9d56d0a23c25520787fe265dab52d27b6e08b423",
+    },
     {
       "path": "target/briefs/entity-Order.md",
       "sha256": "a51be333db93eca74237aa054aeed896a99aa7c31135cf64fac975e2b25a8496",
@@ -138,8 +166,30 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
       "sha256": "3b9e9284f7c4b4076ec457d52e840e0d24800d99192d2edae572764b8a6c83a8",
     },
   ],
-  "hash": "c1291b3ded6247221932e10a1a5406841472fe073b837f0ab8888dd8dd75fed9",
+  "hash": "45527d9713aee39ad3331dcb9e103efc5743d262c4c2598e155fac62d06377ba",
   "layers": {
+    "neutral": {
+      "briefs": [
+        {
+          "item": "entity:Order",
+          "path": "neutral/briefs/entity-Order.md",
+        },
+        {
+          "item": "method:Order.pay",
+          "path": "neutral/briefs/method-Order-pay.md",
+        },
+        {
+          "item": "method:Order.refund",
+          "path": "neutral/briefs/method-Order-refund.md",
+        },
+        {
+          "item": "usecase:pay_order",
+          "path": "neutral/briefs/usecase-pay_order.md",
+        },
+      ],
+      "model": "neutral/model.json",
+      "readme": "neutral/README.md",
+    },
     "target": {
       "items": [
         {
@@ -207,6 +257,12 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
 [
   "BUNDLE.md",
   "bundle.json",
+  "neutral/README.md",
+  "neutral/briefs/entity-Order.md",
+  "neutral/briefs/method-Order-pay.md",
+  "neutral/briefs/method-Order-refund.md",
+  "neutral/briefs/usecase-pay_order.md",
+  "neutral/model.json",
   "target/briefs/entity-Order.md",
   "target/briefs/method-Order-pay.md",
   "target/briefs/method-Order-refund.md",
@@ -223,5 +279,260 @@ exports[`compileBundle on the shop project returns the bundle, its manifest and 
   "target/skeleton/src/shop/application/pay-order.ts",
   "target/skeleton/src/shop/domain/order.events.ts",
   "target/skeleton/src/shop/domain/order.ts",
+]
+`;
+
+exports[`compileBundle on the shop project the neutral layer is a snapshot on the shop project: neutral 1`] = `
+[
+  {
+    "content": 
+"# Neutral layer
+
+The change described without any programming language, for a team that does not use the nestjs-ts target.
+
+- \`model.json\`: new and extended entities, value objects, events, ports and use-cases; state transitions (an empty list means the Delta declares none); every invariant with its stable id, text and given/when/then examples; the acceptance criteria of the proposal, if there is one.
+- \`briefs/\`: one brief per item, in wave order.
+
+Text quoted from the change request is escaped; only the surrounding framework text is guaranteed to contain no TypeScript.
+
+This layer has no \`done\` certification: only the nestjs-ts target layer is certified, so a team implementing from here owns its own verification.
+"
+,
+    "path": "neutral/README.md",
+  },
+  {
+    "content": 
+"# Brief: entity:Order
+
+Wave 1, domain layer. Finish every item of an earlier wave first.
+
+## Job
+
+Extend the existing entity Order with the members listed in model.json and nothing else.
+States: open, paid
+Operations: refund (each has its own brief)
+
+## Business rules and examples
+
+### invariant:Order/paid-once
+
+Refunds a paid order.
+
+Example 1
+- Given: Refunds a paid order.
+- When: Refunds a paid order.
+- Then: Refunds a paid order.
+
+## Rules
+
+- model.json, one folder up, is the full specification; this brief is the slice for one item.
+- Use your own language, layout and test tools. Keep invariant ids and business text exactly as written.
+- This layer has no \`done\` certification: only the nestjs-ts target layer is certified, so a team implementing from here owns its own verification.
+"
+,
+    "path": "neutral/briefs/entity-Order.md",
+  },
+  {
+    "content": 
+"# Brief: method:Order.pay
+
+Wave 2, domain layer. Finish every item of an earlier wave first.
+
+## Job
+
+Implement the element method:Order.pay as described in model.json.
+
+## Rules
+
+- model.json, one folder up, is the full specification; this brief is the slice for one item.
+- Use your own language, layout and test tools. Keep invariant ids and business text exactly as written.
+- This layer has no \`done\` certification: only the nestjs-ts target layer is certified, so a team implementing from here owns its own verification.
+"
+,
+    "path": "neutral/briefs/method-Order-pay.md",
+  },
+  {
+    "content": 
+"# Brief: method:Order.refund
+
+Wave 2, domain layer. Finish every item of an earlier wave first.
+
+## Job
+
+Implement the operation refund of Order.
+
+Refunds a paid order.
+
+Inputs:
+- reason (optional text)
+Returns: nothing
+State change: from paid to open
+Announces events: OrderRefunded
+
+## Business rules and examples
+
+### invariant:Order/refund-needs-paid
+
+Refunds a paid order.
+
+Example 1
+- Given: g
+- When: w
+- Then: t
+
+## Rules
+
+- model.json, one folder up, is the full specification; this brief is the slice for one item.
+- Use your own language, layout and test tools. Keep invariant ids and business text exactly as written.
+- This layer has no \`done\` certification: only the nestjs-ts target layer is certified, so a team implementing from here owns its own verification.
+"
+,
+    "path": "neutral/briefs/method-Order-refund.md",
+  },
+  {
+    "content": 
+"# Brief: usecase:pay_order
+
+Wave 3, application layer. Finish every item of an earlier wave first.
+
+## Job
+
+Extend the existing use-case pay_order with what is listed here.
+Calls operations: Order.refund
+Announces events: OrderRefunded
+
+## Rules
+
+- model.json, one folder up, is the full specification; this brief is the slice for one item.
+- Use your own language, layout and test tools. Keep invariant ids and business text exactly as written.
+- This layer has no \`done\` certification: only the nestjs-ts target layer is certified, so a team implementing from here owns its own verification.
+"
+,
+    "path": "neutral/briefs/usecase-pay_order.md",
+  },
+  {
+    "content": 
+"{
+  "module": "shop",
+  "certification": "This layer has no \`done\` certification: only the nestjs-ts target layer is certified, so a team implementing from here owns its own verification.",
+  "entities": [
+    {
+      "name": "Order",
+      "existing": true,
+      "description": null,
+      "states": [
+        "open",
+        "paid"
+      ],
+      "invariants": [
+        "invariant:Order/paid-once"
+      ],
+      "methods": [
+        {
+          "name": "refund",
+          "description": "Refunds a paid order.",
+          "static": false,
+          "inputs": [
+            {
+              "name": "reason",
+              "type": "text",
+              "optional": true
+            }
+          ],
+          "returns": "nothing",
+          "emits": [
+            "OrderRefunded"
+          ],
+          "transition": {
+            "from": [
+              "paid"
+            ],
+            "to": "open"
+          },
+          "invariants": [
+            "invariant:Order/refund-needs-paid"
+          ]
+        }
+      ]
+    }
+  ],
+  "valueObjects": [],
+  "events": [
+    {
+      "name": "OrderRefunded",
+      "entity": "Order",
+      "description": "Refunds a paid order.",
+      "payload": [
+        {
+          "name": "orderId",
+          "type": "text",
+          "optional": false
+        }
+      ]
+    }
+  ],
+  "ports": [],
+  "useCases": [
+    {
+      "name": "pay_order",
+      "existing": true,
+      "description": null,
+      "whenToUse": null,
+      "whenNotToUse": null,
+      "inputs": [],
+      "outputs": [],
+      "uses": [
+        "Order.refund"
+      ],
+      "emits": [
+        "OrderRefunded"
+      ],
+      "ports": []
+    }
+  ],
+  "transitions": [
+    {
+      "entity": "Order",
+      "method": "refund",
+      "from": [
+        "paid"
+      ],
+      "to": "open"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "invariant:Order/paid-once",
+      "owner": "Order",
+      "method": null,
+      "text": "Refunds a paid order.",
+      "examples": [
+        {
+          "given": "Refunds a paid order.",
+          "when": "Refunds a paid order.",
+          "then": "Refunds a paid order."
+        }
+      ]
+    },
+    {
+      "id": "invariant:Order/refund-needs-paid",
+      "owner": "Order",
+      "method": "refund",
+      "text": "Refunds a paid order.",
+      "examples": [
+        {
+          "given": "g",
+          "when": "w",
+          "then": "t"
+        }
+      ]
+    }
+  ],
+  "acceptance": []
+}
+"
+,
+    "path": "neutral/model.json",
+  },
 ]
 `;
