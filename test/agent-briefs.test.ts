@@ -1,7 +1,8 @@
-import { afterEach, expect, test } from 'bun:test';
+import { afterEach, beforeAll, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { CLI_TEST_TIMEOUT_MS } from './helpers/timeouts';
 import {
   CORE_RULES,
   approxTokens,
@@ -23,16 +24,37 @@ import {
 
 const ROOT = resolve(import.meta.dir, '..');
 const packets = new Map<string, string>();
-function packet(item: string): string {
-  const cached = packets.get(item);
-  if (cached) return cached;
-  const run = Bun.spawnSync(
+// One async spawn per item; a failing packet fails with its stderr.
+async function fetchPacket(item: string): Promise<string> {
+  const proc = Bun.spawn(
     ['bun', 'src/cli/main.ts', 'packet', item, '--static'],
     { cwd: ROOT, stdout: 'pipe', stderr: 'pipe' },
   );
-  expect(run.exitCode).toBe(0);
-  const text = run.stdout.toString();
-  packets.set(item, text);
+  const [text, stderr] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+  ]);
+  const code = await proc.exited;
+  if (code !== 0) throw new Error(`packet ${item} exited ${code}: ${stderr}`);
+  return text;
+}
+const PREFETCHED_ITEMS = [
+  'entity:Order',
+  'method:Order.cancel',
+  'usecase:create_order',
+  'operator:order-operator',
+] as const;
+// Prefetch in parallel so no test pays for the spawns.
+beforeAll(async () => {
+  await Promise.all(
+    PREFETCHED_ITEMS.map(async (item) =>
+      packets.set(item, await fetchPacket(item)),
+    ),
+  );
+}, CLI_TEST_TIMEOUT_MS);
+function packet(item: string): string {
+  const text = packets.get(item);
+  if (text === undefined) throw new Error(`packet ${item} was not prefetched`);
   return text;
 }
 const dirs: string[] = [];
@@ -119,12 +141,7 @@ test('conteúdo fora do packet fica em seção própria com hash próprio', () =
 test('orçamento de tokens: núcleos curtos e brief acima do limite falha', () => {
   for (const core of Object.values(ROLE_CORES))
     expect(approxTokens(core)).toBeLessThan(600);
-  for (const item of [
-    'entity:Order',
-    'method:Order.cancel',
-    'usecase:create_order',
-    'operator:order-operator',
-  ])
+  for (const item of PREFETCHED_ITEMS)
     expect(approxTokens(renderBrief({ packet: packet(item) }))).toBeLessThan(
       6000,
     );

@@ -12,6 +12,7 @@ import { join, resolve } from 'node:path';
 import { MOTIVO_PLACEHOLDER } from '@agentic-ddd/compiler';
 import { checkSnapshot } from '../compiler/snapshot';
 import { bootstrapChanges } from '../../test/helpers/bootstrap';
+import { CLI_TEST_TIMEOUT_MS } from '../../test/helpers/timeouts';
 
 const ROOT = resolve(import.meta.dir, '../..');
 
@@ -142,7 +143,7 @@ describe('agentic-ddd compile (CLI)', () => {
       '| `.agentic/runtime/order-operator/SKILL.md` |',
     );
     expect(result.stdout).toContain('≈tokens');
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   test('lint error in write mode exits 1 but still writes', async () => {
     const result = run(
