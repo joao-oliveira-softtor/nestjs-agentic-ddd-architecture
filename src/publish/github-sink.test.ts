@@ -11,6 +11,7 @@ const change = {
   body: 'Body',
   changesDir: 'changes',
   baseRef: 'sha-base',
+  lockPath: 'domain.lock.json',
   files: [{ path: 'changes/0007-refund-window/proposal.md', content: '# hi' }],
 };
 
@@ -121,6 +122,7 @@ describe('GitHubChangeSink', () => {
 
   describe('base ref', () => {
     const file = 'examples/orders/domain/order.ts';
+    const lock = 'domain.lock.json';
     const based = {
       ...change,
       baseRef: 'sha-old',
@@ -137,20 +139,47 @@ describe('GitHubChangeSink', () => {
     };
     const nothingCreated = (fake: { requests: string[] }) =>
       expect(fake.requests.some((r) => r.startsWith('POST'))).toBe(false);
+    // The fake host cannot shape a 200 answer or show the query, so the sink gets a fetch that watches or rewrites the compare.
+    const sinkOver = (
+      fake: { fetch: typeof fetch },
+      onCompare: (url: string) => Response | undefined,
+    ) =>
+      new GitHubChangeSink({
+        token: TOKEN,
+        owner: 'acme',
+        repo: 'shop',
+        allowedPrefixes: ['changes/', 'examples/orders/'],
+        fetch: ((url: string, init?: RequestInit) =>
+          (url.includes('/compare/') ? onCompare(url) : undefined) ??
+          fake.fetch(url, init)) as typeof fetch,
+      });
 
-    test('publishes when the targets are the same at the base ref and at the default branch head', async () => {
+    test('publishes when the targets are untouched on the default branch since the base ref', async () => {
       const { fake, sink } = withHistory({ [file]: 'v1', 'other.md': 'moved' });
       await sink.publish(based);
       expect(fake.pulls).toHaveLength(1);
     });
 
-    test('compares the trees with one listing per ref', async () => {
+    test('asks the compare API once, with the base ref and the head SHA, and lists no trees', async () => {
       const { fake, sink } = withHistory({ [file]: 'v1' });
       await sink.publish(based);
       const r = '/repos/acme/shop';
-      expect(fake.requests.filter((q) => q.includes('/git/trees/'))).toEqual([
-        `GET ${r}/git/trees/tree-of-sha-old`,
-        `GET ${r}/git/trees/tree-of-sha-base`,
+      expect(fake.requests.filter((q) => q.includes('/compare/'))).toEqual([
+        `GET ${r}/compare/sha-old...sha-base`,
+      ]);
+      expect(fake.requests.some((q) => q.includes('/git/trees/'))).toBe(false);
+    });
+
+    test('asks for one commit only, so the files come back on one small first page', async () => {
+      const { fake } = withHistory({ [file]: 'v1' });
+      const urls: string[] = [];
+      const sink = sinkOver(fake, (u) => {
+        urls.push(u);
+        return undefined;
+      });
+      await sink.publish(based);
+      expect(urls).toEqual([
+        'https://api.github.com/repos/acme/shop/compare/sha-old...sha-base?per_page=1',
       ]);
     });
 
@@ -164,7 +193,6 @@ describe('GitHubChangeSink', () => {
         const e = await failure(sink.publish(based));
         expect(e.code).toBe('publish.base-mismatch');
         expect(e.message).toContain(file);
-        expect(e.message).toContain('main moved');
         nothingCreated(fake);
       },
     );
@@ -190,6 +218,63 @@ describe('GitHubChangeSink', () => {
       expect(e.message).toContain('examples/orders/b.ts');
     });
 
+    test('names the real default branch, not "main"', async () => {
+      const s = setup({ defaultBranch: 'trunk' });
+      s.fake.history.set('sha-old', { [file]: 'v1' });
+      s.fake.history.set('sha-base', { [file]: 'v2' });
+      const e = await failure(s.sink.publish(based));
+      expect(e.message).toContain('on trunk');
+      expect(e.message).not.toContain('on main');
+    });
+
+    test('refuses when the lock moved on the default branch, though no target did', async () => {
+      const { fake, sink } = withHistory(
+        { [file]: 'v1', [lock]: 'new' },
+        { [file]: 'v1', [lock]: 'old' },
+      );
+      const e = await failure(sink.publish(based));
+      expect(e.code).toBe('publish.base-mismatch');
+      expect(e.message).toContain(lock);
+      nothingCreated(fake);
+    });
+
+    test('refuses a target whose only change is its mode (no content diff)', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      fake.changed.push({ filename: file, status: 'changed' });
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.base-mismatch',
+      );
+      nothingCreated(fake);
+    });
+
+    test.each([
+      [
+        'the new name',
+        { filename: file, status: 'renamed', previous_filename: 'old.ts' },
+      ],
+      [
+        'the old name',
+        { filename: 'moved.ts', status: 'renamed', previous_filename: file },
+      ],
+    ])('refuses a rename that touches a target by %s', async (_, entry) => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      fake.changed.push(entry);
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.base-mismatch',
+      );
+      nothingCreated(fake);
+    });
+
+    test('matches case-insensitively: Order.ts added on main blocks a bundle writing order.ts', async () => {
+      const { fake, sink } = withHistory(
+        { 'examples/orders/domain/Order.ts': 'x' },
+        {},
+      );
+      const e = await failure(sink.publish(based));
+      expect(e.code).toBe('publish.base-mismatch');
+      nothingCreated(fake);
+    });
+
     test('refuses a base ref the host does not know, whatever else is true', async () => {
       const { fake, sink } = setup();
       const e = await failure(
@@ -200,45 +285,79 @@ describe('GitHubChangeSink', () => {
       nothingCreated(fake);
     });
 
-    // The fake host cannot shape a 200 answer, so the sink gets a fetch that rewrites one.
-    const answeringWith = (suffix: string, answer: string) => {
-      const { fake } = withHistory({ [file]: 'v1' });
-      const sink = new GitHubChangeSink({
-        token: TOKEN,
-        owner: 'acme',
-        repo: 'shop',
-        allowedPrefixes: ['changes/', 'examples/orders/'],
-        fetch: ((url: string, init?: RequestInit) =>
-          url.endsWith(suffix)
-            ? Promise.resolve(new Response(answer))
-            : fake.fetch(url, init)) as typeof fetch,
-      });
-      return { fake, sink };
-    };
-
-    test.each([
-      ['truncated', { truncated: true, tree: [] }],
-      ['without a truncated flag', { tree: [] }],
-      ['without a tree array', { truncated: false }],
-    ])('fails closed when a tree listing comes back %s', async (_, listing) => {
-      const { fake, sink } = answeringWith(
-        '/git/trees/tree-of-sha-old?recursive=1',
-        JSON.stringify(listing),
+    test('maps a 422 "No commit found" from the compare to base-unknown too', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      fake.failWith = {
+        match: '/compare/sha-old...sha-base',
+        status: 422,
+        body: 'No commit found for SHA: sha-old',
+      };
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.base-unknown',
       );
-      const e = await failure(sink.publish(based));
-      expect(e.code).toBe('publish.host-failed');
-      expect(e.message).toContain('too large to compare');
       nothingCreated(fake);
     });
 
     test.each([
-      ['an object without a tree', '{}'],
+      [500, 'publish.host-failed'],
+      [403, 'publish.host-denied'],
+    ])(
+      'keeps a %s from the compare as the host error it is',
+      async (status, code) => {
+        const { fake, sink } = withHistory({ [file]: 'v1' });
+        fake.failWith = { match: '/compare/sha-old...sha-base', status };
+        expect((await failure(sink.publish(based))).code).toBe(code);
+      },
+    );
+
+    describe('a comparison GitHub cannot list in full', () => {
+      const filler = (n: number) =>
+        Array.from({ length: n }, (_, i) => ({
+          filename: `elsewhere/${i}.txt`,
+          status: 'modified',
+        }));
+
+      test('refuses with host-failed at the 300-file cap, saying so, when no target is among them', async () => {
+        const { fake, sink } = withHistory({ [file]: 'v1' });
+        fake.changed.push(...filler(300));
+        const e = await failure(sink.publish(based));
+        expect(e.code).toBe('publish.host-failed');
+        expect(e.message).toContain('too large for GitHub to list');
+        nothingCreated(fake);
+      });
+
+      test('still names a target that is among the 300 listed', async () => {
+        const { fake, sink } = withHistory({ [file]: 'v1' });
+        fake.changed.push(...filler(299), {
+          filename: file,
+          status: 'modified',
+        });
+        expect((await failure(sink.publish(based))).code).toBe(
+          'publish.base-mismatch',
+        );
+      });
+
+      test('publishes at 299 unrelated files: the list is whole', async () => {
+        const { fake, sink } = withHistory({ [file]: 'v1' });
+        fake.changed.push(...filler(299));
+        await sink.publish(based);
+        expect(fake.pulls).toHaveLength(1);
+      });
+    });
+
+    test.each([
+      ['an object without files', '{"status":"ahead"}'],
+      ['files that are not a list', '{"files":"x"}'],
+      ['a file entry without a name', '{"files":[{"status":"added"}]}'],
+      ['an error body on a 200', '{"message":"Server Error"}'],
       ['not JSON', '<html>bad gateway</html>'],
-    ])('fails closed when the base commit answer is %s', async (_, answer) => {
-      const { fake, sink } = answeringWith('/git/commits/sha-old', answer);
+    ])('fails closed when the comparison answer is %s', async (_, answer) => {
+      const { fake } = withHistory({ [file]: 'v1' });
+      const sink = sinkOver(fake, () => new Response(answer));
       const e = await failure(sink.publish(based));
       expect(e.code).toBe('publish.host-failed');
-      expect(e.message).toContain('no tree');
+      expect(e.message).toContain('unexpected answer from the host');
+      expect(e.message).not.toContain('too large');
       nothingCreated(fake);
     });
 

@@ -30,6 +30,8 @@ const MAX_BODY = 60_000;
 const MAX_FILES = 500;
 const MAX_FILE_BYTES = 1024 * 1024;
 const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
+// GitHub's compare lists at most 300 files, whatever the size of the change.
+const COMPARE_FILES_CAP = 300;
 // Git metadata, submodule/attribute config and CI workflows: a PR must never touch them.
 const GIT_SEGMENTS = new Set([
   '.git',
@@ -206,13 +208,7 @@ export class GitHubChangeSink implements ChangeSink {
       undefined,
       'base commit',
     );
-    await this.#assertBaseUnmoved(
-      repo,
-      base,
-      head.object.sha,
-      baseCommit.tree.sha,
-      change,
-    );
+    await this.#assertBaseUnmoved(repo, base, head.object.sha, change);
     // Contents go inline: one request instead of one blob per file. Mode 100644 makes every file regular.
     const tree = change.files.map((f) => ({
       path: f.path,
@@ -259,63 +255,61 @@ export class GitHubChangeSink implements ChangeSink {
     }
   }
 
-  /** Refuses a bundle whose target files changed on the default branch since its base ref (`apply` checks the same locally). */
+  /**
+   * Refuses a bundle whose target files, or the lock it was compiled against, changed on the
+   * default branch since its base ref (`apply` checks the same locally). One compare call lists
+   * what changed (mode-only changes and renames included); GitHub gives the whole `files` list
+   * only on the first page, up to 300 files, so a longer one cannot prove anything.
+   */
   async #assertBaseUnmoved(
     repo: string,
     branch: string,
     headSha: string,
-    headTree: string,
     change: PublishableChange,
   ): Promise<void> {
     if (change.baseRef === headSha) return;
     const res = await this.#send(
       'GET',
-      `${repo}/git/commits/${encodeURIComponent(change.baseRef)}`,
+      `${repo}/compare/${encodeURIComponent(change.baseRef)}...${headSha}?per_page=1`,
       undefined,
     );
-    if (res.status === 404)
+    // 404 or 422 "No commit found": the host never saw the base.
+    if (res.status === 404 || res.status === 422)
       throw new AgenticError(
         'publish.base-unknown',
         `the bundle's base ref ${JSON.stringify(change.baseRef)} is not a commit on the Git host (push it first)`,
       );
-    this.#check(res, 'bundle base commit');
-    const atBase = await this.#blobs(
-      repo,
-      (await res.json().catch(() => undefined))?.tree?.sha,
+    this.#check(res, 'base comparison');
+    const answer = await res.json().catch(() => undefined);
+    const files: { filename: string; previous_filename?: string }[] =
+      answer?.files;
+    if (
+      !Array.isArray(files) ||
+      files.some((f) => typeof f?.filename !== 'string')
+    )
+      throw new AgenticError(
+        'publish.host-failed',
+        'GitHub base comparison failed: unexpected answer from the host',
+      );
+    const changed = new Set(
+      files.flatMap((f) => [
+        folded(f.filename),
+        folded(f.previous_filename ?? ''),
+      ]),
     );
-    const atHead = await this.#blobs(repo, headTree);
-    const moved = change.files.find(
-      (f) => atBase.get(f.path) !== atHead.get(f.path),
+    const guarded = [...change.files.map((f) => f.path), change.lockPath].find(
+      (p) => changed.has(folded(p)),
     );
-    if (moved)
+    if (guarded !== undefined)
       throw new AgenticError(
         'publish.base-mismatch',
-        `${JSON.stringify(moved.path)} changed on ${branch} since the bundle's base ref ${JSON.stringify(change.baseRef)} (main moved; publishing would overwrite it)`,
+        `${JSON.stringify(guarded)} changed on ${branch} since the bundle's base ref ${JSON.stringify(change.baseRef)}; publishing would overwrite it`,
       );
-  }
-
-  /** Blob SHA by path of a whole tree; fails closed when GitHub truncates the listing. */
-  async #blobs(repo: string, tree: unknown): Promise<Map<string, string>> {
-    if (typeof tree !== 'string')
+    if (files.length >= COMPARE_FILES_CAP)
       throw new AgenticError(
         'publish.host-failed',
-        'GitHub bundle base commit failed: the answer had no tree',
+        `GitHub base comparison failed: the changes since the bundle's base ref are too large for GitHub to list all their files (${COMPARE_FILES_CAP} at most)`,
       );
-    const listing = await this.#call<{
-      truncated?: boolean;
-      tree?: { path: string; sha: string }[];
-    }>(
-      'GET',
-      `${repo}/git/trees/${tree}?recursive=1`,
-      undefined,
-      'tree listing',
-    );
-    if (listing.truncated !== false || !Array.isArray(listing.tree))
-      throw new AgenticError(
-        'publish.host-failed',
-        'GitHub tree listing failed: the tree is too large to compare',
-      );
-    return new Map(listing.tree.map((e) => [e.path, e.sha]));
   }
 
   /** Refuses a number already used in the changes directory or its `archive/` on the default branch (`apply` checks the same on a working copy). */

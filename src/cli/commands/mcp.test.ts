@@ -607,6 +607,7 @@ describe('mcpCommand publish sink', () => {
         body: 'b',
         changesDir: 'changes',
         baseRef: 'sha-base',
+        lockPath: 'domain.lock.json',
         files: [{ path: 'elsewhere/a.ts', content: 'x' }],
       })
       .catch((e: { code: string }) => e.code);
