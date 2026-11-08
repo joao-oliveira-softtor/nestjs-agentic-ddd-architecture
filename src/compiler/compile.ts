@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { defaultRegistry, type Registry } from '@agentic-ddd/decorators';
 import { analyze } from './analyze';
-import { archiveProposal } from './changes/apply';
+import { archiveProposal } from './changes/archive';
 import { writeDraft } from './changes/draft';
 import { listProposals } from './changes/proposal';
 import { reconcile } from './changes/reconcile';

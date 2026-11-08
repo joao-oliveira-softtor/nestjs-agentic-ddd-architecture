@@ -94,7 +94,7 @@ export {
   type ReconcileInput,
   type ReconcilePlan,
 } from './changes/reconcile';
-export { archiveProposal } from './changes/apply';
+export { archiveProposal } from './changes/archive';
 export { writeDraft } from './changes/draft';
 export { verify, type VerifyOptions } from './verify/index';
 export {
@@ -136,3 +136,32 @@ export {
   rulesFor,
   type Rule,
 } from './rules';
+export {
+  LIMITS as DELTA_LIMITS,
+  deltaSchema,
+  literal,
+  parseType,
+  renderDelta,
+  splice as spliceFragment,
+  validateDelta,
+  type Delta as ModuleDelta,
+  type DeltaError,
+  type RenderOptions as RenderDeltaOptions,
+  type RenderResult as RenderDeltaResult,
+  type Fragment as DeltaFragment,
+  type RenderedExample,
+  type RenderedFile,
+  type SpliceResult,
+  type TypeExpr,
+} from './delta/index';
+export {
+  BUNDLE_VERSION,
+  compileBundle,
+  type Bundle,
+  type BundleFile,
+  type BundleInput,
+  type BundleManifest,
+  type NeutralLayer,
+  type TargetItem,
+  type TargetLayer,
+} from './bundle/index';

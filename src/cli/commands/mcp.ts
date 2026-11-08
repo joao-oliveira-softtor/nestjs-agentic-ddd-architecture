@@ -9,19 +9,30 @@ import {
   type PublishedLock,
 } from '../../compiler/published';
 import { AgenticError, formatCoded } from '../../contracts/codes';
+import {
+  publishTargetFromProject,
+  type PublishTarget,
+} from '../../publish/bundle';
 import { parseArgs } from '../args';
 import { USAGE } from '../usage';
 
 type Load = () => Promise<{
-  startMcpServer(options: { root: string; published?: PublishedLock }): {
+  startMcpServer(options: {
+    root: string;
+    published?: PublishedLock;
+    config?: string;
+    publish?: PublishTarget;
+  }): {
     close(): unknown;
   };
   startMcpHttpServer(options: {
     root: string;
     published?: PublishedLock;
+    config?: string;
     port: number;
     host: string;
     mcp: McpConfig;
+    publish?: PublishTarget;
   }): Promise<{ close(): unknown; port: number }>;
 }>;
 
@@ -48,6 +59,36 @@ const BIND_ERRORS: Readonly<
     message: (host) => `${host} is not an address of this machine`,
   },
 };
+
+const configPathOf = (values: ReadonlyMap<string, string>, root: string) =>
+  values.get('--config') ?? resolve(root, 'agentic.config.ts');
+
+// publish_change needs a working copy (a published lock has no files to publish from) and a Git host in the environment.
+async function publishFor(
+  published: PublishedLock | undefined,
+  root: string,
+  configPath: string,
+): Promise<{ publish: PublishTarget | undefined } | { error: AgenticError }> {
+  if (published !== undefined) return { publish: undefined };
+  try {
+    return {
+      publish: await publishTargetFromProject(root, configPath, process.env),
+    };
+  } catch (error) {
+    if (!(error instanceof AgenticError)) throw error;
+    return { error };
+  }
+}
+
+// A published host may have no module sources, so skip the module-path checks.
+async function mcpConfigOf(
+  published: PublishedLock | undefined,
+  publish: PublishTarget | undefined,
+  configPath: string,
+): Promise<McpConfig | undefined> {
+  if (published !== undefined) return loadMcpConfig(configPath);
+  return (publish?.config ?? (await loadConfig(configPath))).mcp;
+}
 
 export async function mcpCommand(
   args: readonly string[],
@@ -128,6 +169,13 @@ export async function mcpCommand(
       return 1;
     }
   }
+  const configPath = configPathOf(parsed.values, root);
+  const made = await publishFor(published, root, configPath);
+  if ('error' in made) {
+    console.error(formatCoded(made.error));
+    return 1;
+  }
+  const { publish } = made;
   // Printed only once the server is up, never before a failure.
   const announce = () => {
     if (published !== undefined)
@@ -136,13 +184,7 @@ export async function mcpCommand(
       );
   };
   if (http) {
-    const configPath =
-      parsed.values.get('--config') ?? resolve(root, 'agentic.config.ts');
-    // A published host may have no module sources, so skip the module-path checks.
-    const mcp =
-      published === undefined
-        ? (await loadConfig(configPath)).mcp
-        : await loadMcpConfig(configPath);
+    const mcp = await mcpConfigOf(published, publish, configPath);
     if (mcp === undefined) {
       console.error(
         formatCoded({
@@ -157,9 +199,11 @@ export async function mcpCommand(
       handle = await mod.startMcpHttpServer({
         root,
         published,
+        config: resolve(configPath),
         port: Number(port),
         host,
         mcp,
+        publish,
       });
     } catch (error) {
       const { code, message } = error as { code?: string; message?: string };
@@ -202,7 +246,12 @@ export async function mcpCommand(
     await handle.close();
     return 0;
   }
-  const handle = mod.startMcpServer({ root, published });
+  const handle = mod.startMcpServer({
+    root,
+    published,
+    config: resolve(configPath),
+    publish,
+  });
   announce();
   const { stdin } = process;
   if (!stdin.readableEnded && !stdin.destroyed)

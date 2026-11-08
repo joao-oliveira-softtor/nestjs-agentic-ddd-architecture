@@ -1,6 +1,29 @@
 // Stable error codes for CLI, compile, verify and MCP output. Codes are part of the public
 // surface: tests and tooling match on them, so reword messages freely but never rename a code.
 export const ERROR_CODES = {
+  // apply
+  'apply.base-mismatch':
+    'The project is not at the bundle base: another lock or base ref, or a target file changed locally.',
+  'apply.change-exists': 'The change directory for the bundle already exists.',
+  'apply.change-invalid':
+    'The bundle does not carry exactly one NNNN-slug change directory.',
+  'apply.compile-failed':
+    'The compile after writing the bundle failed; the bundle files were restored.',
+  'apply.compile-timeout':
+    'The compile after writing the bundle did not finish in time and was stopped; the bundle files were restored.',
+  'apply.confirmation-required':
+    'apply lists the files it would write and needs --yes before writing.',
+  'apply.hash-mismatch':
+    'The bundle is not intact: a file is tampered, missing or extra.',
+  'apply.locked': 'Another apply holds the lock file.',
+  'apply.path-escape': 'A bundle path resolves outside the project.',
+  'apply.path-forbidden':
+    'A bundle path is outside the module paths and the change directory, or inside .git, .github, node_modules or .tmp.',
+  'apply.rollback-failed':
+    'The rollback could not restore every file; the originals are kept in the .tmp stage folder named in the message.',
+  'apply.write-failed':
+    'A file of the bundle could not be written; every write was rolled back.',
+
   // auth
   'auth.audience-mismatch':
     'The token audience does not include this resource.',
@@ -10,6 +33,26 @@ export const ERROR_CODES = {
   'auth.token-invalid':
     'The access token is malformed, unsigned or fails verification.',
   'auth.token-missing': 'The request carries no Bearer access token.',
+
+  // bundle
+  'bundle.base-lock-missing':
+    'The base ref has no domain lock to compare the proposal against.',
+  'bundle.base-unknown': 'The base ref is not a commit of the base repository.',
+  'bundle.brief-invalid':
+    'An executor brief cannot be rendered for an item (for example the team rules exceed their token budget).',
+  'bundle.compile-failed':
+    'The compile of the candidate tree failed (the message carries its output).',
+  'bundle.compile-timeout':
+    'The compile of the candidate tree did not finish in time and was stopped.',
+  'bundle.config-missing':
+    'The project config is not committed in the base ref, or is outside the base repository.',
+  'bundle.delta-invalid':
+    'The Delta does not render against the base (the message lists the Delta errors).',
+  'bundle.module-unknown':
+    'The Delta module is not configured in the base project.',
+  'bundle.path-escape':
+    'A rendered or proposal path resolves outside the module or the changes directory.',
+  'bundle.proposal-invalid': 'The proposal slug is not kebab-case.',
 
   // cli
   'cli.argument-count':
@@ -77,6 +120,24 @@ export const ERROR_CODES = {
   'config.suffix-test-file':
     'A suffix ends in .test.ts, .spec.ts or .d.ts, or has an empty segment.',
 
+  // delta
+  'delta.invalid-identifier':
+    'A Delta name or id is not an allowed identifier (wrong pattern or a reserved word).',
+  'delta.name-collision':
+    'A Delta name or id repeats inside the Delta or already exists in the base.',
+  'delta.path-collision':
+    'A rendered file path already exists in the module (compared ignoring case) or is rendered twice.',
+  'delta.reference-unknown':
+    'A Delta uses, emits, ports, owner, state or type reference points to something not declared.',
+  'delta.schema-invalid':
+    'The Delta does not match the schema (wrong shape, missing field or unknown key).',
+  'delta.splice-anchor-missing':
+    'A Delta fragment cannot be spliced: the class, decorator or array it extends is not in the target file.',
+  'delta.splice-unexpected-shape':
+    'A Delta fragment cannot be spliced: the target file does not parse, or a member or import conflicts with it.',
+  'delta.type-invalid':
+    'A Delta type is outside the allowed grammar (string, number, boolean, Date, a declared name, or T[]).',
+
   // ir
   'ir.emits-target-missing': 'emits points to a class without @AgentEvent.',
   'ir.implements-not-class':
@@ -126,10 +187,19 @@ export const ERROR_CODES = {
   'mcp.doc-unknown':
     'The requested document does not exist or is not readable by this token.',
   'mcp.element-unknown': 'The requested element id does not exist.',
+  'mcp.input-too-large': 'The tool input is larger than the server accepts.',
   'mcp.host-denied': 'The request Host header is not allowed.',
   'mcp.skills-unavailable':
     'The authoring skill directory is not available on this server.',
   'mcp.origin-denied': 'The request Origin header is not allowed.',
+  'mcp.propose-busy':
+    'Another propose_change is running on this server; retry shortly.',
+  'mcp.propose-unavailable':
+    'propose_change needs a working copy with a git history; this server serves a published lock.',
+  'mcp.publish-busy':
+    'Another publish_change is running on this server; retry shortly.',
+  'mcp.publish-unavailable':
+    'publish_change needs a working copy and a Git host configured on the server (AGENTIC_GITHUB_TOKEN and AGENTIC_GITHUB_REPO).',
   'mcp.path-out-of-scope':
     'The requested path is outside the modules the token may read.',
   'mcp.path-outside-root': 'The requested path is outside the project root.',
@@ -189,6 +259,25 @@ export const ERROR_CODES = {
   'proposal.slug-invalid': 'The --draft-change slug is not kebab-case.',
   'proposal.status-invalid': 'status is not proposed or applied.',
   'proposal.title-missing': 'The proposal has no title.',
+
+  // publish
+  'publish.branch-exists':
+    'The change branch already exists on the Git host; it is never updated.',
+  'publish.change-exists':
+    'The change number is already used in the target repository changes directory.',
+  'publish.change-invalid':
+    'The change number or slug is not NNNN and a kebab-case slug.',
+  'publish.config-invalid':
+    'The sink configuration (token, owner, repo or path prefixes) is not valid.',
+  'publish.host-denied':
+    'The Git host refused the server token (HTTP 401 or 403).',
+  'publish.host-failed':
+    'The Git host answered with an unexpected HTTP status.',
+  'publish.host-rate-limited':
+    'The Git host rate-limited the server token (HTTP 429, or 403 with no quota left).',
+  'publish.host-unreachable': 'The Git host could not be reached.',
+  'publish.path-invalid':
+    'A file path is not relative POSIX, or is outside the allowed prefixes.',
 
   // published
   'published.digest-mismatch':
