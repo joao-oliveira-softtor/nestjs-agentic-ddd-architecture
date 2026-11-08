@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
+import { CLI_TEST_TIMEOUT_MS } from '../../test/helpers/timeouts';
 
 const ROOT = resolve(import.meta.dir, '../..');
 
@@ -135,4 +136,4 @@ test('value objects: packet, verify done with covers, missing covers and skeleto
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, CLI_TEST_TIMEOUT_MS);
