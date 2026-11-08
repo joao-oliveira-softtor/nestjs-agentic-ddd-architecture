@@ -349,6 +349,7 @@ describe('GitHubChangeSink', () => {
       ['an object without files', '{"status":"ahead"}'],
       ['files that are not a list', '{"files":"x"}'],
       ['a file entry without a name', '{"files":[{"status":"added"}]}'],
+      ['a file entry that is null', '{"files":[null]}'],
       ['an error body on a 200', '{"message":"Server Error"}'],
       ['not JSON', '<html>bad gateway</html>'],
     ])('fails closed when the comparison answer is %s', async (_, answer) => {

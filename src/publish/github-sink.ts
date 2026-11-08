@@ -66,6 +66,23 @@ const capTitle = (text: string) =>
 
 const folded = (path: string) => path.normalize('NFC').toLowerCase();
 
+/** The folded names (and rename origins) a compare answer lists, with how many files it lists; undefined when it has no usable `files`. */
+function comparedPaths(
+  answer: any,
+): { paths: Set<string>; listed: number } | undefined {
+  const files: { filename?: unknown; previous_filename?: unknown }[] =
+    answer?.files;
+  if (
+    !Array.isArray(files) ||
+    files.some((f) => typeof f?.filename !== 'string')
+  )
+    return undefined;
+  const names = files
+    .flatMap((f) => [f.filename, f.previous_filename])
+    .filter((p) => typeof p === 'string');
+  return { paths: new Set(names.map(folded)), listed: files.length };
+}
+
 const dotSegment = (s: string) => s === '' || s === '.' || s === '..';
 
 // Windows drops trailing dots and spaces, so ".git." is ".git" there.
@@ -280,32 +297,21 @@ export class GitHubChangeSink implements ChangeSink {
         `the bundle's base ref ${JSON.stringify(change.baseRef)} is not a commit on the Git host (push it first)`,
       );
     this.#check(res, 'base comparison');
-    const answer = await res.json().catch(() => undefined);
-    const files: { filename: string; previous_filename?: string }[] =
-      answer?.files;
-    if (
-      !Array.isArray(files) ||
-      files.some((f) => typeof f?.filename !== 'string')
-    )
+    const compared = comparedPaths(await res.json().catch(() => undefined));
+    if (compared === undefined)
       throw new AgenticError(
         'publish.host-failed',
         'GitHub base comparison failed: unexpected answer from the host',
       );
-    const changed = new Set(
-      files.flatMap((f) => [
-        folded(f.filename),
-        folded(f.previous_filename ?? ''),
-      ]),
-    );
     const guarded = [...change.files.map((f) => f.path), change.lockPath].find(
-      (p) => changed.has(folded(p)),
+      (p) => compared.paths.has(folded(p)),
     );
     if (guarded !== undefined)
       throw new AgenticError(
         'publish.base-mismatch',
         `${JSON.stringify(guarded)} changed on ${branch} since the bundle's base ref ${JSON.stringify(change.baseRef)}; publishing would overwrite it`,
       );
-    if (files.length >= COMPARE_FILES_CAP)
+    if (compared.listed >= COMPARE_FILES_CAP)
       throw new AgenticError(
         'publish.host-failed',
         `GitHub base comparison failed: the changes since the bundle's base ref are too large for GitHub to list all their files (${COMPARE_FILES_CAP} at most)`,
