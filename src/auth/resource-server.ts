@@ -180,7 +180,14 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
       let payload;
       try {
         // Refuse unusable tokens before any discovery/JWKS fetch: garbage must not cost outbound I/O.
-        const { alg } = decodeProtectedHeader(token);
+        // decodeProtectedHeader throws a plain TypeError for a non-JWT token, not a JOSEError.
+        const { alg } = (() => {
+          try {
+            return decodeProtectedHeader(token);
+          } catch {
+            throw new errors.JWSInvalid('Malformed token');
+          }
+        })();
         if (alg === undefined || !ALGORITHMS.includes(alg))
           throw new errors.JWSInvalid('Unsupported algorithm');
         // Entra and Auth0 issue `typ: JWT`, so `at+jwt` is not required.
