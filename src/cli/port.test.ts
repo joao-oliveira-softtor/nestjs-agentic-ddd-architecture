@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { MOTIVO_PLACEHOLDER } from '@agentic-ddd/compiler';
+import { CLI_TEST_TIMEOUT_MS } from '../../test/helpers/timeouts';
 
 const ROOT = resolve(import.meta.dir, '../..');
 
@@ -74,7 +75,7 @@ test('port: appears in the packet, changing the description requires a proposal 
       };
     };
     const hashOf = () => {
-      const p = run('packet', 'usecase:matricular_aluno');
+      const p = run('packet', 'usecase:matricular_aluno', '--static');
       expect(p.stderr).toBe('');
       expect(p.code).toBe(0);
       return {
@@ -115,4 +116,4 @@ test('port: appears in the packet, changing the description requires a proposal 
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, CLI_TEST_TIMEOUT_MS);

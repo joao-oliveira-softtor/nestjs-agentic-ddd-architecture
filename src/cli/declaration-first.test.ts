@@ -43,7 +43,7 @@ test('declared Order: four waves, packets, verify item RED→GREEN, stable gener
     const hashes = new Map<string, string>();
     for (const wave of waves)
       for (const id of wave) {
-        const packet = run('packet', id);
+        const packet = run('packet', id, '--static');
         expect(packet.code).toBe(0);
         const hash = /specHash: `([a-f0-9]{64})`/.exec(packet.stdout)![1]!;
         hashes.set(id, hash);
