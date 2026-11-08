@@ -119,7 +119,7 @@ export async function orderSkeleton() {
   );
   await writeFile(
     join(dir, 'agentic.config.ts'),
-    `export default { modules: [{ name: 'orders', path: 'app' }], verify: { test: ['bun', 'test', './app/test'], commands: { typecheck: ['bun', ${JSON.stringify(join(ROOT, 'node_modules/typescript/bin/tsc'))}, '--noEmit', '--project', 'tsconfig.json'] } } };`,
+    `export default { modules: [{ name: 'orders', path: 'app' }], verify: { test: ['bun', 'test', './app/test'], commands: { typecheck: ['bun', ${JSON.stringify(join(ROOT, 'node_modules/typescript/bin/tsc'))}, '--noEmit', '--incremental', '--tsBuildInfoFile', '.tsbuildinfo', '--project', 'tsconfig.json'] } } };`,
   );
   const original = new Map(
     await Promise.all(
