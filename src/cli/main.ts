@@ -1,4 +1,5 @@
 import { AgenticError, formatCoded } from '../contracts/codes';
+import { applyCommand } from './commands/apply';
 import { compileCommand } from './commands/compile';
 import { irCommand } from './commands/ir';
 import { verifyCommand } from './commands/verify';
@@ -7,12 +8,14 @@ import { statusCommand, nextCommand } from './commands/state';
 import { packetCommand } from './commands/packet';
 import { mcpCommand } from './commands/mcp';
 import { publishLockCommand } from './commands/publishLock';
+import { bundleAnalysisCommand } from './commands/bundleAnalysis';
 
 export { USAGE };
 
 const COMMANDS: Readonly<
   Record<string, (args: readonly string[]) => Promise<number>>
 > = {
+  apply: applyCommand,
   compile: compileCommand,
   ir: irCommand,
   verify: verifyCommand,
@@ -21,6 +24,7 @@ const COMMANDS: Readonly<
   packet: packetCommand,
   mcp: (args) => mcpCommand(args),
   'publish-lock': publishLockCommand,
+  'bundle-analysis': bundleAnalysisCommand,
 };
 
 export async function main(argv: readonly string[]): Promise<number> {

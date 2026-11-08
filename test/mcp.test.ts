@@ -5,6 +5,11 @@ import { join, resolve } from 'node:path';
 import { parseLock } from '../src/compiler/lock';
 import { SNAPSHOT_PATH, writeSnapshot } from '../src/compiler/snapshot';
 import { DEFAULT_CONVENTIONS } from '../src/compiler/conventions';
+import { additionDelta } from '../src/compiler/delta/additions-fixture';
+import { compileBundle } from '../src/compiler/bundle';
+import { withProposeSlot } from '../src/mcp';
+import { startStdioMcp } from './helpers/stdio-mcp';
+import { leftovers, shopProposal, shopRepo } from './helpers/shop-repo';
 
 const REPO = resolve(import.meta.dir, '..');
 const LOCK = '.agentic/domain.lock.json';
@@ -100,7 +105,7 @@ describe('agentic mcp (subprocesso)', () => {
       const list = await request('tools/list');
       const tools = list.result.tools as {
         name: string;
-        annotations: { readOnlyHint: boolean };
+        annotations: Record<string, boolean>;
       }[];
       expect(tools.map((t) => t.name).sort()).toEqual([
         'authoring_guide',
@@ -108,9 +113,28 @@ describe('agentic mcp (subprocesso)', () => {
         'domain_element',
         'domain_overview',
         'domain_source',
+        'propose_change',
+        'publish_change',
         'rules_for_path',
       ]);
-      for (const t of tools) expect(t.annotations.readOnlyHint).toBe(true);
+      // propose_change creates a worktree and runs processes on the server; publish_change opens a pull request on the Git host: neither is read-only.
+      for (const t of tools)
+        expect(t.annotations.readOnlyHint).toBe(
+          t.name !== 'propose_change' && t.name !== 'publish_change',
+        );
+      // The same Delta on the same base gives the same bundle, so a retry is safe.
+      expect(
+        tools.find((t) => t.name === 'propose_change')?.annotations,
+      ).toMatchObject({ idempotentHint: true, destructiveHint: false });
+      // A published branch exists afterwards: never idempotent, not destructive, talks to the Git host.
+      expect(
+        tools.find((t) => t.name === 'publish_change')?.annotations,
+      ).toEqual({
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      });
 
       const text = (r: any) => r.result.content[0].text as string;
       for (const [name, args] of [
@@ -172,4 +196,80 @@ describe('agentic mcp (subprocesso)', () => {
       await rm(tmp, { recursive: true, force: true });
     }
   }, 60000);
+});
+
+describe('agentic mcp (stdio) propose_change', () => {
+  test('serves the bundle locally, stateless, and refuses what the Delta gets wrong', async () => {
+    const repo = await shopRepo();
+    const mcp = await startStdioMcp(repo.root);
+    try {
+      const before = await leftovers(repo);
+      // The bundle's changes/NNNN-slug/ comes from the proposal: a call without one is refused.
+      const missing = await mcp.call('propose_change', {
+        delta: additionDelta(),
+      });
+      expect(missing.isError).toBe(true);
+      expect(missing.content[0].text).toContain('proposal');
+      const ok = await mcp.call('propose_change', {
+        delta: additionDelta(),
+        proposal: shopProposal(),
+      });
+      expect(ok.isError).toBeFalsy();
+      const bundle = JSON.parse(ok.content[0].text);
+      expect(bundle.files.map((f: { path: string }) => f.path)).toContain(
+        'BUNDLE.md',
+      );
+      const again = await mcp.call('propose_change', {
+        delta: additionDelta(),
+        proposal: shopProposal(),
+      });
+      expect(JSON.parse(again.content[0].text).hash).toBe(bundle.hash);
+      const bad = await mcp.call('propose_change', {
+        delta: { module: 'shop', entities: [{ name: 'x' }] },
+        proposal: shopProposal(),
+      });
+      expect(bad.isError).toBe(true);
+      expect(bad.content[0].text).toContain('[delta.schema-invalid]');
+      expect(await leftovers(repo)).toEqual(before);
+    } finally {
+      await mcp.close();
+      await rm(repo.root, { recursive: true, force: true });
+    }
+  }, 180_000);
+});
+
+describe('propose_change concurrency', () => {
+  test('a second call is refused while one is in flight; the slot frees after success, error and timeout', async () => {
+    const repo = await shopRepo();
+    try {
+      await mkdir(repo.work, { recursive: true });
+      const slow = join(repo.work, 'slow-cli.ts');
+      await writeFile(slow, 'await Bun.sleep(60_000);\n');
+      const input = {
+        delta: additionDelta(),
+        baseRoot: repo.root,
+        baseRef: 'HEAD',
+        proposal: shopProposal(),
+      };
+      // The first call hangs in the child until the 1 s timeout, so the second arrives mid-flight.
+      const first = withProposeSlot(() =>
+        compileBundle({ ...input, cliEntry: slow, timeoutMs: 1000 }),
+      ).catch((e: { code: string }) => e.code);
+      const second = await withProposeSlot(async () => 'ran').catch(
+        (e: { code: string }) => e.code,
+      );
+      expect(second).toBe('mcp.propose-busy');
+      expect(await first).toBe('bundle.compile-timeout');
+      // Timeout released it; so do a failure and a success.
+      expect(
+        await withProposeSlot(async () => {
+          throw new Error('boom');
+        }).catch((e: Error) => e.message),
+      ).toBe('boom');
+      expect(await withProposeSlot(async () => 'ok')).toBe('ok');
+      expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
+    } finally {
+      await rm(repo.root, { recursive: true, force: true });
+    }
+  }, 60_000);
 });
