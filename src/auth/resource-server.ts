@@ -138,6 +138,15 @@ function isIssuerFailure(error: unknown): boolean {
   );
 }
 
+// decodeProtectedHeader throws a plain TypeError for a non-JWT token, not a JOSEError.
+function protectedHeader(token: string) {
+  try {
+    return decodeProtectedHeader(token);
+  } catch {
+    throw new errors.JWSInvalid('Malformed token');
+  }
+}
+
 function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
   const { issuer, resource } = options;
   const audience = audiences(resource);
@@ -180,14 +189,7 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
       let payload;
       try {
         // Refuse unusable tokens before any discovery/JWKS fetch: garbage must not cost outbound I/O.
-        // decodeProtectedHeader throws a plain TypeError for a non-JWT token, not a JOSEError.
-        const { alg } = (() => {
-          try {
-            return decodeProtectedHeader(token);
-          } catch {
-            throw new errors.JWSInvalid('Malformed token');
-          }
-        })();
+        const { alg } = protectedHeader(token);
         if (alg === undefined || !ALGORITHMS.includes(alg))
           throw new errors.JWSInvalid('Unsupported algorithm');
         // Entra and Auth0 issue `typ: JWT`, so `at+jwt` is not required.
