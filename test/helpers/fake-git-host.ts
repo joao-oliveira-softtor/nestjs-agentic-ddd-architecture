@@ -10,6 +10,10 @@ export interface FakeGitHost {
     { message: string; tree: string; parents: string[] }
   >;
   readonly trees: Map<string, unknown>;
+  /** Known commits (a ref's SHA, or a bundle base) and the files in each one, by path; the default branch head is `sha-base`. */
+  readonly history: Map<string, Record<string, string>>;
+  /** Extra entries every compare answer lists after the ones computed from `history` (renames, mode-only changes, filler). */
+  readonly changed: ComparedFile[];
   /** Every Authorization header seen. */
   readonly auth: string[];
   /** Answers with this status to any request whose "METHOD path" ends with `match`. */
@@ -21,6 +25,30 @@ interface Failure {
   status: number;
   body?: string;
   headers?: Record<string, string>;
+}
+
+/** One entry of the compare API's `files` (only the fields the sink reads). */
+export interface ComparedFile {
+  filename: string;
+  status: string;
+  previous_filename?: string;
+}
+
+// The compare API lists every path that differs between two trees.
+function diff(
+  from: Record<string, string>,
+  to: Record<string, string>,
+): ComparedFile[] {
+  return [...new Set([...Object.keys(from), ...Object.keys(to)])]
+    .filter((p) => from[p] !== to[p])
+    .map((filename) => ({
+      filename,
+      status: !(filename in from)
+        ? 'added'
+        : !(filename in to)
+          ? 'removed'
+          : 'modified',
+    }));
 }
 
 export function createFakeGitHost(opts: {
@@ -44,6 +72,8 @@ export function createFakeGitHost(opts: {
     pulls: [],
     commits: new Map(),
     trees: new Map(),
+    history: new Map([['sha-base', {}]]),
+    changed: [],
     auth: [],
     failWith: undefined,
     fetch: (async (
@@ -87,7 +117,22 @@ export function createFakeGitHost(opts: {
       }
       const commit = /^\/git\/commits\/(.+)$/.exec(path);
       if (method === 'GET' && commit)
-        return json(200, { tree: { sha: `tree-of-${commit[1]}` } });
+        return host.history.has(commit[1]!)
+          ? json(200, { tree: { sha: `tree-of-${commit[1]}` } })
+          : json(404, {});
+      const compare = /^\/compare\/(.+)\.\.\.(.+)$/.exec(path);
+      if (method === 'GET' && compare) {
+        const from = host.history.get(decodeURIComponent(compare[1]!));
+        const to = host.history.get(compare[2]!);
+        if (!from || !to) return json(404, { message: 'Not Found' });
+        // Like GitHub, the files come with the first page only and are capped at 300.
+        const first = (url.searchParams.get('page') ?? '1') === '1';
+        const files = first ? [...diff(from, to), ...host.changed] : [];
+        return json(200, {
+          status: files.length === 0 ? 'identical' : 'ahead',
+          files: files.slice(0, 300),
+        });
+      }
       if (method === 'POST' && path === '/git/trees') {
         const s = sha();
         host.trees.set(s, body);

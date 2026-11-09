@@ -30,6 +30,8 @@ const MAX_BODY = 60_000;
 const MAX_FILES = 500;
 const MAX_FILE_BYTES = 1024 * 1024;
 const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
+// GitHub's compare lists at most 300 files, whatever the size of the change.
+const COMPARE_FILES_CAP = 300;
 // Git metadata, submodule/attribute config and CI workflows: a PR must never touch them.
 const GIT_SEGMENTS = new Set([
   '.git',
@@ -63,6 +65,31 @@ const capTitle = (text: string) =>
   cap(text.replace(CONTROL, ' ').trim(), MAX_TITLE);
 
 const folded = (path: string) => path.normalize('NFC').toLowerCase();
+
+interface Compared {
+  paths: Set<string>;
+  listed: number;
+  status: unknown;
+}
+
+/** The folded names (and rename origins) a compare answer lists, with how many files it lists; undefined when it has no usable `files`. */
+function comparedPaths(answer: any): Compared | undefined {
+  const files: { filename?: unknown; previous_filename?: unknown }[] =
+    answer?.files;
+  if (
+    !Array.isArray(files) ||
+    files.some((f) => typeof f?.filename !== 'string')
+  )
+    return undefined;
+  const names = files
+    .flatMap((f) => [f.filename, f.previous_filename])
+    .filter((p) => typeof p === 'string');
+  return {
+    paths: new Set(names.map(folded)),
+    listed: files.length,
+    status: answer.status,
+  };
+}
 
 const dotSegment = (s: string) => s === '' || s === '.' || s === '..';
 
@@ -195,6 +222,7 @@ export class GitHubChangeSink implements ChangeSink {
       undefined,
       'base ref',
     );
+    await this.#assertBaseUnmoved(repo, base, head.object.sha, change);
     if (await this.#exists(`${repo}/git/ref/heads/${branch}`))
       throw new AgenticError(
         'publish.branch-exists',
@@ -250,6 +278,72 @@ export class GitHubChangeSink implements ChangeSink {
     } catch (e) {
       throw await this.#cleanup(e, repo, branch);
     }
+  }
+
+  /**
+   * Refuses a bundle whose target files, or the lock it was compiled against, changed on the
+   * default branch since its base ref (`apply` checks the same locally). One compare call lists
+   * what changed (mode-only changes and renames included); GitHub gives the whole `files` list
+   * only on the first page, up to 300 files, so a longer one cannot prove anything.
+   */
+  async #assertBaseUnmoved(
+    repo: string,
+    branch: string,
+    headSha: string,
+    change: PublishableChange,
+  ): Promise<void> {
+    if (change.baseRef === headSha) return;
+    const base = encodeURIComponent(change.baseRef);
+    const ahead = await this.#compare(repo, `${base}...${headSha}`, change);
+    // Three dots diff from the merge base, so commits only the base has need the reverse comparison.
+    const sides =
+      ahead.status === 'behind' || ahead.status === 'diverged'
+        ? [ahead, await this.#compare(repo, `${headSha}...${base}`, change)]
+        : [ahead];
+    const guarded = [...change.files.map((f) => f.path), change.lockPath].find(
+      (p) => sides.some((s) => s.paths.has(folded(p))),
+    );
+    if (guarded !== undefined)
+      throw new AgenticError(
+        'publish.base-mismatch',
+        `${JSON.stringify(guarded)} differs on ${branch} from the bundle's base ref ${JSON.stringify(change.baseRef)}; ${guarded === change.lockPath ? 'the bundle was compiled against another lock' : 'publishing would overwrite it'}`,
+      );
+    if (sides.some((s) => s.listed >= COMPARE_FILES_CAP))
+      throw new AgenticError(
+        'publish.host-failed',
+        `GitHub base comparison failed: the changes since the bundle's base ref are too large for GitHub to list all their files (${COMPARE_FILES_CAP} at most)`,
+      );
+  }
+
+  /** One compare call (`basehead` is `A...B`, already encoded): what changed from the merge base to B. */
+  async #compare(
+    repo: string,
+    basehead: string,
+    change: PublishableChange,
+  ): Promise<Compared> {
+    const res = await this.#send(
+      'GET',
+      `${repo}/compare/${basehead}?per_page=1`,
+      undefined,
+    );
+    // 404 or 422 "No commit found": the host never saw the base; any other 422 is a host error.
+    if (
+      res.status === 404 ||
+      (res.status === 422 &&
+        (await this.#message(res)).includes('No commit found'))
+    )
+      throw new AgenticError(
+        'publish.base-unknown',
+        `the bundle's base ref ${JSON.stringify(change.baseRef)} is not a commit on the Git host (push it first)`,
+      );
+    this.#check(res, 'base comparison');
+    const compared = comparedPaths(await res.json().catch(() => undefined));
+    if (compared === undefined)
+      throw new AgenticError(
+        'publish.host-failed',
+        'GitHub base comparison failed: unexpected answer from the host',
+      );
+    return compared;
   }
 
   /** Refuses a number already used in the changes directory or its `archive/` on the default branch (`apply` checks the same on a working copy). */
