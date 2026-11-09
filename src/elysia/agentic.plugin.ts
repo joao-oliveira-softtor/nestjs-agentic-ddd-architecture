@@ -112,11 +112,12 @@ function carriesHttpStatus(error: unknown): boolean {
  * shortcut: relies on that Elysia internal; `agentic.plugin.test.ts` fails if an upgrade drops it.
  */
 function rejectSecondMount(app: Base): void {
-  let getParent: () => { decorator: object } = () => app;
+  // Elysia's own getParent answers null until the plugin is mounted.
+  let getParent: () => { decorator: object } | null = () => null;
   Object.defineProperty(app, 'getParent', {
     configurable: true,
     get: () => getParent,
-    set(assigned: typeof getParent) {
+    set(assigned: () => { decorator: object }) {
       if ('agentic' in assigned().decorator)
         throw new Error(
           'Mount one agentic() per app: ctx.agentic would keep the first runtime',
