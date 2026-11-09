@@ -9,6 +9,10 @@ export interface StaticEvidence {
   readonly diagnostics: string[];
 }
 
+/** Folders whose test files are not the project's own; Bun.Glob yields `\` on Windows. */
+export const IGNORED_TEST_PATH =
+  /(^|[\\/])(node_modules|\.git|\.worktrees|dist|__fixtures__)[\\/]/;
+
 export function parseStaticTests(text: string, file: string): StaticEvidence {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const cases: TestCaseResult[] = [];
@@ -109,10 +113,7 @@ export async function readStaticTests(root: string): Promise<StaticEvidence> {
     cwd: root,
     onlyFiles: true,
   }))
-    if (
-      !/(^|\/)(node_modules|\.git|\.worktrees|dist|__fixtures__)\//.test(file)
-    )
-      files.push(file);
+    if (!IGNORED_TEST_PATH.test(file)) files.push(file);
   files.sort();
   const evidence = await Promise.all(
     files.map(async (file) =>
