@@ -36,6 +36,7 @@
     "typescript": "^6.0.2"
   },
   "devDependencies": {
+    "@elysiajs/eden": "1.4.9",
     "@modelcontextprotocol/server": "2.3.1",
     "@nestbun/platform": "^0.1.2",
     "@nestjs/cli": "^12.0.0",
@@ -46,6 +47,7 @@
     "@types/bun": "1.4.2",
     "@types/node": "^24.0.0",
     "ajv": "8.20.0",
+    "elysia": "1.4.30",
     "jose": "6.2.14",
     "oxlint": "^1.58.0",
     "oxlint-tsgolint": "^7.0.2001",
@@ -79,6 +81,10 @@
       "types": "./dist/nestjs/index.d.ts",
       "import": "./dist/nestjs/index.js"
     },
+    "./elysia": {
+      "types": "./dist/elysia/index.d.ts",
+      "import": "./dist/elysia/index.js"
+    },
     "./testing": {
       "types": "./dist/testing/index.d.ts",
       "import": "./dist/testing/index.js"
@@ -100,6 +106,7 @@
     "dist/contracts",
     "dist/runtime",
     "dist/nestjs",
+    "dist/elysia",
     "dist/testing",
     "dist/mcp",
     "dist/publish",
@@ -126,10 +133,14 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "@modelcontextprotocol/server": "2.3.1",
+    "elysia": "^1.4.30",
     "jose": "6.2.14"
   },
   "peerDependenciesMeta": {
     "@modelcontextprotocol/server": {
+      "optional": true
+    },
+    "elysia": {
       "optional": true
     },
     "jose": {

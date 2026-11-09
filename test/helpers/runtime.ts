@@ -40,10 +40,12 @@ export function fixture() {
     payload: z.unknown(),
     source,
   });
+  // A schema of its own, so a tool that took the wrong use-case's schema shows.
   registry.useCases.push({
     ...registry.useCases[0]!,
     target: Outside,
     name: 'outside',
+    input: z.object({ other: z.number() }),
   });
   registry.operators.push({
     target: Agent,
@@ -59,8 +61,23 @@ export function fixture() {
   const modules = [{ name: 'app', path: 'app' }];
   const skillDir = join(root, '.agentic/runtime/agent');
   mkdirSync(skillDir, { recursive: true });
-  const hash = irHash(buildIR(registry, { root, modules }).ir);
-  const skill = `---\nname: agent\nmetadata:\n  agentic-ddd.ir-hash: "${hash}"\n---\n# Runtime skill\nUse tool with care.\n`;
-  writeFileSync(join(skillDir, 'SKILL.md'), skill);
-  return { root, registry, modules, Tool, Agent, skillDir, skill };
+  /** Stamps the skill with the registry's current IR hash, as compile would. */
+  const compileSkill = () => {
+    const hash = irHash(buildIR(registry, { root, modules }).ir);
+    const skill = `---\nname: agent\nmetadata:\n  agentic-ddd.ir-hash: "${hash}"\n---\n# Runtime skill\nUse tool with care.\n`;
+    writeFileSync(join(skillDir, 'SKILL.md'), skill);
+    return skill;
+  };
+  const skill = compileSkill();
+  return {
+    root,
+    registry,
+    modules,
+    Tool,
+    Outside,
+    Agent,
+    skillDir,
+    skill,
+    compileSkill,
+  };
 }

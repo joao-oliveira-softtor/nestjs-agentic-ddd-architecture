@@ -11,6 +11,7 @@ import {
 } from '@agentic-ddd/decorators';
 import { buildIR, irHash, type IRModule } from '../contracts/ir';
 import { limitsError } from '../contracts/limits';
+import { declarationsInModules } from '../contracts/scope';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import { InMemoryEventBus } from './event-bus';
 import type { LlmTool, OperatorRunResult, RunInput } from './types';
@@ -38,14 +39,17 @@ export interface MountedOperator {
 
 export class OperatorRuntime {
   readonly eventBus: EventBus;
+  /** The declarations this runtime resolves operators and use-cases from. */
+  readonly registry: Registry;
   #operators = new Map<string, MountedOperator>();
   constructor(private readonly options: RuntimeOptions) {
     this.eventBus = options.eventBus ?? new InMemoryEventBus();
+    this.registry = options.registry ?? defaultRegistry;
   }
 
   async register(target: ClassRef, instances: UseCaseInstances): Promise<void> {
     const root = resolve(this.options.root ?? process.cwd());
-    const registry = this.options.registry ?? defaultRegistry;
+    const registry = this.registry;
     const record = registry.operators.find((o) => o.target === target);
     if (!record) throw new Error(`Operator ${target.name} is not declared`);
     if (this.#operators.has(record.name))
@@ -118,6 +122,11 @@ export class OperatorRuntime {
     });
   }
 
+  /** The `@AgentUseCase` declaration of a class in this runtime's registry. */
+  useCase(target: ClassRef): UseCaseRecord | undefined {
+    return this.registry.useCases.find((u) => u.target === target);
+  }
+
   async run(name: string, input: RunInput): Promise<OperatorRunResult> {
     const operator = this.#operators.get(name);
     if (!operator) throw new Error(`Unknown operator: ${name}`);
@@ -126,4 +135,18 @@ export class OperatorRuntime {
       eventBus: this.eventBus,
     });
   }
+}
+
+/** Runtime limited to the configured modules' declarations, as the adapters mount it. */
+export function createRuntime(options: RuntimeOptions): OperatorRuntime {
+  return new OperatorRuntime({
+    ...options,
+    registry:
+      options.registry ??
+      declarationsInModules(
+        defaultRegistry,
+        resolve(options.root ?? process.cwd()),
+        options.modules,
+      ),
+  });
 }
