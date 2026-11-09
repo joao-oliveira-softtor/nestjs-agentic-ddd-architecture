@@ -117,4 +117,4 @@ A linha de base do critério de sucesso é o A0 do piloto cycle-21 (Sonnet mediu
 - Versionar spec e plano; declarações de negócio novas exigem proposal antes do código.
 - Executar com testes e validações apropriadas e registrar decisões/progresso.
 
-O canal HTTP exige revisão explícita do gate que hoje proíbe qualquer @Controller. `reactsTo` exige fila, evitando publicação reentrante. Distribuição npm exige smoke em consumidor sem aliases locais. Essas decisões fazem parte das respectivas issues, não de alterações implícitas nesta release.
+O canal HTTP exige revisão explícita do gate que hoje proíbe qualquer @Controller. `reactsTo` exige fila, evitando publicação reentrante. Essas decisões fazem parte das respectivas issues, não de alterações implícitas nesta release.

@@ -128,5 +128,6 @@ Não há workflow de publicação automática: quem publica é o mantenedor, a p
 
 1. Na PR de release: versão no `package.json` e no servidor MCP (`src/mcp/index.ts`), `CHANGELOG.md`, `docs/releases/<versão>.md` e a linha "Release atual" do README.
 2. Depois do merge, na `main` atualizada: `bun install --frozen-lockfile` e `bun run test:package`, que constrói, empacota, audita e instala o tarball real.
-3. `npm publish` (o `prepack` gera o `dist` de novo; o npm pede a senha de uso único quando a conta tem 2FA).
-4. Tag `v<versão>` e release GitHub com o tarball e o `SHA256SUMS`.
+3. `npm pack` (o `prepack` gera o `dist` de novo) e `sha256sum agentic-ddd-<versão>.tgz > SHA256SUMS`: o `test:package` apaga o tarball que auditou, e o `npm publish` sem argumento não deixa nenhum.
+4. `npm publish agentic-ddd-<versão>.tgz`, que publica exatamente esse tarball (o npm pede a senha de uso único quando a conta tem 2FA).
+5. Tag `v<versão>` e release GitHub com o mesmo tarball e o `SHA256SUMS`.
