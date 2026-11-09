@@ -7,7 +7,7 @@ import type { WorkItemStatus } from './state';
 export interface PacketOptions {
   readonly configPath: string;
   readonly item: string;
-  /** @deprecated Sem efeito: o packet nunca executa testes. */
+  /** @deprecated No effect: packet never runs tests. */
   readonly static?: boolean;
 }
 export const isClassScopeItem = (id: string): boolean =>

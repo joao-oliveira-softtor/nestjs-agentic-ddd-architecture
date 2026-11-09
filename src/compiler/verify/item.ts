@@ -23,8 +23,9 @@ export interface ItemVerifyReport {
   readonly gates: GateResult[];
 }
 
-// Wider than readStaticTests on purpose: searching the text needs no parser.
-const TEST_FILES = '**/*.{test,spec}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}';
+// Wider than readStaticTests on purpose: searching the text needs no parser;
+// `_test`/`_spec` are Bun's other test file names.
+const TEST_FILES = '**/*{.,_}{test,spec}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}';
 const PATH_ARGUMENT = /^(\.\.?\/|\/)/;
 const NO_EVIDENCE: TestRun = { cases: [], exitCode: 0 };
 
@@ -49,8 +50,9 @@ export function closureObligations(
 
 /**
  * Test files under `root`, of any extension, that quote one of the obligation
- * ids. Reading the text instead of the syntax tree also finds `test.each`,
- * computed titles and `test` re-exported from a helper.
+ * ids or list it in a literal `[covers: a, b]` title. Reading the text instead
+ * of the syntax tree also finds `test.each`, computed titles and `test`
+ * re-exported from a helper.
  */
 export async function testFilesFor(
   root: string,
@@ -60,6 +62,8 @@ export async function testFilesFor(
     `'${id}'`,
     `"${id}"`,
     `\`${id}\``,
+    ` ${id},`,
+    ` ${id}]`,
   ]);
   const files: string[] = [];
   for await (const scanned of new Bun.Glob(TEST_FILES).scan({

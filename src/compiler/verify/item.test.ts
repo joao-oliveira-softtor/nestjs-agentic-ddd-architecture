@@ -89,6 +89,9 @@ test('testFilesFor picks the test files that quote an obligation id, in any exte
       'c.test.tsx': `covers(["invariant:X/a"], 'three')`,
       'sub/f.spec.js': 'covers([`invariant:X/a`], "four")',
       'g.test.ts': '// invariant:X/a mentioned but never quoted',
+      'h_test.ts': `test('[covers: invariant:X/a, invariant:X/b] five', f)`,
+      'i_spec.ts': `test('[covers: invariant:X/b, invariant:X/a] six', f)`,
+      'j.test.ts': `test('[covers: invariant:X/ab] not a', f)`,
       'node_modules/pkg/d.test.ts': `covers(['invariant:X/a'], 'dep')`,
       '.worktrees/w/e.test.ts': `covers(['invariant:X/a'], 'other tree')`,
       'helper.ts': `covers(['invariant:X/a'], 'not a test file')`,
@@ -101,6 +104,8 @@ test('testFilesFor picks the test files that quote an obligation id, in any exte
     expect(await testFilesFor(root, ['invariant:X/a'])).toEqual([
       'a.test.ts',
       'c.test.tsx',
+      'h_test.ts',
+      'i_spec.ts',
       'sub/f.spec.js',
     ]);
     expect(await testFilesFor(root, [])).toEqual([]);

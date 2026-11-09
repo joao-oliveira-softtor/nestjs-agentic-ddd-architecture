@@ -244,7 +244,7 @@ test('verifyItem does not run a test file that quotes none of the item obligatio
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, CLI_TEST_TIMEOUT_MS);
 
 test(
   'verifyItem also runs the tests of the dependencies and nothing else',
@@ -325,7 +325,7 @@ test('verifyItem judges an item without obligations by its gates alone, even wit
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, CLI_TEST_TIMEOUT_MS);
 
 test(
   'verifyItem in process: runs the covering tests, fails I4 without them, rejects an unknown item',
@@ -388,7 +388,7 @@ test('packet never runs tests, with or without --static, and prints the same pac
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-});
+}, CLI_TEST_TIMEOUT_MS);
 
 test(
   'project without tests allows status, next and packet, but does not certify done',

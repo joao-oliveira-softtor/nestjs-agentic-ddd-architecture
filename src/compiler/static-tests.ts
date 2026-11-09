@@ -9,9 +9,9 @@ export interface StaticEvidence {
   readonly diagnostics: string[];
 }
 
-/** Folders whose test files are not the project's own. */
+/** Folders whose test files are not the project's own; Bun.Glob yields `\` on Windows. */
 export const IGNORED_TEST_PATH =
-  /(^|\/)(node_modules|\.git|\.worktrees|dist|__fixtures__)\//;
+  /(^|[\\/])(node_modules|\.git|\.worktrees|dist|__fixtures__)[\\/]/;
 
 export function parseStaticTests(text: string, file: string): StaticEvidence {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
