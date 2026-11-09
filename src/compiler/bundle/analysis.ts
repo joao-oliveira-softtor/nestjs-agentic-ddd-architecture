@@ -60,7 +60,6 @@ export async function analyzeCandidate(
           item,
           itemSpecification(ir, item, context.proposals),
           configPath,
-          'static',
         ),
       };
     }),

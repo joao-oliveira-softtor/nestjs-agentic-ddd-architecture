@@ -18,4 +18,11 @@ describe('limitsError', () => {
       expect(limitsError({ maxSteps: 3, timeoutMs })).toContain('timeoutMs');
     }
   });
+
+  test('rejects timeoutMs above the setTimeout maximum and names it', () => {
+    expect(limitsError({ maxSteps: 3, timeoutMs: 2_147_483_647 })).toBeNull();
+    expect(limitsError({ maxSteps: 3, timeoutMs: 2_147_483_648 })).toContain(
+      '2147483647',
+    );
+  });
 });

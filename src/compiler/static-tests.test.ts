@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { parseStaticTests } from './static-tests';
+import { IGNORED_TEST_PATH, parseStaticTests } from './static-tests';
 
 test('lê só declarações literais de teste, diagnostica dinâmicas, não conta helpers soltos', () => {
   const result = parseStaticTests(
@@ -38,4 +38,11 @@ test.todo(covers(['method:A.todo'], 'pendente'));
   );
   expect(actual.cases.map((c) => c.covers)).toEqual([['method:A.todo']]);
   expect(actual.diagnostics).toHaveLength(1);
+});
+
+test('IGNORED_TEST_PATH skips foreign folders with either path separator', () => {
+  expect(IGNORED_TEST_PATH.test('node_modules/pkg/a.test.ts')).toBe(true);
+  expect(IGNORED_TEST_PATH.test('app\\dist\\a.test.ts')).toBe(true);
+  expect(IGNORED_TEST_PATH.test('src\\distance\\a.test.ts')).toBe(false);
+  expect(IGNORED_TEST_PATH.test('src/a.test.ts')).toBe(false);
 });

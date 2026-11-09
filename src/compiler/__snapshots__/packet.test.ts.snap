@@ -7,7 +7,7 @@ exports[`pacotes determinísticos dos quatro tipos compartilham hash e especific
 - Layer: domain
 - Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:26\`
-- State: declared
+- State: declared (static: tests not run; never certifies done)
 - specHash: \`9125c147f4697f0043fa03ffe0da424a4eb7066d23cb7db7680c13d043784c9f\`
 - Dependencies: —
 
@@ -95,7 +95,7 @@ exports[`pacotes determinísticos dos quatro tipos compartilham hash e especific
 - Layer: domain
 - Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:34\`
-- State: blocked(declared)
+- State: declared (static: tests not run; never certifies done)
 - specHash: \`dea0638f0750c08cbfa5f0d5f85beaee72d90bf49408ac76283ef3f1e025caf8\`
 - Dependencies: \`entity:Product\`
 
@@ -223,7 +223,7 @@ exports[`pacotes determinísticos dos quatro tipos compartilham hash e especific
 - Layer: application
 - Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:69\`
-- State: blocked(declared)
+- State: declared (static: tests not run; never certifies done)
 - specHash: \`b7fa82f53d76777a9e2f90333524c2ed3a1c9e5c90ebb6dec314abdfecf6560f\`
 - Dependencies: \`method:Product.publish\`
 
@@ -394,7 +394,7 @@ exports[`pacotes determinísticos dos quatro tipos compartilham hash e especific
 - Layer: operators
 - Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:85\`
-- State: blocked(implemented)
+- State: implemented (static: tests not run; never certifies done)
 - specHash: \`d1fb1f6910d00094bb37d30c6d8f61987fec979f0cd7f2eb53d8926990e105f0\`
 - Dependencies: \`usecase:create_product\`, \`usecase:publish_product\`
 
@@ -674,7 +674,7 @@ exports[`pacote de value object traz declaração e obrigações: valueobject:Di
 - Layer: domain
 - Module: vo
 - source: \`src/compiler/packet.test.ts:157\`
-- State: implemented
+- State: implemented (static: tests not run; never certifies done)
 - specHash: \`c0634298f217a038e048f539defcc47c11de603b62ab37e0b182baaa086e459a\`
 - Dependencies: —
 
@@ -727,7 +727,7 @@ exports[`contains e references chegam ao packet da dona, do método e do use-cas
 - Layer: domain
 - Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:26\`
-- State: blocked(declared)
+- State: declared (static: tests not run; never certifies done)
 - specHash: \`f5a6ff799f7bd305d9366bb5424e71d292c15cc709c2ffbf311eac5872994ce4\`
 - Dependencies: \`valueobject:Dinheiro\`
 
@@ -837,7 +837,7 @@ exports[`contains e references chegam ao packet da dona, do método e do use-cas
 - Layer: domain
 - Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:34\`
-- State: blocked(declared)
+- State: declared (static: tests not run; never certifies done)
 - specHash: \`366f379192122898b888637eb37434cb2a232eea40587818886bfb4ff94cad31\`
 - Dependencies: \`entity:Product\`
 
@@ -987,7 +987,7 @@ exports[`contains e references chegam ao packet da dona, do método e do use-cas
 - Layer: application
 - Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:69\`
-- State: blocked(declared)
+- State: declared (static: tests not run; never certifies done)
 - specHash: \`9b2db32ad779aa544c0c6ee8e1371c3c2d3098c56130e9621e3ca9ed76e955da\`
 - Dependencies: \`method:Product.publish\`
 
@@ -1180,7 +1180,7 @@ exports[`use-case com port traz o port com seus métodos no pacote: usecase com 
 - Layer: application
 - Module: shop
 - source: \`src/compiler/__fixtures__/shop.ts:69\`
-- State: blocked(declared)
+- State: declared (static: tests not run; never certifies done)
 - specHash: \`b657bdec6bbc40ad9877332f23ca7aeb299686182133a0b4321224b0361cb894\`
 - Dependencies: \`method:Product.publish\`
 
@@ -1367,7 +1367,7 @@ exports[`pacote de adapter traz o escopo de classe; método mantém o de corpo: 
 - Layer: infrastructure
 - Module: shop
 - source: \`x.ts:2\`
-- State: blocked(declared)
+- State: declared (static: tests not run; never certifies done)
 - specHash: \`f1854fe65801e87987eeb1a97c638cf7527b06d9da843b28174ecd9ba04d5a61\`
 - Dependencies: \`entity:Product\`
 
