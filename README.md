@@ -1,8 +1,8 @@
 # @agentic-ddd
 
-Release atual: [v0.5.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.5.0). [Demonstração reproduzível](docs/releases/0.5.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
+Release atual: [v0.6.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.6.0), no npm como [`agentic-ddd`](https://www.npmjs.com/package/agentic-ddd). [Notas da release](docs/releases/0.6.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
 
-Uso em aplicações externas: [distribuição por tarball, exports públicos e compatibilidade](docs/distribution.md). O nome do pacote é provisório; publicação npm permanece bloqueada.
+Uso em aplicações externas: `npm install agentic-ddd`; [instalação, exports públicos e compatibilidade](docs/distribution.md).
 
 Framework open-source sobre **NestJS + DDD** em que:
 
@@ -296,8 +296,9 @@ bun run ci:docker --build                  # rebuild the image
 - **v0.3.0**: skill e tutorial isolado, runner com Codex/Cursor, dataset ampliado, regressões contra falso done e campanhas com agregação offline.
 - **v0.4.0**: biblioteca ESM modular com exports públicos, CLI instalável e tarball validado em consumidor externo.
 - **v0.5.0**: modelo tático do domínio (value objects, relações entre agregados, ports, adapters e gates T1 a T3), regras do time, servidor MCP local e tutorial `matriculas` com braço de controle pré-registrado.
+- **v0.6.0**: primeira publicação no npm, como `agentic-ddd`. Mensagens e texto gerado em inglês com códigos de erro estáveis, Domain MCP por HTTP com OAuth e acesso por módulo, `propose_change` e `agentic apply` com bundle compilado, adaptador Elysia e suporte nativo a Windows.
 - **Foco atual**: medir se o modelo tático e o framework melhoram o aceite dos agentes, com o ciclo 22 (C0 contra F, pré-registrado e ainda sem execução real; [ADR-0006](docs/adr/ADR-0006.md), D10). O épico #26 está encerrado ([ADR-0003](docs/adr/ADR-0003.md)). O adapter real de LlmPort (#7) e a demonstração CLI com aprovação (#8) estão **em pausa** ([ADR-0004](docs/adr/ADR-0004.md)).
-- **Backlog**: `reactsTo`, contratos gerados, canal HTTP, propostas paralelas e distribuição npm. Veja [issues, dependências e critérios de aceite](docs/ROADMAP.md).
+- **Backlog**: `reactsTo`, contratos gerados, canal HTTP e propostas paralelas. Veja [issues, dependências e critérios de aceite](docs/ROADMAP.md).
 
 Design: [`docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md`](docs/superpowers/specs/2026-10-06-agentic-ddd-v0-design.md) · Decisões: [`docs/adr/ADR-0001.md`](docs/adr/ADR-0001.md)
 

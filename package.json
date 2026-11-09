@@ -1,9 +1,8 @@
 {
-  "name": "nestjs-agentic-ddd-architecture",
-  "version": "0.5.0",
+  "name": "agentic-ddd",
+  "version": "0.6.0",
   "description": "Framework NestJS + DDD em que use-cases são tools, operators (agentes de IA) substituem controllers e um compilador gera skills e AGENTS.md a partir do domínio decorado.",
   "author": "",
-  "private": true,
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -27,7 +26,6 @@
     "evals:session-cost": "bun scripts/evals/session-cost.ts",
     "build:app": "bun build ./src/main.ts --target=bun --packages=external --sourcemap=linked --outdir=dist",
     "prepack": "bun run build",
-    "prepublishOnly": "node scripts/block-publish.cjs",
     "test:package": "bun scripts/package-smoke.ts",
     "ci:docker": "bun scripts/ci-docker.ts"
   },

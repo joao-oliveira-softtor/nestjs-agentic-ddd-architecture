@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "nestjs-agentic-ddd-architecture",
+      "name": "agentic-ddd",
       "dependencies": {
         "typescript": "^6.0.2",
         "zod": "^4.6.5",

@@ -33,20 +33,12 @@ test('package exposes only the eight public boundaries with declarations', () =>
   ]);
   expect(pkg.bin).toEqual({ 'agentic-ddd': './bin/agentic-ddd.js' });
 });
-test('package excludes demo dependencies and guards actual publication', () => {
+test('package excludes demo dependencies and is publishable as agentic-ddd', () => {
   expect(pkg.dependencies.typescript).toBeDefined();
   expect(pkg.dependencies['@nestbun/platform']).toBeUndefined();
   expect(pkg.dependencies.typeorm).toBeUndefined();
   expect(pkg.peerDependencies['@nestjs/common']).toBeDefined();
-  expect(pkg.scripts.prepublishOnly).toContain('block-publish');
-  expect(pkg.private).toBe(true);
-});
-
-test('publication gate exits unsuccessfully without invoking npm', () => {
-  const gate = Bun.spawnSync(['node', 'scripts/block-publish.cjs'], {
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  expect(gate.exitCode).toBe(1);
-  expect(gate.stderr.toString()).toContain('validate the final package name');
+  expect(pkg.name).toBe('agentic-ddd');
+  expect(pkg.private).toBeUndefined();
+  expect(pkg.scripts.prepublishOnly).toBeUndefined();
 });

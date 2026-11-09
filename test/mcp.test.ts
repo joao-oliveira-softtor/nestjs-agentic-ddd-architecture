@@ -99,7 +99,11 @@ describe('agentic mcp (subprocesso)', () => {
         capabilities: {},
         clientInfo: { name: 't', version: '1' },
       });
-      expect(init.result.serverInfo).toBeDefined();
+      const pkg = await Bun.file(join(REPO, 'package.json')).json();
+      expect(init.result.serverInfo).toMatchObject({
+        name: 'agentic-ddd',
+        version: pkg.version,
+      });
       send({ method: 'notifications/initialized' });
 
       const list = await request('tools/list');

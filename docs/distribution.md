@@ -1,6 +1,6 @@
 # Usar o framework em outra aplicação
 
-A distribuição usa um pacote ESM único com oito fronteiras. O nome `nestjs-agentic-ddd-architecture` é provisório para testar tarballs locais; não foi validado para publicação. `private: true` bloqueia inclusive a publicação direta do tarball; `prepublishOnly` fornece um segundo gate no checkout. Pacotes privados ainda permitem npm pack e instalação local. Esta mudança não publica nem cria uma nova release npm.
+A distribuição é um pacote ESM único, publicado no npm como [`agentic-ddd`](https://www.npmjs.com/package/agentic-ddd), com oito fronteiras. Até a v0.5.0 ele se chamava `nestjs-agentic-ddd-architecture` e só saía como tarball da release GitHub; quem instalou assim troca os imports `nestjs-agentic-ddd-architecture/*` por `agentic-ddd/*`.
 
 ## Compatibilidade
 
@@ -11,29 +11,29 @@ A distribuição usa um pacote ESM único com oito fronteiras. O nome `nestjs-ag
 - CommonJS não tem export require nesta versão.
 - Os source maps são distribuídos com sourcesContent e caminhos relativos. Mantenha maps ao empacotar o consumidor: o IR inclui localização original das declarações e o runtime valida o hash da skill.
 
-O tarball v0.5.0 será disponibilizado como asset da [release GitHub](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.5.0), com SHA-256 e logs de validação, quando a release for publicada.
+Cada release GitHub a partir da v0.6.0 também traz o tarball publicado e o `SHA256SUMS`.
 
-## Instalação local
+## Instalação
 
 ```bash
-bun install --frozen-lockfile
-npm pack
 # Na aplicação consumidora:
-npm install ../framework/nestjs-agentic-ddd-architecture-0.5.0.tgz @nestjs/common@^12 @nestjs/core@^12 reflect-metadata@^0.2.2 rxjs@^7.8.1 zod@^4
+npm install agentic-ddd @nestjs/common@^12 @nestjs/core@^12 reflect-metadata@^0.2.2 rxjs@^7.8.1 zod@^4
 ```
+
+Para testar um checkout local sem publicar, gere o tarball com `npm pack` neste repositório e instale o `agentic-ddd-<versão>.tgz` no lugar do nome.
 
 Não adicione paths de `@agentic-ddd/*` ao tsconfig do consumidor. Esses aliases são exclusivamente do desenvolvimento deste checkout.
 
-| Import público                               | Conteúdo                                                                                               |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `nestjs-agentic-ddd-architecture/core`       | Building blocks DDD; a raiz também exporta apenas core                                                 |
-| `nestjs-agentic-ddd-architecture/decorators` | Declarações e registry compartilhado                                                                   |
-| `nestjs-agentic-ddd-architecture/compiler`   | Configuração, IR, geração, verificação e coordenação                                                   |
-| `nestjs-agentic-ddd-architecture/runtime`    | OperatorRuntime, ports, tipos e event bus                                                              |
-| `nestjs-agentic-ddd-architecture/nestjs`     | AgenticModule e tokens de DI                                                                           |
-| `nestjs-agentic-ddd-architecture/testing`    | covers, context e fakes; não exige bun:test                                                            |
-| `nestjs-agentic-ddd-architecture/mcp`        | Servidor MCP local (stdio), somente leitura; requer o peer opcional @modelcontextprotocol/server 2.3.1 |
-| `nestjs-agentic-ddd-architecture/elysia`     | Plugin `agentic()` e rotas de use-case tipadas para Eden; requer o peer opcional `elysia` ^1.4.30      |
+| Import público           | Conteúdo                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `agentic-ddd/core`       | Building blocks DDD; a raiz também exporta apenas core                                                 |
+| `agentic-ddd/decorators` | Declarações e registry compartilhado                                                                   |
+| `agentic-ddd/compiler`   | Configuração, IR, geração, verificação e coordenação                                                   |
+| `agentic-ddd/runtime`    | OperatorRuntime, ports, tipos e event bus                                                              |
+| `agentic-ddd/nestjs`     | AgenticModule e tokens de DI                                                                           |
+| `agentic-ddd/testing`    | covers, context e fakes; não exige bun:test                                                            |
+| `agentic-ddd/mcp`        | Servidor MCP local (stdio), somente leitura; requer o peer opcional @modelcontextprotocol/server 2.3.1 |
+| `agentic-ddd/elysia`     | Plugin `agentic()` e rotas de use-case tipadas para Eden; requer o peer opcional `elysia` ^1.4.30      |
 
 A aplicação fornece agentic.config.ts com defineConfig do export compiler, decorators nas classes e imports de AgenticModule.forRoot/forFeature. O exemplo isolado completo está em test/fixtures/package-consumer.
 
@@ -122,10 +122,11 @@ Notas por cliente:
 
 A allowlist exclui testes, fixtures, snapshots, configurações, avaliações, node_modules e a aplicação de exemplo. A auditoria adicional procura padrões de credenciais e caminhos locais absolutos, incluindo o conteúdo embutido dos maps; ela é uma defesa contra vazamentos acidentais, não um scanner universal de segredos.
 
-## Publicação futura
+## Publicação
 
-1. Confirmar o nome definitivo, consultar disponibilidade no registry e validar o dono/organização e permissões de publicação (incluindo 2FA/trusted publishing).
-2. Se o nome mudar, atualizar metadados e os imports da fixture/documentação. O build deriva os specifiers emitidos do package.json.name.
-3. Definir versão, changelog, licença e access do pacote scoped quando aplicável.
-4. Executar install frozen, typecheck, lint, suite, build e test:package no ambiente suportado; verificar o CI e revisar o conteúdo do tarball.
-5. Alterar private para false e remover deliberadamente o gate prepublishOnly após aprovação do mantenedor e publicar o artefato validado. Não há workflow de publicação automática nesta mudança.
+Não há workflow de publicação automática: quem publica é o mantenedor, a partir da `main` com o CI verde.
+
+1. Na PR de release: versão no `package.json` e no servidor MCP (`src/mcp/index.ts`), `CHANGELOG.md`, `docs/releases/<versão>.md` e a linha "Release atual" do README.
+2. Depois do merge, na `main` atualizada: `bun install --frozen-lockfile` e `bun run test:package`, que constrói, empacota, audita e instala o tarball real.
+3. `npm publish` (o `prepack` gera o `dist` de novo; o npm pede a senha de uso único quando a conta tem 2FA).
+4. Tag `v<versão>` e release GitHub com o tarball e o `SHA256SUMS`.
