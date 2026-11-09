@@ -376,8 +376,10 @@ class SubClash extends Clash {}
 
 test('.error() passes only the exact class it registered, never a subclass', async () => {
   // Registering Error marks Error.prototype for the whole process, so undo it.
-  const app = new Elysia().error({ Error, Clash }).use(await throwingPlugin());
   try {
+    const app = new Elysia()
+      .error({ Error, Clash })
+      .use(await throwingPlugin());
     const upstream = await answer(
       app,
       new UpstreamError('invalid upstream token for tenant X'),
@@ -389,6 +391,9 @@ test('.error() passes only the exact class it registered, never a subclass', asy
     const raw = await answer(app, 'raw secret');
     expect(raw[0]).toBe(500);
     expect(raw[1]).not.toContain('raw secret');
+    // Registering a base class is the app's choice: that exact class passes with its message.
+    const plain = await answer(app, new Error('plain message'));
+    expect(plain[1]).toContain('plain message');
   } finally {
     delete (Error.prototype as { [ERROR_CODE]?: string })[ERROR_CODE];
   }

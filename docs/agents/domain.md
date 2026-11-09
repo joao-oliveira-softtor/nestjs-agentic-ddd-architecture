@@ -23,7 +23,7 @@ Single-context repo:
 └── src/
 ```
 
-ADRs are named `ADR-NNNN.md` with the title inside the file; the next one is `ADR-0007.md`. ADR-0001 to ADR-0006 are historical and written in Portuguese; new ADRs are written in English.
+ADRs are named `ADR-NNNN.md` with the title inside the file; the next one is `ADR-0009.md`. ADR-0001 to ADR-0006 are historical and written in Portuguese; new ADRs are written in English.
 
 ## Use the glossary's vocabulary
 

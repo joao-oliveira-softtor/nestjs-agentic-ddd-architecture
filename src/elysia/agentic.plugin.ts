@@ -56,6 +56,13 @@ export interface ValidationErrorBody {
   found?: unknown;
   property?: string;
   expected?: unknown;
+  /** Per-field issues (`summary`, `path`, `message`, `value`, ...), at most 64. */
+  errors?: Array<{
+    summary?: string;
+    path?: string;
+    message?: string;
+    value?: unknown;
+  }>;
 }
 
 type Base = Elysia<

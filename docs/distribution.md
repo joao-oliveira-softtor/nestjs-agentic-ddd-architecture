@@ -1,6 +1,6 @@
 # Usar o framework em outra aplicação
 
-A distribuição usa um pacote ESM único com sete fronteiras. O nome `nestjs-agentic-ddd-architecture` é provisório para testar tarballs locais; não foi validado para publicação. `private: true` bloqueia inclusive a publicação direta do tarball; `prepublishOnly` fornece um segundo gate no checkout. Pacotes privados ainda permitem npm pack e instalação local. Esta mudança não publica nem cria uma nova release npm.
+A distribuição usa um pacote ESM único com oito fronteiras. O nome `nestjs-agentic-ddd-architecture` é provisório para testar tarballs locais; não foi validado para publicação. `private: true` bloqueia inclusive a publicação direta do tarball; `prepublishOnly` fornece um segundo gate no checkout. Pacotes privados ainda permitem npm pack e instalação local. Esta mudança não publica nem cria uma nova release npm.
 
 ## Compatibilidade
 
@@ -33,6 +33,7 @@ Não adicione paths de `@agentic-ddd/*` ao tsconfig do consumidor. Esses aliases
 | `nestjs-agentic-ddd-architecture/nestjs`     | AgenticModule e tokens de DI                                                                           |
 | `nestjs-agentic-ddd-architecture/testing`    | covers, context e fakes; não exige bun:test                                                            |
 | `nestjs-agentic-ddd-architecture/mcp`        | Servidor MCP local (stdio), somente leitura; requer o peer opcional @modelcontextprotocol/server 2.3.1 |
+| `nestjs-agentic-ddd-architecture/elysia`     | Plugin `agentic()` e rotas de use-case tipadas para Eden; requer o peer opcional `elysia` ^1.4.30      |
 
 A aplicação fornece agentic.config.ts com defineConfig do export compiler, decorators nas classes e imports de AgenticModule.forRoot/forFeature. O exemplo isolado completo está em test/fixtures/package-consumer.
 
