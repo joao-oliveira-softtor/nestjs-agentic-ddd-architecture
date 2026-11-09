@@ -10,6 +10,8 @@ const change = {
   title: 'Add refund window',
   body: 'Body',
   changesDir: 'changes',
+  baseRef: 'sha-base',
+  lockPath: 'domain.lock.json',
   files: [{ path: 'changes/0007-refund-window/proposal.md', content: '# hi' }],
 };
 
@@ -117,6 +119,303 @@ describe('GitHubChangeSink', () => {
       expect(fake.requests).toEqual([]);
     },
   );
+
+  describe('base ref', () => {
+    const file = 'examples/orders/domain/order.ts';
+    const lock = 'domain.lock.json';
+    const based = {
+      ...change,
+      baseRef: 'sha-old',
+      files: [{ path: file, content: 'v1' }],
+    };
+    const withHistory = (
+      head: Record<string, string>,
+      old: Record<string, string> = { [file]: 'v1' },
+    ) => {
+      const s = setup();
+      s.fake.history.set('sha-old', old);
+      s.fake.history.set('sha-base', head);
+      return s;
+    };
+    const nothingCreated = (fake: { requests: string[] }) =>
+      expect(fake.requests.some((r) => r.startsWith('POST'))).toBe(false);
+    // The fake host cannot shape a 200 answer or show the query, so the sink gets a fetch that watches or rewrites the compare.
+    const sinkOver = (
+      fake: { fetch: typeof fetch },
+      onCompare: (url: string) => Response | undefined,
+    ) =>
+      new GitHubChangeSink({
+        token: TOKEN,
+        owner: 'acme',
+        repo: 'shop',
+        allowedPrefixes: ['changes/', 'examples/orders/'],
+        fetch: ((url: string, init?: RequestInit) =>
+          (url.includes('/compare/') ? onCompare(url) : undefined) ??
+          fake.fetch(url, init)) as typeof fetch,
+      });
+
+    test('publishes when the targets are untouched on the default branch since the base ref', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1', 'other.md': 'moved' });
+      await sink.publish(based);
+      expect(fake.pulls).toHaveLength(1);
+    });
+
+    test('asks the compare API once, with the base ref and the head SHA, and lists no trees', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      await sink.publish(based);
+      const r = '/repos/acme/shop';
+      expect(fake.requests.filter((q) => q.includes('/compare/'))).toEqual([
+        `GET ${r}/compare/sha-old...sha-base`,
+      ]);
+      expect(fake.requests.some((q) => q.includes('/git/trees/'))).toBe(false);
+    });
+
+    test('asks for one commit only, so the files come back on one small first page', async () => {
+      const { fake } = withHistory({ [file]: 'v1' });
+      const urls: string[] = [];
+      const sink = sinkOver(fake, (u) => {
+        urls.push(u);
+        return undefined;
+      });
+      await sink.publish(based);
+      expect(urls).toEqual([
+        'https://api.github.com/repos/acme/shop/compare/sha-old...sha-base?per_page=1',
+      ]);
+    });
+
+    test.each([
+      ['changed', { [file]: 'v2' }],
+      ['deleted', {}],
+    ])(
+      'refuses a target %s on the default branch since the base ref',
+      async (_, head) => {
+        const { fake, sink } = withHistory(head);
+        const e = await failure(sink.publish(based));
+        expect(e.code).toBe('publish.base-mismatch');
+        expect(e.message).toContain(file);
+        nothingCreated(fake);
+      },
+    );
+
+    test('refuses a target added on the default branch since the base ref', async () => {
+      const { fake, sink } = withHistory({ [file]: 'new' }, {});
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.base-mismatch',
+      );
+      nothingCreated(fake);
+    });
+
+    test('names the first offending file in bundle order', async () => {
+      const { sink } = withHistory(
+        { 'examples/orders/a.ts': '2', 'examples/orders/b.ts': '2' },
+        { 'examples/orders/a.ts': '1', 'examples/orders/b.ts': '1' },
+      );
+      const files = ['b', 'a'].map((n) => ({
+        path: `examples/orders/${n}.ts`,
+        content: 'x',
+      }));
+      const e = await failure(sink.publish({ ...based, files }));
+      expect(e.message).toContain('examples/orders/b.ts');
+    });
+
+    test('names the real default branch, not "main"', async () => {
+      const s = setup({ defaultBranch: 'trunk' });
+      s.fake.history.set('sha-old', { [file]: 'v1' });
+      s.fake.history.set('sha-base', { [file]: 'v2' });
+      const e = await failure(s.sink.publish(based));
+      expect(e.message).toContain('on trunk');
+      expect(e.message).not.toContain('on main');
+    });
+
+    test('refuses when the lock moved on the default branch, though no target did', async () => {
+      const { fake, sink } = withHistory(
+        { [file]: 'v1', [lock]: 'new' },
+        { [file]: 'v1', [lock]: 'old' },
+      );
+      const e = await failure(sink.publish(based));
+      expect(e.code).toBe('publish.base-mismatch');
+      expect(e.message).toContain(lock);
+      nothingCreated(fake);
+    });
+
+    test('refuses a target whose only change is its mode (no content diff)', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      fake.changed.push({ filename: file, status: 'changed' });
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.base-mismatch',
+      );
+      nothingCreated(fake);
+    });
+
+    test.each([
+      [
+        'the new name',
+        { filename: file, status: 'renamed', previous_filename: 'old.ts' },
+      ],
+      [
+        'the old name',
+        { filename: 'moved.ts', status: 'renamed', previous_filename: file },
+      ],
+    ])('refuses a rename that touches a target by %s', async (_, entry) => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      fake.changed.push(entry);
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.base-mismatch',
+      );
+      nothingCreated(fake);
+    });
+
+    test('matches case-insensitively: Order.ts added on main blocks a bundle writing order.ts', async () => {
+      const { fake, sink } = withHistory(
+        { 'examples/orders/domain/Order.ts': 'x' },
+        {},
+      );
+      const e = await failure(sink.publish(based));
+      expect(e.code).toBe('publish.base-mismatch');
+      nothingCreated(fake);
+    });
+
+    test('refuses a base ref the host does not know, whatever else is true', async () => {
+      const { fake, sink } = setup();
+      const e = await failure(
+        sink.publish({ ...change, baseRef: 'never-pushed' }),
+      );
+      expect(e.code).toBe('publish.base-unknown');
+      expect(e.message).toContain('never-pushed');
+      nothingCreated(fake);
+    });
+
+    test('maps a 422 "No commit found" from the compare to base-unknown too', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      fake.failWith = {
+        match: '/compare/sha-old...sha-base',
+        status: 422,
+        body: 'No commit found for SHA: sha-old',
+      };
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.base-unknown',
+      );
+      nothingCreated(fake);
+    });
+
+    test('keeps a 422 that is not "No commit found" as host-failed', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      fake.failWith = {
+        match: '/compare/sha-old...sha-base',
+        status: 422,
+        body: 'Validation Failed',
+      };
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.host-failed',
+      );
+    });
+
+    describe('a base with commits the default branch lacks', () => {
+      // The fake host has no merge bases: the forward answer is rewritten, the reverse one is computed.
+      const diverged = (fake: { fetch: typeof fetch }) =>
+        sinkOver(fake, (u) =>
+          u.includes('/compare/sha-old...sha-base')
+            ? Response.json({ status: 'diverged', files: [] })
+            : undefined,
+        );
+
+      test('refuses when the base side moved the lock', async () => {
+        const { fake } = withHistory(
+          { [file]: 'v1', [lock]: 'main' },
+          { [file]: 'v1', [lock]: 'branch' },
+        );
+        const e = await failure(diverged(fake).publish(based));
+        expect(e.code).toBe('publish.base-mismatch');
+        expect(e.message).toContain('another lock');
+        expect(
+          fake.requests.filter((q) =>
+            q.includes('/compare/sha-base...sha-old'),
+          ),
+        ).toHaveLength(1);
+        nothingCreated(fake);
+      });
+
+      test('publishes when neither side touched a target or the lock', async () => {
+        const { fake } = withHistory(
+          { [file]: 'v1', 'other.md': 'a' },
+          { [file]: 'v1', 'other.md': 'b' },
+        );
+        await diverged(fake).publish(based);
+        expect(fake.pulls).toHaveLength(1);
+      });
+    });
+
+    test.each([
+      [500, 'publish.host-failed'],
+      [403, 'publish.host-denied'],
+    ])(
+      'keeps a %s from the compare as the host error it is',
+      async (status, code) => {
+        const { fake, sink } = withHistory({ [file]: 'v1' });
+        fake.failWith = { match: '/compare/sha-old...sha-base', status };
+        expect((await failure(sink.publish(based))).code).toBe(code);
+      },
+    );
+
+    describe('a comparison GitHub cannot list in full', () => {
+      const filler = (n: number) =>
+        Array.from({ length: n }, (_, i) => ({
+          filename: `elsewhere/${i}.txt`,
+          status: 'modified',
+        }));
+
+      test('refuses with host-failed at the 300-file cap, saying so, when no target is among them', async () => {
+        const { fake, sink } = withHistory({ [file]: 'v1' });
+        fake.changed.push(...filler(300));
+        const e = await failure(sink.publish(based));
+        expect(e.code).toBe('publish.host-failed');
+        expect(e.message).toContain('too large for GitHub to list');
+        nothingCreated(fake);
+      });
+
+      test('still names a target that is among the 300 listed', async () => {
+        const { fake, sink } = withHistory({ [file]: 'v1' });
+        fake.changed.push(...filler(299), {
+          filename: file,
+          status: 'modified',
+        });
+        expect((await failure(sink.publish(based))).code).toBe(
+          'publish.base-mismatch',
+        );
+      });
+
+      test('publishes at 299 unrelated files: the list is whole', async () => {
+        const { fake, sink } = withHistory({ [file]: 'v1' });
+        fake.changed.push(...filler(299));
+        await sink.publish(based);
+        expect(fake.pulls).toHaveLength(1);
+      });
+    });
+
+    test.each([
+      ['an object without files', '{"status":"ahead"}'],
+      ['files that are not a list', '{"files":"x"}'],
+      ['a file entry without a name', '{"files":[{"status":"added"}]}'],
+      ['a file entry that is null', '{"files":[null]}'],
+      ['an error body on a 200', '{"message":"Server Error"}'],
+      ['not JSON', '<html>bad gateway</html>'],
+    ])('fails closed when the comparison answer is %s', async (_, answer) => {
+      const { fake } = withHistory({ [file]: 'v1' });
+      const sink = sinkOver(fake, () => new Response(answer));
+      const e = await failure(sink.publish(based));
+      expect(e.code).toBe('publish.host-failed');
+      expect(e.message).toContain('unexpected answer from the host');
+      expect(e.message).not.toContain('too large');
+      nothingCreated(fake);
+    });
+
+    test('keeps the token out of the refusal', async () => {
+      const { sink } = withHistory({ [file]: 'v2' });
+      expect(JSON.stringify(await failure(sink.publish(based)))).not.toContain(
+        TOKEN,
+      );
+    });
+  });
 
   test('refuses an existing branch and writes nothing', async () => {
     const { fake, sink } = setup({

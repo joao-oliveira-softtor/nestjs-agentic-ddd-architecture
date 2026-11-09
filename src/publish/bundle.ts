@@ -17,7 +17,7 @@ import { GitHubChangeSink } from './github-sink';
 export type PublishConfig = Pick<
   ResolvedConfig,
   'root' | 'outRoot' | 'changesDir' | 'modules'
->;
+> & { readonly out: Pick<ResolvedConfig['out'], 'lock'> };
 
 /** Where publish_change sends a bundle: the sink, and the project config it was built from (loaded once). */
 export interface PublishTarget {
@@ -92,6 +92,8 @@ export async function publishBundle(
     slug: change.slice(5),
     title: `Change ${change}`,
     changesDir: changesRel,
+    baseRef: manifest.baseRef,
+    lockPath: relTo(root, join(config.outRoot, config.out.lock)),
     body: `Published from a compiled bundle through the Domain MCP.\n\nBundle hash: ${manifest.hash}\nBase ref: ${manifest.baseRef}\n\nThe hash proves the bundle is unchanged, not who made it: review the files before merging.`,
     files: planned.map((p) => ({ path: p.rel, content: p.content })),
   });
@@ -118,6 +120,7 @@ const inRepo = (sink: ChangeSink, prefix: string): ChangeSink =>
           sink.publish({
             ...change,
             changesDir: prefix + change.changesDir,
+            lockPath: prefix + change.lockPath,
             files: change.files.map((f) => ({ ...f, path: prefix + f.path })),
           }),
       };

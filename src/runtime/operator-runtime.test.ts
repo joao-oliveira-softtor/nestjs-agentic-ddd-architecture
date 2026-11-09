@@ -112,3 +112,18 @@ test('useCase finds the declaration of its own class in the runtime registry and
   );
   expect(runtime.useCase(f.Agent)).toBeUndefined();
 });
+
+test('registration refuses a timeoutMs above the setTimeout maximum and names the reason', async () => {
+  const f = fixture();
+  f.registry.operators[0] = {
+    ...f.registry.operators[0]!,
+    limits: { ...f.registry.operators[0]!.limits, timeoutMs: 2_147_483_648 },
+  };
+  const runtime = new OperatorRuntime({ ...f, llm: new FakeLlm([]) });
+  expect(
+    runtime.register(
+      f.Agent,
+      new Map([[f.Tool, { execute: async (input: unknown) => input }]]),
+    ),
+  ).rejects.toThrow('timeoutMs must not exceed 2147483647');
+});

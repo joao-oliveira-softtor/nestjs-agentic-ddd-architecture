@@ -13,6 +13,10 @@ export interface PublishableChange {
   readonly body: string;
   /** Repository-relative POSIX directory of the `NNNN-slug` folders; the sink refuses a number already used there or in its `archive/`. */
   readonly changesDir: string;
+  /** The commit the files were built on; the sink refuses when a target file or the lock changed on the default branch since. */
+  readonly baseRef: string;
+  /** Repository-relative POSIX path of the committed domain lock the bundle was compiled against; guarded like a target. */
+  readonly lockPath: string;
   readonly files: readonly ChangeFile[];
 }
 

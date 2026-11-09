@@ -44,18 +44,18 @@ test('pacotes determinísticos dos quatro tipos compartilham hash e especificaç
   }
 });
 
-test('static mode labels the state, never promises done and keeps the rest of the packet', () => {
+test('the packet labels the state as static, never promises done and never shows blocked', () => {
   const item = report.items.find((i) => i.id === 'method:Product.publish')!;
-  const spec = itemSpecification(ir, item, []);
-  const dynamic = renderPacket(item, spec, 'agentic.config.ts');
-  const staticPacket = renderPacket(item, spec, 'agentic.config.ts', 'static');
-  expect(staticPacket).toContain(
+  expect(item.state).toBe('blocked');
+  const packet = renderPacket(
+    item,
+    itemSpecification(ir, item, []),
+    'agentic.config.ts',
+  );
+  expect(packet).toContain(
     `State: ${item.baseState} (static: tests not run; never certifies done)`,
   );
-  expect(staticPacket).not.toContain('State: blocked');
-  const strip = (text: string) =>
-    text.split('\n').filter((l) => !l.startsWith('- State:'));
-  expect(strip(staticPacket)).toEqual(strip(dynamic));
+  expect(packet).not.toContain('State: blocked');
 });
 
 test('hash exclui localização e mudanças independentes, inclui contratos e regras referenciados', () => {
