@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { scopedTestCommand, testFilesFor } from './item';
+import { closureObligations, scopedTestCommand, testFilesFor } from './item';
 
 const ROOT = '/proj';
 
@@ -97,6 +97,7 @@ test('testFilesFor picks the test files that quote an obligation id, in any exte
       await mkdir(dirname(join(root, file)), { recursive: true });
       await writeFile(join(root, file), text);
     }
+    await mkdir(join(root, 'folder.test.ts'));
     expect(await testFilesFor(root, ['invariant:X/a'])).toEqual([
       'a.test.ts',
       'c.test.tsx',
@@ -106,4 +107,28 @@ test('testFilesFor picks the test files that quote an obligation id, in any exte
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+const node = (id: string, dependsOn: string[], obligations: string[]) => ({
+  id,
+  dependsOn,
+  obligations,
+});
+
+test('closureObligations gathers the obligations of the item and of its dependencies, once each', () => {
+  const items = [
+    node('a', ['b', 'c'], ['a1']),
+    node('b', ['d'], ['b1']),
+    node('c', ['d'], ['c1']),
+    node('d', [], ['d1']),
+    node('unrelated', [], ['u1']),
+  ];
+  expect(closureObligations(items, 'a')).toEqual(['a1', 'b1', 'd1', 'c1']);
+  expect(closureObligations(items, 'd')).toEqual(['d1']);
+});
+
+test('closureObligations stops on a dependency cycle and on an unknown id', () => {
+  const items = [node('a', ['b'], ['a1']), node('b', ['a'], ['b1'])];
+  expect(closureObligations(items, 'a')).toEqual(['a1', 'b1']);
+  expect(closureObligations(items, 'missing')).toEqual([]);
 });

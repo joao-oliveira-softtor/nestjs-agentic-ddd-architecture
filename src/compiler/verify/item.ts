@@ -23,6 +23,7 @@ export interface ItemVerifyReport {
   readonly gates: GateResult[];
 }
 
+// Wider than readStaticTests on purpose: searching the text needs no parser.
 const TEST_FILES = '**/*.{test,spec}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}';
 const PATH_ARGUMENT = /^(\.\.?\/|\/)/;
 const NO_EVIDENCE: TestRun = { cases: [], exitCode: 0 };
@@ -30,8 +31,8 @@ const NO_EVIDENCE: TestRun = { cases: [], exitCode: 0 };
 const posix = (path: string): string => path.replaceAll('\\', '/');
 
 /** Obligation ids of the item and of everything it depends on, directly or not. */
-function closureObligations(
-  items: readonly WorkItemStatus[],
+export function closureObligations(
+  items: readonly Pick<WorkItemStatus, 'id' | 'dependsOn' | 'obligations'>[],
   id: string,
 ): string[] {
   const byId = new Map(items.map((i) => [i.id, i]));
@@ -74,6 +75,24 @@ export async function testFilesFor(
     .sort();
 }
 
+const isPath = (arg: string): boolean => PATH_ARGUMENT.test(arg);
+
+/** A path right after a flag without `=` (`--preload ./setup.ts`) may be that flag's value. */
+function mayBeFlagValue(args: readonly string[], i: number): boolean {
+  const before = args[i - 1];
+  return (
+    isPath(args[i]!) &&
+    before !== undefined &&
+    before.startsWith('-') &&
+    !before.includes('=')
+  );
+}
+
+/** No configured scope means every file is in scope; '' is the root itself. */
+const underAny = (file: string, scopes: readonly string[]): boolean =>
+  scopes.length === 0 ||
+  scopes.some((s) => s === '' || file === s || file.startsWith(`${s}/`));
+
 /**
  * Narrows a `bun test` command to `files`, keeping its flags and only the
  * files that sit under one of its configured paths (`test/evals-*` stay out).
@@ -89,22 +108,16 @@ export function scopedTestCommand(
   files: readonly string[],
 ): string[] | null {
   const args = command.slice(2);
-  const valueOfFlag = (arg: string, i: number): boolean =>
-    PATH_ARGUMENT.test(arg) &&
-    (args[i - 1]?.startsWith('-') ?? false) &&
-    !args[i - 1]!.includes('=');
-  if (command[1] !== 'test' || args.some(valueOfFlag)) return [...command];
+  if (command[1] !== 'test' || args.some((_, i) => mayBeFlagValue(args, i)))
+    return [...command];
   const scopes = args
-    .filter((arg) => PATH_ARGUMENT.test(arg))
+    .filter(isPath)
     .map((arg) => posix(relative(root, resolve(root, arg))));
-  const inScope = (file: string): boolean =>
-    scopes.length === 0 ||
-    scopes.some((s) => s === '' || file === s || file.startsWith(`${s}/`));
-  const selected = files.map(posix).filter(inScope);
+  const selected = files.map(posix).filter((file) => underAny(file, scopes));
   return selected.length
     ? [
         ...command.slice(0, 2),
-        ...args.filter((arg) => !PATH_ARGUMENT.test(arg)),
+        ...args.filter((arg) => !isPath(arg)),
         ...selected.map((file) => `./${file}`),
       ]
     : null;
