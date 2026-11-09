@@ -1,5 +1,5 @@
 import { DomainError, type UseCase } from '@agentic-ddd/core';
-import { defaultRegistry, type ClassRef } from '@agentic-ddd/decorators';
+import type { ClassRef, Registry } from '@agentic-ddd/decorators';
 import {
   createRuntime,
   runUseCase,
@@ -7,9 +7,15 @@ import {
   type RuntimeOptions,
 } from '@agentic-ddd/runtime';
 import {
+  ERROR_CODE,
   Elysia,
   ElysiaCustomStatusResponse,
   InternalServerError,
+  InvalidCookieSignature,
+  InvalidFileType,
+  NotFoundError,
+  ParseError,
+  ValidationError,
   type CreateEden,
 } from 'elysia';
 
@@ -99,10 +105,26 @@ type WithRoutes<R> =
     ? Elysia<B, S, D, M, Routes & R, E, V>
     : never;
 
-function carriesHttpStatus(error: unknown): boolean {
-  if (error instanceof ElysiaCustomStatusResponse) return true;
-  const status = (error as { status?: unknown } | null)?.status;
-  return typeof status === 'number' && status >= 400 && status < 600;
+const ELYSIA_ERRORS = [
+  ElysiaCustomStatusResponse,
+  InternalServerError,
+  InvalidCookieSignature,
+  InvalidFileType,
+  NotFoundError,
+  ParseError,
+  ValidationError,
+];
+
+/**
+ * `status()`, Elysia's own errors and the classes an app registered with `.error()`, whose
+ * prototype Elysia marks with ERROR_CODE. An outside client's error (AxiosError, FetchError)
+ * also has a `status`, but its status and message must not reach the client.
+ */
+function isElysiaError(error: unknown): boolean {
+  return (
+    ELYSIA_ERRORS.some((cls) => error instanceof cls) ||
+    (typeof error === 'object' && error !== null && ERROR_CODE in error)
+  );
 }
 
 /**
@@ -130,7 +152,7 @@ function rejectSecondMount(app: Base): void {
 /** The use-cases that get a route: `http.routes`, or all, none of them approval-gated. */
 function routesToMount<
   M extends { record: { name: string; target: ClassRef } },
->(options: AgenticOptions, mounted: M[]): M[] {
+>(options: AgenticOptions, registry: Registry, mounted: M[]): M[] {
   const listed = options.http?.routes;
   if (listed) {
     for (const name of listed)
@@ -138,7 +160,6 @@ function routesToMount<
         throw new Error(`http.routes names ${name}, which is not in useCases`);
     return mounted.filter(({ record }) => listed.includes(record.name));
   }
-  const registry = options.registry ?? defaultRegistry;
   for (const { record } of mounted) {
     const gate = registry.operators.find(
       (operator) =>
@@ -204,12 +225,16 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
   const mounted = Object.entries(options.useCases).map(([name, instance]) =>
     mountedUseCase(runtime, name, instance),
   );
-  const routes = options.http ? routesToMount(options, mounted) : [];
+  const routes = options.http
+    ? routesToMount(options, runtime.registry, mounted)
+    : [];
   const instances = new Map(
     mounted.map(({ record, instance }) => [record.target, instance]),
   );
-  for (const operator of options.operators)
-    await runtime.register(operator, instances);
+  // register() rechecks the name right before storing it, so a duplicate still fails.
+  await Promise.all(
+    options.operators.map((operator) => runtime.register(operator, instances)),
+  );
   const app = new Elysia({ name: 'agentic-ddd' }).decorate('agentic', runtime);
   rejectSecondMount(app);
   if (!options.http) return app;
@@ -226,7 +251,7 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
             // Elysia's default 500 echoes error.message; the original stays on `cause` for the app's onError.
             if (!(error instanceof DomainError)) {
               // The app's own Elysia errors (NotFoundError, `status()`, `.error()` classes) keep their status.
-              if (carriesHttpStatus(error)) throw error;
+              if (isElysiaError(error)) throw error;
               throw Object.assign(new InternalServerError(), { cause: error });
             }
             return status(422, {

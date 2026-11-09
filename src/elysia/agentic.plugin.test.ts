@@ -5,7 +5,7 @@ import { treaty } from '@elysiajs/eden';
 import { Elysia, NotFoundError, status } from 'elysia';
 import { z } from 'zod';
 import type { UseCase } from '@agentic-ddd/core';
-import { AgentUseCase } from '@agentic-ddd/decorators';
+import { AgentUseCase, Operator } from '@agentic-ddd/decorators';
 import { OperatorRuntime } from '@agentic-ddd/runtime';
 import { agentic } from './index';
 import { CreateOrder } from '../../examples/orders/application/create-order';
@@ -239,7 +239,9 @@ test('an unexpected error answers a generic 500 and the app onError still sees t
   name: 'elysia_failing',
   description: 'Fails with the error the input asks for.',
   whenToUse: 'Only in tests.',
-  input: z.object({ kind: z.enum(['not-found', 'status', 'custom']) }),
+  input: z.object({
+    kind: z.enum(['not-found', 'status', 'custom', 'outside']),
+  }),
   output: z.object({}),
   uses: [],
   emits: [],
@@ -248,8 +250,16 @@ class Failing implements UseCase<{ kind: string }, {}> {
   async execute({ kind }: { kind: string }): Promise<{}> {
     if (kind === 'not-found') throw new NotFoundError('gone');
     if (kind === 'status') throw status(418, 'teapot');
-    throw Object.assign(new Error('clash'), { status: 409 });
+    if (kind === 'custom') throw new Clash('clash');
+    // An outside HTTP client's error (AxiosError, FetchError) also carries a status.
+    throw Object.assign(new Error('invalid upstream token for tenant X'), {
+      status: 401,
+    });
   }
+}
+
+class Clash extends Error {
+  status = 409;
 }
 
 test("the app's own HTTP errors pass through unchanged", async () => {
@@ -261,7 +271,7 @@ test("the app's own HTTP errors pass through unchanged", async () => {
     useCases: { elysia_failing: new Failing() },
     http: {},
   });
-  const app = new Elysia().use(plugin);
+  const app = new Elysia().error({ Clash }).use(plugin);
   const call = async (kind: string) => {
     const response = await app.handle(
       post('/agentic/use-cases/elysia_failing', { kind }),
@@ -271,6 +281,22 @@ test("the app's own HTTP errors pass through unchanged", async () => {
   expect(await call('not-found')).toEqual([404, 'gone']);
   expect(await call('status')).toEqual([418, 'teapot']);
   expect((await call('custom'))[0]).toBe(409);
+});
+
+test("an outside error's status and message never reach the client", async () => {
+  const plugin = await agentic({
+    root,
+    modules: [{ name: 'elysia-test', path: 'src/elysia' }],
+    llm: new FakeLlm([]),
+    operators: [],
+    useCases: { elysia_failing: new Failing() },
+    http: {},
+  });
+  const response = await plugin.handle(
+    post('/agentic/use-cases/elysia_failing', { kind: 'outside' }),
+  );
+  expect(response.status).toBe(500);
+  expect(await response.text()).not.toContain('upstream token');
 });
 
 test('a subclass of a declared use-case mounts under the declared name', async () => {
@@ -364,6 +390,44 @@ test('a use-case that requires approval in an operator is mounted only when list
     (await explicit.handle(post('/agentic/use-cases/cancel_order', cancel)))
       .status,
   ).not.toBe(404);
+});
+
+// Declared here, outside the orders module, so the runtime's scoped registry does not have it.
+@Operator({
+  name: 'elysia-outsider',
+  description: 'Cancels orders from outside the configured modules.',
+  instructions: 'Only in tests.',
+  useCases: [CancelOrder],
+  requiresApproval: [CancelOrder],
+})
+class Outsider {}
+
+test('an operator outside the configured modules fails as not declared, before any approval check', async () => {
+  const mounting = agentic({
+    root,
+    modules,
+    llm: new FakeLlm([]),
+    operators: [Outsider],
+    useCases: { cancel_order: new CancelOrder(new InMemoryOrderRepository()) },
+    http: {},
+  });
+  expect(await rejection(mounting)).toBe('Operator Outsider is not declared');
+});
+
+test('the same operator twice fails the mount, though operators register concurrently', async () => {
+  const orders = new InMemoryOrderRepository();
+  const mounting = agentic({
+    root,
+    modules,
+    llm: new FakeLlm([]),
+    operators: [OrderOperator, OrderOperator],
+    useCases: {
+      create_order: new CreateOrder(orders),
+      confirm_order: new ConfirmOrder(orders),
+      cancel_order: new CancelOrder(orders),
+    },
+  });
+  expect(await rejection(mounting)).toBe('Duplicate operator order-operator');
 });
 
 test('http.routes naming a use-case that was not passed fails the mount', async () => {

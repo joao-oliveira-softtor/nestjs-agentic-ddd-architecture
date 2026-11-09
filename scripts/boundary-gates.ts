@@ -226,13 +226,13 @@ export function importSpecifiers(text: string): string[] {
   return scanImports(text).specifiers;
 }
 
-const FRAMEWORK_RUNTIME = new Set([
+export const FRAMEWORK_RUNTIME = new Set([
   '@agentic-ddd/runtime',
   '@agentic-ddd/nestjs',
   '@agentic-ddd/elysia',
   'elysia',
 ]);
-const FRAMEWORK_PREFIX = /^(?:@nestjs\/|elysia\/|@elysiajs\/)/;
+export const FRAMEWORK_PREFIX = /^(?:@nestjs\/|elysia\/|@elysiajs\/)/;
 /** Pastas que a camada não pode importar, a partir das convenções. */
 export function outerFolders(
   conventions: ResolvedConventions,
