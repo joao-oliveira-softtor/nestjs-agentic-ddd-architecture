@@ -10,6 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { CLI_TEST_TIMEOUT_MS } from '../../test/helpers/timeouts';
+import { packet } from '../compiler/packet';
 import { verifyItem } from '../compiler/verify/item';
 
 const ROOT = resolve(import.meta.dir, '../..');
@@ -357,6 +358,21 @@ test(
   },
   CLI_TEST_TIMEOUT_MS,
 );
+
+test('packet in process: never runs tests and rejects an unknown item', async () => {
+  const { dir } = await queryFixture();
+  try {
+    const configPath = join(dir, 'agentic.config.ts');
+    const text = await packet({ configPath, item: 'entity:Thing' });
+    expect(text).toContain('covered (static: tests not run');
+    expect(await Bun.file(join(dir, 'runs')).exists()).toBe(false);
+    await expect(packet({ configPath, item: 'entity:Nope' })).rejects.toThrow(
+      'work item entity:Nope not found',
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}, CLI_TEST_TIMEOUT_MS);
 
 test('packet never runs tests, with or without --static, and prints the same packet', async () => {
   const { dir, run } = await queryFixture();
