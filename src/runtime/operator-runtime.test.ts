@@ -127,3 +127,27 @@ test('registration refuses a timeoutMs above the setTimeout maximum and names th
     ),
   ).rejects.toThrow('timeoutMs must not exceed 2147483647');
 });
+
+test('an operator may require approval for its own use-cases, never for one outside its allowlist', async () => {
+  const register = (approval: 'Tool' | 'Outside') => {
+    const f = fixture();
+    f.registry.operators[0] = {
+      ...f.registry.operators[0]!,
+      requiresApproval: [f[approval]],
+    };
+    f.compileSkill();
+    const runtime = new OperatorRuntime({ ...f, llm: new FakeLlm([]) });
+    return runtime.register(
+      f.Agent,
+      new Map([[f.Tool, { execute: async (input: unknown) => input }]]),
+    );
+  };
+  expect(await register('Tool')).toBeUndefined();
+  // Settled to the message: an un-awaited `.rejects` can end the test before it checks.
+  expect(
+    await register('Outside').then(
+      () => 'resolved',
+      (error: Error) => error.message,
+    ),
+  ).toBe('Approval target outside allowlist');
+});

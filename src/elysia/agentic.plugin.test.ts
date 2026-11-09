@@ -2,7 +2,17 @@ import { expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { FakeLlm, InMemoryEventBus } from '@agentic-ddd/testing';
 import { treaty } from '@elysiajs/eden';
-import { Elysia, NotFoundError, status } from 'elysia';
+import {
+  ERROR_CODE,
+  Elysia,
+  InternalServerError,
+  InvalidCookieSignature,
+  InvalidFileType,
+  NotFoundError,
+  ParseError,
+  ValidationError,
+  status,
+} from 'elysia';
 import { z } from 'zod';
 import type { UseCase } from '@agentic-ddd/core';
 import { AgentUseCase, Operator } from '@agentic-ddd/decorators';
@@ -297,6 +307,116 @@ test("an outside error's status and message never reach the client", async () =>
   );
   expect(response.status).toBe(500);
   expect(await response.text()).not.toContain('upstream token');
+});
+
+// What elysia_throwing throws; each test sets it before its call.
+let thrown: unknown;
+
+@AgentUseCase({
+  name: 'elysia_throwing',
+  description: 'Throws the value the test set.',
+  whenToUse: 'Only in tests.',
+  input: z.object({}),
+  output: z.object({}),
+  uses: [],
+  emits: [],
+})
+class Throwing implements UseCase<{}, {}> {
+  async execute(): Promise<{}> {
+    throw thrown;
+  }
+}
+
+const throwingPlugin = () =>
+  agentic({
+    root,
+    modules: [{ name: 'elysia-test', path: 'src/elysia' }],
+    llm: new FakeLlm([]),
+    operators: [],
+    useCases: { elysia_throwing: new Throwing() },
+    http: {},
+  });
+
+const answer = async (
+  app: { handle(request: Request): Promise<Response> },
+  error: unknown,
+) => {
+  thrown = error;
+  const response = await app.handle(
+    post('/agentic/use-cases/elysia_throwing', {}),
+  );
+  return [response.status, await response.text()] as const;
+};
+
+test('every error class Elysia exports passes through with its own status', async () => {
+  const app = new Elysia().use(await throwingPlugin());
+  const generic = await answer(app, new Error('plain'));
+  for (const [error, code] of [
+    [new InternalServerError('own 500'), 500],
+    [new NotFoundError('gone'), 404],
+    [new ParseError(), 400],
+    [new ValidationError('body', z.object({ a: z.string() }), {}), 422],
+    [new InvalidCookieSignature('session'), 400],
+    [new InvalidFileType('file', 'image/png'), 422],
+    [status(418, 'teapot'), 418],
+  ] as const) {
+    const [answered, text] = await answer(app, error);
+    expect([error.constructor.name, answered]).toEqual([
+      error.constructor.name,
+      code,
+    ]);
+    expect(text).not.toBe(generic[1]);
+  }
+});
+
+class UpstreamError extends Error {
+  status = 401;
+}
+class SubClash extends Clash {}
+
+test('.error() passes only the exact class it registered, never a subclass', async () => {
+  // Registering Error marks Error.prototype for the whole process, so undo it.
+  const app = new Elysia().error({ Error, Clash }).use(await throwingPlugin());
+  try {
+    const upstream = await answer(
+      app,
+      new UpstreamError('invalid upstream token for tenant X'),
+    );
+    expect(upstream[0]).toBe(500);
+    expect(upstream[1]).not.toContain('upstream token');
+    expect((await answer(app, new Clash('clash')))[0]).toBe(409);
+    expect((await answer(app, new SubClash('sub')))[0]).toBe(500);
+    const raw = await answer(app, 'raw secret');
+    expect(raw[0]).toBe(500);
+    expect(raw[1]).not.toContain('raw secret');
+  } finally {
+    delete (Error.prototype as { [ERROR_CODE]?: string })[ERROR_CODE];
+  }
+});
+
+test("the generic 500 does not serialize the original error for the app's onError", async () => {
+  const seen: unknown[] = [];
+  const app = new Elysia()
+    .onError(({ error }) => {
+      seen.push(error);
+    })
+    .use(await throwingPlugin());
+  const original = Object.assign(new Error('upstream'), {
+    config: { headers: { authorization: 'Bearer secret-token' } },
+  });
+  expect((await answer(app, original))[0]).toBe(500);
+  const wrapped = seen[0] as Error;
+  expect(wrapped.cause).toBe(original);
+  expect(JSON.stringify(wrapped)).not.toContain('secret-token');
+  // Spread, Object.assign and loggers copy only own enumerable keys.
+  expect(Object.keys(wrapped)).not.toContain('cause');
+});
+
+test('the plugin has no parent before it is mounted', async () => {
+  const plugin = (await throwingPlugin()) as unknown as {
+    getParent(): unknown;
+  };
+  expect(plugin.getParent()).toBeNull();
 });
 
 test('a subclass of a declared use-case mounts under the declared name', async () => {

@@ -119,12 +119,16 @@ const ELYSIA_ERRORS = [
  * `status()`, Elysia's own errors and the classes an app registered with `.error()`, whose
  * prototype Elysia marks with ERROR_CODE. An outside client's error (AxiosError, FetchError)
  * also has a `status`, but its status and message must not reach the client.
+ * The mark is process-wide and inherited, so only the exact registered class counts:
+ * `.error({ Error })` must not let every Error subclass through.
  */
 function isElysiaError(error: unknown): boolean {
-  return (
-    ELYSIA_ERRORS.some((cls) => error instanceof cls) ||
-    (typeof error === 'object' && error !== null && ERROR_CODE in error)
-  );
+  if (ELYSIA_ERRORS.some((cls) => error instanceof cls)) return true;
+  const prototype: unknown =
+    typeof error === 'object' && error !== null
+      ? Object.getPrototypeOf(error)
+      : null;
+  return prototype !== null && Object.hasOwn(prototype as object, ERROR_CODE);
 }
 
 /**
@@ -252,7 +256,13 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
             if (!(error instanceof DomainError)) {
               // The app's own Elysia errors (NotFoundError, `status()`, `.error()` classes) keep their status.
               if (isElysiaError(error)) throw error;
-              throw Object.assign(new InternalServerError(), { cause: error });
+              // Not enumerable, so an onError that serializes the 500 does not leak the original.
+              throw Object.defineProperty(new InternalServerError(), 'cause', {
+                value: error,
+                enumerable: false,
+                configurable: true,
+                writable: true,
+              });
             }
             return status(422, {
               code: error.code,
