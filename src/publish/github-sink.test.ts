@@ -298,6 +298,53 @@ describe('GitHubChangeSink', () => {
       nothingCreated(fake);
     });
 
+    test('keeps a 422 that is not "No commit found" as host-failed', async () => {
+      const { fake, sink } = withHistory({ [file]: 'v1' });
+      fake.failWith = {
+        match: '/compare/sha-old...sha-base',
+        status: 422,
+        body: 'Validation Failed',
+      };
+      expect((await failure(sink.publish(based))).code).toBe(
+        'publish.host-failed',
+      );
+    });
+
+    describe('a base with commits the default branch lacks', () => {
+      // The fake host has no merge bases: the forward answer is rewritten, the reverse one is computed.
+      const diverged = (fake: { fetch: typeof fetch }) =>
+        sinkOver(fake, (u) =>
+          u.includes('/compare/sha-old...sha-base')
+            ? Response.json({ status: 'diverged', files: [] })
+            : undefined,
+        );
+
+      test('refuses when the base side moved the lock', async () => {
+        const { fake } = withHistory(
+          { [file]: 'v1', [lock]: 'main' },
+          { [file]: 'v1', [lock]: 'branch' },
+        );
+        const e = await failure(diverged(fake).publish(based));
+        expect(e.code).toBe('publish.base-mismatch');
+        expect(e.message).toContain('another lock');
+        expect(
+          fake.requests.filter((q) =>
+            q.includes('/compare/sha-base...sha-old'),
+          ),
+        ).toHaveLength(1);
+        nothingCreated(fake);
+      });
+
+      test('publishes when neither side touched a target or the lock', async () => {
+        const { fake } = withHistory(
+          { [file]: 'v1', 'other.md': 'a' },
+          { [file]: 'v1', 'other.md': 'b' },
+        );
+        await diverged(fake).publish(based);
+        expect(fake.pulls).toHaveLength(1);
+      });
+    });
+
     test.each([
       [500, 'publish.host-failed'],
       [403, 'publish.host-denied'],
