@@ -66,3 +66,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Tutorial output (bun run skills:example)
 scratch/
+
+# Claude Code worktrees (embedded repos) and ub-mode tool output
+/.claude/worktrees/
+.metrics/
+target/

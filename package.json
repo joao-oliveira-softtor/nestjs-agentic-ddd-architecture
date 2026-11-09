@@ -28,7 +28,8 @@
     "build:app": "bun build ./src/main.ts --target=bun --packages=external --sourcemap=linked --outdir=dist",
     "prepack": "bun run build",
     "prepublishOnly": "node scripts/block-publish.cjs",
-    "test:package": "bun scripts/package-smoke.ts"
+    "test:package": "bun scripts/package-smoke.ts",
+    "ci:docker": "bun scripts/ci-docker.ts"
   },
   "dependencies": {
     "zod": "^4.6.5",
