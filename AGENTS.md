@@ -12,10 +12,7 @@ Este repositório é o framework `@agentic-ddd` (em `src/`) e o app de exemplo `
 - Testes com `bun:test`; snapshots em `__snapshots__/` são revisados como código.
 - Teste novo em `test/` fora de `evals-*` entra em `verify.test` do `agentic.config.ts` (o `evals-verification-scope` confere); teste que roda `verify --item` aninhado vai como `test/evals-*`.
 - A sessão principal deve planejar com o ecc:plan e coordenar o trabalho separando em tasks identificando dependências entre as tasks e direcionando-as para subagents
-- Os subagents deverão rodar em modelos mais básicos, nunca no opus.
-- Quando uma tarefa for complexa, direcione-a para o sonnet, para o restante das tarefas, trabalhe com o haiku
-- As tarefas devem ser bem descritas e otimizadas para serem executadas prioritariamente no haiku
-- Executar o trabalho com a utilização de subagents mais baratos sempre priorizando a mesma qualidade do modelo maior (opus) em tempo record;
+- Modelo de cada subagent pelo trabalho, sempre explícito no dispatch: haiku para tarefa mecânica com brief completo (resolver conflito de `CHANGELOG.md`, rodar uma medição); sonnet como padrão de implementação, correção e revisão de escopo claro; opus para arquitetura, segurança, revisão final e causa raiz difícil. Escreva o brief para que o modelo mais barato que dá conta da tarefa a conclua sem perguntar.
 
 ## Skill autoral e agentes
 
