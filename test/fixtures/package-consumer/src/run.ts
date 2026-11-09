@@ -3,28 +3,28 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
 import { Module } from '@nestjs/common';
-import { Entity as RootEntity } from 'nestjs-agentic-ddd-architecture';
-import { Entity } from 'nestjs-agentic-ddd-architecture/core';
-import { defaultRegistry } from 'nestjs-agentic-ddd-architecture/decorators';
+import { Entity as RootEntity } from 'agentic-ddd';
+import { Entity } from 'agentic-ddd/core';
+import { defaultRegistry } from 'agentic-ddd/decorators';
 import {
   buildIR,
   irHash,
   analyzeProject,
   defineConfig,
-} from 'nestjs-agentic-ddd-architecture/compiler';
+} from 'agentic-ddd/compiler';
 import {
   OperatorRuntime,
   InMemoryEventBus,
-} from 'nestjs-agentic-ddd-architecture/runtime';
+} from 'agentic-ddd/runtime';
 import {
   AgenticModule,
   LLM_PORT,
-} from 'nestjs-agentic-ddd-architecture/nestjs';
+} from 'agentic-ddd/nestjs';
 import {
   FakeLlm,
   InMemoryEventBus as TestBus,
   covers,
-} from 'nestjs-agentic-ddd-architecture/testing';
+} from 'agentic-ddd/testing';
 import {
   Greeting,
   GreetPerson,

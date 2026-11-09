@@ -1,13 +1,13 @@
 import 'reflect-metadata';
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { Entity, type UseCase } from 'nestjs-agentic-ddd-architecture/core';
+import { Entity, type UseCase } from 'agentic-ddd/core';
 import {
   AgentEntity,
   AgentMethod,
   AgentUseCase,
   Operator,
-} from 'nestjs-agentic-ddd-architecture/decorators';
+} from 'agentic-ddd/decorators';
 
 @AgentEntity({ description: 'A named greeting.' })
 export class Greeting extends Entity<string> {

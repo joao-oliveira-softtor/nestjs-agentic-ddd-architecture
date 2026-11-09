@@ -302,7 +302,7 @@ export function createDomainServer(
   };
   const annotations = { readOnlyHint: true, openWorldHint: false };
   const server = new McpServer(
-    { name: 'agentic-ddd', version: '0.5.0' },
+    { name: 'agentic-ddd', version: '0.6.0' },
     { instructions: INSTRUCTIONS },
   );
 

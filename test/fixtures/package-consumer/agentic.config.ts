@@ -1,2 +1,2 @@
-import { defineConfig } from 'nestjs-agentic-ddd-architecture/compiler';
+import { defineConfig } from 'agentic-ddd/compiler';
 export default defineConfig({ modules: [{ name: 'shop', path: 'src/shop' }] });

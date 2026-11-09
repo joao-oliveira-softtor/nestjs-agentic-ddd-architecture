@@ -2,6 +2,10 @@
 
 ## [Não lançado]
 
+## [0.6.0] — 2026-11-09
+
+- **Published on npm as `agentic-ddd`:** the package was called `nestjs-agentic-ddd-architecture` and shipped only as a GitHub release tarball; it is now public on the npm registry. Imports change from `nestjs-agentic-ddd-architecture/<boundary>` to `agentic-ddd/<boundary>` (same eight boundaries, same `agentic-ddd` binary). `private: true` and the `prepublishOnly` gate (`scripts/block-publish.cjs`) are gone; `docs/distribution.md` lists the publication steps.
+
 - **Elysia adapter (ADR-0008):** the same decorated domain mounts on Elysia through `@agentic-ddd/elysia` (`elysia` is an optional peer).
   - `agentic({ ...RuntimeOptions, operators, useCases, http? })` registers the operators and decorates the app with the runtime. Use-cases are passed as instances keyed by the `name` of their `@AgentUseCase`; a different key or a value without the decorator fails the mount.
   - With `http`, each use-case gets `POST {prefix}/use-cases/<name>`, validated by the decorator's zod schemas, and Eden infers the types end to end. `DomainError` answers 422 `{ code, message }`, typed together with Elysia's own validation 422 (`ValidationErrorBody`, which includes its `errors` array) so the client can tell the two apart; any other error answers a generic 500 without the original message. The routes do not go through the `ApprovalPort`; authentication is up to the app (use `onRequest`, which runs before body validation). Operators get no HTTP route (ADR-0007 D5).
@@ -58,6 +62,8 @@
   - **Segurança:** `rules.dir` fora da raiz, a tool MCP `rules_for_path` com `..\`, `./../` ou `x/../../` e o `within` do harness de evals aceitavam caminhos fora da raiz, porque a checagem só via um `../` inicial. Agora o caminho é normalizado antes de ser comparado.
 
 - **Mudança de compatibilidade (#110, ADR-0007 D13):** a skill autoral `skills/agentic-ddd` (SKILL.md e referências), os núcleos de papel (`ROLE_CORES`), o texto dos briefs de executor e revisor e os adaptadores instalados por `skills:install` passam a ser só em inglês. Quem tem adaptadores instalados precisa removê-los e reinstalar (o texto antigo conta como conflito). Os briefs e os núcleos ganham a linha que manda manter identificadores, IDs de regra e texto de negócio sem tradução, e a skill manda responder ao usuário no idioma dele. Os rótulos do packet, as mensagens de erro e os tutoriais de exemplo (`tasks`, `matriculas`) não mudam nesta etapa. O texto medido no cycle-21 e no benchmark de revisão muda; o snapshot `agent-briefs` e o hash da árvore do tutorial foram regenerados.
+
+See [docs/releases/0.6.0.md](docs/releases/0.6.0.md).
 
 ## [0.5.0] — 2026-10-25
 
@@ -168,3 +174,4 @@ Veja [demonstração e validação](docs/releases/0.1.0.md) e [roadmap](docs/ROA
 [0.3.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.3.0
 [0.4.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.4.0
 [0.5.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.5.0
+[0.6.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.6.0

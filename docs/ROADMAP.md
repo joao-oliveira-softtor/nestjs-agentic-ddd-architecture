@@ -59,6 +59,10 @@ Também saem nesta versão: regras do time (#66), layout configurável (#67) e s
 
 A #69 (servidor MCP remoto) e o épico #70 não entram nesta versão e seguem abertos. O ciclo 22 está pré-registrado e ainda não foi executado.
 
+## v0.6.0 — Publicação no npm e Domain MCP como porta de entrada
+
+[Release](releases/0.6.0.md) e [changelog](../CHANGELOG.md). Primeira publicação no npm, como `agentic-ddd`. Entrega as fases 0 a 3 da [ADR-0007](adr/ADR-0007.md) (épicos #105 e #107): mensagens e texto gerado em inglês com códigos de erro (#109 a #111), Domain MCP por HTTP com OAuth, acesso por módulo e lock publicado (#112 a #114), skill autoral pelo MCP (#116) e o caminho de Delta a pull request (#117 a #122, #144). Também saem o adaptador Elysia ([ADR-0008](adr/ADR-0008.md)), o suporte nativo a Windows (#128) e as correções da auditoria #156 a #159. A fase 4 (Runtime MCP, #123 e #124) e os achados #160 a #176 seguem abertos.
+
 ## Frente encerrada — Orquestração de agentes por camada e modelo
 
 Épico [#26](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/26) (sub-issues #27–#39). Objetivo: reduzir tokens e custo com briefs determinísticos por tarefa e distribuição do trabalho por camada entre Haiku, Sonnet e Opus. [Spec](superpowers/specs/2026-10-12-orquestracao-agentes-por-modelo.md), [ADR-0003](adr/ADR-0003.md), [plano](superpowers/plans/2026-10-13-orquestracao-agentes-por-modelo.md) e [pesquisa](research/2026-10-12-orquestracao-agentes-por-modelo/relatorio.md). **Entregue:** `packet --static`, gerador de briefs, executor de domínio isolado, gates de fronteira, papel de revisor, adapter Claude no harness, driver de orquestração com escalação, benchmark de revisão e a medição de custo de sessão (`evals:session-cost`). **Resultado:** o piloto cycle-21 ([#36](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/issues/36), [resultado](superpowers/validation/2026-10-22-cycle-21/RESULTADO.md)) classificou S: Sonnet medium sozinho aceitou tanto quanto o roteamento, com custo um pouco menor. O padrão é o modelo `inherit` com brief e gates; o roteamento fica como experimento; #33 e #38 não serão feitas.
@@ -113,4 +117,4 @@ A linha de base do critério de sucesso é o A0 do piloto cycle-21 (Sonnet mediu
 - Versionar spec e plano; declarações de negócio novas exigem proposal antes do código.
 - Executar com testes e validações apropriadas e registrar decisões/progresso.
 
-O canal HTTP exige revisão explícita do gate que hoje proíbe qualquer @Controller. `reactsTo` exige fila, evitando publicação reentrante. Distribuição npm exige smoke em consumidor sem aliases locais. Essas decisões fazem parte das respectivas issues, não de alterações implícitas nesta release.
+O canal HTTP exige revisão explícita do gate que hoje proíbe qualquer @Controller. `reactsTo` exige fila, evitando publicação reentrante. Essas decisões fazem parte das respectivas issues, não de alterações implícitas nesta release.
