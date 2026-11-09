@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve, sep } from 'node:path';
+import { FRAMEWORK_PREFIX, FRAMEWORK_RUNTIME } from '../scripts/boundary-gates';
 
 const ROOT = resolve(import.meta.dir, '..');
 const IMPORT =
@@ -71,9 +72,7 @@ describe('arquitetura', () => {
       ...filesIn('examples/orders/application'),
     ];
     const forbidden = (s: string) =>
-      s.startsWith('@nestjs/') ||
-      s === '@agentic-ddd/runtime' ||
-      s === '@agentic-ddd/nestjs';
+      FRAMEWORK_PREFIX.test(s) || FRAMEWORK_RUNTIME.has(s);
     expect(offenders(files, (_f, s) => !forbidden(s))).toEqual([]);
   });
 
@@ -130,7 +129,9 @@ describe('arquitetura', () => {
       s.startsWith('node:') ||
       s.startsWith('@modelcontextprotocol/') ||
       resolvesInto(f, s, 'src/mcp') ||
-      /^\.\.\/compiler\/(lock|canonical|rules|snapshot|ir|config|published|conventions|graph|bundle\/index|delta\/schema|changes\/proposal|render\/dev-skill)$/.test(s) ||
+      /^\.\.\/compiler\/(lock|canonical|rules|snapshot|ir|config|published|conventions|graph|bundle\/index|delta\/schema|changes\/proposal|render\/dev-skill)$/.test(
+        s,
+      ) ||
       /^\.\.\/auth\/(resource-server|scopes)$/.test(s) ||
       /^\.\.\/publish\/(bundle|change-sink)$/.test(s) ||
       s.startsWith('../contracts/');

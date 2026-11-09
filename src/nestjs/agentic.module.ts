@@ -5,17 +5,15 @@ import {
   type Provider,
   type Type,
 } from '@nestjs/common';
-import { defaultRegistry } from '@agentic-ddd/decorators';
 import {
   OperatorRuntime,
+  createRuntime,
   InMemoryEventBus,
   type RuntimeOptions,
   type LlmPort,
   type ApprovalPort,
   type EventBus,
 } from '@agentic-ddd/runtime';
-import { resolve } from 'node:path';
-import { declarationsInModules } from '../contracts/scope';
 
 export const LLM_PORT = Symbol('agentic-ddd.LlmPort');
 export const APPROVAL_PORT = Symbol('agentic-ddd.ApprovalPort');
@@ -53,20 +51,7 @@ export class AgenticModule {
             llm: LlmPort,
             approval: ApprovalPort,
             eventBus: EventBus,
-          ) =>
-            new OperatorRuntime({
-              ...options,
-              llm,
-              approval,
-              eventBus,
-              registry:
-                options.registry ??
-                declarationsInModules(
-                  defaultRegistry,
-                  resolve(options.root ?? process.cwd()),
-                  options.modules,
-                ),
-            }),
+          ) => createRuntime({ ...options, llm, approval, eventBus }),
         },
       ],
       exports: [LLM_PORT, APPROVAL_PORT, EVENT_BUS, OperatorRuntime],

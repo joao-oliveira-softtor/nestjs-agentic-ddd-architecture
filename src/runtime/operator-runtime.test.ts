@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test';
 import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FakeLlm } from '@agentic-ddd/testing';
-import { OperatorRuntime } from './index';
+import { OperatorRuntime, createRuntime } from './index';
 
 test('registration loads matching skill; request uses instructions, allowlist, schema and model', async () => {
   const f = fixture();
@@ -103,6 +103,16 @@ test('concurrent registrations of the same operator reject one instead of overwr
   );
 });
 
+test('useCase finds the declaration of its own class in the runtime registry and nothing for other classes', () => {
+  const f = fixture();
+  const runtime = createRuntime({ ...f, llm: new FakeLlm([]) });
+  expect(runtime.useCase(f.Tool)).toBe(f.registry.useCases[0]);
+  expect(runtime.useCase(f.registry.useCases[1]!.target)).toBe(
+    f.registry.useCases[1]!,
+  );
+  expect(runtime.useCase(f.Agent)).toBeUndefined();
+});
+
 test('registration refuses a timeoutMs above the setTimeout maximum and names the reason', async () => {
   const f = fixture();
   f.registry.operators[0] = {
@@ -116,4 +126,28 @@ test('registration refuses a timeoutMs above the setTimeout maximum and names th
       new Map([[f.Tool, { execute: async (input: unknown) => input }]]),
     ),
   ).rejects.toThrow('timeoutMs must not exceed 2147483647');
+});
+
+test('an operator may require approval for its own use-cases, never for one outside its allowlist', async () => {
+  const register = (approval: 'Tool' | 'Outside') => {
+    const f = fixture();
+    f.registry.operators[0] = {
+      ...f.registry.operators[0]!,
+      requiresApproval: [f[approval]],
+    };
+    f.compileSkill();
+    const runtime = new OperatorRuntime({ ...f, llm: new FakeLlm([]) });
+    return runtime.register(
+      f.Agent,
+      new Map([[f.Tool, { execute: async (input: unknown) => input }]]),
+    );
+  };
+  expect(await register('Tool')).toBeUndefined();
+  // Settled to the message: an un-awaited `.rejects` can end the test before it checks.
+  expect(
+    await register('Outside').then(
+      () => 'resolved',
+      (error: Error) => error.message,
+    ),
+  ).toBe('Approval target outside allowlist');
 });

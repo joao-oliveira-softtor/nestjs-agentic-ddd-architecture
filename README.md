@@ -128,6 +128,36 @@ O `AppModule` compõe orders com FakeLlm de roteiro vazio: o v0 não fornece can
 
 Os [E2E](examples/orders/test/operator.test.ts) compilam a skill e validam criação/confirmação, cancelamento, aprovação, outputs, eventos e IDs com a composição Nest.
 
+## Executar no Elysia
+
+O mesmo domínio decorado monta no Elysia por `@agentic-ddd/elysia` ([ADR-0008](docs/adr/ADR-0008.md)). Os use-cases entram como instâncias, com a chave igual ao `name` do `@AgentUseCase`:
+
+```ts
+import { Elysia } from 'elysia';
+import { agentic } from '@agentic-ddd/elysia';
+
+const orders = new InMemoryOrderRepository();
+const app = new Elysia().use(
+  await agentic({
+    llm,
+    modules: [{ name: 'orders', path: 'examples/orders' }],
+    operators: [OrderOperator],
+    useCases: {
+      create_order: new CreateOrder(orders),
+      confirm_order: new ConfirmOrder(orders),
+      cancel_order: new CancelOrder(orders),
+    },
+    // opcional: POST /agentic/use-cases/<name>; cancel_order exige aprovação no operator, então só entra se listado
+    http: { routes: ['create_order', 'confirm_order'] },
+  }),
+);
+export type App = typeof app;
+```
+
+O plugin registra os operators e decora o app com o runtime como `agentic`; a skill desatualizada falha na inicialização, como no `forFeature`. Monte um único `agentic()` por app, com todos os módulos: o Elysia mantém o primeiro decorator `agentic`, então um segundo `agentic()` no mesmo app falha na montagem. Chave diferente do `name` do decorator, ou valor que não é use-case declarado (ou subclasse de um) nos módulos configurados, é erro de montagem. Com `http`, cada use-case de `http.routes` (default: todos os de `useCases`) ganha `POST {prefix}/use-cases/<name>` (prefixo default `/agentic`; `'/'` monta sem prefixo), validado pelo zod de `input` e respondendo o `output`. `DomainError` vira 422 `{ code, message }`, input inválido vira o 422 de validação do Elysia, só os erros do próprio Elysia (`status()`, classes nativas como `NotFoundError` e exatamente as classes registradas com `.error()`, não suas subclasses; registrar uma classe base como `Error` deixa essa classe exata passar com a mensagem, escolha do app, e as subclasses seguem em 500) chegam ao app intactos, e qualquer outro erro, inclusive o de um cliente HTTP externo com `status`, vira 500 genérico, sem a mensagem original; o erro original chega ao `onError` do app em `error.cause`, desde que o `onError` seja registrado antes do `.use(agentic(...))`. No frontend, `treaty<App>(url).agentic['use-cases'].create_order.post(...)` sai tipado pelos genéricos `UseCase<I, O>` de cada use-case; com `transform`, `coerce` ou default no schema, o tipo do body no cliente é o do input já convertido (limite registrado na ADR-0008).
+
+As rotas alteram o domínio e não passam pelo `ApprovalPort` (aprovação é política do operator sobre o LLM); por isso um use-case listado em `requiresApproval` de algum operator só ganha rota se estiver nomeado em `http.routes` (sem isso, a montagem falha). Autentique-as no app com `onRequest`, que roda antes da validação do body: com `beforeHandle`, um chamador sem credencial e com body inválido ainda recebe o 422 com os nomes dos campos e o input devolvido. Operators não ganham rota HTTP (ADR-0007 D5): rode `ctx.agentic.run(name, { message, context })` no seu handler, com `context` derivado no servidor. A composição completa está em [`examples/orders/elysia.ts`](examples/orders/elysia.ts).
+
 ## Mudanças de domínio e conclusão de tarefas
 
 Toda mudança de regra de negócio fica registrada em `changes/`, e o compilador mantém um snapshot do domínio em `.agentic/domain.lock.json`.
@@ -254,6 +284,7 @@ bun run ci:docker --build                  # rebuild the image
 | `src/contracts`   | projeção canônica de declarações e hash compartilhados pelo compiler/runtime           |
 | `src/runtime`     | ports, registro de operators, loop, aprovação, eventos e traces                        |
 | `src/nestjs`      | `AgenticModule.forRoot/forFeature` e tokens de DI                                      |
+| `src/elysia`      | plugin `agentic()` e rotas de use-case tipadas para o Eden                             |
 | `src/testing`     | `covers()`, `createTestContext()`, `FakeLlm`, `FakeApproval` e bus in-memory           |
 | `src/cli`         | `agentic-ddd compile`, `ir`, `status`, `next`, `packet` e `verify`                     |
 | `examples/orders` | domínio de exemplo                                                                     |
