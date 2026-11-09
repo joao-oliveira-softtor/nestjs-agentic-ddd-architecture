@@ -191,30 +191,119 @@ test('packet e verify item: hash, corpo, cobertura e typecheck; falha não relac
   }
 }, CLI_TEST_TIMEOUT_MS);
 
-test('status and verifyItem refuse partial JUnit on a collection error', async () => {
+const WHOLE_SUITE = (config: string) =>
+  config.replace("'bun', 'test', 'app.test.ts'", "'bun', 'test'");
+const specHashOf = (out: string) => /specHash: `([a-f0-9]{64})`/.exec(out)![1]!;
+
+test('status refuses partial JUnit on a collection error', async () => {
   const { dir, run } = await queryFixture();
   try {
-    const hash = /specHash: `([a-f0-9]{64})`/.exec(
-      run('packet', 'entity:Thing').stdout,
-    )![1]!;
     const config = await readFile(join(dir, 'agentic.config.ts'), 'utf8');
-    await writeFile(
-      join(dir, 'agentic.config.ts'),
-      config.replace("'bun', 'test', 'app.test.ts'", "'bun', 'test'"),
-    );
+    await writeFile(join(dir, 'agentic.config.ts'), WHOLE_SUITE(config));
     await writeFile(
       join(dir, 'broken.test.ts'),
       `throw Error('collection failed');`,
     );
-    for (const args of [
-      ['status', '--json'],
-      ['verify', '--item', 'entity:Thing', '--spec-hash', hash, '--json'],
-    ]) {
-      const result = run(...args);
-      expect(result.code).toBe(1);
-      expect(result.stdout).toBe('');
-      expect(result.stderr).toContain('JUnit');
-    }
+    const result = run('status', '--json');
+    expect(result.code).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('JUnit');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('verifyItem does not run a test file that quotes none of the item obligations', async () => {
+  const { dir, run } = await queryFixture();
+  try {
+    const hash = specHashOf(run('packet', 'entity:Thing').stdout);
+    const config = await readFile(join(dir, 'agentic.config.ts'), 'utf8');
+    await writeFile(join(dir, 'agentic.config.ts'), WHOLE_SUITE(config));
+    await writeFile(
+      join(dir, 'broken.test.ts'),
+      `throw Error('collection failed');`,
+    );
+    const result = run(
+      'verify',
+      '--item',
+      'entity:Thing',
+      '--spec-hash',
+      hash,
+      '--json',
+    );
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout).status).toBe('done');
+    expect(await readFile(join(dir, 'runs'), 'utf8')).toBe('1');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('verifyItem also runs the tests of the dependencies and nothing else', async () => {
+  const { dir, run } = await queryFixture();
+  try {
+    const thing = await readFile(join(dir, 'app/thing.ts'), 'utf8');
+    await writeFile(
+      join(dir, 'app/thing.ts'),
+      thing.replace(
+        /\n\}$/,
+        `\n @AgentMethod({ description: 'Renames Thing.' })\n rename() {}\n}`,
+      ),
+    );
+    const marked = (file: string, id: string) =>
+      `import { test, expect } from 'bun:test';
+import { covers } from '@agentic-ddd/testing';
+import { appendFileSync } from 'node:fs';
+appendFileSync('${file}', '1');
+test(covers(['${id}'], 'works'), () => expect(1).toBe(1));`;
+    await writeFile(
+      join(dir, 'rename.test.ts'),
+      marked('renameRuns', 'method:Thing.rename'),
+    );
+    await writeFile(
+      join(dir, 'other.test.ts'),
+      marked('otherRuns', 'method:Unrelated.thing'),
+    );
+    const config = await readFile(join(dir, 'agentic.config.ts'), 'utf8');
+    await writeFile(join(dir, 'agentic.config.ts'), WHOLE_SUITE(config));
+    const item = 'method:Thing.rename';
+    const hash = specHashOf(run('packet', item).stdout);
+    const result = run('verify', '--item', item, '--spec-hash', hash, '--json');
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout).status).toBe('done');
+    expect(await Bun.file(join(dir, 'renameRuns')).exists()).toBe(true);
+    expect(await Bun.file(join(dir, 'runs')).exists()).toBe(true);
+    expect(await Bun.file(join(dir, 'otherRuns')).exists()).toBe(false);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}, CLI_TEST_TIMEOUT_MS);
+
+test('verifyItem judges an item without obligations by its gates alone, even with no tests at all', async () => {
+  const { dir, run } = await queryFixture();
+  try {
+    await rm(join(dir, 'app.test.ts'));
+    const config = await readFile(join(dir, 'agentic.config.ts'), 'utf8');
+    await writeFile(join(dir, 'agentic.config.ts'), WHOLE_SUITE(config));
+    const thing = await readFile(join(dir, 'app/thing.ts'), 'utf8');
+    await writeFile(
+      join(dir, 'app/thing.ts'),
+      thing.replace(
+        / @AgentMethod[\s\S]*? static create\(\) \{ return new Thing\(\); \}/,
+        '',
+      ),
+    );
+    const hash = specHashOf(run('packet', 'entity:Thing').stdout);
+    const result = run(
+      'verify',
+      '--item',
+      'entity:Thing',
+      '--spec-hash',
+      hash,
+      '--json',
+    );
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout).status).toBe('done');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
