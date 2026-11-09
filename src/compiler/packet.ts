@@ -7,7 +7,7 @@ import type { WorkItemStatus } from './state';
 export interface PacketOptions {
   readonly configPath: string;
   readonly item: string;
-  /** Lê declarações de teste sem executá-los; nunca certifica `done`. */
+  /** @deprecated Sem efeito: o packet nunca executa testes. */
   readonly static?: boolean;
 }
 export const isClassScopeItem = (id: string): boolean =>
@@ -22,14 +22,8 @@ export function renderPacket(
   item: WorkItemStatus,
   specification: ItemSpecification,
   configPath: string,
-  mode: 'dynamic' | 'static' = 'dynamic',
 ): string {
-  const state =
-    mode === 'static'
-      ? `${item.baseState} (static: tests not run; never certifies done)`
-      : item.state === 'blocked'
-        ? `blocked(${item.baseState})`
-        : item.state;
+  const state = `${item.baseState} (static: tests not run; never certifies done)`;
   return [
     '# Identification',
     '',
@@ -85,10 +79,9 @@ export function renderPacket(
 
 export async function packet(options: PacketOptions): Promise<string> {
   const context = await stateContext(options.configPath);
-  const staticMode = options.static === true;
-  const item = (
-    await collectStatus(context, staticMode, !staticMode)
-  ).items.find((i) => i.id === options.item);
+  const item = (await collectStatus(context, true)).items.find(
+    (i) => i.id === options.item,
+  );
   if (!item)
     throw new AgenticError(
       'state.item-not-found',
@@ -98,6 +91,5 @@ export async function packet(options: PacketOptions): Promise<string> {
     item,
     itemSpecification(context.project.ir, item, context.proposals),
     options.configPath,
-    staticMode ? 'static' : 'dynamic',
   );
 }

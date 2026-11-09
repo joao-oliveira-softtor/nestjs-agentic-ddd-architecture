@@ -220,24 +220,17 @@ test('status and verifyItem refuse partial JUnit on a collection error', async (
   }
 });
 
-test('packet --static does not run tests and keeps specHash and the verify command', async () => {
+test('packet never runs tests, with or without --static, and prints the same packet', async () => {
   const { dir, run } = await queryFixture();
   try {
-    const staticPacket = run('packet', '--static', 'entity:Thing');
-    expect(staticPacket.code).toBe(0);
+    const withFlag = run('packet', '--static', 'entity:Thing');
+    const withoutFlag = run('packet', 'entity:Thing');
+    expect(withFlag.code).toBe(0);
+    expect(withoutFlag.code).toBe(0);
     expect(await Bun.file(join(dir, 'runs')).exists()).toBe(false);
-    expect(staticPacket.stdout).toContain('covered (static: tests not run');
-    const dynamicPacket = run('packet', 'entity:Thing');
-    expect(dynamicPacket.code).toBe(0);
-    expect(await Bun.file(join(dir, 'runs')).exists()).toBe(true);
-    const hashOf = (out: string) => /specHash: `([a-f0-9]{64})`/.exec(out)![1]!;
-    expect(hashOf(staticPacket.stdout)).toBe(hashOf(dynamicPacket.stdout));
-    const verifyOf = (out: string) =>
-      /```bash\n([^\n]+)\n```/.exec(
-        out.split('## Verification command')[1]!,
-      )![1]!;
-    expect(verifyOf(staticPacket.stdout)).toBe(verifyOf(dynamicPacket.stdout));
-    expect(run('packet', '--static', 'entity:Inexistente').code).toBe(1);
+    expect(withoutFlag.stdout).toContain('covered (static: tests not run');
+    expect(withoutFlag.stdout).toBe(withFlag.stdout);
+    expect(run('packet', 'entity:Inexistente').code).toBe(1);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
