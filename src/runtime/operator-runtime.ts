@@ -50,8 +50,9 @@ export class OperatorRuntime {
     if (!record) throw new Error(`Operator ${target.name} is not declared`);
     if (this.#operators.has(record.name))
       throw new Error(`Duplicate operator ${record.name}`);
-    if (limitsError(record.limits) !== null)
-      throw new Error(`Invalid limits for ${record.name}`);
+    const problem = limitsError(record.limits);
+    if (problem !== null)
+      throw new Error(`Invalid limits for ${record.name}: ${problem}`);
     const { ir, errors } = buildIR(registry, {
       root,
       modules: this.options.modules,

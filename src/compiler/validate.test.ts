@@ -460,6 +460,7 @@ describe('validate', () => {
       { maxSteps: 1.5 },
       { timeoutMs: 0 },
       { timeoutMs: Number.POSITIVE_INFINITY },
+      { timeoutMs: 2_147_483_648 },
     ];
     for (const limits of invalid) {
       const errors = errorsOf(() => {
@@ -485,6 +486,7 @@ describe('validate', () => {
       expect(errors[0]).toContain(
         'validate.operator-limits-invalid operator:op',
       );
+      expect(errors[0]).toContain(Object.keys(limits)[0]!);
     }
   });
 

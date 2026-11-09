@@ -221,6 +221,27 @@ describe('resource server', () => {
     await expectChallenge(await gate(bearer(token)), 401, 'auth.token-invalid');
   });
 
+  for (const token of ['abc', 'a.b.c', '!!!.x.y']) {
+    test(`a non-JWT token "${token}" is a 401 auth.token-invalid before any fetch`, async () => {
+      const server = startAuthServer('oauth');
+      try {
+        const own = createResourceServer({
+          issuer: server.issuer,
+          resource: RESOURCE,
+          requiredScopes: [SCOPE],
+        });
+        await expectChallenge(
+          await own.gate(bearer(token)),
+          401,
+          'auth.token-invalid',
+        );
+        expect({ ...server.hits }).toEqual({ discovery: 0, jwks: 0 });
+      } finally {
+        server.stop();
+      }
+    });
+  }
+
   test('an HS256 token signed with the public key as secret is auth.token-invalid', async () => {
     const secret = new TextEncoder().encode(JSON.stringify(rsa.jwk));
     const token = await new SignJWT({ scope: SCOPE })
