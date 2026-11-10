@@ -48,29 +48,36 @@ function refusalFor(
   );
   if (refused)
     return `Event ${refused.name} is not declared in emits of use-case ${record.name}`;
-  // Stamping happens inside the delivery: refuse here, or a repeat would end as a bus failure.
+  const repeated = repeatedIn(batch);
+  if (repeated)
+    return `Event ${repeated.name} was already published (use-case ${record.name})`;
+  const invalid = batch.find((event) => !payloadFits(event, schemaFor));
+  return invalid
+    ? `Event ${invalid.name} has a payload that does not match its @AgentEvent schema (use-case ${record.name})`
+    : undefined;
+}
+
+/** Stamping happens inside the delivery: a repeat is refused before it, or it would end as a bus failure. */
+function repeatedIn(batch: readonly DomainEvent[]): DomainEvent | undefined {
   const seen = new Set<DomainEvent>();
-  const repeated = batch.find((event) => {
+  return batch.find((event) => {
     if (event.correlationId !== null || seen.has(event)) return true;
     seen.add(event);
     return false;
   });
-  if (repeated)
-    return `Event ${repeated.name} was already published (use-case ${record.name})`;
-  // Only validates: the payload stays as the use-case built it.
-  const invalid = batch.find((event) => {
-    try {
-      return !(
-        schemaFor?.(event.name)?.safeParse(event.payload).success ?? true
-      );
-    } catch {
-      // A schema that cannot run synchronously (an async refinement) cannot vouch for the payload.
-      return true;
-    }
-  });
-  return invalid
-    ? `Event ${invalid.name} has a payload that does not match its @AgentEvent schema (use-case ${record.name})`
-    : undefined;
+}
+
+/** Only validates: the payload stays as the use-case built it. No schema for the name means nothing to check. */
+function payloadFits(
+  event: DomainEvent,
+  schemaFor?: (name: string) => ZodType | undefined,
+): boolean {
+  try {
+    return schemaFor?.(event.name)?.safeParse(event.payload).success ?? true;
+  } catch {
+    // A schema that cannot run synchronously (an async refinement) cannot vouch for the payload.
+    return false;
+  }
 }
 
 /** One use-case execution may only publish the events in its `emits`, and only while it runs. */
