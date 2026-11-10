@@ -6,6 +6,8 @@ export interface EmitsGuard {
   readonly publish: UseCaseContext['publish'];
   /** Set before the first await so even a swallowed or un-awaited failure fails the execution. */
   readonly undeclared: boolean;
+  /** The first refusal that set `undeclared`: it names the event and the use-case. */
+  readonly refusal: Error | undefined;
   /** The first delivery failure, kept so an un-awaited publish cannot lose it. */
   readonly failed: { error: unknown } | undefined;
   /** Resolves once no delivery is pending, including ones started meanwhile, so `failed` is final (a use-case may not await its publish). */
@@ -32,14 +34,24 @@ export function guardEmits(
 ): EmitsGuard {
   let active = true;
   let undeclared = false;
+  let refusal: Error | undefined;
   let failed: { error: unknown } | undefined;
   const settling: Promise<void>[] = [];
+  const refuse = (message: string) => {
+    undeclared = true;
+    const error = new Error(message);
+    refusal ??= error;
+    return error;
+  };
   const assertActive = () => {
     if (!active) throw new Error('Use-case execution already ended');
   };
   return {
     get undeclared() {
       return undeclared;
+    },
+    get refusal() {
+      return refusal;
     },
     get failed() {
       return failed;
@@ -57,8 +69,7 @@ export function guardEmits(
           (event) => !record.emits.some((cls) => cls.name === event.name),
         );
         if (refused) {
-          undeclared = true;
-          throw new Error(
+          throw refuse(
             `Event ${refused.name} is not declared in emits of use-case ${record.name}`,
           );
         }
@@ -70,8 +81,7 @@ export function guardEmits(
             ),
         );
         if (invalid) {
-          undeclared = true;
-          throw new Error(
+          throw refuse(
             `Event ${invalid.name} has a payload that does not match its @AgentEvent schema (use-case ${record.name})`,
           );
         }

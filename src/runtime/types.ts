@@ -62,6 +62,8 @@ export type TerminationReason =
   | 'refused'
   | 'provider_error'
   | 'use_case_error'
+  | 'approval_error'
+  | 'event_bus_error'
   | 'invalid_context';
 export interface OperatorRunResult {
   runId: string;
@@ -69,6 +71,8 @@ export interface OperatorRunResult {
   status: RunStatus;
   reason?: TerminationReason;
   output?: string;
+  /** What was thrown (or the refusal) when the run failed because of an exception; absent for the other outcomes. */
+  error?: unknown;
   steps: Step[];
   events: DomainEvent[];
 }

@@ -59,12 +59,14 @@ export async function runOperator(
     status: RunStatus,
     reason?: TerminationReason,
     output?: string,
+    ...caught: [error?: unknown]
   ): OperatorRunResult => ({
     runId,
     operator: operator.record.name,
     status,
     ...(reason ? { reason } : {}),
     ...(output !== undefined ? { output } : {}),
+    ...(caught.length ? { error: caught[0] } : {}),
     steps,
     events,
   });
@@ -143,6 +145,7 @@ export async function runOperator(
           ? 'require_approval'
           : 'allow';
         if (trace.policy === 'require_approval') {
+          failure = 'approval_error';
           trace.approval = ports.approval
             ? await wait(() =>
                 ports.approval!.request({
@@ -153,6 +156,7 @@ export async function runOperator(
                 }),
               )
             : { approved: false, reason: 'ApprovalPort is not configured' };
+          failure = 'use_case_error';
           if (!trace.approval.approved) {
             result(
               {
@@ -197,11 +201,17 @@ export async function runOperator(
           // Drain on every path: an un-awaited delivery may still fail after the use-case threw.
           await wait(() => guard.drain());
           // Precedence: undeclared event, then a bus failure, then the use-case's own error.
-          if (guard.undeclared) return finish('failed', 'use_case_error');
+          if (guard.undeclared)
+            return finish('failed', 'use_case_error', undefined, guard.refusal);
           if (guard.failed) {
             if (guard.failed.error instanceof RunTimeout)
               throw guard.failed.error;
-            return finish('failed', 'use_case_error');
+            return finish(
+              'failed',
+              'event_bus_error',
+              undefined,
+              guard.failed.error,
+            );
           }
           if (thrown) {
             const error = thrown.error;
@@ -209,7 +219,13 @@ export async function runOperator(
             result({ code: error.code, message: error.message }, true);
           } else {
             const validated = tool.record.output.safeParse(output);
-            if (!validated.success) return finish('failed', 'use_case_error');
+            if (!validated.success)
+              return finish(
+                'failed',
+                'use_case_error',
+                undefined,
+                validated.error,
+              );
             result(
               {
                 output: validated.data,
@@ -231,7 +247,7 @@ export async function runOperator(
   } catch (error) {
     return error instanceof RunTimeout
       ? finish('timeout')
-      : finish('failed', failure);
+      : finish('failed', failure, undefined, error);
   } finally {
     active = false;
     clearTimeout(timer);

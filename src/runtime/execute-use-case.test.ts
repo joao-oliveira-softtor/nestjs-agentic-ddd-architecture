@@ -90,7 +90,7 @@ test('an event outside emits fails the execution even if the use-case swallows t
     await rejection(
       executeUseCase(recordFor(Sneaky), new Sneaky(), { times: 1 }, bus),
     ),
-  ).toBe('Use-case ring published an undeclared event');
+  ).toContain('Event Other');
   expect(bus.events).toEqual([]);
 });
 
@@ -150,7 +150,7 @@ test('a batch with an undeclared event delivers none of it', async () => {
     await rejection(
       executeUseCase(recordFor(Mixed), new Mixed(), { times: 1 }, bus),
     ),
-  ).toBe('Use-case ring published an undeclared event');
+  ).toContain('Event Other');
   expect(bus.events).toEqual([]);
 });
 
@@ -295,7 +295,7 @@ test('an error from the use-case propagates as is, and an undeclared event wins 
         new InMemoryEventBus(),
       ),
     ),
-  ).toBe('Use-case ring published an undeclared event');
+  ).toContain('Event Other');
 });
 
 describe('event payload schema', () => {
@@ -316,7 +316,7 @@ describe('event payload schema', () => {
           schemaFor,
         }),
       ),
-    ).toBe('Use-case ring published an undeclared event');
+    ).toContain('Event Rang');
     expect(bus.events).toEqual([]);
   });
 

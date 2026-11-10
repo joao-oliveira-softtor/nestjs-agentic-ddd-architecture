@@ -65,8 +65,7 @@ export async function runUseCase(
   await guard.drain();
   guard.end();
   // Precedence: undeclared event, then a bus failure, then the use-case's own error.
-  if (guard.undeclared)
-    throw new Error(`Use-case ${record.name} published an undeclared event`);
+  if (guard.refusal) throw guard.refusal;
   if (guard.failed) throw guard.failed.error;
   if (thrown) throw thrown.error;
   return record.output.parse(output);
