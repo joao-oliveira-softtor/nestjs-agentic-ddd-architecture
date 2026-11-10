@@ -3,6 +3,7 @@
 ## [Não lançado]
 
 - **CI (#171):** a pull request's superseded runs are cancelled (one concurrency group per ref; each push to `main` keeps its own group and is never cancelled), and every job has a time limit: `ci` 20 min, `ci-windows` 25 min, `evals` 60 min.
+- **Development dependencies (#172):** six unused devDependencies are gone (`@nestjs/cli`, `@nestjs/schematics`, `@nestjs/mau`, `@nestjs/typeorm`, `typeorm`, `source-map-support`), with the dead `nest-cli.json`. The published package does not change.
 
 ## [0.6.0] — 2026-11-09
 
