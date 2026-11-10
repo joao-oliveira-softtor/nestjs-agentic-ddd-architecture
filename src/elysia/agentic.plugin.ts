@@ -138,23 +138,35 @@ function isElysiaError(error: unknown): boolean {
   return prototype !== null && Object.hasOwn(prototype as object, ERROR_CODE);
 }
 
+const hooked = Symbol('agentic-ddd.rejectSecondMount');
+type Mountable = { decorator: object; getParent: () => Mountable | null };
+
 /**
  * Elysia keeps the first `agentic` decorator, so a second plugin on one app would leave
  * its operators unreachable through `ctx.agentic` without a sign. `use()` assigns the
  * plugin's `getParent`, which is the only hook that sees the parent at mount time.
+ * A parent that passes the check gets the same hook, so two sibling sub-apps that each hold an
+ * `agentic()` fail when the second one reaches their common app; `hooked` installs it once per instance.
+ * Known limit: a plugin that is an async function returning another instance never receives
+ * `getParent`, so it is not detected.
  * shortcut: relies on that Elysia internal; `agentic.plugin.test.ts` fails if an upgrade drops it.
  */
-function rejectSecondMount(app: Base): void {
-  // Elysia's own getParent answers null until the plugin is mounted.
-  let getParent: () => { decorator: object } | null = () => null;
+function rejectSecondMount(app: Mountable): void {
+  const marked = app as unknown as Record<symbol, true>;
+  if (marked[hooked]) return;
+  marked[hooked] = true;
+  // Elysia's own getParent answers null until the instance is mounted.
+  let getParent = app.getParent;
   Object.defineProperty(app, 'getParent', {
     configurable: true,
     get: () => getParent,
-    set(assigned: () => { decorator: object }) {
-      if ('agentic' in assigned().decorator)
+    set(assigned: () => Mountable) {
+      const parent = assigned();
+      if ('agentic' in parent.decorator)
         throw new Error(
           'Mount one agentic() per app: ctx.agentic would keep the first runtime',
         );
+      rejectSecondMount(parent);
       getParent = assigned;
     },
   });
@@ -247,7 +259,7 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
     options.operators.map((operator) => runtime.register(operator, instances)),
   );
   const app = new Elysia({ name: 'agentic-ddd' }).decorate('agentic', runtime);
-  rejectSecondMount(app);
+  rejectSecondMount(app as unknown as Mountable);
   if (!options.http) return app;
   const prefix = (options.http.prefix ?? '/agentic').replace(/\/$/, '');
   return app.group(prefix, (group) => {

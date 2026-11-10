@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **Elysia: a second `agentic()` in a sibling sub-app fails the mount (#184):** two sub-apps that each held their own `agentic()` could both be mounted on one app, and `ctx.agentic` silently kept the first runtime. The second mount now fails with the same `Mount one agentic() per app` error as a direct second mount. A plugin that is an async function returning another instance is still not detected.
+
 - **Behaviour change — the default event bus no longer keeps events, and a throwing subscriber no longer fails the publication (#161, #162):** `InMemoryEventBus` (the default bus of `OperatorRuntime` and `AgenticModule`) used to append every event to `events` forever; it now keeps them only with `new InMemoryEventBus({ record: true })`, which tests use. A subscriber that throws no longer rejects `publish` or skips the subscribers and events after it: the error goes to the new `onError(error, event)` option, or to `console.error`. A run therefore no longer ends `failed` because a subscriber threw after the use-case saved. Publications are still delivered one batch at a time for the whole bus, now stated in the class documentation.
 
 ## [0.6.0] — 2026-11-09

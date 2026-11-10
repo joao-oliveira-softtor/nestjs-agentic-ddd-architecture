@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { FakeLlm, InMemoryEventBus } from '@agentic-ddd/testing';
 import { treaty } from '@elysiajs/eden';
@@ -590,4 +590,61 @@ test('a second agentic() on one app fails the mount instead of shadowing the fir
   expect(() => app.use(second)).toThrow(
     'Mount one agentic() per app: ctx.agentic would keep the first runtime',
   );
+});
+
+describe('one agentic() per app across nested mounts', () => {
+  const message =
+    'Mount one agentic() per app: ctx.agentic would keep the first runtime';
+  const mount = (prefix: string) =>
+    agentic({
+      root,
+      modules,
+      llm: new FakeLlm([]),
+      operators: [],
+      useCases: {
+        create_order: new CreateOrder(new InMemoryOrderRepository()),
+      },
+      http: { prefix },
+    });
+
+  test('two sibling sub-apps with their own agentic() fail on the shared root', async () => {
+    const first = new Elysia().use(await mount('/a'));
+    const second = new Elysia().use(await mount('/b'));
+    const rootApp = new Elysia().use(first);
+    expect(() => rootApp.use(second)).toThrow(message);
+  });
+
+  test('a second agentic() inside .group() fails the mount', async () => {
+    const app = new Elysia().use(await mount('/a'));
+    const second = await mount('/b');
+    expect(() => app.group('/g', (group) => group.use(second))).toThrow(
+      message,
+    );
+  });
+
+  test('a second agentic() inside .guard() fails the mount', async () => {
+    const app = new Elysia().use(await mount('/a'));
+    const second = await mount('/b');
+    expect(() => app.guard({}, (guard) => guard.use(second))).toThrow(message);
+  });
+
+  test('a second agentic() inside a function plugin fails the mount', async () => {
+    const app = new Elysia().use(await mount('/a'));
+    const second = await mount('/b');
+    expect(() => app.use((inner) => inner.use(second))).toThrow(message);
+  });
+
+  test('one agentic() in a sub-app mounted on a root still serves its route', async () => {
+    const sub = new Elysia().use(await mount('/a'));
+    const response = await new Elysia()
+      .use(sub)
+      .handle(
+        post('/a/use-cases/create_order', {
+          order_id: 'nest-1',
+          customer_id: 'c',
+          items,
+        }),
+      );
+    expect(response.status).toBe(200);
+  });
 });
