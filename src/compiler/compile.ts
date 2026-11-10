@@ -214,11 +214,9 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
 
   if (options.mode === 'check') {
     const drift = await checkOutputs(config, rendered);
-    const current = await readFile(lockAbs, 'utf8').catch(() => null);
-    if (
-      lockText !== null &&
-      (current === null || toLf(current) !== lockText)
-    ) {
+    // A checkout with CRLF is not drift: the lock read from disk is compared as LF.
+    const current = await readFile(lockAbs, 'utf8').then(toLf, () => null);
+    if (lockText !== null && current !== lockText) {
       drift.push({
         path: config.out.lock,
         reason: current === null ? 'missing' : 'changed',

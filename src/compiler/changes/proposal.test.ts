@@ -247,7 +247,7 @@ describe('BOM and CRLF tolerance', () => {
     expect(proposalHashMatches(crlf, sha256(crlf))).toBe(true);
     expect(proposalHashMatches(VALID, sha256(crlf))).toBe(true);
     expect(proposalHashMatches(crlf, sha256(`${VALID}x`))).toBe(false);
-    expect(proposalHashMatches(crlf, 'outro-hash')).toBe(false);
+    expect(proposalHashMatches(crlf, 'another-hash')).toBe(false);
   });
 
   test('proposalHashMatches accepts a legacy hash of the raw bytes when the line endings are mixed', () => {

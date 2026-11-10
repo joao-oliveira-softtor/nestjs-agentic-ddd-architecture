@@ -59,11 +59,9 @@ export async function writeFileAtomic(
       // shortcut: falls back to an in-place write when the rename is refused (file held open on Windows); upgrade to a retry if truncated files are ever reported
       await writeFile(target, content);
     }
-  } catch (error) {
+  } finally {
     await rm(temporary, { force: true });
-    throw error;
   }
-  await rm(temporary, { force: true });
 }
 
 const RENAME_REFUSED = new Set(['EPERM', 'EBUSY', 'EACCES']);
@@ -174,6 +172,27 @@ async function containsLink(dir: string): Promise<boolean> {
   return entries.some((entry) => entry.isSymbolicLink());
 }
 
+// Nothing is deleted before the new files are written, so a failure in between keeps the old skills:
+// kept directories are overwritten in place and orphans go away after the writes.
+async function planSkillDirs(
+  config: ResolvedConfig,
+  rendered: Rendered,
+): Promise<{ keptDirs: [string, string][]; orphans: string[] }> {
+  const keptDirs: [string, string][] = [];
+  const orphans: string[] = [];
+  for (const [base, keep] of managedBases(config, rendered)) {
+    for (const dir of await generatedSkillDirs(join(config.outRoot, base))) {
+      const absolute = join(config.outRoot, base, dir);
+      if (!keep.includes(dir)) orphans.push(`${base}/${dir}`);
+      // rm removes a link without following it, so nothing is written or pruned through one
+      else if (await containsLink(absolute))
+        await rm(absolute, { recursive: true, force: true });
+      else keptDirs.push([base, dir]);
+    }
+  }
+  return { keptDirs, orphans };
+}
+
 async function conflictingDirs(
   config: ResolvedConfig,
   rendered: Rendered,
@@ -264,7 +283,7 @@ export async function writeOutputs(
   const agentsPath = join(config.outRoot, config.out.agentsMd);
   const claudePath = join(config.outRoot, config.out.claudeMd);
   const existingAgents = await readOrNull(agentsPath);
-  const existingClaude = await readOrNull(claudePath);
+  await readOrNull(claudePath);
   const conflicts = await conflictingDirs(config, rendered);
   for (const dir of [...conflicts].sort()) {
     warnings.push(
@@ -272,23 +291,11 @@ export async function writeOutputs(
     );
   }
 
-  // Nothing is deleted before the new files are written: a failure in between keeps the old skills.
-  const removedOrphans = new Set<string>();
-  const keptDirs: [string, string][] = [];
-  for (const [base, keep] of managedBases(config, rendered)) {
-    for (const dir of await generatedSkillDirs(join(config.outRoot, base))) {
-      const absolute = join(config.outRoot, base, dir);
-      if (keep.includes(dir)) {
-        // rm removes a link without following it, so nothing is written or pruned through one
-        if (await containsLink(absolute))
-          await rm(absolute, { recursive: true, force: true });
-        else keptDirs.push([base, dir]);
-      } else {
-        removedOrphans.add(resolve(join(config.outRoot, base, dir)));
-        written.push(`${base}/${dir} (removed)`);
-      }
-    }
-  }
+  const { keptDirs, orphans } = await planSkillDirs(config, rendered);
+  const removedOrphans = new Set(
+    orphans.map((dir) => resolve(config.outRoot, dir)),
+  );
+  written.push(...orphans.map((dir) => `${dir} (removed)`));
 
   for (const [path, content] of rendered.files) {
     if (inConflict(conflicts, path)) continue;
@@ -312,7 +319,8 @@ export async function writeOutputs(
   );
   written.push(config.out.agentsMd);
 
-  if (existingClaude === null) {
+  // Decided only now: CLAUDE.md may be a link to the AGENTS.md just written, or its target.
+  if ((await readOrNull(claudePath)) === null) {
     await mkdir(dirname(claudePath), { recursive: true });
     await writeFile(claudePath, CLAUDE_MD_CONTENT);
     written.push(config.out.claudeMd);

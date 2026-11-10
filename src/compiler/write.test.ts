@@ -608,6 +608,24 @@ describe('writeOutputs / checkOutputs', () => {
     expect((await readdir(out)).filter((n) => n.endsWith('.tmp'))).toEqual([]);
   });
 
+  test.each([
+    ['CLAUDE.md', 'AGENTS.md'],
+    ['AGENTS.md', 'CLAUDE.md'],
+  ])(
+    '%s linked to a %s that does not exist yet keeps the generated block',
+    async (linkName, targetName) => {
+      await symlink(targetName, join(out, linkName));
+
+      await writeOutputs(config, rendered);
+
+      expect((await lstat(join(out, linkName))).isSymbolicLink()).toBe(true);
+      expect(await readFile(join(out, targetName), 'utf8')).toContain(
+        BLOCK_BEGIN,
+      );
+      expect(await checkOutputs(config, rendered)).toEqual([]);
+    },
+  );
+
   test('AGENTS.md is replaced, not rewritten in place: a hard link keeps the old content', async () => {
     const path = join(out, 'AGENTS.md');
     await writeFile(path, '# Old notes\n');
