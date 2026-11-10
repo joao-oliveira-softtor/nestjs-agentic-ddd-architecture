@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **Proposals tolerate a BOM and CRLF checkouts (#167, #168):** `proposal.md` may start with a UTF-8 BOM (it used to fail with `proposal.frontmatter-missing`), and an archived proposal now hashes the same in LF and CRLF, so a Windows checkout no longer reports `proposal.applied-edited`. The hash is taken over the text without the BOM and with LF line endings; the file itself is never rewritten, and locks written before this change still verify.
+
 ## [0.6.0] — 2026-11-09
 
 - **Published on npm as `agentic-ddd`:** the package was called `nestjs-agentic-ddd-architecture` and shipped only as a GitHub release tarball; it is now public on the npm registry. Imports change from `nestjs-agentic-ddd-architecture/<boundary>` to `agentic-ddd/<boundary>` (same eight boundaries, same `agentic-ddd` binary). `private: true` and the `prepublishOnly` gate (`scripts/block-publish.cjs`) are gone; `docs/distribution.md` lists the publication steps.

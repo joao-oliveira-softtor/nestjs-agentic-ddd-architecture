@@ -1,4 +1,4 @@
-import { canonicalize, sha256 } from '../canonical';
+import { canonicalize, sha256, toLf } from '../canonical';
 import type { RenderedExample } from '../delta/render';
 import { shellQuote } from '../packet';
 
@@ -56,7 +56,7 @@ export interface BundleManifest {
 export const byPath = (a: { path: string }, b: { path: string }): number =>
   a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
 
-export const toLf = (s: string): string => s.replaceAll('\r\n', '\n');
+export { toLf };
 
 /** Hashes everything but the hash itself: sorted keys, no whitespace, files by path, LF content. */
 export function buildManifest(

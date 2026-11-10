@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { sha256 } from '../canonical';
 import { AgenticError } from '../ir';
 import {
   MOTIVO_PLACEHOLDER,
@@ -10,6 +11,8 @@ import {
   markApplied,
   nextChangeId,
   parseProposal,
+  proposalHash,
+  proposalHashMatches,
   renderDraft,
   summarize,
 } from './proposal';
@@ -217,6 +220,37 @@ describe('parseProposal', () => {
   });
 });
 
+describe('BOM and CRLF tolerance', () => {
+  const BOM = '﻿';
+  const crlf = VALID.replaceAll('\n', '\r\n');
+
+  test('a proposal that starts with a BOM parses to the same fields, raw untouched', () => {
+    const plain = parse(VALID);
+    const bom = parse(BOM + VALID);
+    expect(bom.errors).toEqual([]);
+    expect(bom.proposal).toEqual({ ...plain.proposal!, raw: BOM + VALID });
+  });
+
+  test('markApplied accepts a BOM and keeps it', () => {
+    expect(markApplied(BOM + VALID)).toBe(BOM + markApplied(VALID));
+  });
+
+  test('proposalHash is the same for LF, CRLF and BOM text', () => {
+    expect(proposalHash(crlf)).toBe(proposalHash(VALID));
+    expect(proposalHash(BOM + VALID)).toBe(proposalHash(VALID));
+    expect(proposalHash(VALID)).toBe(sha256(VALID));
+    expect(proposalHash(`${VALID}x`)).not.toBe(proposalHash(VALID));
+  });
+
+  test('proposalHashMatches accepts the LF hash and the old CRLF-bytes hash, not an edit', () => {
+    expect(proposalHashMatches(crlf, sha256(VALID))).toBe(true);
+    expect(proposalHashMatches(crlf, sha256(crlf))).toBe(true);
+    expect(proposalHashMatches(VALID, sha256(crlf))).toBe(true);
+    expect(proposalHashMatches(crlf, sha256(`${VALID}x`))).toBe(false);
+    expect(proposalHashMatches(crlf, 'outro-hash')).toBe(false);
+  });
+});
+
 describe('Motivo, draft and numbering', () => {
   test('extractMotivo ignores HTML comments and stops at the next ##', () => {
     expect(extractMotivo(`\n## Motivo\n\n${MOTIVO_PLACEHOLDER}\n`)).toBe('');
@@ -364,6 +398,22 @@ describe('listProposals', () => {
       ],
     ]);
     expect(errors[1]?.message).toContain('0002');
+  });
+
+  test('a proposal file with a BOM and CRLF is listed with raw as read', async () => {
+    const raw = `﻿${VALID.replaceAll('\n', '\r\n')}`;
+    await mkdir(join(dir, '0002-cancelamento-exige-motivo'), {
+      recursive: true,
+    });
+    await writeFile(
+      join(dir, '0002-cancelamento-exige-motivo', 'proposal.md'),
+      raw,
+    );
+    const { proposals, errors } = await listProposals(dir, 'changes');
+    expect(errors).toEqual([]);
+    expect(proposals.map((p) => p.id)).toEqual(['0002']);
+    expect(proposals[0]!.raw).toBe(raw);
+    expect(proposals[0]!.raw).toContain('\r\n');
   });
 
   test('a missing changes folder is not an error', async () => {
