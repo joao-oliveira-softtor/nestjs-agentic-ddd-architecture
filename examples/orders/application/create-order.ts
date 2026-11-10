@@ -70,6 +70,7 @@ export class CreateOrder implements UseCase<
         unitPrice: i.unit_price,
       })),
     });
+    // Evento publicado após o save, no máximo uma vez pelo runtime (um outbox no repositório dá ao menos uma vez); ctx.signal aborta no timeout da execução, então um use-case longo pode parar antes do save.
     await this.orders.save(order);
     await ctx.publish(order.pullEvents());
     return { order_id: order.id, status: 'pending', total: order.total };

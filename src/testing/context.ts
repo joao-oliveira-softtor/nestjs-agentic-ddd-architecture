@@ -5,7 +5,11 @@ export interface TestContext extends UseCaseContext {
 }
 
 export function createTestContext(
-  ids: { correlationId?: string; causationId?: string } = {},
+  ids: {
+    correlationId?: string;
+    causationId?: string;
+    signal?: AbortSignal;
+  } = {},
 ): TestContext {
   const correlationId = ids.correlationId ?? 'test-run';
   const causationId = ids.causationId ?? 'test-step';
@@ -13,6 +17,7 @@ export function createTestContext(
   return {
     correlationId,
     causationId,
+    signal: ids.signal ?? new AbortController().signal,
     published,
     async publish(events) {
       for (const event of events) {

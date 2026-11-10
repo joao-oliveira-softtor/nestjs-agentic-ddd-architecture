@@ -374,3 +374,21 @@ describe('event payload schema', () => {
     expect(bus.events).toEqual([]);
   });
 });
+
+test('the context carries a signal that is not aborted', async () => {
+  let signal: AbortSignal | undefined;
+  class Spy implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      signal = ctx.signal;
+      return { ok: true as const };
+    }
+  }
+  await executeUseCase(
+    recordFor(Spy),
+    new Spy(),
+    { times: 1 },
+    new InMemoryEventBus(),
+  );
+  expect(signal).toBeInstanceOf(AbortSignal);
+  expect(signal?.aborted).toBe(false);
+});

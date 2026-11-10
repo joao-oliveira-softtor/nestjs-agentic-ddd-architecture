@@ -36,16 +36,20 @@ export async function runOperator(
   const messages: LlmMessage[] = [{ role: 'user', text: input.message }];
   let active = true;
   const deadline = performance.now() + operator.record.limits.timeoutMs;
+  // Aborted only when the deadline expires, never when the run ends.
+  const deadlineSignal = new AbortController();
   let timer!: ReturnType<typeof setTimeout>;
   const expired = new Promise<never>((_, reject) => {
     timer = setTimeout(() => {
       active = false;
+      deadlineSignal.abort();
       reject(new RunTimeout());
     }, operator.record.limits.timeoutMs);
   });
   const check = () => {
     if (!active || performance.now() >= deadline) {
       active = false;
+      deadlineSignal.abort();
       throw new RunTimeout();
     }
   };
@@ -188,6 +192,7 @@ export async function runOperator(
         const ctx: UseCaseContext = {
           correlationId: runId,
           causationId: step.id,
+          signal: deadlineSignal.signal,
           publish: guard.publish,
         };
         try {

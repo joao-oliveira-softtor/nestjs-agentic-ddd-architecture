@@ -56,6 +56,7 @@ export async function runUseCase(
     output = await instance.execute(parsed, {
       correlationId: id,
       causationId: id,
+      signal: new AbortController().signal, // never aborts: no deadline here yet
       publish: guard.publish,
     });
   } catch (error) {

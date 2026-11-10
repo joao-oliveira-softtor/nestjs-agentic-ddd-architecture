@@ -321,6 +321,35 @@ for (const stage of ['llm', 'approval', 'execute', 'bus'] as const) {
   });
 }
 
+test('ctx.signal aborts when the run times out and stays clear when it completes', async () => {
+  let slowSignal: AbortSignal | undefined;
+  const slow = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      slowSignal = ctx.signal;
+      expect(ctx.signal.aborted).toBe(false);
+      await Bun.sleep(60);
+      return input;
+    },
+    {},
+    { timeoutMs: 20 },
+  );
+  expect((await slow.runtime.run('agent', { message: 'go' })).status).toBe(
+    'timeout',
+  );
+  expect(slowSignal?.aborted).toBe(true);
+
+  let doneSignal: AbortSignal | undefined;
+  const done = await setup([calls(call()), end], async (input, ctx) => {
+    doneSignal = ctx.signal;
+    return input;
+  });
+  expect((await done.runtime.run('agent', { message: 'go' })).status).toBe(
+    'completed',
+  );
+  expect(doneSignal?.aborted).toBe(false);
+});
+
 for (const [name, context] of [
   ['bigint', 1n],
   [
