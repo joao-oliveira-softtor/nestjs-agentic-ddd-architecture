@@ -22,7 +22,7 @@ import { readLock, serializeLock } from './lock';
 import { fillMarkers, loadRules, RuleError, type Rule } from './rules';
 import { renderAll, type Rendered } from './render/index';
 import { removeSnapshot, sourceLines, writeSnapshot } from './snapshot';
-import { stableStringify } from './canonical';
+import { stableStringify, toLf } from './canonical';
 import { registrySizes, scopeRegistry } from './scope';
 import { relationWarnings } from './validate';
 import {
@@ -215,7 +215,10 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   if (options.mode === 'check') {
     const drift = await checkOutputs(config, rendered);
     const current = await readFile(lockAbs, 'utf8').catch(() => null);
-    if (lockText !== null && current !== lockText) {
+    if (
+      lockText !== null &&
+      (current === null || toLf(current) !== lockText)
+    ) {
       drift.push({
         path: config.out.lock,
         reason: current === null ? 'missing' : 'changed',

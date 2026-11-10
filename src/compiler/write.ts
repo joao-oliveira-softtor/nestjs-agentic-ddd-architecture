@@ -13,6 +13,7 @@ import {
 } from 'node:fs/promises';
 import type { Stats } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import { toLf } from './canonical';
 import type { ResolvedConfig } from './config';
 import { toPosix, type Coded } from './ir';
 import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
@@ -331,7 +332,8 @@ export async function checkOutputs(
     if (inConflict(conflicts, path)) continue;
     const actual = await readOrNull(join(config.outRoot, path));
     if (actual === null) drift.push({ path, reason: 'missing' });
-    else if (actual !== content) drift.push({ path, reason: 'changed' });
+    // A checkout with CRLF is not drift: only the text read from disk is normalized.
+    else if (toLf(actual) !== content) drift.push({ path, reason: 'changed' });
   }
 
   for (const [base, keep] of managedBases(config, rendered)) {
@@ -351,7 +353,7 @@ export async function checkOutputs(
   const block = agents === null ? null : extractAgentsBlock(agents);
   if (block === null)
     drift.push({ path: config.out.agentsMd, reason: 'missing' });
-  else if (block !== rendered.agentsBlock)
+  else if (toLf(block) !== rendered.agentsBlock)
     drift.push({ path: config.out.agentsMd, reason: 'changed' });
 
   if ((await readOrNull(join(config.outRoot, config.out.claudeMd))) === null) {

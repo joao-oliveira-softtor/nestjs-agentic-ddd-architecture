@@ -167,6 +167,59 @@ describe('writeOutputs / checkOutputs', () => {
     ]);
   });
 
+  describe('CRLF checkout', () => {
+    const toCrlf = async (path: string): Promise<void> => {
+      const absolute = join(out, path);
+      await writeFile(
+        absolute,
+        (await readFile(absolute, 'utf8')).replace(/\n/g, '\r\n'),
+      );
+    };
+    const allToCrlf = async (): Promise<void> => {
+      for (const path of [...rendered.files.keys(), 'AGENTS.md'])
+        await toCrlf(path);
+    };
+
+    test('files converted to CRLF by git are not drift', async () => {
+      await writeOutputs(config, rendered);
+      await allToCrlf();
+      expect(await checkOutputs(config, rendered)).toEqual([]);
+    });
+
+    test('a real change in a CRLF file is still reported', async () => {
+      await writeOutputs(config, rendered);
+      await allToCrlf();
+      const skillPath = join(out, '.agents/skills/shop-dev/SKILL.md');
+      await writeFile(
+        skillPath,
+        `${await readFile(skillPath, 'utf8')}edited\r\n`,
+      );
+      const agentsPath = join(out, 'AGENTS.md');
+      await writeFile(
+        agentsPath,
+        (await readFile(agentsPath, 'utf8')).replace(
+          '## Domain (agentic-ddd)',
+          '## Edited',
+        ),
+      );
+      expect(await checkOutputs(config, rendered)).toEqual([
+        { path: '.agents/skills/shop-dev/SKILL.md', reason: 'changed' },
+        { path: 'AGENTS.md', reason: 'changed' },
+      ]);
+    });
+
+    test('a write keeps the CRLF text of the user outside the generated block', async () => {
+      await writeFile(
+        join(out, 'AGENTS.md'),
+        `# Project\r\n\r\nNotes.\r\n\r\n${BLOCK_BEGIN}\r\nold\r\n${BLOCK_END}\r\nend\r\n`,
+      );
+      await writeOutputs(config, rendered);
+      const agents = await readFile(join(out, 'AGENTS.md'), 'utf8');
+      expect(agents.startsWith('# Project\r\n\r\nNotes.\r\n\r\n')).toBe(true);
+      expect(agents.endsWith(`${BLOCK_END}\r\nend\r\n`)).toBe(true);
+    });
+  });
+
   test('remove skill gerada órfã e nunca toca skill do usuário', async () => {
     const orphan = join(out, '.agentic/runtime/old-operator');
     await mkdir(orphan, { recursive: true });
