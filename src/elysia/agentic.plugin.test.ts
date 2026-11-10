@@ -614,6 +614,21 @@ describe('one agentic() per app across nested mounts', () => {
     expect(() => rootApp.use(second)).toThrow(message);
   });
 
+  test('siblings two levels deep still fail on the shared root', async () => {
+    const first = new Elysia().use(new Elysia().use(await mount('/a')));
+    const second = new Elysia().use(new Elysia().use(await mount('/b')));
+    const rootApp = new Elysia().use(first);
+    expect(() => rootApp.use(second)).toThrow(message);
+  });
+
+  test('one agentic() reaching the root through two sub-apps is the same runtime, not a second mount', async () => {
+    const shared = new Elysia().use(await mount('/a'));
+    const v1 = new Elysia({ prefix: '/v1' }).use(shared);
+    const v2 = new Elysia({ prefix: '/v2' }).use(shared);
+    const rootApp = new Elysia().use(v1);
+    expect(() => rootApp.use(v2)).not.toThrow();
+  });
+
   test('a second agentic() inside .group() fails the mount', async () => {
     const app = new Elysia().use(await mount('/a'));
     const second = await mount('/b');

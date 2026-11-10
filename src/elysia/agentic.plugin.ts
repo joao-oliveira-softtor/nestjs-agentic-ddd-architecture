@@ -139,6 +139,7 @@ function isElysiaError(error: unknown): boolean {
 }
 
 const hooked = Symbol('agentic-ddd.rejectSecondMount');
+type Agentic = { agentic?: unknown };
 type Mountable = { decorator: object; getParent: () => Mountable | null };
 
 /**
@@ -152,9 +153,8 @@ type Mountable = { decorator: object; getParent: () => Mountable | null };
  * shortcut: relies on that Elysia internal; `agentic.plugin.test.ts` fails if an upgrade drops it.
  */
 function rejectSecondMount(app: Mountable): void {
-  const marked = app as unknown as Record<symbol, true>;
-  if (marked[hooked]) return;
-  marked[hooked] = true;
+  if (hooked in app) return;
+  Object.defineProperty(app, hooked, { value: true });
   // Elysia's own getParent answers null until the instance is mounted.
   let getParent = app.getParent;
   Object.defineProperty(app, 'getParent', {
@@ -162,7 +162,11 @@ function rejectSecondMount(app: Mountable): void {
     get: () => getParent,
     set(assigned: () => Mountable) {
       const parent = assigned();
-      if ('agentic' in parent.decorator)
+      // The same runtime arriving by a second path (one sub-app mounted twice) is not a second plugin.
+      if (
+        'agentic' in parent.decorator &&
+        parent.decorator.agentic !== (app.decorator as Agentic).agentic
+      )
         throw new Error(
           'Mount one agentic() per app: ctx.agentic would keep the first runtime',
         );
