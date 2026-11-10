@@ -128,6 +128,23 @@ test('registration refuses a timeoutMs above the setTimeout maximum and names th
   ).rejects.toThrow('timeoutMs must not exceed 2147483647');
 });
 
+test('the constructor refuses an invalid useCaseTimeoutMs and names the option', () => {
+  const f = fixture();
+  for (const useCaseTimeoutMs of [0, -1, Number.NaN, Infinity, 2_147_483_648]) {
+    expect(
+      () =>
+        new OperatorRuntime({ ...f, llm: new FakeLlm([]), useCaseTimeoutMs }),
+    ).toThrow('useCaseTimeoutMs must');
+  }
+  expect(
+    new OperatorRuntime({ ...f, llm: new FakeLlm([]), useCaseTimeoutMs: 500 })
+      .useCaseTimeoutMs,
+  ).toBe(500);
+  expect(
+    new OperatorRuntime({ ...f, llm: new FakeLlm([]) }).useCaseTimeoutMs,
+  ).toBeUndefined();
+});
+
 test('an operator may require approval for its own use-cases, never for one outside its allowlist', async () => {
   const register = (approval: 'Tool' | 'Outside') => {
     const f = fixture();

@@ -1,8 +1,10 @@
 import { DomainError, type UseCase } from '@agentic-ddd/core';
 import type { ClassRef, Registry } from '@agentic-ddd/decorators';
 import {
+  AgenticError,
   createRuntime,
   runUseCase,
+  schemaLookup,
   type OperatorRuntime,
   type RuntimeOptions,
 } from '@agentic-ddd/runtime';
@@ -94,6 +96,8 @@ type UseCaseRoutes<
         response: {
           200: OutputOf<U[K]>;
           422: DomainErrorBody | ValidationErrorBody;
+          /** `runtime.use-case-timeout`, with `useCaseTimeoutMs` set. */
+          504: DomainErrorBody;
         };
       };
     };
@@ -265,11 +269,7 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
   const app = new Elysia({ name: 'agentic-ddd' }).decorate('agentic', runtime);
   rejectSecondMount(app as unknown as Mountable);
   if (!options.http) return app;
-  // By name, like the emits check; the runtime index does not export its own lookup.
-  const eventSchemas = new Map(
-    runtime.registry.events.map((e) => [e.target.name, e.payload]),
-  );
-  const schemaFor = (name: string) => eventSchemas.get(name);
+  const schemaFor = schemaLookup(runtime.registry);
   const prefix = (options.http.prefix ?? '/agentic').replace(/\/$/, '');
   return app.group(prefix, (group) => {
     for (const { record, instance } of routes)
@@ -280,8 +280,17 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
             // Elysia already validated and transformed `body` with record.input.
             return await runUseCase(record, instance, body, runtime.eventBus, {
               schemaFor,
+              timeoutMs: runtime.useCaseTimeoutMs,
             });
           } catch (error) {
+            if (
+              error instanceof AgenticError &&
+              error.code === 'runtime.use-case-timeout'
+            )
+              return status(504, {
+                code: error.code,
+                message: error.message,
+              } satisfies DomainErrorBody);
             // Elysia's default 500 echoes error.message; the original stays on `cause` for the app's onError.
             if (!(error instanceof DomainError)) {
               // The app's own Elysia errors (NotFoundError, `status()`, `.error()` classes) keep their status.

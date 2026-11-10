@@ -3,6 +3,7 @@ import {
   type DomainEvent,
   type UseCaseContext,
 } from '@agentic-ddd/core';
+import { createDeadline } from './deadline';
 import { guardEmits } from './emits-guard';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import type { MountedOperator } from './operator-runtime';
@@ -34,31 +35,11 @@ export async function runOperator(
   const steps: Step[] = [];
   const events: DomainEvent[] = [];
   const messages: LlmMessage[] = [{ role: 'user', text: input.message }];
-  let active = true;
-  const deadline = performance.now() + operator.record.limits.timeoutMs;
-  // Aborted only when the deadline expires, never when the run ends.
-  const deadlineSignal = new AbortController();
-  let timer!: ReturnType<typeof setTimeout>;
-  const expired = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      active = false;
-      deadlineSignal.abort();
-      reject(new RunTimeout());
-    }, operator.record.limits.timeoutMs);
-  });
-  const check = () => {
-    if (!active || performance.now() >= deadline) {
-      active = false;
-      deadlineSignal.abort();
-      throw new RunTimeout();
-    }
-  };
-  const wait = async <T>(operation: () => Promise<T>): Promise<T> => {
-    check();
-    const value = await Promise.race([operation(), expired]);
-    check();
-    return value;
-  };
+  const deadline = createDeadline(
+    operator.record.limits.timeoutMs,
+    () => new RunTimeout(),
+  );
+  const { check, wait } = deadline;
   const finish = (
     status: RunStatus,
     reason?: TerminationReason,
@@ -192,7 +173,7 @@ export async function runOperator(
         const ctx: UseCaseContext = {
           correlationId: runId,
           causationId: step.id,
-          signal: deadlineSignal.signal,
+          signal: deadline.signal,
           publish: guard.publish,
         };
         try {
@@ -254,7 +235,6 @@ export async function runOperator(
       ? finish('timeout')
       : finish('failed', failure, undefined, error);
   } finally {
-    active = false;
-    clearTimeout(timer);
+    deadline.dispose();
   }
 }

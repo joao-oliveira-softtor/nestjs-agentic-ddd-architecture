@@ -7,6 +7,7 @@ import {
   type UseCaseContext,
 } from '@agentic-ddd/core';
 import type { UseCaseRecord } from '@agentic-ddd/decorators';
+import { AgenticError } from '../contracts/codes';
 import { InMemoryEventBus } from './event-bus';
 import type { EventBus } from './ports';
 import { executeUseCase } from './execute-use-case';
@@ -391,4 +392,108 @@ test('the context carries a signal that is not aborted', async () => {
   );
   expect(signal).toBeInstanceOf(AbortSignal);
   expect(signal?.aborted).toBe(false);
+});
+
+describe('timeoutMs', () => {
+  let signal: AbortSignal | undefined;
+  let release: (() => void) | undefined;
+  class Hung implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      signal = ctx.signal;
+      await new Promise<void>((resolve) => (release = resolve));
+      await ctx.publish([new Rang({})]);
+      return { ok: true as const };
+    }
+  }
+
+  test('a use-case that never resolves fails at the deadline with runtime.use-case-timeout and an aborted signal', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    const caught = await executeUseCase(
+      recordFor(Hung),
+      new Hung(),
+      { times: 1 },
+      bus,
+      { timeoutMs: 20 },
+    ).catch((error: unknown) => error);
+    expect(caught).toBeInstanceOf(AgenticError);
+    expect((caught as AgenticError).code).toBe('runtime.use-case-timeout');
+    expect((caught as AgenticError).message).toContain('ring');
+    expect((caught as AgenticError).message).toContain('20');
+    expect(signal?.aborted).toBe(true);
+    // The use-case keeps running after the deadline: its late publication is refused.
+    release?.();
+    await Bun.sleep(1);
+    expect(bus.events).toEqual([]);
+  });
+
+  test('a drain that never settles fails at the deadline, over the bus outcome', async () => {
+    const hungBus: EventBus = {
+      publish: () => new Promise<void>(() => {}),
+      subscribe: () => () => {},
+    };
+    class Forgetful implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        void ctx.publish([new Rang({})]);
+        return { ok: true as const };
+      }
+    }
+    const caught = await executeUseCase(
+      recordFor(Forgetful),
+      new Forgetful(),
+      { times: 1 },
+      hungBus,
+      { timeoutMs: 20 },
+    ).catch((error: unknown) => error);
+    expect((caught as AgenticError).code).toBe('runtime.use-case-timeout');
+  });
+
+  test('within the deadline the result and the precedence are as without one', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    expect(
+      await executeUseCase(recordFor(Ring), new Ring(), { times: 1 }, bus, {
+        timeoutMs: 1_000,
+      }),
+    ).toEqual({ ok: true });
+    expect(bus.events).toHaveLength(1);
+    class Doomed implements UseCase<{ times: number }, { ok: true }> {
+      async execute(
+        _: { times: number },
+        ctx: UseCaseContext,
+      ): Promise<{ ok: true }> {
+        void ctx.publish([new Rang({})]);
+        throw new DomainError('RING_BROKEN', 'The bell broke');
+      }
+    }
+    expect(
+      await rejection(
+        executeUseCase(
+          recordFor(Doomed),
+          new Doomed(),
+          { times: 1 },
+          failingBus,
+          { timeoutMs: 1_000 },
+        ),
+      ),
+    ).toBe('bus down');
+  });
+
+  test('without timeoutMs the same options never abort the signal', async () => {
+    class Slow implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        signal = ctx.signal;
+        await Bun.sleep(30);
+        return { ok: true as const };
+      }
+    }
+    expect(
+      await executeUseCase(
+        recordFor(Slow),
+        new Slow(),
+        { times: 1 },
+        new InMemoryEventBus(),
+        { schemaFor: () => undefined },
+      ),
+    ).toEqual({ ok: true });
+    expect(signal?.aborted).toBe(false);
+  });
 });

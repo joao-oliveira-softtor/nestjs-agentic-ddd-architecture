@@ -8,10 +8,15 @@ export function limitsError(limits: {
 }): string | null {
   if (!Number.isInteger(limits.maxSteps) || limits.maxSteps <= 0)
     return 'maxSteps must be a positive integer';
-  if (!Number.isFinite(limits.timeoutMs) || limits.timeoutMs <= 0)
-    return 'timeoutMs must be a finite positive number';
+  return timeoutError('timeoutMs', limits.timeoutMs);
+}
+
+/** The rule for any timeout handed to setTimeout, with `name` as the option in the message. */
+export function timeoutError(name: string, ms: number): string | null {
+  if (!Number.isFinite(ms) || ms <= 0)
+    return `${name} must be a finite positive number`;
   // setTimeout clamps anything above 2^31-1 to 1 ms, so every run would time out at once.
-  if (limits.timeoutMs > MAX_TIMEOUT_MS)
-    return `timeoutMs must not exceed ${MAX_TIMEOUT_MS} (the setTimeout maximum)`;
+  if (ms > MAX_TIMEOUT_MS)
+    return `${name} must not exceed ${MAX_TIMEOUT_MS} (the setTimeout maximum)`;
   return null;
 }

@@ -350,6 +350,58 @@ test('ctx.signal aborts when the run times out and stays clear when it completes
   expect(doneSignal?.aborted).toBe(false);
 });
 
+test('a late publish after the run completed is refused and leaves ctx.signal clear', async () => {
+  let kept!: UseCaseContext;
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    kept = ctx;
+    return input;
+  });
+  expect((await f.runtime.run('agent', { message: 'go' })).status).toBe(
+    'completed',
+  );
+  const outcome = await kept.publish([new Changed('late')]).then(
+    () => 'resolved',
+    () => 'refused',
+  );
+  expect(outcome).toBe('refused');
+  expect(kept.signal.aborted).toBe(false);
+});
+
+test('a use-case that blocks the event loop past the deadline ends the run as timeout and aborts ctx.signal', async () => {
+  let signal: AbortSignal | undefined;
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      signal = ctx.signal;
+      // Synchronous, so the timer cannot fire: only check() sees the expiry.
+      Bun.sleepSync(40);
+      return input;
+    },
+    {},
+    { timeoutMs: 20 },
+  );
+  expect((await f.runtime.run('agent', { message: 'go' })).status).toBe(
+    'timeout',
+  );
+  expect(signal?.aborted).toBe(true);
+});
+
+test('two use-case executions in one run receive the same signal', async () => {
+  const signals: AbortSignal[] = [];
+  const f = await setup(
+    [calls(call(), call('t2', 'tool', { value: 'b' })), end],
+    async (input, ctx) => {
+      signals.push(ctx.signal);
+      return input;
+    },
+  );
+  expect((await f.runtime.run('agent', { message: 'go' })).status).toBe(
+    'completed',
+  );
+  expect(signals).toHaveLength(2);
+  expect(signals[0]).toBe(signals[1]!);
+});
+
 for (const [name, context] of [
   ['bigint', 1n],
   [
@@ -563,10 +615,11 @@ test('a bus failure on an un-awaited publish fails the run', async () => {
 });
 
 test('a bus failure wins over a DomainError thrown after an un-awaited publish', async () => {
+  const down = new Error('bus down');
   const eventBus: EventBus = {
     publish: async () => {
       await Bun.sleep(5);
-      throw new Error('bus down');
+      throw down;
     },
     subscribe: () => () => {},
   };
@@ -580,6 +633,7 @@ test('a bus failure wins over a DomainError thrown after an un-awaited publish',
   );
   const result = await f.runtime.run('agent', { message: 'go' });
   expect(result).toMatchObject(failedBus);
+  expect(result.error).toBe(down);
   expect(f.llm.requests).toHaveLength(1);
 });
 
@@ -813,28 +867,34 @@ describe('a failed run exposes its error', () => {
     expect((result.error as Error).message).toContain('Event Other');
   });
 
-  test('an invalid event payload ends use_case_error naming the event', async () => {
-    const result = await run(
-      await setup(
-        [calls(call()), end],
-        async (input, ctx) => {
-          await ctx.publish([new Changed({ value: 123 })]);
-          return input;
-        },
-        {},
-        undefined,
-        false,
-        (f) => {
-          f.registry.events[0] = {
-            ...f.registry.events[0]!,
-            payload: z.object({ value: z.string() }),
-          };
-        },
-      ),
-    );
-    expect(result).toMatchObject(failedUseCase);
-    expect((result.error as Error).message).toContain('Event Changed');
-  });
+  for (const [title, swallow] of [
+    ['', false],
+    [' even when the use-case swallows the refusal', true],
+  ] as const) {
+    test(`an invalid event payload ends use_case_error naming the event${title}`, async () => {
+      const result = await run(
+        await setup(
+          [calls(call()), end],
+          async (input, ctx) => {
+            const publishing = ctx.publish([new Changed({ value: 123 })]);
+            await (swallow ? publishing.catch(() => {}) : publishing);
+            return input;
+          },
+          {},
+          undefined,
+          false,
+          (f) => {
+            f.registry.events[0] = {
+              ...f.registry.events[0]!,
+              payload: z.object({ value: z.string() }),
+            };
+          },
+        ),
+      );
+      expect(result).toMatchObject(failedUseCase);
+      expect((result.error as Error).message).toContain('Event Changed');
+    });
+  }
 
   test('an invalid output ends use_case_error with the ZodError', async () => {
     const result = await run(

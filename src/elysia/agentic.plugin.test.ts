@@ -242,6 +242,39 @@ test('an event payload outside its @AgentEvent schema answers 500 and reaches no
   expect(eventBus.events).toEqual([]);
 });
 
+@AgentUseCase({
+  name: 'elysia_hung',
+  description: 'Never finishes.',
+  whenToUse: 'Only in tests.',
+  input: z.object({}),
+  output: z.object({}),
+  uses: [],
+  emits: [],
+})
+class Hung implements UseCase<{}, {}> {
+  execute(): Promise<{}> {
+    return new Promise(() => {});
+  }
+}
+
+test('with useCaseTimeoutMs a route whose use-case never resolves answers 504 with the code', async () => {
+  const app = await agentic({
+    root,
+    modules: [{ name: 'elysia-test', path: 'src/elysia' }],
+    llm: new FakeLlm([]),
+    operators: [],
+    useCaseTimeoutMs: 20,
+    useCases: { elysia_hung: new Hung() },
+    http: {},
+  });
+  const api = treaty(app);
+  const response = await api.agentic['use-cases'].elysia_hung.post({});
+  expect(response.status).toBe(504);
+  const body = response.error?.value;
+  expect(body).toMatchObject({ code: 'runtime.use-case-timeout' });
+  expect((body as { message: string }).message).toContain('elysia_hung');
+});
+
 test('output outside its schema answers 500', async () => {
   // Number('x') is NaN, which the output schema rejects.
   const response = await (
