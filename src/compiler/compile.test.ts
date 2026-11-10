@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import {
   access,
+  link,
   mkdir,
   mkdtemp,
   readFile,
@@ -214,6 +215,21 @@ describe('compile (exemplo orders)', () => {
     expect(
       (await compile({ configPath, outRoot: out, mode: 'check' })).ok,
     ).toBe(true);
+  });
+
+  test('the lock is replaced, not rewritten in place: a hard link keeps the old content', async () => {
+    await bootstrapChanges(out);
+    const lockPath = join(out, '.agentic/domain.lock.json');
+    const lock = JSON.parse(await readFile(lockPath, 'utf8'));
+    lock.ir.useCases[0].description = 'Old description.';
+    const oldText = JSON.stringify(lock);
+    await writeFile(lockPath, oldText);
+    await link(lockPath, join(out, 'lock.copy.json'));
+
+    await compile({ configPath, outRoot: out, mode: 'write' });
+
+    expect(await readFile(lockPath, 'utf8')).not.toBe(oldText);
+    expect(await readFile(join(out, 'lock.copy.json'), 'utf8')).toBe(oldText);
   });
 
   test('mudança de domínio sem proposta remove o snapshot existente', async () => {
