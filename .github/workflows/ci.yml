@@ -8,9 +8,15 @@ on:
 permissions:
   contents: read
 
+# Pull requests share one group per ref and cancel superseded runs; pushes get their own group.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   ci:
     runs-on: ubuntu-22.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -38,6 +44,7 @@ jobs:
   ci-windows:
     # Same gate as `ci` on native Windows (#128): paths, symlinks and line endings.
     runs-on: windows-latest
+    timeout-minutes: 25
     defaults:
       run:
         shell: bash
@@ -69,6 +76,7 @@ jobs:
   evals:
     # ubuntu-latest rejected the bubblewrap uid map; keep the required probe.
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2

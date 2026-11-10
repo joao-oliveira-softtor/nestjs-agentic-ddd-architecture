@@ -1,7 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import type { DomainLock } from '../compiler/lock';
 import type { Rule } from '../compiler/rules';
-import { coversModule, narrowRuleGlobs, pathModule, scopeLock } from './scope';
+import {
+  coversModule,
+  lockModules,
+  narrowRuleGlobs,
+  pathModule,
+  scopeLock,
+} from './scope';
 
 const inv = (id: string, on: string | null = null) => ({
   id,
@@ -386,4 +392,54 @@ describe('coversModule', () => {
       expect(coversModule('all', value)).toBe(true);
     }
   });
+});
+
+describe('lockModules', () => {
+  const {
+    valueObjects: _vo,
+    ports: _ports,
+    adapters: _adapters,
+    ...ir
+  } = lock.ir;
+  // No elements at all, and the optional lists absent: only the declared module is known.
+  const bare: DomainLock = {
+    ...lock,
+    ir: {
+      ...ir,
+      modules: [{ name: 'declared', path: 'examples/declared' }],
+      entities: [],
+      events: [],
+      useCases: [],
+      operators: [],
+    },
+    changes: [],
+  };
+  const at = (module: string) => [{ module }] as never;
+
+  test('a lock with no elements and no optional lists knows only its declared modules', () => {
+    expect(lockModules(bare)).toEqual(new Set(['declared']));
+  });
+
+  test('a change item names a module the lock no longer declares', () => {
+    const change = { ...lock.changes[0]!, items: [{ module: 'removed' }] };
+    const known = lockModules({ ...bare, changes: [change as never] });
+    expect(known).toEqual(new Set(['declared', 'removed']));
+  });
+
+  for (const list of [
+    'entities',
+    'valueObjects',
+    'events',
+    'ports',
+    'adapters',
+    'useCases',
+    'operators',
+  ] as const)
+    test(`${list} count even when their module is not declared`, () => {
+      const known = lockModules({
+        ...bare,
+        ir: { ...bare.ir, [list]: at(`in-${list}`) },
+      });
+      expect(known).toEqual(new Set(['declared', `in-${list}`]));
+    });
 });
