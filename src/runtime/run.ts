@@ -4,7 +4,7 @@ import {
   type UseCaseContext,
 } from '@agentic-ddd/core';
 import { createDeadline } from './deadline';
-import { guardEmits, type EmitsGuard } from './emits-guard';
+import { guardEmits, guardFailure } from './emits-guard';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import type { MountedOperator } from './operator-runtime';
 import type {
@@ -23,16 +23,6 @@ class RunTimeout extends Error {
   constructor() {
     super('Operator timeout');
   }
-}
-
-/** What the guard recorded ends the run whatever the use-case did: a refusal, then a bus failure. */
-function guardFailure(
-  guard: EmitsGuard,
-): { reason: TerminationReason; error: unknown } | undefined {
-  if (guard.undeclared)
-    return { reason: 'use_case_error', error: guard.refusal };
-  if (!guard.failed) return undefined;
-  return { reason: 'event_bus_error', error: guard.failed.error };
 }
 
 /** A single deadline covers provider, approval, execution and event delivery. */
@@ -151,7 +141,6 @@ export async function runOperator(
                 }),
               )
             : { approved: false, reason: 'ApprovalPort is not configured' };
-          failure = 'use_case_error';
           if (!trace.approval.approved) {
             result(
               {
@@ -164,6 +153,8 @@ export async function runOperator(
             );
             continue;
           }
+          // Only here: a port that resolves with no decision is still the port's failure.
+          failure = 'use_case_error';
         }
         const guard = guardEmits(
           tool.record,

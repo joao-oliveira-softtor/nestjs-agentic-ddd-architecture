@@ -5,8 +5,8 @@ import type { EventBus, EventHandler } from './ports';
 export interface InMemoryEventBusOptions {
   /** Keep every published event in `events` (tests); off by default. */
   record?: boolean;
-  /** Receives a subscriber error; defaults to `console.error` with the event name and id (no payload). */
-  onError?: (error: unknown, event: DomainEvent) => void;
+  /** Receives a subscriber error; defaults to `console.error` with the event name and id (no payload). May be async: a returned promise is awaited. */
+  onError?: (error: unknown, event: DomainEvent) => unknown;
 }
 
 /**
@@ -49,7 +49,7 @@ export class InMemoryEventBus implements EventBus {
           try {
             await this.#deliveryContext.run(context, () => handler(event));
           } catch (error) {
-            this.#report(error, event);
+            await this.#report(error, event);
           } finally {
             context.active = false;
           }
@@ -60,9 +60,10 @@ export class InMemoryEventBus implements EventBus {
     return delivery;
   }
 
-  #report(error: unknown, event: DomainEvent): void {
+  /** Awaited like a handler, so an async `onError` that rejects is caught here too. */
+  async #report(error: unknown, event: DomainEvent): Promise<void> {
     try {
-      if (this.#options.onError) this.#options.onError(error, event);
+      if (this.#options.onError) await this.#options.onError(error, event);
       // Name the event only: its payload may hold data that must not reach a log.
       else
         console.error(

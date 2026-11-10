@@ -161,6 +161,28 @@ test('bus sends an error thrown by onError to console.error and still resolves',
   }
 });
 
+test('bus sends the rejection of an async onError to console.error and still resolves', async () => {
+  const original = console.error;
+  const calls: unknown[][] = [];
+  console.error = (...args: unknown[]) => void calls.push(args);
+  try {
+    const hookError = new Error('hook');
+    const bus = new InMemoryEventBus({
+      onError: async () => {
+        await Bun.sleep(1);
+        throw hookError;
+      },
+    });
+    bus.subscribe(() => {
+      throw new Error('boom');
+    });
+    await bus.publish([new Created('a')]);
+    expect(calls.flat()).toContain(hookError);
+  } finally {
+    console.error = original;
+  }
+});
+
 test('bus keeps no events unless record is true', async () => {
   const events = [new Created('a'), new Created('b')];
   const plain = new InMemoryEventBus();

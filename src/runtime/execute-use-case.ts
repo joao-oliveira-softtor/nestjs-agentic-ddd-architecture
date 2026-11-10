@@ -3,7 +3,7 @@ import type { UseCaseRecord } from '@agentic-ddd/decorators';
 import type { ZodType } from 'zod';
 import { AgenticError } from '../contracts/codes';
 import { createDeadline } from './deadline';
-import { guardEmits } from './emits-guard';
+import { guardEmits, guardFailure } from './emits-guard';
 import type { EventBus } from './ports';
 
 export interface UseCaseOptions {
@@ -90,8 +90,8 @@ export async function runUseCase(
     deadline.dispose();
   }
   // Precedence: undeclared event, then a bus failure, then the use-case's own error.
-  if (guard.refusal) throw guard.refusal;
-  if (guard.failed) throw guard.failed.error;
+  const blocked = guardFailure(guard);
+  if (blocked) throw blocked.error;
   if (thrown) throw thrown.error;
   return record.output.parse(output);
 }

@@ -10,9 +10,20 @@ export interface EmitsGuard {
   readonly refusal: Error | undefined;
   /** The first delivery failure, kept so an un-awaited publish cannot lose it. */
   readonly failed: { error: unknown } | undefined;
-  /** Resolves once no delivery is pending, including ones started meanwhile, so `failed` is final (a use-case may not await its publish). */
+  /** Resolves once no delivery is pending, including ones started meanwhile, and ends the guard at that instant, so `failed` is final (a use-case may not await its publish). */
   drain(): Promise<void>;
   end(): void;
+}
+
+/** What the guard recorded wins over whatever the use-case did: a refusal, then a bus failure. */
+export function guardFailure(
+  guard: EmitsGuard,
+):
+  { reason: 'use_case_error' | 'event_bus_error'; error: unknown } | undefined {
+  if (guard.undeclared)
+    return { reason: 'use_case_error', error: guard.refusal };
+  if (!guard.failed) return undefined;
+  return { reason: 'event_bus_error', error: guard.failed.error };
 }
 
 /** Event payload schemas by event name, the same key as the emits check. */
@@ -38,9 +49,12 @@ function refusalFor(
   if (refused)
     return `Event ${refused.name} is not declared in emits of use-case ${record.name}`;
   // Stamping happens inside the delivery: refuse here, or a repeat would end as a bus failure.
-  const repeated = batch.find(
-    (event, i) => event.correlationId !== null || batch.indexOf(event) !== i,
-  );
+  const seen = new Set<DomainEvent>();
+  const repeated = batch.find((event) => {
+    if (event.correlationId !== null || seen.has(event)) return true;
+    seen.add(event);
+    return false;
+  });
   if (repeated)
     return `Event ${repeated.name} was already published (use-case ${record.name})`;
   // Only validates: the payload stays as the use-case built it.
@@ -107,6 +121,8 @@ export function guardEmits(
       } catch (error) {
         return Promise.reject(error);
       }
+      // `ctx.publish(aggregate.pullEvents())` with nothing raised must not reach a bus that refuses an empty batch.
+      if (!batch.length) return Promise.resolve();
       const delivery = deliver(batch);
       // An awaiting caller still sees the rejection; a caller that forgot to await does not
       // leave an unhandled one, and the guard keeps the failure for the execution to rethrow.
@@ -120,6 +136,8 @@ export function guardEmits(
     async drain() {
       // A delivery can start while an earlier one settles, so walk the list as it grows.
       for (let i = 0; i < settling.length; i++) await settling[i];
+      // Closed in the same tick, or a publish made before the caller resumes would be delivered unobserved.
+      active = false;
     },
   };
 }

@@ -845,6 +845,23 @@ describe('a failed run exposes its error', () => {
     expect(later.error).toBe(bug);
   });
 
+  test('an ApprovalPort that resolves with no decision ends approval_error', async () => {
+    const result = await run(
+      await setup(
+        [calls(call()), end],
+        undefined,
+        { approval: { request: async () => undefined as never } },
+        undefined,
+        true,
+      ),
+    );
+    expect(result).toMatchObject({
+      status: 'failed',
+      reason: 'approval_error',
+    });
+    expect(result.error).toBeInstanceOf(TypeError);
+  });
+
   for (const [title, error] of [
     ['an Error', new Error('bus down')],
     ['a DomainError', new DomainError('BUS_DOWN', 'bus down')],

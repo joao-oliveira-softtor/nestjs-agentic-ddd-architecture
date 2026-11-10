@@ -139,6 +139,26 @@ test('a published batch reaches the bus in one call', async () => {
   expect(calls).toEqual([['Rang', 'Rang']]);
 });
 
+test('an empty batch does not reach the bus', async () => {
+  let calls = 0;
+  const bus: EventBus = {
+    publish: async () => {
+      calls++;
+    },
+    subscribe: () => () => {},
+  };
+  class Quiet implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      await ctx.publish([]);
+      return { ok: true as const };
+    }
+  }
+  expect(
+    await executeUseCase(recordFor(Quiet), new Quiet(), { times: 1 }, bus),
+  ).toEqual({ ok: true });
+  expect(calls).toBe(0);
+});
+
 test('a batch with an undeclared event delivers none of it', async () => {
   const bus = new InMemoryEventBus({ record: true });
   class Mixed implements UseCase<{ times: number }, { ok: true }> {
@@ -248,6 +268,38 @@ test('a publish made while the drain waits is drained too', async () => {
       executeUseCase(recordFor(Chained), new Chained(), { times: 1 }, bus),
     ),
   ).toBe('second down');
+});
+
+test('a publish that starts once the drain found nothing pending is refused, not delivered unobserved', async () => {
+  let calls = 0;
+  const bus: EventBus = {
+    publish: async () => {
+      calls++;
+      await Bun.sleep(2);
+    },
+    subscribe: () => () => {},
+  };
+  let background!: Promise<string>;
+  class Background implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      background = (async () => {
+        await ctx.publish([new Rang({})]);
+        // Any quick await: the first delivery settled, so the drain sees nothing pending meanwhile.
+        await Promise.resolve();
+        await ctx.publish([new Rang({})]);
+        return 'published';
+      })().catch((error: Error) => error.message);
+      return { ok: true as const };
+    }
+  }
+  await executeUseCase(
+    recordFor(Background),
+    new Background(),
+    { times: 1 },
+    bus,
+  );
+  expect(await background).toBe('Use-case execution already ended');
+  expect(calls).toBe(1);
 });
 
 test('a publish made after the execution ended is refused', async () => {
