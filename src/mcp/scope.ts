@@ -85,6 +85,28 @@ export function scopeLock(lock: DomainLock, access: ModuleAccess): DomainLock {
   };
 }
 
+/** Every module name `scopeLock` compares with `access`: tokens that read the same ones of these get the same view. */
+export function lockModules(lock: DomainLock): Set<string> {
+  const { ir } = lock;
+  return new Set([
+    ...ir.modules.map((m) => m.name),
+    // A published lock is not checked for elements outside `ir.modules`.
+    ...[
+      ir.entities,
+      ir.valueObjects ?? [],
+      ir.events,
+      ir.ports ?? [],
+      ir.adapters ?? [],
+      ir.useCases,
+      ir.operators,
+    ]
+      .flat()
+      .map((x) => x.module),
+    // A change may cite a module `ir.modules` no longer has: it decides whether the change is visible.
+    ...lock.changes.flatMap((c) => c.items.map((i) => i.module)),
+  ]);
+}
+
 /** Whether `access` covers `module`; anything that is not a module name (the client's text) is never covered. */
 export function coversModule(access: ModuleAccess, module: unknown): boolean {
   return (

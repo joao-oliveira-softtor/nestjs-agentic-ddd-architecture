@@ -1,5 +1,4 @@
-import { sha256 } from '../canonical';
-import type { Proposal } from '../changes/proposal';
+import { proposalHashMatches, type Proposal } from '../changes/proposal';
 import { deltaProblems } from '../changes/reconcile';
 import type { DiffItem } from '../diff';
 import type { Coded, ErrorCode } from '../ir';
@@ -132,7 +131,7 @@ export function evaluateGates(input: GateInput): VerifyReport {
         fix: 'restore the lock from git',
         source: proposal.path,
       });
-    } else if (recorded.hash !== sha256(proposal.raw)) {
+    } else if (!proposalHashMatches(proposal.raw, recorded.hash)) {
       g1.push({
         code: 'proposal.applied-edited',
         message: `the proposal ${proposal.id} was edited after being applied`,

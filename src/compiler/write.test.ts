@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import {
+  link,
   lstat,
   mkdir,
   mkdtemp,
   readdir,
   readFile,
   readlink,
+  rename,
   rm,
   symlink,
   writeFile,
@@ -23,6 +25,7 @@ import {
   extractAgentsBlock,
   checkOutputs,
   mergeAgentsBlock,
+  writeFileAtomic,
   writeOutputs,
 } from './write';
 
@@ -35,6 +38,12 @@ const block = `${BLOCK_BEGIN}\nconteúdo\n${BLOCK_END}`;
 
 let out: string;
 let config: ResolvedConfig;
+
+const rejection = (promise: Promise<unknown>): Promise<unknown> =>
+  promise.then(
+    () => null,
+    (error: unknown) => error,
+  );
 
 beforeEach(async () => {
   out = await mkdtemp(join(tmpdir(), 'agentic-write-'));
@@ -159,6 +168,59 @@ describe('writeOutputs / checkOutputs', () => {
     ]);
   });
 
+  describe('CRLF checkout', () => {
+    const toCrlf = async (path: string): Promise<void> => {
+      const absolute = join(out, path);
+      await writeFile(
+        absolute,
+        (await readFile(absolute, 'utf8')).replace(/\n/g, '\r\n'),
+      );
+    };
+    const allToCrlf = async (): Promise<void> => {
+      for (const path of [...rendered.files.keys(), 'AGENTS.md'])
+        await toCrlf(path);
+    };
+
+    test('files converted to CRLF by git are not drift', async () => {
+      await writeOutputs(config, rendered);
+      await allToCrlf();
+      expect(await checkOutputs(config, rendered)).toEqual([]);
+    });
+
+    test('a real change in a CRLF file is still reported', async () => {
+      await writeOutputs(config, rendered);
+      await allToCrlf();
+      const skillPath = join(out, '.agents/skills/shop-dev/SKILL.md');
+      await writeFile(
+        skillPath,
+        `${await readFile(skillPath, 'utf8')}edited\r\n`,
+      );
+      const agentsPath = join(out, 'AGENTS.md');
+      await writeFile(
+        agentsPath,
+        (await readFile(agentsPath, 'utf8')).replace(
+          '## Domain (agentic-ddd)',
+          '## Edited',
+        ),
+      );
+      expect(await checkOutputs(config, rendered)).toEqual([
+        { path: '.agents/skills/shop-dev/SKILL.md', reason: 'changed' },
+        { path: 'AGENTS.md', reason: 'changed' },
+      ]);
+    });
+
+    test('a write keeps the CRLF text of the user outside the generated block', async () => {
+      await writeFile(
+        join(out, 'AGENTS.md'),
+        `# Project\r\n\r\nNotes.\r\n\r\n${BLOCK_BEGIN}\r\nold\r\n${BLOCK_END}\r\nend\r\n`,
+      );
+      await writeOutputs(config, rendered);
+      const agents = await readFile(join(out, 'AGENTS.md'), 'utf8');
+      expect(agents.startsWith('# Project\r\n\r\nNotes.\r\n\r\n')).toBe(true);
+      expect(agents.endsWith(`${BLOCK_END}\r\nend\r\n`)).toBe(true);
+    });
+  });
+
   test('remove skill gerada órfã e nunca toca skill do usuário', async () => {
     const orphan = join(out, '.agentic/runtime/old-operator');
     await mkdir(orphan, { recursive: true });
@@ -180,6 +242,119 @@ describe('writeOutputs / checkOutputs', () => {
       '---\nname: minha-skill\n---\n',
     );
     expect(await checkOutputs(config, rendered)).toEqual([]);
+  });
+
+  test('a stale file inside a kept skill directory is removed and check is clean', async () => {
+    await writeOutputs(config, rendered);
+    const stale = join(out, '.agents/skills/shop-dev/references/stale.md');
+    await writeFile(stale, 'stale\n');
+    expect(await checkOutputs(config, rendered)).toContainEqual({
+      path: '.agents/skills/shop-dev/references/stale.md',
+      reason: 'extra',
+    });
+
+    await writeOutputs(config, rendered);
+
+    expect(await lstat(stale).catch(() => null)).toBeNull();
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+  });
+
+  test('a kept skill directory that is a symbolic link becomes a real directory and its target is untouched', async () => {
+    await writeOutputs(config, rendered);
+    const dir = join(out, '.agents/skills/shop-dev');
+    const target = join(out, 'outside/shop-dev');
+    await mkdir(join(out, 'outside'));
+    await rename(dir, target);
+    await writeFile(join(target, 'extra.md'), 'extra\n');
+    const oldSkill = `${await readFile(join(target, 'SKILL.md'), 'utf8')}\nold\n`;
+    await writeFile(join(target, 'SKILL.md'), oldSkill);
+    await symlink(target, dir);
+
+    await writeOutputs(config, rendered);
+
+    expect((await lstat(dir)).isDirectory()).toBe(true);
+    expect(await readFile(join(dir, 'SKILL.md'), 'utf8')).toBe(
+      rendered.files.get('.agents/skills/shop-dev/SKILL.md')!,
+    );
+    expect(await readFile(join(target, 'extra.md'), 'utf8')).toBe('extra\n');
+    expect(await readFile(join(target, 'SKILL.md'), 'utf8')).toBe(oldSkill);
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+  });
+
+  test('a symbolic link inside a kept skill directory is never written through', async () => {
+    await writeOutputs(config, rendered);
+    const path = [...rendered.files.keys()].find((file) =>
+      file.startsWith('.agents/skills/shop-dev/references/'),
+    )!;
+    const outside = join(out, 'outside.md');
+    await writeFile(outside, 'outside\n');
+    await rm(join(out, path));
+    await symlink(outside, join(out, path));
+
+    await writeOutputs(config, rendered);
+
+    expect(await readFile(outside, 'utf8')).toBe('outside\n');
+    expect((await lstat(join(out, path))).isFile()).toBe(true);
+    expect(await readFile(join(out, path), 'utf8')).toBe(
+      rendered.files.get(path)!,
+    );
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+  });
+
+  test('a rendered file that cannot be read is reported as missing by check', async () => {
+    await writeOutputs(config, rendered);
+    const path = '.agents/skills/shop-dev/references/history.md';
+    await rm(join(out, path));
+    await mkdir(join(out, path));
+
+    expect(await checkOutputs(config, rendered)).toContainEqual({
+      path,
+      reason: 'missing',
+    });
+  });
+
+  test('a failure in the middle of the writes leaves the other skill directories as they were', async () => {
+    await writeOutputs(config, rendered);
+    const sentinel = join(out, '.agents/skills/shop-dev/references/history.md');
+    await writeFile(sentinel, 'previous content\n');
+    // the runtime directory is written first; its references path cannot be created
+    const blocked = join(out, '.agentic/runtime/catalog-operator/references');
+    await rm(blocked, { recursive: true });
+    await writeFile(blocked, 'not a directory\n');
+    const orphan = join(out, '.agents/skills/gone-dev');
+    await mkdir(orphan, { recursive: true });
+    await writeFile(
+      join(orphan, 'SKILL.md'),
+      '---\nname: gone-dev\nmetadata:\n  agentic-ddd.generated: "true"\n---\n',
+    );
+
+    expect(await rejection(writeOutputs(config, rendered))).not.toBeNull();
+
+    // an orphan directory is removed only after every write, so it survives too
+    expect((await lstat(join(orphan, 'SKILL.md'))).isFile()).toBe(true);
+    expect(await readFile(sentinel, 'utf8')).toBe('previous content\n');
+    expect(
+      await readFile(join(out, '.agents/skills/shop-dev/SKILL.md'), 'utf8'),
+    ).toBe(rendered.files.get('.agents/skills/shop-dev/SKILL.md')!);
+  });
+
+  test('the directory of a removed module goes away with its mirror link', async () => {
+    const gone = join(out, '.agents/skills/gone-dev');
+    await mkdir(gone, { recursive: true });
+    await writeFile(
+      join(gone, 'SKILL.md'),
+      '---\nname: gone-dev\nmetadata:\n  agentic-ddd.generated: "true"\n---\n',
+    );
+    const skills = join(out, '.claude/skills');
+    await mkdir(skills, { recursive: true });
+    await symlink('../../.agents/skills/gone-dev', join(skills, 'gone-dev'));
+
+    const { written } = await writeOutputs(config, rendered);
+
+    expect(await lstat(gone).catch(() => null)).toBeNull();
+    expect(await lstat(join(skills, 'gone-dev')).catch(() => null)).toBeNull();
+    expect(written).toContain('.agents/skills/gone-dev (removed)');
+    expect(written).toContain('.claude/skills/gone-dev (link removed)');
   });
 
   test('AGENTS.md: preserva texto manual e só o bloco conta para o check', async () => {
@@ -338,6 +513,148 @@ describe('writeOutputs / checkOutputs', () => {
     expect(await checkOutputs(config, rendered)).toEqual([
       { path: '.agents/skills/shop-dev', reason: 'conflict' },
     ]);
+  });
+
+  test.each(['AGENTS.md', 'CLAUDE.md'])(
+    '%s that cannot be read fails write and check without touching the skills',
+    async (name) => {
+      await writeOutputs(config, rendered);
+      const skillPath = join(out, '.agents/skills/shop-dev/SKILL.md');
+      // a hand edit that a rewrite of the skill directory would erase
+      const before = `${await readFile(skillPath, 'utf8')}\nhand edit\n`;
+      await writeFile(skillPath, before);
+      await rm(join(out, name));
+      await mkdir(join(out, name));
+
+      expect(await rejection(writeOutputs(config, rendered))).toMatchObject({
+        message: expect.stringContaining(name),
+      });
+      expect(await readFile(skillPath, 'utf8')).toBe(before);
+      expect((await lstat(join(out, name))).isDirectory()).toBe(true);
+      expect(await rejection(checkOutputs(config, rendered))).toMatchObject({
+        message: expect.stringContaining(name),
+      });
+    },
+  );
+
+  test('a kept skill directory whose SKILL.md is a directory is a conflict, not a crash', async () => {
+    const dir = join(out, '.agents/skills/shop-dev');
+    await mkdir(join(dir, 'SKILL.md'), { recursive: true });
+
+    expect(await checkOutputs(config, rendered)).toContainEqual({
+      path: '.agents/skills/shop-dev',
+      reason: 'conflict',
+    });
+    const { warnings } = await writeOutputs(config, rendered);
+
+    expect(warnings).toContain(
+      '.agents/skills/shop-dev exists and was not generated by agentic-ddd; it was not overwritten',
+    );
+    expect((await lstat(join(dir, 'SKILL.md'))).isDirectory()).toBe(true);
+  });
+
+  test('an extra directory with an unreadable SKILL.md does not make write or check fail', async () => {
+    await mkdir(join(out, '.agentic/runtime/odd/SKILL.md'), {
+      recursive: true,
+    });
+
+    await writeOutputs(config, rendered);
+
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+    expect(
+      (await lstat(join(out, '.agentic/runtime/odd/SKILL.md'))).isDirectory(),
+    ).toBe(true);
+  });
+
+  test('a stray plain file among the skill directories breaks neither write nor check', async () => {
+    await mkdir(join(out, '.agents/skills'), { recursive: true });
+    await writeFile(join(out, '.agents/skills/stray.txt'), 'stray\n');
+
+    await writeOutputs(config, rendered);
+
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+    expect(await readFile(join(out, '.agents/skills/stray.txt'), 'utf8')).toBe(
+      'stray\n',
+    );
+  });
+
+  test('a symbolic link AGENTS.md stays a link and its target gets the block', async () => {
+    const targetDir = join(out, 'shared');
+    await mkdir(targetDir);
+    const target = join(targetDir, 'real-agents.md');
+    await writeFile(target, '# Team notes\n');
+    await symlink(target, join(out, 'AGENTS.md'));
+
+    await writeOutputs(config, rendered);
+
+    expect((await lstat(join(out, 'AGENTS.md'))).isSymbolicLink()).toBe(true);
+    const text = await readFile(target, 'utf8');
+    expect(text.startsWith('# Team notes\n')).toBe(true);
+    expect(text).toContain(BLOCK_BEGIN);
+    expect((await readdir(out)).filter((n) => n.endsWith('.tmp'))).toEqual([]);
+    expect(
+      (await readdir(targetDir)).filter((n) => n.endsWith('.tmp')),
+    ).toEqual([]);
+  });
+
+  test('a dangling symbolic link AGENTS.md stays a link and its target is created', async () => {
+    const target = join(out, 'not-yet.md');
+    await symlink(target, join(out, 'AGENTS.md'));
+
+    await writeOutputs(config, rendered);
+
+    expect((await lstat(join(out, 'AGENTS.md'))).isSymbolicLink()).toBe(true);
+    expect(await readFile(target, 'utf8')).toContain(BLOCK_BEGIN);
+    expect((await readdir(out)).filter((n) => n.endsWith('.tmp'))).toEqual([]);
+  });
+
+  test.each([
+    ['CLAUDE.md', 'AGENTS.md'],
+    ['AGENTS.md', 'CLAUDE.md'],
+  ])(
+    '%s linked to a %s that does not exist yet keeps the generated block',
+    async (linkName, targetName) => {
+      await symlink(targetName, join(out, linkName));
+
+      await writeOutputs(config, rendered);
+
+      expect((await lstat(join(out, linkName))).isSymbolicLink()).toBe(true);
+      expect(await readFile(join(out, targetName), 'utf8')).toContain(
+        BLOCK_BEGIN,
+      );
+      expect(await checkOutputs(config, rendered)).toEqual([]);
+    },
+  );
+
+  test('AGENTS.md is replaced, not rewritten in place: a hard link keeps the old content', async () => {
+    const path = join(out, 'AGENTS.md');
+    await writeFile(path, '# Old notes\n');
+    await link(path, join(out, 'AGENTS.copy.md'));
+
+    await writeOutputs(config, rendered);
+
+    expect(await readFile(path, 'utf8')).toContain(BLOCK_BEGIN);
+    expect(await readFile(join(out, 'AGENTS.copy.md'), 'utf8')).toBe(
+      '# Old notes\n',
+    );
+  });
+
+  test('writeFileAtomic replaces the content and leaves no temporary file', async () => {
+    const path = join(out, 'atomic.txt');
+    await writeFile(path, 'old\n');
+    await writeFileAtomic(path, 'new\n');
+    expect(await readFile(path, 'utf8')).toBe('new\n');
+    expect((await readdir(out)).filter((n) => n.endsWith('.tmp'))).toEqual([]);
+  });
+
+  test('writeFileAtomic keeps the destination and cleans up when the rename fails', async () => {
+    const path = join(out, 'is-a-dir');
+    await mkdir(path);
+    expect(await rejection(writeFileAtomic(path, 'x\n'))).toBeInstanceOf(
+      Error,
+    );
+    expect((await lstat(path)).isDirectory()).toBe(true);
+    expect((await readdir(out)).filter((n) => n.endsWith('.tmp'))).toEqual([]);
   });
 
   test('a marca de gerado só vale no frontmatter', async () => {

@@ -21,7 +21,13 @@ import type { Rule } from '../compiler/rules';
 import { checkSnapshot } from '../compiler/snapshot';
 import { publishBundle, type PublishTarget } from '../publish/bundle';
 import type { PublishedChange } from '../publish/change-sink';
-import { coversModule, narrowRuleGlobs, pathModule, scopeLock } from './scope';
+import {
+  coversModule,
+  lockModules,
+  narrowRuleGlobs,
+  pathModule,
+  scopeLock,
+} from './scope';
 import {
   authoringCatalogue,
   authoringLoader,
@@ -29,6 +35,7 @@ import {
   findDoc,
   index,
   LANGUAGE_RULE,
+  type AuthoringDoc,
   type SkillDoc,
 } from './skills';
 import { changes, element, overview, rulesForPath } from './tools';
@@ -70,6 +77,18 @@ export const withProposeSlot = oneAtATime('mcp.propose-busy', 'propose_change');
 export const withPublishSlot = oneAtATime('mcp.publish-busy', 'publish_change');
 
 const noGrant = (access: ModuleAccess) => access !== 'all' && access.size === 0;
+
+function requireGrant(
+  access: ModuleAccess,
+  capability: string,
+  what: string,
+): void {
+  if (noGrant(access))
+    throw new AgenticError(
+      'auth.scope-missing',
+      `the ${capability} scope is needed to ${what}`,
+    );
+}
 
 function assertInputSize(args: unknown, max = MAX_INPUT_BYTES): void {
   if (Buffer.byteLength(JSON.stringify(args)) > max)
@@ -145,11 +164,7 @@ async function publishChange(
   access: ModuleAccess,
   args: PublishArgs,
 ): Promise<PublishedChange> {
-  if (noGrant(access))
-    throw new AgenticError(
-      'auth.scope-missing',
-      `the ${PUBLISH_CAPABILITY} scope is needed to publish a change`,
-    );
+  requireGrant(access, PUBLISH_CAPABILITY, 'publish a change');
   assertInputSize(args, MAX_PUBLISH_BYTES);
   if (!publish || 'published' in source)
     throw new AgenticError(
@@ -168,23 +183,89 @@ async function publishChange(
   );
 }
 
+// What the servers of one process may share instead of redoing it per request (HTTP builds a server per request).
+export type Shared = {
+  authoringDocs: () => Promise<AuthoringDoc[] | null>;
+  snapshot: typeof checkSnapshot;
+  catalogue: typeof catalogue;
+  // Published mode only (the lock never changes), keyed by access.
+  catalogues: Map<string, SkillDoc[]>;
+};
+
+// `check` and `catalogue` are injectable so a test can count the real work.
+export function createShared(
+  authoringDir = AUTHORING_DIR,
+  deps: { check?: typeof checkSnapshot; catalogue?: typeof catalogue } = {},
+): Shared {
+  const check = deps.check ?? checkSnapshot;
+  const inFlight = new Map<string, ReturnType<typeof checkSnapshot>>();
+  return {
+    authoringDocs: authoringLoader(authoringDir),
+    // A check in flight is shared; a call that arrives after it finished starts another.
+    snapshot: (root) => {
+      let run = inFlight.get(root);
+      if (!run) {
+        run = check(root).finally(() => inFlight.delete(root));
+        inFlight.set(root, run);
+      }
+      return run;
+    },
+    catalogue: deps.catalogue ?? catalogue,
+    catalogues: new Map(),
+  };
+}
+
+// Distinct access sets are few in practice; this bounds the memo against a flood of crafted ones.
+const MAX_CATALOGUES = 256;
+
+// Published mode: the lock never changes, so the catalogue depends only on the lock and on which of its modules the
+// token reads. The key names every module the lock mentions (`lockModules`) and the lock's digest.
+// Nothing is kept while the authoring skill is missing: it may be there on the next call.
+function publishedCatalogue(
+  shared: Shared,
+  published: PublishedLock,
+  input: Parameters<typeof catalogue>[0],
+  authoringAvailable: boolean,
+): SkillDoc[] {
+  const { fullLock, skillAccess: access } = input;
+  const key = `${published.digest}:${
+    access === 'all'
+      ? 'all'
+      : JSON.stringify(
+          [...lockModules(fullLock)].filter((name) => access.has(name)).sort(),
+        )
+  }`;
+  let docs = shared.catalogues.get(key);
+  if (!docs) {
+    docs = shared.catalogue(input);
+    if (authoringAvailable) {
+      // shortcut: crude cap on distinct access sets, upgrade to LRU if real deployments exceed it
+      if (shared.catalogues.size >= MAX_CATALOGUES) shared.catalogues.clear();
+      shared.catalogues.set(key, docs);
+    }
+  }
+  return docs;
+}
+
 // The tools and skill documents, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
 // `publish` is where publish_change sends a bundle (its sink and the project config); without it that tool answers `mcp.publish-unavailable`.
+// `shared` is built once by a long-lived caller; without it the server keeps its own, built from `authoringDir`.
+// When `shared` is passed, `authoringDir` is ignored: the `Shared` carries its own directory.
 export function createDomainServer(
   source: Source,
   remote: boolean,
   authoringDir = AUTHORING_DIR,
   publish?: PublishTarget,
+  shared: Shared = createShared(authoringDir),
 ): McpServer {
-  // The skill comes from the installed package, not from the project: read once per server, in both modes.
-  const authoringDocs = authoringLoader(authoringDir);
+  // The skill comes from the installed package, not from the project: read once per `shared`, in both modes.
   // Fail closed: a remote call without a grant sees nothing.
   const accessOf = (ctx: Ctx | undefined, capability: string): ModuleAccess =>
     remote
       ? (moduleAccess(ctx?.http?.authInfo?.scopes ?? [], capability) ??
         new Set<string>())
       : 'all';
-  // Every call revalidates the snapshot: nothing serves stale data.
+  // Every call revalidates the snapshot: a check in flight is shared; a call that arrives after it finished starts another.
   const scopedFor = async (
     ctx: Ctx | undefined,
     capability: string,
@@ -197,7 +278,7 @@ export function createDomainServer(
     };
     if ('published' in source) base = source.published;
     else {
-      const snap = await checkSnapshot(source.root);
+      const snap = await shared.snapshot(source.root);
       if (!snap.ok) {
         // The snapshot.missing reason embeds an absolute path: not for remote clients.
         if (remote && snap.code === 'snapshot.missing')
@@ -228,20 +309,25 @@ export function createDomainServer(
     authoring: boolean;
     unavailable?: AgenticError;
   }> => {
-    const authoring = await authoringDocs();
-    const available = authoring !== null;
+    // Before any work: a token without the grant does not trigger the load.
     if (noGrant(accessOf(ctx, SKILL_CAPABILITY)))
-      return { docs: [], authoring: available };
+      return { docs: [], authoring: false };
+    const authoring = await shared.authoringDocs();
+    const available = authoring !== null;
     try {
       const s = await scopedFor(ctx, SKILL_CAPABILITY);
+      const input = {
+        authoring: authoring ?? [],
+        fullLock: s.fullLock,
+        rules: s.rules,
+        skillAccess: s.access,
+        conventions: s.conventions,
+      };
       return {
-        docs: catalogue({
-          authoring: authoring ?? [],
-          fullLock: s.fullLock,
-          rules: s.rules,
-          skillAccess: s.access,
-          conventions: s.conventions,
-        }),
+        docs:
+          'published' in source
+            ? publishedCatalogue(shared, source.published, input, available)
+            : shared.catalogue(input),
         authoring: available,
       };
     } catch (error) {
@@ -288,7 +374,10 @@ export function createDomainServer(
       capability = CAPABILITY,
     ) =>
     (args: A, ctx?: Ctx) =>
-      respond(async () => run(await scopedFor(ctx, capability), args));
+      respond(async () => {
+        requireGrant(accessOf(ctx, capability), capability, 'read the domain');
+        return run(await scopedFor(ctx, capability), args);
+      });
   // Resource callbacks: the SDK sends error.message to the client, so a remote caller gets only coded ones.
   const docsFor = async (ctx: Ctx): Promise<SkillDoc[]> => {
     try {
@@ -430,11 +519,11 @@ export function createDomainServer(
     ({ doc }: { doc?: string }, ctx?: Ctx) =>
       respond(async () => {
         // Not the snapshot-bound `guarded`: the authoring skill is served without one.
-        if (noGrant(accessOf(ctx, SKILL_CAPABILITY)))
-          throw new AgenticError(
-            'auth.scope-missing',
-            `the ${SKILL_CAPABILITY} scope is needed to read skill documents`,
-          );
+        requireGrant(
+          accessOf(ctx, SKILL_CAPABILITY),
+          SKILL_CAPABILITY,
+          'read skill documents',
+        );
         const { docs, authoring, unavailable } = await docsOf(ctx);
         if (doc === undefined)
           return index(
@@ -641,6 +730,7 @@ export async function startMcpHttpServer({
     new URL(getOAuthProtectedResourceMetadataUrl(resource)).pathname,
   );
   // Stateless: no session state (publish_change keeps only a per-process busy flag), so a fresh server per request is enough.
+  const shared = createShared();
   const handler = createMcpHandler(
     () =>
       createDomainServer(
@@ -648,6 +738,7 @@ export async function startMcpHttpServer({
         true,
         undefined,
         publish,
+        shared,
       ),
     {
       maxRequestBodySize: MAX_BODY_BYTES,

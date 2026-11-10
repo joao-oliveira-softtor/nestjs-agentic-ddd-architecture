@@ -1,9 +1,14 @@
-import { sha256 } from '../canonical';
 import { EMPTY_IR, elementsOf, semanticDiff, type DiffItem } from '../diff';
 import { workItems } from '../graph';
 import type { Coded, CompileError, IR } from '../ir';
 import type { DomainLock, LockChange } from '../lock';
-import { markApplied, summarize, type Proposal } from './proposal';
+import {
+  markApplied,
+  proposalHash,
+  proposalHashMatches,
+  summarize,
+  type Proposal,
+} from './proposal';
 
 export interface ReconcileInput {
   readonly ir: IR;
@@ -72,7 +77,7 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
         message: `the applied proposal ${change.id} is not in ${input.changesDir}/archive`,
         source: change.path,
       });
-    } else if (sha256(archived.raw) !== change.hash) {
+    } else if (!proposalHashMatches(archived.raw, change.hash)) {
       errors.push({
         code: 'proposal.applied-edited',
         message: `the applied proposal ${change.id} was edited after being applied; archived proposals are immutable (restore it from git and open a new proposal)`,
@@ -215,7 +220,7 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
     title: proposal.title,
     path: archivedPath,
     summary: summarize(proposal.motivo),
-    hash: sha256(appliedRaw),
+    hash: proposalHash(appliedRaw),
     items,
   };
   return {

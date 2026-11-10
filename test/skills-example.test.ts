@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from 'bun:test';
 import {
   lstat,
+  mkdir,
   mkdtemp,
   readFile,
   readlink,
@@ -12,6 +13,12 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { toPosix } from '../src/contracts/ir';
+import {
+  createSkillsExample,
+  removeIncompleteExample,
+  type Tutorial,
+} from '../scripts/create-skills-example';
+import { symlinkHint } from '../scripts/install-skills';
 
 const ROOT = resolve(import.meta.dir, '..');
 const dirs: string[] = [];
@@ -19,6 +26,11 @@ afterEach(async () => {
   for (const dir of dirs.splice(0))
     await rm(dir, { recursive: true, force: true });
 });
+const exists = (path: string) =>
+  lstat(path).then(
+    () => true,
+    () => false,
+  );
 function run(root: string, ...args: string[]) {
   const p = Bun.spawnSync(
     [
@@ -318,4 +330,43 @@ test('tutorial tasks sem opção: hash da árvore gerada estável e portável', 
     hash.update('\0');
   }
   expect(hash.digest('hex')).toMatchSnapshot();
+});
+
+test('removing an incomplete example does not follow links into other directories', async () => {
+  const base = await mkdtemp(join(tmpdir(), 'agentic-cleanup-'));
+  dirs.push(base);
+  const outside = join(base, 'outside');
+  await mkdir(outside);
+  await writeFile(join(outside, 'keep.txt'), 'keep');
+  const tree = join(base, 'tree');
+  await mkdir(tree);
+  await writeFile(join(tree, 'file.txt'), 'x');
+  // Same kind of link the script creates for node_modules ('dir' becomes a junction on Windows).
+  await symlink(outside, join(tree, 'node_modules'), 'dir');
+  await removeIncompleteExample(tree);
+  expect(await exists(tree)).toBe(false);
+  expect(await readFile(join(outside, 'keep.txt'), 'utf8')).toBe('keep');
+});
+
+test('a failed example leaves no destination behind and a rerun succeeds', async () => {
+  const base = await mkdtemp(join(tmpdir(), 'agentic-failed-'));
+  dirs.push(base);
+  const dest = join(base, 'nested', 'tasks');
+  const failure = await createSkillsExample(dest, 'nope' as Tutorial).then(
+    () => undefined,
+    (error: unknown) => error,
+  );
+  expect(failure).toBeInstanceOf(Error);
+  expect(await exists(dest)).toBe(false);
+  await createSkillsExample(dest, 'tasks');
+  expect(await lstat(join(dest, 'agentic.config.ts'))).toBeDefined();
+}, 30_000);
+
+test('symlinkHint explains only symlink permission errors', () => {
+  expect(symlinkHint({ code: 'EPERM', syscall: 'symlink' })).toBe(
+    'Enable Windows Developer Mode or run as administrator to create symlinks.',
+  );
+  expect(symlinkHint({ code: 'EPERM', syscall: 'open' })).toBeUndefined();
+  expect(symlinkHint({ code: 'ENOENT', syscall: 'symlink' })).toBeUndefined();
+  expect(symlinkHint('EPERM symlink')).toBeUndefined();
 });

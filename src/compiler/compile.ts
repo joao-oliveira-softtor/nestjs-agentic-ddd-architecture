@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { defaultRegistry, type Registry } from '@agentic-ddd/decorators';
 import { analyze } from './analyze';
@@ -22,10 +22,15 @@ import { readLock, serializeLock } from './lock';
 import { fillMarkers, loadRules, RuleError, type Rule } from './rules';
 import { renderAll, type Rendered } from './render/index';
 import { removeSnapshot, sourceLines, writeSnapshot } from './snapshot';
-import { stableStringify } from './canonical';
+import { stableStringify, toLf } from './canonical';
 import { registrySizes, scopeRegistry } from './scope';
 import { relationWarnings } from './validate';
-import { checkOutputs, writeOutputs, type Drift } from './write';
+import {
+  checkOutputs,
+  writeFileAtomic,
+  writeOutputs,
+  type Drift,
+} from './write';
 
 export interface CompileOptions {
   readonly configPath: string;
@@ -209,7 +214,8 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
 
   if (options.mode === 'check') {
     const drift = await checkOutputs(config, rendered);
-    const current = await readFile(lockAbs, 'utf8').catch(() => null);
+    // A checkout with CRLF is not drift: the lock read from disk is compared as LF.
+    const current = await readFile(lockAbs, 'utf8').then(toLf, () => null);
     if (lockText !== null && current !== lockText) {
       drift.push({
         path: config.out.lock,
@@ -249,7 +255,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   }
   if (commit && lockText !== null) {
     await mkdir(dirname(lockAbs), { recursive: true });
-    await writeFile(lockAbs, lockText);
+    await writeFileAtomic(lockAbs, lockText);
     written.push(config.out.lock);
   }
   if (
