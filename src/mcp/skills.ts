@@ -54,19 +54,19 @@ export async function loadAuthoringDocs(dir: string): Promise<AuthoringDoc[]> {
   }
 }
 
-/** `loadAuthoringDocs` once, on first use: the skill comes from the installed package and does not change. `null` when it is not shipped. A failed read is not kept: the next call tries again. */
+/** `loadAuthoringDocs` once, on first use: the skill comes from the installed package and does not change. `null` when it is not shipped. Only documents are kept: a failed read, or a missing directory (a deploy may be copying it), is tried again by the next call. */
 export function authoringLoader(
   dir: string,
 ): () => Promise<AuthoringDoc[] | null> {
   let loaded: Promise<AuthoringDoc[] | null> | undefined;
   return () =>
     (loaded ??= loadAuthoringDocs(dir).catch((error) => {
+      loaded = undefined;
       if (
         error instanceof AgenticError &&
         error.code === 'mcp.skills-unavailable'
       )
         return null;
-      loaded = undefined;
       throw error;
     }));
 }

@@ -21,7 +21,13 @@ import type { Rule } from '../compiler/rules';
 import { checkSnapshot } from '../compiler/snapshot';
 import { publishBundle, type PublishTarget } from '../publish/bundle';
 import type { PublishedChange } from '../publish/change-sink';
-import { coversModule, narrowRuleGlobs, pathModule, scopeLock } from './scope';
+import {
+  coversModule,
+  lockModules,
+  narrowRuleGlobs,
+  pathModule,
+  scopeLock,
+} from './scope';
 import {
   authoringCatalogue,
   authoringLoader,
@@ -213,28 +219,30 @@ export function createShared(
 const MAX_CATALOGUES = 256;
 
 // Published mode: the lock never changes, so the catalogue depends only on the lock and on which of its modules the
-// token reads. The key names every module the lock mentions (a change may cite one `ir.modules` no longer has: it
-// decides whether the change is visible) and the lock's digest.
+// token reads. The key names every module the lock mentions (`lockModules`) and the lock's digest.
+// Nothing is kept while the authoring skill is missing: it may be there on the next call.
 function publishedCatalogue(
   shared: Shared,
   published: PublishedLock,
   input: Parameters<typeof catalogue>[0],
+  authoringAvailable: boolean,
 ): SkillDoc[] {
   const { fullLock, skillAccess: access } = input;
-  const known = new Set([
-    ...fullLock.ir.modules.map((m) => m.name),
-    ...fullLock.changes.flatMap((c) => c.items.map((i) => i.module)),
-  ]);
   const key = `${published.digest}:${
     access === 'all'
       ? 'all'
-      : JSON.stringify([...known].filter((name) => access.has(name)).sort())
+      : JSON.stringify(
+          [...lockModules(fullLock)].filter((name) => access.has(name)).sort(),
+        )
   }`;
   let docs = shared.catalogues.get(key);
   if (!docs) {
-    // shortcut: crude cap on distinct access sets, upgrade to LRU if real deployments exceed it
-    if (shared.catalogues.size >= MAX_CATALOGUES) shared.catalogues.clear();
-    shared.catalogues.set(key, (docs = shared.catalogue(input)));
+    docs = shared.catalogue(input);
+    if (authoringAvailable) {
+      // shortcut: crude cap on distinct access sets, upgrade to LRU if real deployments exceed it
+      if (shared.catalogues.size >= MAX_CATALOGUES) shared.catalogues.clear();
+      shared.catalogues.set(key, docs);
+    }
   }
   return docs;
 }
@@ -318,7 +326,7 @@ export function createDomainServer(
       return {
         docs:
           'published' in source
-            ? publishedCatalogue(shared, source.published, input)
+            ? publishedCatalogue(shared, source.published, input, available)
             : shared.catalogue(input),
         authoring: available,
       };

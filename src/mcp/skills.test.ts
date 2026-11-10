@@ -134,6 +134,22 @@ describe('authoringLoader', () => {
   test('a missing directory is null, not an error, and carries no path', async () => {
     expect(await authoringLoader(resolve(root, 'no-such-dir'))()).toBeNull();
   });
+
+  test('a missing directory is not kept: the skill appearing later is read once and then kept', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'agentic-late-'));
+    const dir = join(tmp, 'skill');
+    try {
+      const load = authoringLoader(dir);
+      expect(await load()).toBeNull();
+      await cp(resolve(root, 'skills/agentic-ddd'), dir, { recursive: true });
+      const loaded = await load();
+      expect(loaded?.map((d) => d.path)).toContain('SKILL.md');
+      await rm(dir, { recursive: true, force: true });
+      expect(await load()).toBe(loaded);
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('catalogue', () => {

@@ -208,11 +208,14 @@ describe('the authoring skill is loaded once for all servers that share it', () 
     try {
       await cp(skillDir, tmp, { recursive: true });
       const shared = createShared(tmp);
-      const guide = (s: ReturnType<typeof createDomainServer>) =>
-        call(s, 'authoring_guide', { doc: 'SKILL.md' }, ['skill:read']);
-      const first = await guide(publishedServer(shared));
+      const guide = (scope: string) =>
+        call(publishedServer(shared), 'authoring_guide', { doc: 'SKILL.md' }, [
+          scope,
+        ]);
+      const first = await guide('skill:read');
       await rm(tmp, { recursive: true, force: true });
-      const second = await guide(publishedServer(shared));
+      // Another access: the catalogue memo misses, so only the loaded skill can answer.
+      const second = await guide('skill:read:orders');
       expect(first.result.isError).toBeUndefined();
       expect(second.result.content[0].text).toBe(first.result.content[0].text);
     } finally {
@@ -351,6 +354,30 @@ describe('the catalogue is memoised by access, in published mode only', () => {
       );
     });
 
+    test('a token never gets the catalogue of one that can read an element outside the declared modules', async () => {
+      // The compiler never writes such a lock, but the published-lock parser accepts it.
+      const lock = structuredClone(repoLock);
+      lock.ir.events.push({
+        ...lock.ir.events[0]!,
+        id: 'event:GhostHappened',
+        module: 'ghost',
+      });
+      lock.ir.useCases[0]!.emits.push('event:GhostHappened');
+      const p = createPublishedLock('1', lock, [], DEFAULT_CONVENTIONS);
+      const shared = createShared(skillDir);
+      const skill = (scopes: string[]) =>
+        call(
+          serverOf(p, shared),
+          'authoring_guide',
+          { doc: 'skill://orders-dev/SKILL.md' },
+          scopes,
+        );
+      const both = await skill(['skill:read:orders', 'skill:read:ghost']);
+      const ordersOnly = await skill(['skill:read:orders']);
+      expect(both.result.content[0].text).toContain('GhostHappened');
+      expect(ordersOnly.result.content[0].text).not.toContain('GhostHappened');
+    });
+
     test('two published locks never share an entry', async () => {
       const keys: unknown[] = [];
       const shared = createShared(skillDir, {
@@ -378,6 +405,28 @@ describe('the catalogue is memoised by access, in published mode only', () => {
       await history(published, shared, ['skill:read:orders']);
       expect(shared.catalogues.size).toBe(1);
     });
+  });
+});
+
+describe('a catalogue built while the authoring skill was missing is not kept', () => {
+  test('the skill appearing later is listed by the next call with the same access', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'agentic-late-'));
+    const dir = join(tmp, 'skill');
+    try {
+      const shared = createShared(dir);
+      const scopes = ['skill:read:orders'];
+      const guide = () =>
+        call(publishedServer(shared), 'authoring_guide', {}, scopes);
+      const before = (await guide()).result.content[0].text as string;
+      expect(before).toContain('authoring skill is unavailable');
+      expect(before).not.toContain('skill://agentic-ddd/SKILL.md');
+      await cp(skillDir, dir, { recursive: true });
+      const after = (await guide()).result.content[0].text as string;
+      expect(after).not.toContain('authoring skill is unavailable');
+      expect(after).toContain('skill://agentic-ddd/SKILL.md');
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
   });
 });
 
