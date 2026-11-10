@@ -186,31 +186,40 @@ export async function runOperator(
           publish: guard.publish,
         };
         try {
-          const output = await wait(() =>
-            tool.instance.execute(parsed.data, ctx),
-          );
+          let output: unknown;
+          let thrown: { error: unknown } | undefined;
+          try {
+            output = await wait(() => tool.instance.execute(parsed.data, ctx));
+          } catch (error) {
+            thrown = { error };
+          }
+          // Drain on every path: an un-awaited delivery may still fail after the use-case threw.
           await wait(() => guard.drain());
+          // Precedence: undeclared event, then a bus failure, then the use-case's own error.
           if (guard.undeclared) return finish('failed', 'use_case_error');
           if (guard.failed) {
-            if (guard.failed.error instanceof RunTimeout) throw guard.failed.error;
+            if (guard.failed.error instanceof RunTimeout)
+              throw guard.failed.error;
             return finish('failed', 'use_case_error');
           }
-          const validated = tool.record.output.safeParse(output);
-          if (!validated.success) return finish('failed', 'use_case_error');
-          result(
-            {
-              output: validated.data,
-              events: trace.events.map((event) => ({
-                name: event.name,
-                payload: event.payload,
-              })),
-            },
-            false,
-          );
-        } catch (error) {
-          if (error instanceof RunTimeout) throw error;
-          if (guard.undeclared || !(error instanceof DomainError)) throw error;
-          result({ code: error.code, message: error.message }, true);
+          if (thrown) {
+            const error = thrown.error;
+            if (!(error instanceof DomainError)) throw error;
+            result({ code: error.code, message: error.message }, true);
+          } else {
+            const validated = tool.record.output.safeParse(output);
+            if (!validated.success) return finish('failed', 'use_case_error');
+            result(
+              {
+                output: validated.data,
+                events: trace.events.map((event) => ({
+                  name: event.name,
+                  payload: event.payload,
+                })),
+              },
+              false,
+            );
+          }
         } finally {
           guard.end();
         }

@@ -7,7 +7,7 @@ export interface EmitsGuard {
   readonly undeclared: boolean;
   /** The first delivery failure, kept so an un-awaited publish cannot lose it. */
   readonly failed: { error: unknown } | undefined;
-  /** Resolves once every delivery started so far settled, so `failed` is final (a use-case may not await its publish). */
+  /** Resolves once no delivery is pending, including ones started meanwhile, so `failed` is final (a use-case may not await its publish). */
   drain(): Promise<void>;
   end(): void;
 }
@@ -68,7 +68,8 @@ export function guardEmits(
       return delivery;
     },
     async drain() {
-      await Promise.all(settling);
+      // A delivery can start while an earlier one settles, so walk the list as it grows.
+      for (let i = 0; i < settling.length; i++) await settling[i];
     },
   };
 }

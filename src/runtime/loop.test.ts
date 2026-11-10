@@ -528,6 +528,70 @@ test('a bus failure on an un-awaited publish fails the run', async () => {
   expect(result).toMatchObject(failedUseCase);
 });
 
+test('a bus failure wins over a DomainError thrown after an un-awaited publish', async () => {
+  const eventBus: EventBus = {
+    publish: async () => {
+      await Bun.sleep(5);
+      throw new Error('bus down');
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (_input, ctx) => {
+      void ctx.publish([new Changed('a')]);
+      throw new DomainError('NO_WORK', 'no work');
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(f.llm.requests).toHaveLength(1);
+});
+
+test('an un-awaited publish to a bus that never resolves ends the run as timeout', async () => {
+  const eventBus: EventBus = {
+    publish: () => new Promise<void>(() => {}),
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      void ctx.publish([new Changed('a')]);
+      return input;
+    },
+    { eventBus },
+    { timeoutMs: 20 },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result.status).toBe('timeout');
+});
+
+test('a publish started while an un-awaited delivery is pending is drained too', async () => {
+  let started = 0;
+  const eventBus: EventBus = {
+    publish: async () => {
+      const n = ++started;
+      await Bun.sleep(n === 1 ? 5 : 15);
+      if (n === 2) throw new Error('second down');
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      void ctx.publish([new Changed('a')]);
+      void Bun.sleep(3)
+        .then(() => ctx.publish([new Changed('b')]))
+        .catch(() => {});
+      return input;
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+});
+
 test('a publish made after the run ended is refused', async () => {
   let late!: UseCaseContext['publish'];
   const f = await setup([calls(call()), end], async (input, ctx) => {

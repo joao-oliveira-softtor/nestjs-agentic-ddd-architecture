@@ -175,6 +175,80 @@ test('a bus failure on an un-awaited publish fails the execution', async () => {
   ).toBe('bus down');
 });
 
+const failingBus: EventBus = {
+  publish: async () => {
+    await Bun.sleep(5);
+    throw new Error('bus down');
+  },
+  subscribe: () => () => {},
+};
+
+test('a bus failure wins over a DomainError thrown after an un-awaited publish', async () => {
+  class Doomed implements UseCase<{ times: number }, { ok: true }> {
+    async execute(
+      _: { times: number },
+      ctx: UseCaseContext,
+    ): Promise<{ ok: true }> {
+      void ctx.publish([new Rang({})]);
+      throw new DomainError('RING_BROKEN', 'The bell broke');
+    }
+  }
+  expect(
+    await rejection(
+      executeUseCase(recordFor(Doomed), new Doomed(), { times: 1 }, failingBus),
+    ),
+  ).toBe('bus down');
+});
+
+test('a bus failure swallowed by the use-case still fails the execution', async () => {
+  class Swallower implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      try {
+        await ctx.publish([new Rang({})]);
+      } catch {
+        // swallowed on purpose
+      }
+      return { ok: true as const };
+    }
+  }
+  expect(
+    await rejection(
+      executeUseCase(
+        recordFor(Swallower),
+        new Swallower(),
+        { times: 1 },
+        failingBus,
+      ),
+    ),
+  ).toBe('bus down');
+});
+
+test('a publish made while the drain waits is drained too', async () => {
+  let started = 0;
+  const bus: EventBus = {
+    publish: async () => {
+      const n = ++started;
+      await Bun.sleep(n === 1 ? 5 : 15);
+      if (n === 2) throw new Error('second down');
+    },
+    subscribe: () => () => {},
+  };
+  class Chained implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      void ctx.publish([new Rang({})]);
+      void Bun.sleep(3)
+        .then(() => ctx.publish([new Rang({})]))
+        .catch(() => {});
+      return { ok: true as const };
+    }
+  }
+  expect(
+    await rejection(
+      executeUseCase(recordFor(Chained), new Chained(), { times: 1 }, bus),
+    ),
+  ).toBe('second down');
+});
+
 test('a publish made after the execution ended is refused', async () => {
   const bus = new InMemoryEventBus({ record: true });
   let late!: UseCaseContext['publish'];
