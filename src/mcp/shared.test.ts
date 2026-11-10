@@ -71,6 +71,19 @@ const workingCopy = (shared: ReturnType<typeof createShared>) =>
 const publishedServer = (shared: ReturnType<typeof createShared>) =>
   createDomainServer({ published }, true, undefined, undefined, shared);
 
+// Resolves once `n` calls have reached the shared snapshot, so a test can wait for them instead of sleeping.
+function whenCalled(shared: ReturnType<typeof createShared>, n: number) {
+  let calls = 0;
+  let reached: () => void = () => {};
+  const done = new Promise<void>((resolve) => (reached = resolve));
+  const real = shared.snapshot;
+  shared.snapshot = (root) => {
+    if (++calls === n) reached();
+    return real(root);
+  };
+  return done;
+}
+
 describe('the snapshot check is shared while it runs', () => {
   test('simultaneous calls on two servers run it once; one that arrives after it finished runs it again', async () => {
     let runs = 0;
@@ -83,11 +96,12 @@ describe('the snapshot check is shared while it runs', () => {
         return snap;
       },
     });
+    const bothArrived = whenCalled(shared, 2);
     const both = Promise.all([
       overview(workingCopy(shared)),
       overview(workingCopy(shared)),
     ]);
-    await Bun.sleep(20);
+    await bothArrived;
     expect(runs).toBe(1);
     finish();
     const [a, b] = await both;
@@ -95,6 +109,52 @@ describe('the snapshot check is shared while it runs', () => {
     expect(b.result.isError).toBeUndefined();
     expect(runs).toBe(1);
     await overview(workingCopy(shared));
+    expect(runs).toBe(2);
+  });
+
+  test('callers with different access share the check and each gets its own scope', async () => {
+    const twoModules = { ...snap, lock: twoModuleLock(repoLock) };
+    let runs = 0;
+    let finish: () => void = () => {};
+    const gate = new Promise<void>((done) => (finish = done));
+    const shared = createShared(skillDir, {
+      check: async () => {
+        runs++;
+        await gate;
+        return twoModules;
+      },
+    });
+    const remoteWorkingCopy = () =>
+      createDomainServer(
+        { root: '/project' },
+        true,
+        undefined,
+        undefined,
+        shared,
+      );
+    const modulesOf = (out: any): string[] =>
+      JSON.parse(out.result.content[0].text).modules.map(
+        (m: { name: string }) => m.name,
+      );
+    const bothArrived = whenCalled(shared, 2);
+    const both = Promise.all([
+      call(remoteWorkingCopy(), 'domain_overview', {}, ['domain:read:orders']),
+      call(remoteWorkingCopy(), 'domain_overview', {}, ['domain:read:billing']),
+    ]);
+    await bothArrived;
+    expect(runs).toBe(1);
+    finish();
+    const [orders, billing] = await both;
+    expect(runs).toBe(1);
+    expect(modulesOf(orders)).toEqual(['orders']);
+    expect(modulesOf(billing)).toEqual(['billing']);
+    expect(orders.result.content[0].text).not.toBe(
+      billing.result.content[0].text,
+    );
+    const all = await call(remoteWorkingCopy(), 'domain_overview', {}, [
+      'domain:read',
+    ]);
+    expect(modulesOf(all).sort()).toEqual(['billing', 'orders']);
     expect(runs).toBe(2);
   });
 
