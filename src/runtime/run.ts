@@ -4,7 +4,7 @@ import {
   type UseCaseContext,
 } from '@agentic-ddd/core';
 import { createDeadline } from './deadline';
-import { guardEmits } from './emits-guard';
+import { guardEmits, type EmitsGuard } from './emits-guard';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import type { MountedOperator } from './operator-runtime';
 import type {
@@ -23,6 +23,18 @@ class RunTimeout extends Error {
   constructor() {
     super('Operator timeout');
   }
+}
+
+/** What the guard recorded ends the run whatever the use-case did: a refusal, then a bus failure. */
+function guardFailure(
+  guard: EmitsGuard,
+): { reason: TerminationReason; error: unknown } | undefined {
+  if (guard.undeclared)
+    return { reason: 'use_case_error', error: guard.refusal };
+  if (!guard.failed) return undefined;
+  // The run deadline cut the delivery: that is a timeout, not a bus failure.
+  if (guard.failed.error instanceof RunTimeout) throw guard.failed.error;
+  return { reason: 'event_bus_error', error: guard.failed.error };
 }
 
 /** A single deadline covers provider, approval, execution and event delivery. */
@@ -187,18 +199,9 @@ export async function runOperator(
           // Drain on every path: an un-awaited delivery may still fail after the use-case threw.
           await wait(() => guard.drain());
           // Precedence: undeclared event, then a bus failure, then the use-case's own error.
-          if (guard.undeclared)
-            return finish('failed', 'use_case_error', undefined, guard.refusal);
-          if (guard.failed) {
-            if (guard.failed.error instanceof RunTimeout)
-              throw guard.failed.error;
-            return finish(
-              'failed',
-              'event_bus_error',
-              undefined,
-              guard.failed.error,
-            );
-          }
+          const blocked = guardFailure(guard);
+          if (blocked)
+            return finish('failed', blocked.reason, undefined, blocked.error);
           if (thrown) {
             const error = thrown.error;
             if (!(error instanceof DomainError)) throw error;

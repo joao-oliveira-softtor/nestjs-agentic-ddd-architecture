@@ -25,6 +25,34 @@ export function schemaLookup(
   return (name) => byName.get(name);
 }
 
+/** Why a batch is refused: an event outside `emits` first, then a payload outside its schema. */
+function refusalFor(
+  record: UseCaseRecord,
+  batch: readonly DomainEvent[],
+  schemaFor?: (name: string) => ZodType | undefined,
+): string | undefined {
+  // By name, like the IR and skills: identity breaks when a module is loaded twice.
+  const refused = batch.find(
+    (event) => !record.emits.some((cls) => cls.name === event.name),
+  );
+  if (refused)
+    return `Event ${refused.name} is not declared in emits of use-case ${record.name}`;
+  // Only validates: the payload stays as the use-case built it.
+  const invalid = batch.find((event) => {
+    try {
+      return !(
+        schemaFor?.(event.name)?.safeParse(event.payload).success ?? true
+      );
+    } catch {
+      // A schema that cannot run synchronously (an async refinement) cannot vouch for the payload.
+      return true;
+    }
+  });
+  return invalid
+    ? `Event ${invalid.name} has a payload that does not match its @AgentEvent schema (use-case ${record.name})`
+    : undefined;
+}
+
 /** One use-case execution may only publish the events in its `emits`, and only while it runs. */
 export function guardEmits(
   record: UseCaseRecord,
@@ -64,31 +92,8 @@ export function guardEmits(
       try {
         check();
         assertActive();
-        // By name, like the IR and skills: identity breaks when a module is loaded twice.
-        const refused = batch.find(
-          (event) => !record.emits.some((cls) => cls.name === event.name),
-        );
-        if (refused) {
-          throw refuse(
-            `Event ${refused.name} is not declared in emits of use-case ${record.name}`,
-          );
-        }
-        // Only validates: the payload stays as the use-case built it.
-        const invalid = batch.find((event) => {
-          try {
-            return !(
-              schemaFor?.(event.name)?.safeParse(event.payload).success ?? true
-            );
-          } catch {
-            // A schema that cannot run synchronously (an async refinement) cannot vouch for the payload.
-            return true;
-          }
-        });
-        if (invalid) {
-          throw refuse(
-            `Event ${invalid.name} has a payload that does not match its @AgentEvent schema (use-case ${record.name})`,
-          );
-        }
+        const message = refusalFor(record, batch, schemaFor);
+        if (message) throw refuse(message);
         if (undeclared)
           throw new Error(
             `Use-case ${record.name} already published an undeclared event`,
