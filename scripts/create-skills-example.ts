@@ -122,7 +122,8 @@ export async function createSkillsExample(
     await put('.gitignore', 'node_modules/\n');
     await installSkills({ root, scope: 'project', target: 'all' });
   } catch (error) {
-    await removeIncompleteExample(root);
+    // A failed cleanup must not replace the error that caused it.
+    await removeIncompleteExample(root).catch(() => {});
     throw error;
   }
 }
