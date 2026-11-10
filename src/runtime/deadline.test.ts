@@ -20,6 +20,20 @@ const throws = (fn: () => void): unknown => {
 };
 
 describe('createDeadline', () => {
+  test('an operation that blocks past the deadline and then resolves is still rejected', async () => {
+    const deadline = createDeadline(5, () => new Expired());
+    // The timer cannot fire while the event loop is blocked, so only the check after the race sees it.
+    const outcome = await settle(
+      deadline.wait(async () => {
+        Bun.sleepSync(20);
+        return 'late';
+      }),
+    );
+    expect(outcome).toBeInstanceOf(Expired);
+    expect(deadline.signal.aborted).toBe(true);
+    deadline.dispose();
+  });
+
   test('expiry rejects wait with the onExpire error and aborts the signal', async () => {
     const deadline = createDeadline(10, () => new Expired());
     const outcome = await settle(
