@@ -9,6 +9,7 @@ import type { DomainLock } from '../lock';
 import {
   markApplied,
   parseProposal,
+  proposalHash,
   renderDraft,
   type Delta,
   type Proposal,
@@ -104,6 +105,27 @@ describe('reconcile', () => {
       },
     ]);
   });
+
+  test.each([
+    ['CRLF', (raw: string) => raw.replaceAll('\n', '\r\n')],
+    ['a BOM', (raw: string) => `\uFEFF${raw}`],
+  ])(
+    'the hash recorded on apply ignores %s in the open proposal',
+    (_, transform) => {
+      const lf = proposal({ motivo: 'Base do histórico.' });
+      const open = parseProposal(
+        transform(lf.raw),
+        `${lf.id}-${lf.slug}`,
+        lf.path,
+        false,
+      ).proposal!;
+      const plan = reconcile(input(null, [open]));
+      expect(plan.errors).toEqual([]);
+      expect(plan.nextLock?.changes[0]?.hash).toBe(
+        proposalHash(markApplied(lf.raw)),
+      );
+    },
+  );
 
   test('an empty Motivo and delta divergences stay pending', () => {
     const delta: Delta = {
@@ -249,6 +271,60 @@ describe('reconcile', () => {
       },
     ]);
     expect(plan.nextLock).toEqual(lock);
+  });
+
+  describe('archived proposal hash across line endings', () => {
+    const archivedFrom = (transform: (raw: string) => string): Proposal => {
+      const base = proposal({ motivo: 'Base.', archived: true, applied: true });
+      return parseProposal(
+        transform(base.raw),
+        `${base.id}-${base.slug}`,
+        base.path,
+        true,
+      ).proposal!;
+    };
+    const toCrlf = (raw: string): string => raw.replaceAll('\n', '\r\n');
+    const lockWith = (applied: Proposal, hash: string): DomainLock => ({
+      lockVersion: 1,
+      ir,
+      changes: [
+        {
+          id: applied.id,
+          title: 'estado inicial',
+          path: applied.path,
+          summary: 'Base.',
+          hash,
+          items: [],
+        },
+      ],
+    });
+    const codesOf = (lock: DomainLock, applied: Proposal): string[] =>
+      reconcile(input(lock, [applied])).errors.map((e) => e.code);
+
+    test('the same proposal in LF and CRLF gets the same verdict', () => {
+      const lf = archivedFrom((raw) => raw);
+      const crlf = archivedFrom(toCrlf);
+      const lock = lockWith(lf, proposalHash(lf.raw));
+      expect(codesOf(lock, lf)).toEqual([]);
+      expect(codesOf(lock, crlf)).toEqual([]);
+    });
+
+    test('a lock written from the CRLF bytes before the fix still verifies', () => {
+      const crlf = archivedFrom(toCrlf);
+      expect(codesOf(lockWith(crlf, sha256(crlf.raw)), crlf)).toEqual([]);
+    });
+
+    test('a really edited proposal is still reported, in LF or CRLF', () => {
+      const lf = archivedFrom((raw) => raw);
+      const lock = lockWith(lf, proposalHash(lf.raw));
+      for (const transform of [(raw: string) => raw, toCrlf])
+        expect(
+          codesOf(
+            lock,
+            archivedFrom((raw) => `${transform(raw)}edited\n`),
+          ),
+        ).toEqual(['proposal.applied-edited']);
+    });
   });
 
   test('an archived proposal that was edited, missing or unregistered is a hard error', () => {

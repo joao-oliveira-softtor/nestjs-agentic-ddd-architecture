@@ -21,6 +21,8 @@ export function sha256(text: string): string {
   return createHash('sha256').update(text).digest('hex');
 }
 
+export const toLf = (s: string): string => s.replaceAll('\r\n', '\n');
+
 export function byId<T extends { readonly id: string }>(a: T, b: T): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }

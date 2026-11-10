@@ -136,6 +136,14 @@ describe('agentic-ddd compile (CLI)', () => {
     expect(run('constructor').code).toBe(2);
   });
 
+  test('the usage warns that apply runs the bundle code, so only trusted bundles', () => {
+    const line = run('build')
+      .stderr.split('\n')
+      .find((l) => l.includes('agentic-ddd apply'));
+    expect(line).toContain('runs the code');
+    expect(line).toContain('only trusted');
+  });
+
   test('--report prints tokens per file', () => {
     const result = run('compile', '--report', '--out-root', out);
     expect(result.code).toBe(0);

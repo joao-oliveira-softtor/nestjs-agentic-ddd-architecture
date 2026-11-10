@@ -43,6 +43,8 @@ A aplicação fornece agentic.config.ts com defineConfig do export compiler, dec
 ./node_modules/.bin/agentic-ddd compile --check
 ```
 
+Em checkout com conversão para CRLF (Windows com `core.autocrlf=true`), `compile --check` ignora a diferença de fim de linha nos arquivos gerados, no bloco do `AGENTS.md` e no lock; para manter o repositório estável, recomenda-se `* text=auto eol=lf` no `.gitattributes` da aplicação consumidora.
+
 CLI e compilador interpretam os caminhos a partir do config do consumidor. As instruções geradas usam o nome público do pacote. Imports privados de dist não são parte da API.
 
 ## Servidor MCP local

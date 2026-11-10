@@ -242,6 +242,39 @@ describe('evaluateGates', () => {
     expect(ok.status).toBe('passed');
   });
 
+  describe('G1: archived proposal hash across line endings', () => {
+    const archivedFrom = (text: string) =>
+      parseProposal(text, '0002-cancelamento-exige-motivo', PATH, true)
+        .proposal!;
+    const toCrlf = (text: string): string => text.replaceAll('\n', '\r\n');
+    const g1 = (overrides: Partial<GateInput>) =>
+      evaluateGates(input(overrides)).gates.find((g) => g.id === 'G1')!;
+
+    test('the same proposal in LF and CRLF passes against one lock', () => {
+      const withLock = lock();
+      expect(g1({ lock: withLock, proposal: archived }).status).toBe('passed');
+      expect(
+        g1({ lock: withLock, proposal: archivedFrom(toCrlf(RAW)) }).status,
+      ).toBe('passed');
+    });
+
+    test('a lock written from the CRLF bytes before the fix still passes', () => {
+      expect(
+        g1({
+          lock: lock(toCrlf(RAW)),
+          proposal: archivedFrom(toCrlf(RAW)),
+        }).status,
+      ).toBe('passed');
+    });
+
+    test('a really edited proposal is still reported, in LF or CRLF', () => {
+      for (const text of [`${RAW}edited\n`, toCrlf(`${RAW}edited\n`)])
+        expect(
+          g1({ proposal: archivedFrom(text) }).findings.map((f) => f.code),
+        ).toEqual(['proposal.applied-edited']);
+    });
+  });
+
   test('G1: archived proposal edited or with a domain change after it', () => {
     const edited = evaluateGates(
       input({ lock: lock('outro conteúdo') }),
@@ -332,7 +365,9 @@ describe('evaluateGates', () => {
   });
 
   test('G5: exactly four failing tests name three and end with "and 1 more"', () => {
-    const failing = [10, 20, 30, 40].map((line) => testCase([], 'failed', line));
+    const failing = [10, 20, 30, 40].map((line) =>
+      testCase([], 'failed', line),
+    );
     expect(suiteFailedMessage([...goodTests, ...failing])).toBe(
       `the test suite exited with 1; failing: ${failing
         .slice(0, 3)

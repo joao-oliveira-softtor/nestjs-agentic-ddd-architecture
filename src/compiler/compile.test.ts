@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import {
   access,
+  link,
   mkdir,
   mkdtemp,
   readFile,
@@ -103,6 +104,57 @@ describe('compile (exemplo orders)', () => {
     ]);
   });
 
+  describe('CRLF checkout', () => {
+    const toCrlf = async (path: string): Promise<void> => {
+      const absolute = join(out, path);
+      await writeFile(
+        absolute,
+        (await readFile(absolute, 'utf8')).replace(/\n/g, '\r\n'),
+      );
+    };
+    const allToCrlf = async (): Promise<void> => {
+      const generated = new Bun.Glob('{.agents,.agentic}/**/*').scan({
+        cwd: out,
+        onlyFiles: true,
+        dot: true,
+      });
+      for await (const path of generated) await toCrlf(path);
+      await toCrlf('AGENTS.md');
+    };
+
+    test('generated files, AGENTS.md and the lock converted to CRLF are not outdated', async () => {
+      await bootstrapChanges(out);
+      await compile({ configPath, outRoot: out, mode: 'write' });
+      await allToCrlf();
+      const check = await compile({ configPath, outRoot: out, mode: 'check' });
+      expect(check.drift).toEqual([]);
+      expect(check.ok).toBe(true);
+    });
+
+    test('a real change in the CRLF lock is still reported', async () => {
+      await bootstrapChanges(out);
+      await compile({ configPath, outRoot: out, mode: 'write' });
+      await allToCrlf();
+      const lockPath = join(out, '.agentic/domain.lock.json');
+      await writeFile(lockPath, `${await readFile(lockPath, 'utf8')} \r\n`);
+      const check = await compile({ configPath, outRoot: out, mode: 'check' });
+      expect(check.drift).toEqual([
+        { path: '.agentic/domain.lock.json', reason: 'changed' },
+      ]);
+    });
+  });
+
+  test('a successful write leaves no temporary file next to the lock or AGENTS.md', async () => {
+    await bootstrapChanges(out);
+    await compile({ configPath, outRoot: out, mode: 'write' });
+    expect(
+      [...(await readdir(out)), ...(await readdir(join(out, '.agentic')))].filter(
+        (name) => name.endsWith('.tmp'),
+      ),
+    ).toEqual([]);
+    await access(join(out, '.agentic/domain.lock.json'));
+  });
+
   test('avisa quando CLAUDE.md existe sem @AGENTS.md', async () => {
     await writeFile(join(out, 'CLAUDE.md'), 'meu arquivo\n');
     const result = await compile({ configPath, outRoot: out, mode: 'write' });
@@ -203,6 +255,21 @@ describe('compile (exemplo orders)', () => {
     expect(
       (await compile({ configPath, outRoot: out, mode: 'check' })).ok,
     ).toBe(true);
+  });
+
+  test('the lock is replaced, not rewritten in place: a hard link keeps the old content', async () => {
+    await bootstrapChanges(out);
+    const lockPath = join(out, '.agentic/domain.lock.json');
+    const lock = JSON.parse(await readFile(lockPath, 'utf8'));
+    lock.ir.useCases[0].description = 'Old description.';
+    const oldText = JSON.stringify(lock);
+    await writeFile(lockPath, oldText);
+    await link(lockPath, join(out, 'lock.copy.json'));
+
+    await compile({ configPath, outRoot: out, mode: 'write' });
+
+    expect(await readFile(lockPath, 'utf8')).not.toBe(oldText);
+    expect(await readFile(join(out, 'lock.copy.json'), 'utf8')).toBe(oldText);
   });
 
   test('mudança de domínio sem proposta remove o snapshot existente', async () => {
