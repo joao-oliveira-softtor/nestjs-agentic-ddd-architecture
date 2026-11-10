@@ -304,8 +304,13 @@ describe('authoring_guide over the Domain MCP', () => {
       );
       expect(text).not.toContain('Order');
       expect(text).not.toContain('billing');
-      // domain_source is unguarded by design; the others see an empty scope.
-      if (name !== 'domain_source') expect(text).not.toContain('open rule');
+      // domain_source is unguarded by design; the others refuse a token with no domain grant.
+      if (name === 'domain_source') expect(out.result.isError).toBeUndefined();
+      else {
+        expect(out.result.isError).toBe(true);
+        expect(text).toContain('auth.scope-missing');
+        expect(text).not.toContain('open rule');
+      }
     }
   });
 

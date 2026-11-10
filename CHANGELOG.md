@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **Breaking, MCP: a token without `domain:read` is refused by the domain tools (#166).** `domain_overview`, `domain_element`, `domain_changes` and `rules_for_path` now answer `auth.scope-missing` instead of an empty result when the token has no `domain:read` grant (for example `skill:read` only, or only `change:propose`/`change:publish`), and no longer scan the project for it. `domain_source` and tokens with `domain:read:<module>` are unchanged.
+
 ## [0.6.0] — 2026-11-09
 
 - **Published on npm as `agentic-ddd`:** the package was called `nestjs-agentic-ddd-architecture` and shipped only as a GitHub release tarball; it is now public on the npm registry. Imports change from `nestjs-agentic-ddd-architecture/<boundary>` to `agentic-ddd/<boundary>` (same eight boundaries, same `agentic-ddd` binary). `private: true` and the `prepublishOnly` gate (`scripts/block-publish.cjs`) are gone; `docs/distribution.md` lists the publication steps.

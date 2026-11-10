@@ -288,7 +288,14 @@ export function createDomainServer(
       capability = CAPABILITY,
     ) =>
     (args: A, ctx?: Ctx) =>
-      respond(async () => run(await scopedFor(ctx, capability), args));
+      respond(async () => {
+        if (noGrant(accessOf(ctx, capability)))
+          throw new AgenticError(
+            'auth.scope-missing',
+            'the domain:read scope is needed to read the domain',
+          );
+        return run(await scopedFor(ctx, capability), args);
+      });
   // Resource callbacks: the SDK sends error.message to the client, so a remote caller gets only coded ones.
   const docsFor = async (ctx: Ctx): Promise<SkillDoc[]> => {
     try {
