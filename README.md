@@ -1,6 +1,6 @@
 # @agentic-ddd
 
-Release atual: [v0.6.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.6.0), no npm como [`agentic-ddd`](https://www.npmjs.com/package/agentic-ddd). [Notas da release](docs/releases/0.6.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
+Release atual: [v0.7.0](https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.7.0), no npm como [`agentic-ddd`](https://www.npmjs.com/package/agentic-ddd). [Notas da release](docs/releases/0.7.0.md) · [Changelog](CHANGELOG.md) · [Próximos planos e issues](docs/ROADMAP.md).
 
 Uso em aplicações externas: `npm install agentic-ddd`; [instalação, exports públicos e compatibilidade](docs/distribution.md).
 
@@ -304,6 +304,7 @@ bun run ci:docker --build                  # rebuild the image
 - **v0.4.0**: biblioteca ESM modular com exports públicos, CLI instalável e tarball validado em consumidor externo.
 - **v0.5.0**: modelo tático do domínio (value objects, relações entre agregados, ports, adapters e gates T1 a T3), regras do time, servidor MCP local e tutorial `matriculas` com braço de controle pré-registrado.
 - **v0.6.0**: primeira publicação no npm, como `agentic-ddd`. Mensagens e texto gerado em inglês com códigos de erro estáveis, Domain MCP por HTTP com OAuth e acesso por módulo, `propose_change` e `agentic apply` com bundle compilado, adaptador Elysia e suporte nativo a Windows.
+- **v0.7.0**: robustez. O runtime passa a expor o erro de um run que falha, valida o payload dos eventos, não perde `publish` sem `await`, dá `ctx.signal` ao use-case e aceita um prazo para use-case fora de operator (504 nas rotas Elysia). O compilador aguenta checkout com CRLF ou BOM, falha antes de sobrescrever um `AGENTS.md` ilegível e não apaga as skills antes de regravá-las. O `agentic apply` roda o código do bundle que aplica: só aplique bundle de origem confiável ([ADR-0007](docs/adr/ADR-0007.md), D15).
 - **Foco atual**: medir se o modelo tático e o framework melhoram o aceite dos agentes, com o ciclo 22 (C0 contra F, pré-registrado e ainda sem execução real; [ADR-0006](docs/adr/ADR-0006.md), D10). O épico #26 está encerrado ([ADR-0003](docs/adr/ADR-0003.md)). O adapter real de LlmPort (#7) e a demonstração CLI com aprovação (#8) estão **em pausa** ([ADR-0004](docs/adr/ADR-0004.md)).
 - **Backlog**: `reactsTo`, contratos gerados e propostas paralelas. Veja [issues, dependências e critérios de aceite](docs/ROADMAP.md).
 
