@@ -20,6 +20,17 @@ const throws = (fn: () => void): unknown => {
 };
 
 describe('createDeadline', () => {
+  test.each([Infinity, NaN, 0, -1, 2_147_483_648])(
+    'a timeoutMs of %p is refused instead of expiring at once',
+    (timeoutMs) => {
+      const error = throws(() =>
+        createDeadline(timeoutMs, () => new Expired()),
+      );
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toContain('timeoutMs');
+    },
+  );
+
   test('an operation that blocks past the deadline and then resolves is still rejected', async () => {
     const deadline = createDeadline(5, () => new Expired());
     // The timer cannot fire while the event loop is blocked, so only the check after the race sees it.

@@ -25,7 +25,7 @@ export function schemaLookup(
   return (name) => byName.get(name);
 }
 
-/** Why a batch is refused: an event outside `emits` first, then a payload outside its schema. */
+/** Why a batch is refused: an event outside `emits` first, then one published before, then a payload outside its schema. */
 function refusalFor(
   record: UseCaseRecord,
   batch: readonly DomainEvent[],
@@ -37,6 +37,12 @@ function refusalFor(
   );
   if (refused)
     return `Event ${refused.name} is not declared in emits of use-case ${record.name}`;
+  // Stamping happens inside the delivery: refuse here, or a repeat would end as a bus failure.
+  const repeated = batch.find(
+    (event, i) => event.correlationId !== null || batch.indexOf(event) !== i,
+  );
+  if (repeated)
+    return `Event ${repeated.name} was already published (use-case ${record.name})`;
   // Only validates: the payload stays as the use-case built it.
   const invalid = batch.find((event) => {
     try {

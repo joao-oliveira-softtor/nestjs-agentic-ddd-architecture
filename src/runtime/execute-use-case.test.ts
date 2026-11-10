@@ -394,14 +394,48 @@ test('the context carries a signal that is not aborted', async () => {
   expect(signal?.aborted).toBe(false);
 });
 
+describe('an event that was already published', () => {
+  const twice: [
+    string,
+    (ctx: UseCaseContext, e: Rang) => Promise<unknown>,
+    number,
+  ][] = [
+    [
+      'published twice',
+      async (ctx, e) => {
+        await ctx.publish([e]);
+        await ctx.publish([e]);
+      },
+      1,
+    ],
+    ['twice in one batch', (ctx, e) => ctx.publish([e, e]), 0],
+  ];
+  test.each(twice)(
+    '%s is refused, naming the event, not reported as a bus failure',
+    async (_, publish, delivered) => {
+      class Twice implements UseCase<{ times: number }, { ok: true }> {
+        async execute(_: { times: number }, ctx: UseCaseContext) {
+          await publish(ctx, new Rang({}));
+          return { ok: true as const };
+        }
+      }
+      const bus = new InMemoryEventBus({ record: true });
+      const message = await rejection(
+        executeUseCase(recordFor(Twice), new Twice(), { times: 1 }, bus),
+      );
+      expect(message).toContain('Event Rang was already published');
+      expect(message).toContain('ring');
+      expect(bus.events).toHaveLength(delivered);
+    },
+  );
+});
+
 describe('timeoutMs', () => {
   let signal: AbortSignal | undefined;
-  let release: (() => void) | undefined;
   class Hung implements UseCase<{ times: number }, { ok: true }> {
     async execute(_: { times: number }, ctx: UseCaseContext) {
       signal = ctx.signal;
-      await new Promise<void>((resolve) => (release = resolve));
-      await ctx.publish([new Rang({})]);
+      await new Promise<void>(() => {});
       return { ok: true as const };
     }
   }
@@ -420,11 +454,54 @@ describe('timeoutMs', () => {
     expect((caught as AgenticError).message).toContain('ring');
     expect((caught as AgenticError).message).toContain('20');
     expect(signal?.aborted).toBe(true);
-    // The use-case keeps running after the deadline: its late publication is refused.
-    release?.();
-    await Bun.sleep(1);
     expect(bus.events).toEqual([]);
   });
+
+  test('a publication after the deadline but before the execution ended is refused', async () => {
+    class Late implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        // Blocks the event loop, so the timer cannot fire: only the guard's deadline check can refuse.
+        Bun.sleepSync(30);
+        await ctx.publish([new Rang({})]);
+        return { ok: true as const };
+      }
+    }
+    const bus = new InMemoryEventBus({ record: true });
+    const caught = await executeUseCase(
+      recordFor(Late),
+      new Late(),
+      { times: 1 },
+      bus,
+      { timeoutMs: 10 },
+    ).catch((error: unknown) => error);
+    expect((caught as AgenticError).code).toBe('runtime.use-case-timeout');
+    expect(bus.events).toEqual([]);
+  });
+
+  test.each([0, Infinity, NaN])(
+    'a timeoutMs of %p is refused, naming the option, before the use-case runs',
+    async (timeoutMs) => {
+      let ran = false;
+      class Spy implements UseCase<{ times: number }, { ok: true }> {
+        execute() {
+          ran = true;
+          return Promise.resolve({ ok: true as const });
+        }
+      }
+      expect(
+        await rejection(
+          executeUseCase(
+            recordFor(Spy),
+            new Spy(),
+            { times: 1 },
+            new InMemoryEventBus(),
+            { timeoutMs },
+          ),
+        ),
+      ).toContain('timeoutMs');
+      expect(ran).toBe(false);
+    },
+  );
 
   test('a drain that never settles fails at the deadline, over the bus outcome', async () => {
     const hungBus: EventBus = {

@@ -16,7 +16,7 @@ import {
 import { z } from 'zod';
 import { DomainEvent, type UseCase } from '@agentic-ddd/core';
 import { AgentEvent, AgentUseCase, Operator } from '@agentic-ddd/decorators';
-import { OperatorRuntime } from '@agentic-ddd/runtime';
+import { AgenticError, OperatorRuntime } from '@agentic-ddd/runtime';
 import { agentic } from './index';
 import { CreateOrder } from '../../examples/orders/application/create-order';
 import { ConfirmOrder } from '../../examples/orders/application/confirm-order';
@@ -273,6 +273,47 @@ test('with useCaseTimeoutMs a route whose use-case never resolves answers 504 wi
   const body = response.error?.value;
   expect(body).toMatchObject({ code: 'runtime.use-case-timeout' });
   expect((body as { message: string }).message).toContain('elysia_hung');
+});
+
+@AgentUseCase({
+  name: 'elysia_nested_timeout',
+  description: 'Throws the timeout of a nested use-case.',
+  whenToUse: 'Only in tests.',
+  input: z.object({}),
+  output: z.object({}),
+  uses: [],
+  emits: [],
+})
+class NestedTimeout implements UseCase<{}, {}> {
+  execute(): Promise<{}> {
+    return Promise.reject(
+      new AgenticError(
+        'runtime.use-case-timeout',
+        'Use-case inner_secret did not finish within useCaseTimeoutMs (5 ms)',
+      ),
+    );
+  }
+}
+
+test('a timeout error thrown by the use-case itself answers 504 with the route name, not the foreign message', async () => {
+  const app = await agentic({
+    root,
+    modules: [{ name: 'elysia-test', path: 'src/elysia' }],
+    llm: new FakeLlm([]),
+    operators: [],
+    useCaseTimeoutMs: 1_000,
+    useCases: { elysia_nested_timeout: new NestedTimeout() },
+    http: {},
+  });
+  const api = treaty(app);
+  const response = await api.agentic['use-cases'].elysia_nested_timeout.post(
+    {},
+  );
+  expect(response.status).toBe(504);
+  const body = response.error?.value as { code: string; message: string };
+  expect(body.code).toBe('runtime.use-case-timeout');
+  expect(body.message).toContain('elysia_nested_timeout');
+  expect(body.message).not.toContain('inner_secret');
 });
 
 test('output outside its schema answers 500', async () => {

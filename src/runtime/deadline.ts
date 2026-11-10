@@ -1,3 +1,5 @@
+import { timeoutError } from '../contracts/limits';
+
 export interface Deadline {
   /** Aborted only when the deadline is reached, never by `dispose`. */
   readonly signal: AbortSignal;
@@ -10,11 +12,14 @@ export interface Deadline {
   readonly dispose: () => void;
 }
 
-/** One deadline for a run or an execution; without `timeoutMs` it never expires. */
+/** One deadline for a run or an execution; without `timeoutMs` it never expires. Throws on a `timeoutMs` setTimeout cannot honor. */
 export function createDeadline(
   timeoutMs: number | undefined,
   onExpire: () => Error,
 ): Deadline {
+  const problem =
+    timeoutMs === undefined ? null : timeoutError('timeoutMs', timeoutMs);
+  if (problem !== null) throw new Error(problem);
   const controller = new AbortController();
   if (timeoutMs === undefined)
     return {

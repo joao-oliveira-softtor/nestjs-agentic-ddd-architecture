@@ -537,7 +537,7 @@ test('a declared event is published, a subclass of it is refused', async () => {
   expect(sub.eventBus.events).toEqual([]);
 });
 
-test('a concurrent batch stops reaching the bus once another publish is refused', async () => {
+test('a batch accepted before a concurrent publish is refused is still delivered whole, and the run fails', async () => {
   const f = await setup([calls(call()), end], async (input, ctx) => {
     await Promise.all([
       ctx.publish([new Changed('a1'), new Changed('a2')]),
@@ -549,6 +549,31 @@ test('a concurrent batch stops reaching the bus once another publish is refused'
   expect(result).toMatchObject(failedUseCase);
   expect(f.eventBus.events.map((e) => e.payload)).toEqual(['a1', 'a2']);
 });
+
+test.each([
+  ['published twice', 1],
+  ['twice in one batch', 0],
+])(
+  'an event %s is refused as a use-case error, not a bus failure',
+  async (kind, delivered) => {
+    const f = await setup([calls(call()), end], async (input, ctx) => {
+      const event = new Changed('x');
+      if (kind === 'twice in one batch')
+        await ctx.publish([event, event]).catch(() => {});
+      else {
+        await ctx.publish([event]);
+        await ctx.publish([event]).catch(() => {});
+      }
+      return input;
+    });
+    const result = await f.runtime.run('agent', { message: 'go' });
+    expect(result).toMatchObject(failedUseCase);
+    expect((result.error as Error).message).toContain(
+      'Event Changed was already published',
+    );
+    expect(f.eventBus.events).toHaveLength(delivered);
+  },
+);
 
 test('a published batch reaches the bus in one call', async () => {
   const batches: string[][] = [];

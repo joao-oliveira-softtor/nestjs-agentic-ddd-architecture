@@ -5,7 +5,7 @@ import type { EventBus, EventHandler } from './ports';
 export interface InMemoryEventBusOptions {
   /** Keep every published event in `events` (tests); off by default. */
   record?: boolean;
-  /** Receives a subscriber error; defaults to `console.error`. */
+  /** Receives a subscriber error; defaults to `console.error` with the event name and id (no payload). */
   onError?: (error: unknown, event: DomainEvent) => void;
 }
 
@@ -62,7 +62,13 @@ export class InMemoryEventBus implements EventBus {
 
   #report(error: unknown, event: DomainEvent): void {
     try {
-      (this.#options.onError ?? console.error)(error, event);
+      if (this.#options.onError) this.#options.onError(error, event);
+      // Name the event only: its payload may hold data that must not reach a log.
+      else
+        console.error(
+          `Event subscriber failed on ${event.name} (${event.eventId})`,
+          error,
+        );
     } catch (hookError) {
       console.error(hookError);
     }

@@ -28,8 +28,10 @@ export interface RuntimeOptions {
   modules: readonly IRModule[];
   registry?: Registry;
   /**
-   * Deadline in ms for a use-case run outside an operator (`executeUseCase`, the Elysia routes);
-   * operator runs keep their own `limits.timeoutMs`. Unset means no deadline.
+   * Deadline in ms for a use-case run outside an operator; operator runs keep their own
+   * `limits.timeoutMs`. Unset means no deadline. The Elysia routes apply it; a direct caller of
+   * `executeUseCase` passes `runtime.useCaseTimeoutMs` as `options.timeoutMs`; `AgenticModule`
+   * (NestJS) accepts and validates it, but nothing there runs a use-case outside an operator.
    */
   useCaseTimeoutMs?: number;
 }

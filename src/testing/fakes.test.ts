@@ -117,7 +117,7 @@ test('bus isolates a throwing handler: later handlers and events are still deliv
   expect(failures).toEqual([[boom, a]]);
 });
 
-test('bus reports a handler error to console.error without onError', async () => {
+test('bus reports a handler error to console.error without onError, naming the event and not printing its payload', async () => {
   const original = console.error;
   const calls: unknown[][] = [];
   console.error = (...args: unknown[]) => void calls.push(args);
@@ -127,8 +127,14 @@ test('bus reports a handler error to console.error without onError', async () =>
     bus.subscribe(async () => {
       throw boom;
     });
-    await bus.publish([new Created('a')]);
-    expect(calls.flat()).toContain(boom);
+    const event = new Created('secret');
+    await bus.publish([event]);
+    const [line, error] = calls[0] ?? [];
+    expect(calls).toHaveLength(1);
+    expect(line).toContain('Created');
+    expect(line).toContain(event.eventId);
+    expect(error).toBe(boom);
+    expect(calls.flat()).not.toContain(event);
   } finally {
     console.error = original;
   }

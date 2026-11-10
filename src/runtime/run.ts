@@ -32,8 +32,6 @@ function guardFailure(
   if (guard.undeclared)
     return { reason: 'use_case_error', error: guard.refusal };
   if (!guard.failed) return undefined;
-  // The run deadline cut the delivery: that is a timeout, not a bus failure.
-  if (guard.failed.error instanceof RunTimeout) throw guard.failed.error;
   return { reason: 'event_bus_error', error: guard.failed.error };
 }
 

@@ -287,9 +287,10 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
               error instanceof AgenticError &&
               error.code === 'runtime.use-case-timeout'
             )
+              // Not error.message: a nested use-case's own timeout would leak its name.
               return status(504, {
                 code: error.code,
-                message: error.message,
+                message: `Use-case ${record.name} did not finish in time`,
               } satisfies DomainErrorBody);
             // Elysia's default 500 echoes error.message; the original stays on `cause` for the app's onError.
             if (!(error instanceof DomainError)) {
