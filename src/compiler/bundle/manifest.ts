@@ -91,7 +91,7 @@ export function renderBundleMd(m: BundleManifest): string {
     '',
     '## Apply the bundle',
     '',
-    'Run from the base checkout, at the base ref above. It refuses on a base mismatch, writes the skeleton and runs `compile`. The bundle hash proves the bundle is unchanged, not who made it (integrity, not authenticity): compare the hash above with the sender before confirming. It writes only under a module path and one `changes/NNNN-slug/` directory; without `--yes` it lists the files and writes nothing.',
+    'Run from the base checkout, at the base ref above. It refuses on a base mismatch, writes the skeleton and runs `compile`. The bundle hash proves the bundle is unchanged, not who made it (integrity, not authenticity): compare the hash above with the sender before confirming. Applying runs the code of the bundle (the `compile` step imports its module files with your privileges), so apply only a bundle you trust. It writes only under a module path and one `changes/NNNN-slug/` directory; without `--yes` it lists the files and writes nothing.',
     '',
     '```bash',
     'bun run agentic apply <path-to-this-bundle>',

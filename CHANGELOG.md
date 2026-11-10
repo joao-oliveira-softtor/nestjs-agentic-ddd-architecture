@@ -3,7 +3,10 @@
 ## [Não lançado]
 
 - **Proposals tolerate a BOM and CRLF checkouts (#167, #168):** `proposal.md` may start with a UTF-8 BOM (it used to fail with `proposal.frontmatter-missing`), and an archived proposal now hashes the same in LF and CRLF, so a Windows checkout no longer reports `proposal.applied-edited`. The hash is taken over the text without the BOM and with LF line endings; the file itself is never rewritten, and locks written before this change still verify.
+
 - **`skills:example` cleans up after a failure (#173):** `skills:example` now removes the half-built destination when it fails after creating it, so a rerun no longer stops at "Destino já existe", and `skills:example`/`skills:install` print a hint to enable Windows Developer Mode or run as administrator when symlink creation fails with `EPERM`.
+
+- **`BUNDLE.md` and ADR-0007 D15 state the trust model of `agentic apply` (#178):** `BUNDLE.md` now says that applying a bundle runs its code (the `compile` step imports the module files), so apply only bundles you trust; ADR-0007 D15 records this trust model (integrity, not authorship; no sandbox for now). The bundle hash is unchanged (`BUNDLE.md` is derived and not hashed), so existing bundles apply as before.
 
 ## [0.6.0] — 2026-11-09
 
