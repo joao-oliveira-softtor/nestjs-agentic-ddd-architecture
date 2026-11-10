@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+## [0.7.0] — 2026-11-10
+
 - **Elysia routes and `executeUseCase` can have a deadline (#186):** a use-case run outside an operator awaited `execute` with no bound, so a hung dependency pinned the HTTP request. The new `RuntimeOptions.useCaseTimeoutMs` applies only outside an operator, and leaving it unset means no deadline, the old behaviour. It bounds the execution and the delivery of its events. On expiry it aborts `ctx.signal`, refuses any later publish, and fails with an `AgenticError` coded `runtime.use-case-timeout` (new code), which wins over a refused event, a bus failure or the use-case's own error. An Elysia route maps that code to 504 `{ code, message }`, typed for Eden like the domain 422. A 504 can come after `save` committed, and events already handed to the bus may still be delivered, so a route a client retries should be idempotent. The value is validated like `limits.timeoutMs` (finite, positive, at most 2147483647), and `OperatorRuntime` refuses an invalid one in its constructor. `executeUseCase` / `runUseCase` take it as `options.timeoutMs`. `@agentic-ddd/runtime` now also exports `AgenticError`, `ErrorCode` and `schemaLookup`.
 
 - **Breaking change — `UseCaseContext` has a required `signal` (#164):** a use-case kept running after its operator run timed out, with no way to know. `ctx.signal` is an `AbortSignal` aborted when the run's deadline expires; aborting only notifies, it interrupts nothing, so a long use-case checks it before `save`. Code that builds a `UseCaseContext` by hand must now provide one; `createTestContext` accepts `signal` and provides a never-aborted one by default. The authoring skill and the orders example state the delivery contract: an event is published after `save`, at most once by the runtime, and an outbox in the repository gives at least once.
@@ -35,6 +37,8 @@
 - **CI (#171):** a pull request's superseded runs are cancelled (one concurrency group per ref; each push to `main` keeps its own group and is never cancelled), and every job has a time limit: `ci` 20 min, `ci-windows` 25 min, `evals` 60 min.
 
 - **Development dependencies (#172):** six unused devDependencies are gone (`@nestjs/cli`, `@nestjs/schematics`, `@nestjs/mau`, `@nestjs/typeorm`, `typeorm`, `source-map-support`), with the dead `nest-cli.json`. The published package does not change.
+
+See [docs/releases/0.7.0.md](docs/releases/0.7.0.md).
 
 ## [0.6.0] — 2026-11-09
 
@@ -209,3 +213,4 @@ Veja [demonstração e validação](docs/releases/0.1.0.md) e [roadmap](docs/ROA
 [0.4.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.4.0
 [0.5.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.5.0
 [0.6.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.6.0
+[0.7.0]: https://github.com/joao-oliveira-softtor/nestjs-agentic-ddd-architecture/releases/tag/v0.7.0
