@@ -1,20 +1,35 @@
 import type { UseCase } from '@agentic-ddd/core';
 import type { UseCaseRecord } from '@agentic-ddd/decorators';
+import type { ZodType } from 'zod';
 import { guardEmits } from './emits-guard';
 import type { EventBus } from './ports';
+
+export interface UseCaseOptions {
+  /** The `@AgentEvent` payload schema of an event name, if any. */
+  schemaFor?: (name: string) => ZodType | undefined;
+}
 
 /**
  * Runs a use-case outside an operator (e.g. an HTTP route): no LLM and no
  * ApprovalPort, but the same input/output schemas and `emits` rule. A
- * DomainError propagates as is.
+ * DomainError propagates as is. Each event is validated against its
+ * `@AgentEvent` schema only when `options.schemaFor` returns one for its name;
+ * with no lookup, or no schema for the name, that event's validation is skipped.
  */
 export async function executeUseCase(
   record: UseCaseRecord,
   instance: UseCase<unknown, unknown>,
   input: unknown,
   eventBus: EventBus,
+  options?: UseCaseOptions,
 ): Promise<unknown> {
-  return runUseCase(record, instance, record.input.parse(input), eventBus);
+  return runUseCase(
+    record,
+    instance,
+    record.input.parse(input),
+    eventBus,
+    options,
+  );
 }
 
 /** Like `executeUseCase` for an input already parsed by `record.input` (parsing twice breaks transforms). */
@@ -23,12 +38,18 @@ export async function runUseCase(
   instance: UseCase<unknown, unknown>,
   parsed: unknown,
   eventBus: EventBus,
+  options?: UseCaseOptions,
 ): Promise<unknown> {
   const id = crypto.randomUUID();
-  const guard = guardEmits(record, async (batch) => {
-    for (const event of batch) event.stamp(id, id);
-    await eventBus.publish(batch);
-  });
+  const guard = guardEmits(
+    record,
+    async (batch) => {
+      for (const event of batch) event.stamp(id, id);
+      await eventBus.publish(batch);
+    },
+    undefined,
+    options?.schemaFor,
+  );
   let output: unknown;
   let thrown: { error: unknown } | undefined;
   try {

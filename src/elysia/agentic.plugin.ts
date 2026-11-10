@@ -265,6 +265,11 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
   const app = new Elysia({ name: 'agentic-ddd' }).decorate('agentic', runtime);
   rejectSecondMount(app as unknown as Mountable);
   if (!options.http) return app;
+  // By name, like the emits check; the runtime index does not export its own lookup.
+  const eventSchemas = new Map(
+    runtime.registry.events.map((e) => [e.target.name, e.payload]),
+  );
+  const schemaFor = (name: string) => eventSchemas.get(name);
   const prefix = (options.http.prefix ?? '/agentic').replace(/\/$/, '');
   return app.group(prefix, (group) => {
     for (const { record, instance } of routes)
@@ -273,7 +278,9 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
         async ({ body, status }) => {
           try {
             // Elysia already validated and transformed `body` with record.input.
-            return await runUseCase(record, instance, body, runtime.eventBus);
+            return await runUseCase(record, instance, body, runtime.eventBus, {
+              schemaFor,
+            });
           } catch (error) {
             // Elysia's default 500 echoes error.message; the original stays on `cause` for the app's onError.
             if (!(error instanceof DomainError)) {

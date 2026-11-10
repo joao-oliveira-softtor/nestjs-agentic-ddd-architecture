@@ -1,4 +1,5 @@
-import { expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
+import { z } from 'zod';
 import {
   DomainError,
   DomainEvent,
@@ -37,8 +38,11 @@ async function setup(
   options: Partial<RuntimeOptions> = {},
   limits?: { maxSteps?: number; timeoutMs?: number },
   approval = false,
+  tweak?: (f: ReturnType<typeof fixture>) => void,
 ) {
   const f = fixture();
+  tweak?.(f);
+  if (tweak) f.compileSkill();
   if (limits || approval) {
     f.registry.operators[0] = {
       ...f.registry.operators[0]!,
@@ -621,4 +625,39 @@ test('a second copy of a declared event class is accepted by name, like the IR',
   const result = await f.runtime.run('agent', { message: 'go' });
   expect(result.status).toBe('completed');
   expect(f.eventBus.events.map((e) => e.name)).toEqual(['Changed']);
+});
+
+describe('event payload schema', () => {
+  const strict = (f: ReturnType<typeof fixture>) => {
+    f.registry.events[0] = {
+      ...f.registry.events[0]!,
+      payload: z.object({ value: z.string() }),
+    };
+  };
+  const run = (payload: unknown) =>
+    setup(
+      [calls(call()), end],
+      async (input, ctx) => {
+        await ctx.publish([new Changed(payload)]);
+        return input;
+      },
+      {},
+      undefined,
+      false,
+      strict,
+    );
+
+  test('an event whose payload breaks its @AgentEvent schema refuses the batch and fails the run', async () => {
+    const f = await run({ value: 123 });
+    const result = await f.runtime.run('agent', { message: 'go' });
+    expect(result).toMatchObject(failedUseCase);
+    expect(f.eventBus.events).toEqual([]);
+  });
+
+  test('an event with a valid payload is delivered', async () => {
+    const f = await run({ value: 'ok' });
+    const result = await f.runtime.run('agent', { message: 'go' });
+    expect(result.status).toBe('completed');
+    expect(f.eventBus.events.map((e) => e.payload)).toEqual([{ value: 'ok' }]);
+  });
 });

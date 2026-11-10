@@ -179,6 +179,7 @@ export async function runOperator(
             await wait(() => ports.eventBus.publish(batch));
           },
           check,
+          operator.schemaFor,
         );
         const ctx: UseCaseContext = {
           correlationId: runId,

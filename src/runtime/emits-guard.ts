@@ -1,5 +1,6 @@
 import type { DomainEvent, UseCaseContext } from '@agentic-ddd/core';
-import type { UseCaseRecord } from '@agentic-ddd/decorators';
+import type { Registry, UseCaseRecord } from '@agentic-ddd/decorators';
+import type { ZodType } from 'zod';
 
 export interface EmitsGuard {
   readonly publish: UseCaseContext['publish'];
@@ -12,11 +13,22 @@ export interface EmitsGuard {
   end(): void;
 }
 
+/** Event payload schemas by event name, the same key as the emits check. */
+export function schemaLookup(
+  registry: Registry,
+): (name: string) => ZodType | undefined {
+  const byName = new Map(
+    registry.events.map((e) => [e.target.name, e.payload]),
+  );
+  return (name) => byName.get(name);
+}
+
 /** One use-case execution may only publish the events in its `emits`, and only while it runs. */
 export function guardEmits(
   record: UseCaseRecord,
   deliver: (batch: readonly DomainEvent[]) => Promise<void>,
   check: () => void = () => {},
+  schemaFor?: (name: string) => ZodType | undefined,
 ): EmitsGuard {
   let active = true;
   let undeclared = false;
@@ -48,6 +60,19 @@ export function guardEmits(
           undeclared = true;
           throw new Error(
             `Event ${refused.name} is not declared in emits of use-case ${record.name}`,
+          );
+        }
+        // Only validates: the payload stays as the use-case built it.
+        const invalid = batch.find(
+          (event) =>
+            !(
+              schemaFor?.(event.name)?.safeParse(event.payload).success ?? true
+            ),
+        );
+        if (invalid) {
+          undeclared = true;
+          throw new Error(
+            `Event ${invalid.name} has a payload that does not match its @AgentEvent schema (use-case ${record.name})`,
           );
         }
         if (undeclared)

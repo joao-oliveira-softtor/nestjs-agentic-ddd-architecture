@@ -14,8 +14,8 @@ import {
   status,
 } from 'elysia';
 import { z } from 'zod';
-import type { UseCase } from '@agentic-ddd/core';
-import { AgentUseCase, Operator } from '@agentic-ddd/decorators';
+import { DomainEvent, type UseCase } from '@agentic-ddd/core';
+import { AgentEvent, AgentUseCase, Operator } from '@agentic-ddd/decorators';
 import { OperatorRuntime } from '@agentic-ddd/runtime';
 import { agentic } from './index';
 import { CreateOrder } from '../../examples/orders/application/create-order';
@@ -197,6 +197,49 @@ test('transformed input: the route answers with the converted value', async () =
   ).handle(post('/agentic/use-cases/elysia_probe', { n: '2' }));
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ n: 2 });
+});
+
+@AgentEvent({
+  description: 'Only in tests.',
+  payload: z.object({ id: z.string() }),
+})
+class ElysiaStrict extends DomainEvent<{ id: unknown }> {}
+
+@AgentUseCase({
+  name: 'elysia_strict',
+  description: 'Publishes an event whose payload breaks its schema.',
+  whenToUse: 'Only in tests.',
+  input: z.object({}),
+  output: z.object({}),
+  uses: [],
+  emits: [ElysiaStrict],
+})
+class Strict implements UseCase<{}, {}> {
+  async execute(
+    _: {},
+    ctx: { publish: (batch: ElysiaStrict[]) => Promise<void> },
+  ) {
+    await ctx.publish([new ElysiaStrict({ id: 123 })]);
+    return {};
+  }
+}
+
+test('an event payload outside its @AgentEvent schema answers 500 and reaches no subscriber', async () => {
+  const eventBus = new InMemoryEventBus({ record: true });
+  const app = await agentic({
+    root,
+    modules: [{ name: 'elysia-test', path: 'src/elysia' }],
+    llm: new FakeLlm([]),
+    operators: [],
+    eventBus,
+    useCases: { elysia_strict: new Strict() },
+    http: {},
+  });
+  const response = await app.handle(
+    post('/agentic/use-cases/elysia_strict', {}),
+  );
+  expect(response.status).toBe(500);
+  expect(eventBus.events).toEqual([]);
 });
 
 test('output outside its schema answers 500', async () => {
@@ -651,15 +694,13 @@ describe('one agentic() per app across nested mounts', () => {
 
   test('one agentic() in a sub-app mounted on a root still serves its route', async () => {
     const sub = new Elysia().use(await mount('/a'));
-    const response = await new Elysia()
-      .use(sub)
-      .handle(
-        post('/a/use-cases/create_order', {
-          order_id: 'nest-1',
-          customer_id: 'c',
-          items,
-        }),
-      );
+    const response = await new Elysia().use(sub).handle(
+      post('/a/use-cases/create_order', {
+        order_id: 'nest-1',
+        customer_id: 'c',
+        items,
+      }),
+    );
     expect(response.status).toBe(200);
   });
 });

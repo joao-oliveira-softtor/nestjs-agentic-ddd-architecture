@@ -14,6 +14,7 @@ import { limitsError } from '../contracts/limits';
 import { declarationsInModules } from '../contracts/scope';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import { InMemoryEventBus } from './event-bus';
+import { schemaLookup } from './emits-guard';
 import type { LlmTool, OperatorRunResult, RunInput } from './types';
 
 export type UseCaseInstances = ReadonlyMap<ClassRef, UseCase<unknown, unknown>>;
@@ -30,6 +31,8 @@ export interface RuntimeOptions {
 export interface MountedOperator {
   record: OperatorRecord;
   system: string;
+  /** `@AgentEvent` payload schema by event name. */
+  schemaFor: ReturnType<typeof schemaLookup>;
   tools: LlmTool[];
   useCases: Map<
     string,
@@ -117,6 +120,7 @@ export class OperatorRuntime {
     this.#operators.set(record.name, {
       record,
       system: `${record.instructions}\n\n${front![2]}`,
+      schemaFor: schemaLookup(registry),
       tools,
       useCases,
     });

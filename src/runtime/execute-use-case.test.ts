@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { z } from 'zod';
 import {
   DomainError,
@@ -296,4 +296,33 @@ test('an error from the use-case propagates as is, and an undeclared event wins 
       ),
     ),
   ).toBe('Use-case ring published an undeclared event');
+});
+
+describe('event payload schema', () => {
+  const schemas = new Map([['Rang', z.object({ times: z.number() })]]);
+  const schemaFor = (name: string) => schemas.get(name);
+  class BadRing implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      await ctx.publish([new Rang({ times: 'many' })]);
+      return { ok: true as const };
+    }
+  }
+
+  test('a payload outside its schema rejects and nothing reaches the bus', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    expect(
+      await rejection(
+        executeUseCase(recordFor(BadRing), new BadRing(), { times: 1 }, bus, {
+          schemaFor,
+        }),
+      ),
+    ).toBe('Use-case ring published an undeclared event');
+    expect(bus.events).toEqual([]);
+  });
+
+  test('without a lookup the same payload is delivered', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    await executeUseCase(recordFor(BadRing), new BadRing(), { times: 1 }, bus);
+    expect(bus.events).toHaveLength(1);
+  });
 });
