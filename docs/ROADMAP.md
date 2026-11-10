@@ -65,7 +65,7 @@ A #69 (servidor MCP remoto) e o épico #70 não entram nesta versão e seguem ab
 
 ## v0.7.0 — Robustez do runtime, do compilador e do Domain MCP
 
-[Release](releases/0.7.0.md) e [changelog](../CHANGELOG.md). Entrega 18 issues da auditoria da 0.6.0 e das revisões seguintes: runtime (#160 a #164, #183, #184, #186), compilador e skills (#167 a #170, #173, #178), Domain MCP (#165, #166) e CI (#171, #172). Há mudanças de comportamento e uma quebra de contrato (`UseCaseContext.signal` obrigatório), listadas na nota da release. O Runtime MCP (#123 e #124) passa para a versão seguinte.
+[Release](releases/0.7.0.md) e [changelog](../CHANGELOG.md). Entrega 18 issues da auditoria da 0.6.0 e das revisões seguintes: runtime (#160 a #164, #183, #184, #186), compilador e skills (#167 a #170, #173, #178), Domain MCP (#165, #166) e CI (#171, #172). Há mudanças de comportamento e duas quebras de contrato (`UseCaseContext.signal` obrigatório e, no MCP, token sem `domain:read` recusado pelas tools de domínio), listadas na nota da release. O Runtime MCP (#123 e #124) passa para a versão seguinte, e os achados #174 a #177, #179 e #187 seguem abertos.
 
 ## Frente encerrada — Orquestração de agentes por camada e modelo
 
