@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { FakeLlm, InMemoryEventBus } from '@agentic-ddd/testing';
 import { treaty } from '@elysiajs/eden';
@@ -14,9 +14,9 @@ import {
   status,
 } from 'elysia';
 import { z } from 'zod';
-import type { UseCase } from '@agentic-ddd/core';
-import { AgentUseCase, Operator } from '@agentic-ddd/decorators';
-import { OperatorRuntime } from '@agentic-ddd/runtime';
+import { DomainEvent, type UseCase } from '@agentic-ddd/core';
+import { AgentEvent, AgentUseCase, Operator } from '@agentic-ddd/decorators';
+import { AgenticError, OperatorRuntime } from '@agentic-ddd/runtime';
 import { agentic } from './index';
 import { CreateOrder } from '../../examples/orders/application/create-order';
 import { ConfirmOrder } from '../../examples/orders/application/confirm-order';
@@ -57,7 +57,7 @@ test('the decorated runtime runs the operator, which gets no HTTP route (ADR-000
     },
     { content: [{ type: 'text', text: 'Criado.' }], stopReason: 'end' },
   ]);
-  const eventBus = new InMemoryEventBus();
+  const eventBus = new InMemoryEventBus({ record: true });
   const { app, orders } = await createOrdersApp({ root, llm, eventBus });
   const result = await app.decorator.agentic.run('order-operator', {
     message: 'Crie o pedido',
@@ -76,7 +76,7 @@ test('the decorated runtime runs the operator, which gets no HTTP route (ADR-000
 });
 
 test('use-case route through Eden: typed, publishes the event and maps DomainError', async () => {
-  const eventBus = new InMemoryEventBus();
+  const eventBus = new InMemoryEventBus({ record: true });
   const { app } = await createOrdersApp({
     root,
     llm: new FakeLlm([]),
@@ -197,6 +197,123 @@ test('transformed input: the route answers with the converted value', async () =
   ).handle(post('/agentic/use-cases/elysia_probe', { n: '2' }));
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ n: 2 });
+});
+
+@AgentEvent({
+  description: 'Only in tests.',
+  payload: z.object({ id: z.string() }),
+})
+class ElysiaStrict extends DomainEvent<{ id: unknown }> {}
+
+@AgentUseCase({
+  name: 'elysia_strict',
+  description: 'Publishes an event whose payload breaks its schema.',
+  whenToUse: 'Only in tests.',
+  input: z.object({}),
+  output: z.object({}),
+  uses: [],
+  emits: [ElysiaStrict],
+})
+class Strict implements UseCase<{}, {}> {
+  async execute(
+    _: {},
+    ctx: { publish: (batch: ElysiaStrict[]) => Promise<void> },
+  ) {
+    await ctx.publish([new ElysiaStrict({ id: 123 })]);
+    return {};
+  }
+}
+
+test('an event payload outside its @AgentEvent schema answers 500 and reaches no subscriber', async () => {
+  const eventBus = new InMemoryEventBus({ record: true });
+  const app = await agentic({
+    root,
+    modules: [{ name: 'elysia-test', path: 'src/elysia' }],
+    llm: new FakeLlm([]),
+    operators: [],
+    eventBus,
+    useCases: { elysia_strict: new Strict() },
+    http: {},
+  });
+  const response = await app.handle(
+    post('/agentic/use-cases/elysia_strict', {}),
+  );
+  expect(response.status).toBe(500);
+  expect(eventBus.events).toEqual([]);
+});
+
+@AgentUseCase({
+  name: 'elysia_hung',
+  description: 'Never finishes.',
+  whenToUse: 'Only in tests.',
+  input: z.object({}),
+  output: z.object({}),
+  uses: [],
+  emits: [],
+})
+class Hung implements UseCase<{}, {}> {
+  execute(): Promise<{}> {
+    return new Promise(() => {});
+  }
+}
+
+test('with useCaseTimeoutMs a route whose use-case never resolves answers 504 with the code', async () => {
+  const app = await agentic({
+    root,
+    modules: [{ name: 'elysia-test', path: 'src/elysia' }],
+    llm: new FakeLlm([]),
+    operators: [],
+    useCaseTimeoutMs: 20,
+    useCases: { elysia_hung: new Hung() },
+    http: {},
+  });
+  const api = treaty(app);
+  const response = await api.agentic['use-cases'].elysia_hung.post({});
+  expect(response.status).toBe(504);
+  const body = response.error?.value;
+  expect(body).toMatchObject({ code: 'runtime.use-case-timeout' });
+  expect((body as { message: string }).message).toContain('elysia_hung');
+});
+
+@AgentUseCase({
+  name: 'elysia_nested_timeout',
+  description: 'Throws the timeout of a nested use-case.',
+  whenToUse: 'Only in tests.',
+  input: z.object({}),
+  output: z.object({}),
+  uses: [],
+  emits: [],
+})
+class NestedTimeout implements UseCase<{}, {}> {
+  execute(): Promise<{}> {
+    return Promise.reject(
+      new AgenticError(
+        'runtime.use-case-timeout',
+        'Use-case inner_secret did not finish within useCaseTimeoutMs (5 ms)',
+      ),
+    );
+  }
+}
+
+test('a timeout error thrown by the use-case itself answers 504 with the route name, not the foreign message', async () => {
+  const app = await agentic({
+    root,
+    modules: [{ name: 'elysia-test', path: 'src/elysia' }],
+    llm: new FakeLlm([]),
+    operators: [],
+    useCaseTimeoutMs: 1_000,
+    useCases: { elysia_nested_timeout: new NestedTimeout() },
+    http: {},
+  });
+  const api = treaty(app);
+  const response = await api.agentic['use-cases'].elysia_nested_timeout.post(
+    {},
+  );
+  expect(response.status).toBe(504);
+  const body = response.error?.value as { code: string; message: string };
+  expect(body.code).toBe('runtime.use-case-timeout');
+  expect(body.message).toContain('elysia_nested_timeout');
+  expect(body.message).not.toContain('inner_secret');
 });
 
 test('output outside its schema answers 500', async () => {
@@ -590,4 +707,74 @@ test('a second agentic() on one app fails the mount instead of shadowing the fir
   expect(() => app.use(second)).toThrow(
     'Mount one agentic() per app: ctx.agentic would keep the first runtime',
   );
+});
+
+describe('one agentic() per app across nested mounts', () => {
+  const message =
+    'Mount one agentic() per app: ctx.agentic would keep the first runtime';
+  const mount = (prefix: string) =>
+    agentic({
+      root,
+      modules,
+      llm: new FakeLlm([]),
+      operators: [],
+      useCases: {
+        create_order: new CreateOrder(new InMemoryOrderRepository()),
+      },
+      http: { prefix },
+    });
+
+  test('two sibling sub-apps with their own agentic() fail on the shared root', async () => {
+    const first = new Elysia().use(await mount('/a'));
+    const second = new Elysia().use(await mount('/b'));
+    const rootApp = new Elysia().use(first);
+    expect(() => rootApp.use(second)).toThrow(message);
+  });
+
+  test('siblings two levels deep still fail on the shared root', async () => {
+    const first = new Elysia().use(new Elysia().use(await mount('/a')));
+    const second = new Elysia().use(new Elysia().use(await mount('/b')));
+    const rootApp = new Elysia().use(first);
+    expect(() => rootApp.use(second)).toThrow(message);
+  });
+
+  test('one agentic() reaching the root through two sub-apps is the same runtime, not a second mount', async () => {
+    const shared = new Elysia().use(await mount('/a'));
+    const v1 = new Elysia({ prefix: '/v1' }).use(shared);
+    const v2 = new Elysia({ prefix: '/v2' }).use(shared);
+    const rootApp = new Elysia().use(v1);
+    expect(() => rootApp.use(v2)).not.toThrow();
+  });
+
+  test('a second agentic() inside .group() fails the mount', async () => {
+    const app = new Elysia().use(await mount('/a'));
+    const second = await mount('/b');
+    expect(() => app.group('/g', (group) => group.use(second))).toThrow(
+      message,
+    );
+  });
+
+  test('a second agentic() inside .guard() fails the mount', async () => {
+    const app = new Elysia().use(await mount('/a'));
+    const second = await mount('/b');
+    expect(() => app.guard({}, (guard) => guard.use(second))).toThrow(message);
+  });
+
+  test('a second agentic() inside a function plugin fails the mount', async () => {
+    const app = new Elysia().use(await mount('/a'));
+    const second = await mount('/b');
+    expect(() => app.use((inner) => inner.use(second))).toThrow(message);
+  });
+
+  test('one agentic() in a sub-app mounted on a root still serves its route', async () => {
+    const sub = new Elysia().use(await mount('/a'));
+    const response = await new Elysia().use(sub).handle(
+      post('/a/use-cases/create_order', {
+        order_id: 'nest-1',
+        customer_id: 'c',
+        items,
+      }),
+    );
+    expect(response.status).toBe(200);
+  });
 });

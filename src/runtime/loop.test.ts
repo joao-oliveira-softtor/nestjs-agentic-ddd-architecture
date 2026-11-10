@@ -1,4 +1,5 @@
-import { expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
+import { z } from 'zod';
 import {
   DomainError,
   DomainEvent,
@@ -16,6 +17,7 @@ import {
   type LlmResponse,
   type RuntimeOptions,
 } from './index';
+import type { EventBus } from './ports';
 
 const end: LlmResponse = {
   content: [{ type: 'text', text: 'done' }],
@@ -36,8 +38,11 @@ async function setup(
   options: Partial<RuntimeOptions> = {},
   limits?: { maxSteps?: number; timeoutMs?: number },
   approval = false,
+  tweak?: (f: ReturnType<typeof fixture>) => void,
 ) {
   const f = fixture();
+  tweak?.(f);
+  if (tweak) f.compileSkill();
   if (limits || approval) {
     f.registry.operators[0] = {
       ...f.registry.operators[0]!,
@@ -51,7 +56,7 @@ async function setup(
     );
   }
   const llm = new FakeLlm(script);
-  const eventBus = new InMemoryEventBus();
+  const eventBus = new InMemoryEventBus({ record: true });
   const runtime = new OperatorRuntime({ ...f, llm, eventBus, ...options });
   await runtime.register(f.Agent, new Map([[f.Tool, { execute }]]));
   return { runtime, llm, eventBus };
@@ -316,6 +321,87 @@ for (const stage of ['llm', 'approval', 'execute', 'bus'] as const) {
   });
 }
 
+test('ctx.signal aborts when the run times out and stays clear when it completes', async () => {
+  let slowSignal: AbortSignal | undefined;
+  const slow = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      slowSignal = ctx.signal;
+      expect(ctx.signal.aborted).toBe(false);
+      await Bun.sleep(60);
+      return input;
+    },
+    {},
+    { timeoutMs: 20 },
+  );
+  expect((await slow.runtime.run('agent', { message: 'go' })).status).toBe(
+    'timeout',
+  );
+  expect(slowSignal?.aborted).toBe(true);
+
+  let doneSignal: AbortSignal | undefined;
+  const done = await setup([calls(call()), end], async (input, ctx) => {
+    doneSignal = ctx.signal;
+    return input;
+  });
+  expect((await done.runtime.run('agent', { message: 'go' })).status).toBe(
+    'completed',
+  );
+  expect(doneSignal?.aborted).toBe(false);
+});
+
+test('a late publish after the run completed is refused and leaves ctx.signal clear', async () => {
+  let kept!: UseCaseContext;
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    kept = ctx;
+    return input;
+  });
+  expect((await f.runtime.run('agent', { message: 'go' })).status).toBe(
+    'completed',
+  );
+  const outcome = await kept.publish([new Changed('late')]).then(
+    () => 'resolved',
+    () => 'refused',
+  );
+  expect(outcome).toBe('refused');
+  expect(kept.signal.aborted).toBe(false);
+});
+
+test('a use-case that blocks the event loop past the deadline ends the run as timeout and aborts ctx.signal', async () => {
+  let signal: AbortSignal | undefined;
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      signal = ctx.signal;
+      // Synchronous, so the timer cannot fire: only check() sees the expiry.
+      Bun.sleepSync(40);
+      return input;
+    },
+    {},
+    { timeoutMs: 20 },
+  );
+  expect((await f.runtime.run('agent', { message: 'go' })).status).toBe(
+    'timeout',
+  );
+  expect(signal?.aborted).toBe(true);
+});
+
+test('two use-case executions in one run receive the same signal', async () => {
+  const signals: AbortSignal[] = [];
+  const f = await setup(
+    [calls(call(), call('t2', 'tool', { value: 'b' })), end],
+    async (input, ctx) => {
+      signals.push(ctx.signal);
+      return input;
+    },
+  );
+  expect((await f.runtime.run('agent', { message: 'go' })).status).toBe(
+    'completed',
+  );
+  expect(signals).toHaveLength(2);
+  expect(signals[0]).toBe(signals[1]!);
+});
+
 for (const [name, context] of [
   ['bigint', 1n],
   [
@@ -369,6 +455,7 @@ for (const [name, context] of [
 class Other extends DomainEvent {}
 class SubChanged extends Changed {}
 const failedUseCase = { status: 'failed', reason: 'use_case_error' };
+const failedBus = { status: 'failed', reason: 'event_bus_error' };
 
 test('publishing an event outside the use-case emits fails the run and nothing reaches the bus', async () => {
   const f = await setup([calls(call()), end], async (input, ctx) => {
@@ -450,7 +537,7 @@ test('a declared event is published, a subclass of it is refused', async () => {
   expect(sub.eventBus.events).toEqual([]);
 });
 
-test('a concurrent batch stops reaching the bus once another publish is refused', async () => {
+test('a batch accepted before a concurrent publish is refused is still delivered whole, and the run fails', async () => {
   const f = await setup([calls(call()), end], async (input, ctx) => {
     await Promise.all([
       ctx.publish([new Changed('a1'), new Changed('a2')]),
@@ -460,7 +547,178 @@ test('a concurrent batch stops reaching the bus once another publish is refused'
   });
   const result = await f.runtime.run('agent', { message: 'go' });
   expect(result).toMatchObject(failedUseCase);
-  expect(f.eventBus.events.map((e) => e.payload)).toEqual(['a1']);
+  expect(f.eventBus.events.map((e) => e.payload)).toEqual(['a1', 'a2']);
+});
+
+test.each([
+  ['published twice', 1],
+  ['twice in one batch', 0],
+])(
+  'an event %s is refused as a use-case error, not a bus failure',
+  async (kind, delivered) => {
+    const f = await setup([calls(call()), end], async (input, ctx) => {
+      const event = new Changed('x');
+      if (kind === 'twice in one batch')
+        await ctx.publish([event, event]).catch(() => {});
+      else {
+        await ctx.publish([event]);
+        await ctx.publish([event]).catch(() => {});
+      }
+      return input;
+    });
+    const result = await f.runtime.run('agent', { message: 'go' });
+    expect(result).toMatchObject(failedUseCase);
+    expect((result.error as Error).message).toContain(
+      'Event Changed was already published',
+    );
+    expect(f.eventBus.events).toHaveLength(delivered);
+  },
+);
+
+test('a published batch reaches the bus in one call', async () => {
+  const batches: string[][] = [];
+  const eventBus: EventBus = {
+    publish: async (events) => {
+      batches.push(events.map((e) => e.name));
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      await ctx.publish([new Changed('a'), new Changed('b')]);
+      return input;
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result.status).toBe('completed');
+  expect(batches).toEqual([['Changed', 'Changed']]);
+  expect(result.events).toHaveLength(2);
+});
+
+test('a batch [declared, undeclared] delivers nothing and fails the run', async () => {
+  const published: number[] = [];
+  const eventBus: EventBus = {
+    publish: async (events) => {
+      published.push(events.length);
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      await ctx.publish([new Changed('ok'), new Other('x')]);
+      return input;
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(published).toEqual([]);
+  expect(result.events).toEqual([]);
+});
+
+test('a bus failure on an un-awaited publish fails the run', async () => {
+  const eventBus: EventBus = {
+    publish: async () => {
+      await Bun.sleep(5);
+      throw new Error('bus down');
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      void ctx.publish([new Changed('a')]);
+      return input;
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedBus);
+});
+
+test('a bus failure wins over a DomainError thrown after an un-awaited publish', async () => {
+  const down = new Error('bus down');
+  const eventBus: EventBus = {
+    publish: async () => {
+      await Bun.sleep(5);
+      throw down;
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (_input, ctx) => {
+      void ctx.publish([new Changed('a')]);
+      throw new DomainError('NO_WORK', 'no work');
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedBus);
+  expect(result.error).toBe(down);
+  expect(f.llm.requests).toHaveLength(1);
+});
+
+test('an un-awaited publish to a bus that never resolves ends the run as timeout', async () => {
+  const eventBus: EventBus = {
+    publish: () => new Promise<void>(() => {}),
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      void ctx.publish([new Changed('a')]);
+      return input;
+    },
+    { eventBus },
+    { timeoutMs: 20 },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result.status).toBe('timeout');
+});
+
+test('a publish started while an un-awaited delivery is pending is drained too', async () => {
+  let started = 0;
+  const eventBus: EventBus = {
+    publish: async () => {
+      const n = ++started;
+      await Bun.sleep(n === 1 ? 5 : 15);
+      if (n === 2) throw new Error('second down');
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      void ctx.publish([new Changed('a')]);
+      void Bun.sleep(3)
+        .then(() => ctx.publish([new Changed('b')]))
+        .catch(() => {});
+      return input;
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedBus);
+});
+
+test('a publish made after the run ended is refused', async () => {
+  let late!: UseCaseContext['publish'];
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    late = (batch) => ctx.publish(batch);
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result.status).toBe('completed');
+  const outcome = await late([new Changed('late')]).then(
+    () => 'resolved',
+    () => 'refused',
+  );
+  expect(outcome).toBe('refused');
+  expect(f.eventBus.events).toEqual([]);
 });
 
 test('a second copy of a declared event class is accepted by name, like the IR', async () => {
@@ -476,4 +734,233 @@ test('a second copy of a declared event class is accepted by name, like the IR',
   const result = await f.runtime.run('agent', { message: 'go' });
   expect(result.status).toBe('completed');
   expect(f.eventBus.events.map((e) => e.name)).toEqual(['Changed']);
+});
+
+describe('event payload schema', () => {
+  const strict = (f: ReturnType<typeof fixture>) => {
+    f.registry.events[0] = {
+      ...f.registry.events[0]!,
+      payload: z.object({ value: z.string() }),
+    };
+  };
+  const run = (payload: unknown) =>
+    setup(
+      [calls(call()), end],
+      async (input, ctx) => {
+        await ctx.publish([new Changed(payload)]);
+        return input;
+      },
+      {},
+      undefined,
+      false,
+      strict,
+    );
+
+  test('an event whose payload breaks its @AgentEvent schema refuses the batch and fails the run', async () => {
+    const f = await run({ value: 123 });
+    const result = await f.runtime.run('agent', { message: 'go' });
+    expect(result).toMatchObject(failedUseCase);
+    expect(f.eventBus.events).toEqual([]);
+  });
+
+  test('an event with a valid payload is delivered', async () => {
+    const f = await run({ value: 'ok' });
+    const result = await f.runtime.run('agent', { message: 'go' });
+    expect(result.status).toBe('completed');
+    expect(f.eventBus.events.map((e) => e.payload)).toEqual([{ value: 'ok' }]);
+  });
+});
+
+describe('a failed run exposes its error', () => {
+  const run = (f: Awaited<ReturnType<typeof setup>>) =>
+    f.runtime.run('agent', { message: 'go' });
+  const failingBus = (error: unknown): EventBus => ({
+    publish: async () => {
+      await Bun.sleep(1);
+      throw error;
+    },
+    subscribe: () => () => {},
+  });
+
+  test('a provider error ends provider_error with the thrown object', async () => {
+    const boom = new Error('429');
+    const result = await run(
+      await setup([
+        () => {
+          throw boom;
+        },
+      ]),
+    );
+    expect(result).toMatchObject({
+      status: 'failed',
+      reason: 'provider_error',
+    });
+    expect(result.error).toBe(boom);
+  });
+
+  test('a use-case error ends use_case_error with the thrown object', async () => {
+    const boom = new TypeError('bug');
+    const result = await run(
+      await setup([calls(call()), end], async () => {
+        throw boom;
+      }),
+    );
+    expect(result).toMatchObject(failedUseCase);
+    expect(result.error).toBe(boom);
+  });
+
+  test('an ApprovalPort error ends approval_error, and a later use-case error is use_case_error', async () => {
+    const boom = new Error('approval down');
+    const down = await run(
+      await setup(
+        [calls(call()), end],
+        undefined,
+        {
+          approval: {
+            request: async () => {
+              throw boom;
+            },
+          },
+        },
+        undefined,
+        true,
+      ),
+    );
+    expect(down).toMatchObject({ status: 'failed', reason: 'approval_error' });
+    expect(down.error).toBe(boom);
+
+    const bug = new Error('bug');
+    const later = await run(
+      await setup(
+        [calls(call()), end],
+        async () => {
+          throw bug;
+        },
+        { approval: new FakeApproval(() => ({ approved: true })) },
+        undefined,
+        true,
+      ),
+    );
+    expect(later).toMatchObject(failedUseCase);
+    expect(later.error).toBe(bug);
+  });
+
+  test('an ApprovalPort that resolves with no decision ends approval_error', async () => {
+    const result = await run(
+      await setup(
+        [calls(call()), end],
+        undefined,
+        { approval: { request: async () => undefined as never } },
+        undefined,
+        true,
+      ),
+    );
+    expect(result).toMatchObject({
+      status: 'failed',
+      reason: 'approval_error',
+    });
+    expect(result.error).toBeInstanceOf(TypeError);
+  });
+
+  for (const [title, error] of [
+    ['an Error', new Error('bus down')],
+    ['a DomainError', new DomainError('BUS_DOWN', 'bus down')],
+  ] as const) {
+    test(`a bus rejecting with ${title} ends event_bus_error with that object`, async () => {
+      const result = await run(
+        await setup(
+          [calls(call()), end],
+          async (input, ctx) => {
+            await ctx.publish([new Changed('a')]).catch(() => {});
+            return input;
+          },
+          { eventBus: failingBus(error) },
+        ),
+      );
+      expect(result).toMatchObject(failedBus);
+      expect(result.error).toBe(error);
+    });
+  }
+
+  test('an un-awaited publish rejecting ends event_bus_error with that object', async () => {
+    const boom = new Error('bus down');
+    const result = await run(
+      await setup(
+        [calls(call()), end],
+        async (input, ctx) => {
+          void ctx.publish([new Changed('a')]);
+          return input;
+        },
+        { eventBus: failingBus(boom) },
+      ),
+    );
+    expect(result).toMatchObject(failedBus);
+    expect(result.error).toBe(boom);
+  });
+
+  test('an undeclared event ends use_case_error naming the event', async () => {
+    const result = await run(
+      await setup([calls(call()), end], async (input, ctx) => {
+        await ctx.publish([new Other('x')]).catch(() => {});
+        return input;
+      }),
+    );
+    expect(result).toMatchObject(failedUseCase);
+    expect((result.error as Error).message).toContain('Event Other');
+  });
+
+  for (const [title, swallow] of [
+    ['', false],
+    [' even when the use-case swallows the refusal', true],
+  ] as const) {
+    test(`an invalid event payload ends use_case_error naming the event${title}`, async () => {
+      const result = await run(
+        await setup(
+          [calls(call()), end],
+          async (input, ctx) => {
+            const publishing = ctx.publish([new Changed({ value: 123 })]);
+            await (swallow ? publishing.catch(() => {}) : publishing);
+            return input;
+          },
+          {},
+          undefined,
+          false,
+          (f) => {
+            f.registry.events[0] = {
+              ...f.registry.events[0]!,
+              payload: z.object({ value: z.string() }),
+            };
+          },
+        ),
+      );
+      expect(result).toMatchObject(failedUseCase);
+      expect((result.error as Error).message).toContain('Event Changed');
+    });
+  }
+
+  test('an invalid output ends use_case_error with the ZodError', async () => {
+    const result = await run(
+      await setup([calls(call()), end], async () => ({ wrong: true })),
+    );
+    expect(result).toMatchObject(failedUseCase);
+    expect(result.error).toBeInstanceOf(z.ZodError);
+  });
+
+  test('timeout and completed carry no error key', async () => {
+    const slow = await run(
+      await setup(
+        [() => new Promise<LlmResponse>(() => {})],
+        undefined,
+        {},
+        {
+          timeoutMs: 20,
+        },
+      ),
+    );
+    expect(slow.status).toBe('timeout');
+    expect('error' in slow).toBe(false);
+    const done = await run(await setup([end]));
+    expect(done.status).toBe('completed');
+    expect('error' in done).toBe(false);
+  });
 });

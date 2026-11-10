@@ -3,7 +3,8 @@ import {
   type DomainEvent,
   type UseCaseContext,
 } from '@agentic-ddd/core';
-import { guardEmits } from './emits-guard';
+import { createDeadline } from './deadline';
+import { guardEmits, guardFailure } from './emits-guard';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import type { MountedOperator } from './operator-runtime';
 import type {
@@ -34,37 +35,23 @@ export async function runOperator(
   const steps: Step[] = [];
   const events: DomainEvent[] = [];
   const messages: LlmMessage[] = [{ role: 'user', text: input.message }];
-  let active = true;
-  const deadline = performance.now() + operator.record.limits.timeoutMs;
-  let timer!: ReturnType<typeof setTimeout>;
-  const expired = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      active = false;
-      reject(new RunTimeout());
-    }, operator.record.limits.timeoutMs);
-  });
-  const check = () => {
-    if (!active || performance.now() >= deadline) {
-      active = false;
-      throw new RunTimeout();
-    }
-  };
-  const wait = async <T>(operation: () => Promise<T>): Promise<T> => {
-    check();
-    const value = await Promise.race([operation(), expired]);
-    check();
-    return value;
-  };
+  const deadline = createDeadline(
+    operator.record.limits.timeoutMs,
+    () => new RunTimeout(),
+  );
+  const { check, wait } = deadline;
   const finish = (
     status: RunStatus,
     reason?: TerminationReason,
     output?: string,
+    ...caught: [error?: unknown]
   ): OperatorRunResult => ({
     runId,
     operator: operator.record.name,
     status,
     ...(reason ? { reason } : {}),
     ...(output !== undefined ? { output } : {}),
+    ...(caught.length ? { error: caught[0] } : {}),
     steps,
     events,
   });
@@ -143,6 +130,7 @@ export async function runOperator(
           ? 'require_approval'
           : 'allow';
         if (trace.policy === 'require_approval') {
+          failure = 'approval_error';
           trace.approval = ports.approval
             ? await wait(() =>
                 ports.approval!.request({
@@ -165,45 +153,68 @@ export async function runOperator(
             );
             continue;
           }
+          // Only here: a port that resolves with no decision is still the port's failure.
+          failure = 'use_case_error';
         }
         const guard = guardEmits(
           tool.record,
-          async (event) => {
-            event.stamp(runId, step.id);
-            trace.events.push(event);
-            step.events.push(event);
-            events.push(event);
-            // One event at a time: after timeout no next publication is admitted.
-            await wait(() => ports.eventBus.publish([event]));
+          async (batch) => {
+            for (const event of batch) {
+              event.stamp(runId, step.id);
+              trace.events.push(event);
+              step.events.push(event);
+              events.push(event);
+            }
+            // One call per batch, under the run deadline: after timeout no later publication is admitted.
+            await wait(() => ports.eventBus.publish(batch));
           },
           check,
+          operator.schemaFor,
         );
         const ctx: UseCaseContext = {
           correlationId: runId,
           causationId: step.id,
+          signal: deadline.signal,
           publish: guard.publish,
         };
         try {
-          const output = await wait(() =>
-            tool.instance.execute(parsed.data, ctx),
-          );
-          if (guard.undeclared) return finish('failed', 'use_case_error');
-          const validated = tool.record.output.safeParse(output);
-          if (!validated.success) return finish('failed', 'use_case_error');
-          result(
-            {
-              output: validated.data,
-              events: trace.events.map((event) => ({
-                name: event.name,
-                payload: event.payload,
-              })),
-            },
-            false,
-          );
-        } catch (error) {
-          if (error instanceof RunTimeout) throw error;
-          if (guard.undeclared || !(error instanceof DomainError)) throw error;
-          result({ code: error.code, message: error.message }, true);
+          let output: unknown;
+          let thrown: { error: unknown } | undefined;
+          try {
+            output = await wait(() => tool.instance.execute(parsed.data, ctx));
+          } catch (error) {
+            thrown = { error };
+          }
+          // Drain on every path: an un-awaited delivery may still fail after the use-case threw.
+          await wait(() => guard.drain());
+          // Precedence: undeclared event, then a bus failure, then the use-case's own error.
+          const blocked = guardFailure(guard);
+          if (blocked)
+            return finish('failed', blocked.reason, undefined, blocked.error);
+          if (thrown) {
+            const error = thrown.error;
+            if (!(error instanceof DomainError)) throw error;
+            result({ code: error.code, message: error.message }, true);
+          } else {
+            const validated = tool.record.output.safeParse(output);
+            if (!validated.success)
+              return finish(
+                'failed',
+                'use_case_error',
+                undefined,
+                validated.error,
+              );
+            result(
+              {
+                output: validated.data,
+                events: trace.events.map((event) => ({
+                  name: event.name,
+                  payload: event.payload,
+                })),
+              },
+              false,
+            );
+          }
         } finally {
           guard.end();
         }
@@ -214,9 +225,8 @@ export async function runOperator(
   } catch (error) {
     return error instanceof RunTimeout
       ? finish('timeout')
-      : finish('failed', failure);
+      : finish('failed', failure, undefined, error);
   } finally {
-    active = false;
-    clearTimeout(timer);
+    deadline.dispose();
   }
 }

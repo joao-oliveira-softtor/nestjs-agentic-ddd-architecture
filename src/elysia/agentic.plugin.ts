@@ -1,8 +1,10 @@
 import { DomainError, type UseCase } from '@agentic-ddd/core';
 import type { ClassRef, Registry } from '@agentic-ddd/decorators';
 import {
+  AgenticError,
   createRuntime,
   runUseCase,
+  schemaLookup,
   type OperatorRuntime,
   type RuntimeOptions,
 } from '@agentic-ddd/runtime';
@@ -94,6 +96,8 @@ type UseCaseRoutes<
         response: {
           200: OutputOf<U[K]>;
           422: DomainErrorBody | ValidationErrorBody;
+          /** `runtime.use-case-timeout`, with `useCaseTimeoutMs` set. */
+          504: DomainErrorBody;
         };
       };
     };
@@ -138,23 +142,39 @@ function isElysiaError(error: unknown): boolean {
   return prototype !== null && Object.hasOwn(prototype as object, ERROR_CODE);
 }
 
+const hooked = Symbol('agentic-ddd.rejectSecondMount');
+type Agentic = { agentic?: unknown };
+type Mountable = { decorator: object; getParent: () => Mountable | null };
+
 /**
  * Elysia keeps the first `agentic` decorator, so a second plugin on one app would leave
  * its operators unreachable through `ctx.agentic` without a sign. `use()` assigns the
  * plugin's `getParent`, which is the only hook that sees the parent at mount time.
+ * A parent that passes the check gets the same hook, so two sibling sub-apps that each hold an
+ * `agentic()` fail when the second one reaches their common app; `hooked` installs it once per instance.
+ * Known limit: a plugin that is an async function returning another instance never receives
+ * `getParent`, so it is not detected.
  * shortcut: relies on that Elysia internal; `agentic.plugin.test.ts` fails if an upgrade drops it.
  */
-function rejectSecondMount(app: Base): void {
-  // Elysia's own getParent answers null until the plugin is mounted.
-  let getParent: () => { decorator: object } | null = () => null;
+function rejectSecondMount(app: Mountable): void {
+  if (hooked in app) return;
+  Object.defineProperty(app, hooked, { value: true });
+  // Elysia's own getParent answers null until the instance is mounted.
+  let getParent = app.getParent;
   Object.defineProperty(app, 'getParent', {
     configurable: true,
     get: () => getParent,
-    set(assigned: () => { decorator: object }) {
-      if ('agentic' in assigned().decorator)
+    set(assigned: () => Mountable) {
+      const parent = assigned();
+      // The same runtime arriving by a second path (one sub-app mounted twice) is not a second plugin.
+      if (
+        'agentic' in parent.decorator &&
+        parent.decorator.agentic !== (app.decorator as Agentic).agentic
+      )
         throw new Error(
           'Mount one agentic() per app: ctx.agentic would keep the first runtime',
         );
+      rejectSecondMount(parent);
       getParent = assigned;
     },
   });
@@ -247,8 +267,9 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
     options.operators.map((operator) => runtime.register(operator, instances)),
   );
   const app = new Elysia({ name: 'agentic-ddd' }).decorate('agentic', runtime);
-  rejectSecondMount(app);
+  rejectSecondMount(app as unknown as Mountable);
   if (!options.http) return app;
+  const schemaFor = schemaLookup(runtime.registry);
   const prefix = (options.http.prefix ?? '/agentic').replace(/\/$/, '');
   return app.group(prefix, (group) => {
     for (const { record, instance } of routes)
@@ -257,8 +278,20 @@ export async function agentic(options: AgenticOptions): Promise<Base> {
         async ({ body, status }) => {
           try {
             // Elysia already validated and transformed `body` with record.input.
-            return await runUseCase(record, instance, body, runtime.eventBus);
+            return await runUseCase(record, instance, body, runtime.eventBus, {
+              schemaFor,
+              timeoutMs: runtime.useCaseTimeoutMs,
+            });
           } catch (error) {
+            if (
+              error instanceof AgenticError &&
+              error.code === 'runtime.use-case-timeout'
+            )
+              // Not error.message: a nested use-case's own timeout would leak its name.
+              return status(504, {
+                code: error.code,
+                message: `Use-case ${record.name} did not finish in time`,
+              } satisfies DomainErrorBody);
             // Elysia's default 500 echoes error.message; the original stays on `cause` for the app's onError.
             if (!(error instanceof DomainError)) {
               // The app's own Elysia errors (NotFoundError, `status()`, `.error()` classes) keep their status.

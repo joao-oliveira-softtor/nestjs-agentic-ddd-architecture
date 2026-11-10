@@ -54,3 +54,19 @@ describe('createTestContext', () => {
     ]);
   });
 });
+
+describe('createTestContext signal', () => {
+  test('brings a signal that is not aborted', () => {
+    const { signal } = createTestContext();
+    expect(signal).toBeInstanceOf(AbortSignal);
+    expect(signal.aborted).toBe(false);
+  });
+
+  test('exposes the signal passed in', () => {
+    const controller = new AbortController();
+    const ctx = createTestContext({ signal: controller.signal });
+    expect(ctx.signal).toBe(controller.signal);
+    controller.abort();
+    expect(ctx.signal.aborted).toBe(true);
+  });
+});

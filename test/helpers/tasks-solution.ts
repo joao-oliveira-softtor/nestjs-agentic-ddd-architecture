@@ -87,7 +87,7 @@ import { InMemoryTaskRepository } from '../infrastructure/in-memory-task.reposit
 test(covers(['operator:task-operator', 'criterion:0001/tools'], 'operator executa tools reais e publica eventos'), async () => {
   const tool = (id: string, name: string, input: unknown): LlmResponse => ({content: [{type: 'tool_call', id, name, input}], stopReason: 'tool_calls'});
   const llm = new FakeLlm([tool('c', 'create_task', {task_id: 't1', title: 'Ler'}), tool('f', 'complete_task', {task_id: 't1'}), {content: [{type: 'text', text: 'Concluída.'}], stopReason: 'end'}]);
-  const repo = new InMemoryTaskRepository(); const bus = new InMemoryEventBus();
+  const repo = new InMemoryTaskRepository(); const bus = new InMemoryEventBus({ record: true });
   const runtime = new OperatorRuntime({llm, eventBus: bus, root: process.cwd(), modules: [{name: 'tasks', path: 'app'}]});
   await runtime.register(TaskOperator, new Map<ClassRef, UseCase<unknown, unknown>>([[CreateTask, new CreateTask(repo)], [CompleteTask, new CompleteTask(repo)]]));
   const result = await runtime.run('task-operator', {message: 'Crie e conclua t1'});

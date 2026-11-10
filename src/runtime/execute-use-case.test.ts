@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { z } from 'zod';
 import {
   DomainError,
@@ -7,6 +7,7 @@ import {
   type UseCaseContext,
 } from '@agentic-ddd/core';
 import type { UseCaseRecord } from '@agentic-ddd/decorators';
+import { AgenticError } from '../contracts/codes';
 import { InMemoryEventBus } from './event-bus';
 import type { EventBus } from './ports';
 import { executeUseCase } from './execute-use-case';
@@ -42,7 +43,7 @@ class Ring implements UseCase<{ times: number }, { ok: true }> {
 }
 
 test('publishes declared events stamped with one id per call and validates the output', async () => {
-  const bus = new InMemoryEventBus();
+  const bus = new InMemoryEventBus({ record: true });
   expect(
     await executeUseCase(recordFor(Ring), new Ring(), { times: 1 }, bus),
   ).toEqual({ ok: true });
@@ -52,7 +53,7 @@ test('publishes declared events stamped with one id per call and validates the o
 });
 
 test('each call gets a fresh UUID, with correlationId equal to causationId', async () => {
-  const bus = new InMemoryEventBus();
+  const bus = new InMemoryEventBus({ record: true });
   for (let i = 0; i < 2; i++)
     await executeUseCase(recordFor(Ring), new Ring(), { times: 1 }, bus);
   const [first, second] = bus.events;
@@ -85,16 +86,16 @@ test('an event outside emits fails the execution even if the use-case swallows t
       return { ok: true as const };
     }
   }
-  const bus = new InMemoryEventBus();
+  const bus = new InMemoryEventBus({ record: true });
   expect(
     await rejection(
       executeUseCase(recordFor(Sneaky), new Sneaky(), { times: 1 }, bus),
     ),
-  ).toBe('Use-case ring published an undeclared event');
+  ).toContain('Event Other');
   expect(bus.events).toEqual([]);
 });
 
-test('an un-awaited batch stops delivering once the execution ended', async () => {
+test('an un-awaited batch is still delivered whole once the execution ended', async () => {
   const delivered: string[] = [];
   const slowBus: EventBus = {
     publish: async (events) => {
@@ -116,8 +117,205 @@ test('an un-awaited batch stops delivering once the execution ended', async () =
     { times: 1 },
     slowBus,
   );
-  expect(await rejection(batch)).toBe('Use-case execution already ended');
-  expect(delivered).toEqual(['Rang']);
+  expect(await rejection(batch)).toBe('resolved');
+  expect(delivered).toEqual(['Rang', 'Rang']);
+});
+
+test('a published batch reaches the bus in one call', async () => {
+  const calls: string[][] = [];
+  const bus: EventBus = {
+    publish: async (events) => {
+      calls.push(events.map((event) => event.name));
+    },
+    subscribe: () => () => {},
+  };
+  class Twice implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      await ctx.publish([new Rang({}), new Rang({})]);
+      return { ok: true as const };
+    }
+  }
+  await executeUseCase(recordFor(Twice), new Twice(), { times: 1 }, bus);
+  expect(calls).toEqual([['Rang', 'Rang']]);
+});
+
+test('an empty batch does not reach the bus', async () => {
+  let calls = 0;
+  const bus: EventBus = {
+    publish: async () => {
+      calls++;
+    },
+    subscribe: () => () => {},
+  };
+  class Quiet implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      await ctx.publish([]);
+      return { ok: true as const };
+    }
+  }
+  expect(
+    await executeUseCase(recordFor(Quiet), new Quiet(), { times: 1 }, bus),
+  ).toEqual({ ok: true });
+  expect(calls).toBe(0);
+});
+
+test('a batch with an undeclared event delivers none of it', async () => {
+  const bus = new InMemoryEventBus({ record: true });
+  class Mixed implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      await ctx.publish([new Rang({}), new Other({})]);
+      return { ok: true as const };
+    }
+  }
+  expect(
+    await rejection(
+      executeUseCase(recordFor(Mixed), new Mixed(), { times: 1 }, bus),
+    ),
+  ).toContain('Event Other');
+  expect(bus.events).toEqual([]);
+});
+
+test('a bus failure on an un-awaited publish fails the execution', async () => {
+  const bus: EventBus = {
+    publish: async () => {
+      await Bun.sleep(5);
+      throw new Error('bus down');
+    },
+    subscribe: () => () => {},
+  };
+  class Forgetful implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      void ctx.publish([new Rang({})]);
+      return { ok: true as const };
+    }
+  }
+  expect(
+    await rejection(
+      executeUseCase(recordFor(Forgetful), new Forgetful(), { times: 1 }, bus),
+    ),
+  ).toBe('bus down');
+});
+
+const failingBus: EventBus = {
+  publish: async () => {
+    await Bun.sleep(5);
+    throw new Error('bus down');
+  },
+  subscribe: () => () => {},
+};
+
+test('a bus failure wins over a DomainError thrown after an un-awaited publish', async () => {
+  class Doomed implements UseCase<{ times: number }, { ok: true }> {
+    async execute(
+      _: { times: number },
+      ctx: UseCaseContext,
+    ): Promise<{ ok: true }> {
+      void ctx.publish([new Rang({})]);
+      throw new DomainError('RING_BROKEN', 'The bell broke');
+    }
+  }
+  expect(
+    await rejection(
+      executeUseCase(recordFor(Doomed), new Doomed(), { times: 1 }, failingBus),
+    ),
+  ).toBe('bus down');
+});
+
+test('a bus failure swallowed by the use-case still fails the execution', async () => {
+  class Swallower implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      try {
+        await ctx.publish([new Rang({})]);
+      } catch {
+        // swallowed on purpose
+      }
+      return { ok: true as const };
+    }
+  }
+  expect(
+    await rejection(
+      executeUseCase(
+        recordFor(Swallower),
+        new Swallower(),
+        { times: 1 },
+        failingBus,
+      ),
+    ),
+  ).toBe('bus down');
+});
+
+test('a publish made while the drain waits is drained too', async () => {
+  let started = 0;
+  const bus: EventBus = {
+    publish: async () => {
+      const n = ++started;
+      await Bun.sleep(n === 1 ? 5 : 15);
+      if (n === 2) throw new Error('second down');
+    },
+    subscribe: () => () => {},
+  };
+  class Chained implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      void ctx.publish([new Rang({})]);
+      void Bun.sleep(3)
+        .then(() => ctx.publish([new Rang({})]))
+        .catch(() => {});
+      return { ok: true as const };
+    }
+  }
+  expect(
+    await rejection(
+      executeUseCase(recordFor(Chained), new Chained(), { times: 1 }, bus),
+    ),
+  ).toBe('second down');
+});
+
+test('a publish that starts once the drain found nothing pending is refused, not delivered unobserved', async () => {
+  let calls = 0;
+  const bus: EventBus = {
+    publish: async () => {
+      calls++;
+      await Bun.sleep(2);
+    },
+    subscribe: () => () => {},
+  };
+  let background!: Promise<string>;
+  class Background implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      background = (async () => {
+        await ctx.publish([new Rang({})]);
+        // Any quick await: the first delivery settled, so the drain sees nothing pending meanwhile.
+        await Promise.resolve();
+        await ctx.publish([new Rang({})]);
+        return 'published';
+      })().catch((error: Error) => error.message);
+      return { ok: true as const };
+    }
+  }
+  await executeUseCase(
+    recordFor(Background),
+    new Background(),
+    { times: 1 },
+    bus,
+  );
+  expect(await background).toBe('Use-case execution already ended');
+  expect(calls).toBe(1);
+});
+
+test('a publish made after the execution ended is refused', async () => {
+  const bus = new InMemoryEventBus({ record: true });
+  let late!: UseCaseContext['publish'];
+  class Keeper implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      late = (batch) => ctx.publish(batch);
+      return { ok: true as const };
+    }
+  }
+  await executeUseCase(recordFor(Keeper), new Keeper(), { times: 1 }, bus);
+  expect(await rejection(late([new Rang({})]))).toBe(
+    'Use-case execution already ended',
+  );
+  expect(bus.events).toEqual([]);
 });
 
 test('an error from the use-case propagates as is, and an undeclared event wins over it', async () => {
@@ -150,5 +348,281 @@ test('an error from the use-case propagates as is, and an undeclared event wins 
         new InMemoryEventBus(),
       ),
     ),
-  ).toBe('Use-case ring published an undeclared event');
+  ).toContain('Event Other');
+});
+
+describe('event payload schema', () => {
+  const schemas = new Map([['Rang', z.object({ times: z.number() })]]);
+  const schemaFor = (name: string) => schemas.get(name);
+  class BadRing implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      await ctx.publish([new Rang({ times: 'many' })]);
+      return { ok: true as const };
+    }
+  }
+
+  test('a payload outside its schema rejects and nothing reaches the bus', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    expect(
+      await rejection(
+        executeUseCase(recordFor(BadRing), new BadRing(), { times: 1 }, bus, {
+          schemaFor,
+        }),
+      ),
+    ).toContain('Event Rang');
+    expect(bus.events).toEqual([]);
+  });
+
+  test('without a lookup the same payload is delivered', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    await executeUseCase(recordFor(BadRing), new BadRing(), { times: 1 }, bus);
+    expect(bus.events).toHaveLength(1);
+  });
+
+  test('a lookup with no schema for the name delivers the event', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    await executeUseCase(recordFor(BadRing), new BadRing(), { times: 1 }, bus, {
+      schemaFor: () => undefined,
+    });
+    expect(bus.events).toHaveLength(1);
+  });
+
+  test('one invalid payload refuses the whole batch', async () => {
+    class Mixed implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        await ctx.publish([
+          new Rang({ times: 1 }),
+          new Rang({ times: 'many' }),
+        ]);
+        return { ok: true as const };
+      }
+    }
+    const bus = new InMemoryEventBus({ record: true });
+    expect(
+      await rejection(
+        executeUseCase(recordFor(Mixed), new Mixed(), { times: 1 }, bus, {
+          schemaFor,
+        }),
+      ),
+    ).toContain('Event Rang');
+    expect(bus.events).toEqual([]);
+  });
+
+  test('a schema that throws while validating fails the execution even when the use-case swallows it', async () => {
+    const throwing = z.object({ times: z.number() }).refine(async () => true);
+    class Swallows implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        await ctx.publish([new Rang({ times: 1 })]).catch(() => {});
+        return { ok: true as const };
+      }
+    }
+    const bus = new InMemoryEventBus({ record: true });
+    expect(
+      await rejection(
+        executeUseCase(recordFor(Swallows), new Swallows(), { times: 1 }, bus, {
+          schemaFor: () => throwing,
+        }),
+      ),
+    ).toContain('Event Rang');
+    expect(bus.events).toEqual([]);
+  });
+});
+
+test('the context carries a signal that is not aborted', async () => {
+  let signal: AbortSignal | undefined;
+  class Spy implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      signal = ctx.signal;
+      return { ok: true as const };
+    }
+  }
+  await executeUseCase(
+    recordFor(Spy),
+    new Spy(),
+    { times: 1 },
+    new InMemoryEventBus(),
+  );
+  expect(signal).toBeInstanceOf(AbortSignal);
+  expect(signal?.aborted).toBe(false);
+});
+
+describe('an event that was already published', () => {
+  const twice: [
+    string,
+    (ctx: UseCaseContext, e: Rang) => Promise<unknown>,
+    number,
+  ][] = [
+    [
+      'published twice',
+      async (ctx, e) => {
+        await ctx.publish([e]);
+        await ctx.publish([e]);
+      },
+      1,
+    ],
+    ['twice in one batch', (ctx, e) => ctx.publish([e, e]), 0],
+  ];
+  test.each(twice)(
+    '%s is refused, naming the event, not reported as a bus failure',
+    async (_, publish, delivered) => {
+      class Twice implements UseCase<{ times: number }, { ok: true }> {
+        async execute(_: { times: number }, ctx: UseCaseContext) {
+          await publish(ctx, new Rang({}));
+          return { ok: true as const };
+        }
+      }
+      const bus = new InMemoryEventBus({ record: true });
+      const message = await rejection(
+        executeUseCase(recordFor(Twice), new Twice(), { times: 1 }, bus),
+      );
+      expect(message).toContain('Event Rang was already published');
+      expect(message).toContain('ring');
+      expect(bus.events).toHaveLength(delivered);
+    },
+  );
+});
+
+describe('timeoutMs', () => {
+  let signal: AbortSignal | undefined;
+  class Hung implements UseCase<{ times: number }, { ok: true }> {
+    async execute(_: { times: number }, ctx: UseCaseContext) {
+      signal = ctx.signal;
+      await new Promise<void>(() => {});
+      return { ok: true as const };
+    }
+  }
+
+  test('a use-case that never resolves fails at the deadline with runtime.use-case-timeout and an aborted signal', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    const caught = await executeUseCase(
+      recordFor(Hung),
+      new Hung(),
+      { times: 1 },
+      bus,
+      { timeoutMs: 20 },
+    ).catch((error: unknown) => error);
+    expect(caught).toBeInstanceOf(AgenticError);
+    expect((caught as AgenticError).code).toBe('runtime.use-case-timeout');
+    expect((caught as AgenticError).message).toContain('ring');
+    expect((caught as AgenticError).message).toContain('20');
+    expect(signal?.aborted).toBe(true);
+    expect(bus.events).toEqual([]);
+  });
+
+  test('a publication after the deadline but before the execution ended is refused', async () => {
+    class Late implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        // Blocks the event loop, so the timer cannot fire: only the guard's deadline check can refuse.
+        Bun.sleepSync(30);
+        await ctx.publish([new Rang({})]);
+        return { ok: true as const };
+      }
+    }
+    const bus = new InMemoryEventBus({ record: true });
+    const caught = await executeUseCase(
+      recordFor(Late),
+      new Late(),
+      { times: 1 },
+      bus,
+      { timeoutMs: 10 },
+    ).catch((error: unknown) => error);
+    expect((caught as AgenticError).code).toBe('runtime.use-case-timeout');
+    expect(bus.events).toEqual([]);
+  });
+
+  test.each([0, Infinity, NaN])(
+    'a timeoutMs of %p is refused, naming the option, before the use-case runs',
+    async (timeoutMs) => {
+      let ran = false;
+      class Spy implements UseCase<{ times: number }, { ok: true }> {
+        execute() {
+          ran = true;
+          return Promise.resolve({ ok: true as const });
+        }
+      }
+      expect(
+        await rejection(
+          executeUseCase(
+            recordFor(Spy),
+            new Spy(),
+            { times: 1 },
+            new InMemoryEventBus(),
+            { timeoutMs },
+          ),
+        ),
+      ).toContain('timeoutMs');
+      expect(ran).toBe(false);
+    },
+  );
+
+  test('a drain that never settles fails at the deadline, over the bus outcome', async () => {
+    const hungBus: EventBus = {
+      publish: () => new Promise<void>(() => {}),
+      subscribe: () => () => {},
+    };
+    class Forgetful implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        void ctx.publish([new Rang({})]);
+        return { ok: true as const };
+      }
+    }
+    const caught = await executeUseCase(
+      recordFor(Forgetful),
+      new Forgetful(),
+      { times: 1 },
+      hungBus,
+      { timeoutMs: 20 },
+    ).catch((error: unknown) => error);
+    expect((caught as AgenticError).code).toBe('runtime.use-case-timeout');
+  });
+
+  test('within the deadline the result and the precedence are as without one', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    expect(
+      await executeUseCase(recordFor(Ring), new Ring(), { times: 1 }, bus, {
+        timeoutMs: 1_000,
+      }),
+    ).toEqual({ ok: true });
+    expect(bus.events).toHaveLength(1);
+    class Doomed implements UseCase<{ times: number }, { ok: true }> {
+      async execute(
+        _: { times: number },
+        ctx: UseCaseContext,
+      ): Promise<{ ok: true }> {
+        void ctx.publish([new Rang({})]);
+        throw new DomainError('RING_BROKEN', 'The bell broke');
+      }
+    }
+    expect(
+      await rejection(
+        executeUseCase(
+          recordFor(Doomed),
+          new Doomed(),
+          { times: 1 },
+          failingBus,
+          { timeoutMs: 1_000 },
+        ),
+      ),
+    ).toBe('bus down');
+  });
+
+  test('without timeoutMs the same options never abort the signal', async () => {
+    class Slow implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        signal = ctx.signal;
+        await Bun.sleep(30);
+        return { ok: true as const };
+      }
+    }
+    expect(
+      await executeUseCase(
+        recordFor(Slow),
+        new Slow(),
+        { times: 1 },
+        new InMemoryEventBus(),
+        { schemaFor: () => undefined },
+      ),
+    ).toEqual({ ok: true });
+    expect(signal?.aborted).toBe(false);
+  });
 });

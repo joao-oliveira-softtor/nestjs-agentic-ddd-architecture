@@ -39,7 +39,7 @@ async function composition(
   approval: FakeApproval,
   runtimeDir?: string,
 ) {
-  const bus = new InMemoryEventBus();
+  const bus = new InMemoryEventBus({ record: true });
   const module = await Test.createTestingModule({
     imports: [
       AgenticModule.forRoot({

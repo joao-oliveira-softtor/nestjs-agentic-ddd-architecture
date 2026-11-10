@@ -1,4 +1,4 @@
-// Stable error codes for CLI, compile, verify and MCP output. Codes are part of the public
+// Stable error codes for CLI, compile, verify, MCP and runtime output. Codes are part of the public
 // surface: tests and tooling match on them, so reword messages freely but never rename a code.
 export const ERROR_CODES = {
   // apply
@@ -314,6 +314,10 @@ export const ERROR_CODES = {
   'rules.frontmatter-unclosed': 'A rule frontmatter is empty or never closed.',
   'rules.glob-invalid': 'A rule glob is absolute or has a ".." segment.',
   'rules.paths-invalid': 'A rule paths is not a non-empty list of globs.',
+
+  // runtime
+  'runtime.use-case-timeout':
+    'A use-case run outside an operator exceeded useCaseTimeoutMs.',
 
   // snapshot
   'snapshot.missing': 'No MCP snapshot exists at the expected location.',

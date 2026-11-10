@@ -37,6 +37,7 @@ export class ConfirmOrder implements UseCase<
   ): Promise<ConfirmOrderOutput> {
     const order = await loadOrder(this.orders, input.order_id);
     order.confirm();
+    // The event is published after save, at most once by the runtime (a repository outbox gives at least once); ctx.signal aborts when the execution times out, so a long use-case can stop before save; after the timeout ctx.publish is refused, so an event after save is not delivered.
     await this.orders.save(order);
     await ctx.publish(order.pullEvents());
     return { order_id: order.id, status: 'confirmed' };

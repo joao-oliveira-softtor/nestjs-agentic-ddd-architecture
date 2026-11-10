@@ -1,21 +1,103 @@
 import type { DomainEvent, UseCaseContext } from '@agentic-ddd/core';
-import type { UseCaseRecord } from '@agentic-ddd/decorators';
+import type { Registry, UseCaseRecord } from '@agentic-ddd/decorators';
+import type { ZodType } from 'zod';
 
 export interface EmitsGuard {
   readonly publish: UseCaseContext['publish'];
   /** Set before the first await so even a swallowed or un-awaited failure fails the execution. */
   readonly undeclared: boolean;
+  /** The first refusal that set `undeclared`: it names the event and the use-case. */
+  readonly refusal: Error | undefined;
+  /** The first delivery failure, kept so an un-awaited publish cannot lose it. */
+  readonly failed: { error: unknown } | undefined;
+  /** Resolves once no delivery is pending, including ones started meanwhile, and ends the guard at that instant, so `failed` is final (a use-case may not await its publish). */
+  drain(): Promise<void>;
   end(): void;
+}
+
+/** What the guard recorded wins over whatever the use-case did: a refusal, then a bus failure. */
+export function guardFailure(
+  guard: EmitsGuard,
+):
+  { reason: 'use_case_error' | 'event_bus_error'; error: unknown } | undefined {
+  if (guard.undeclared)
+    return { reason: 'use_case_error', error: guard.refusal };
+  if (!guard.failed) return undefined;
+  return { reason: 'event_bus_error', error: guard.failed.error };
+}
+
+/** Event payload schemas by event name, the same key as the emits check. */
+export function schemaLookup(
+  registry: Registry,
+): (name: string) => ZodType | undefined {
+  const byName = new Map(
+    registry.events.map((e) => [e.target.name, e.payload]),
+  );
+  return (name) => byName.get(name);
+}
+
+/** Why a batch is refused: an event outside `emits` first, then one published before, then a payload outside its schema. */
+function refusalFor(
+  record: UseCaseRecord,
+  batch: readonly DomainEvent[],
+  schemaFor?: (name: string) => ZodType | undefined,
+): string | undefined {
+  // By name, like the IR and skills: identity breaks when a module is loaded twice.
+  const refused = batch.find(
+    (event) => !record.emits.some((cls) => cls.name === event.name),
+  );
+  if (refused)
+    return `Event ${refused.name} is not declared in emits of use-case ${record.name}`;
+  const repeated = repeatedIn(batch);
+  if (repeated)
+    return `Event ${repeated.name} was already published (use-case ${record.name})`;
+  const invalid = batch.find((event) => !payloadFits(event, schemaFor));
+  return invalid
+    ? `Event ${invalid.name} has a payload that does not match its @AgentEvent schema (use-case ${record.name})`
+    : undefined;
+}
+
+/** Stamping happens inside the delivery: a repeat is refused before it, or it would end as a bus failure. */
+function repeatedIn(batch: readonly DomainEvent[]): DomainEvent | undefined {
+  const seen = new Set<DomainEvent>();
+  return batch.find((event) => {
+    if (event.correlationId !== null || seen.has(event)) return true;
+    seen.add(event);
+    return false;
+  });
+}
+
+/** Only validates: the payload stays as the use-case built it. No schema for the name means nothing to check. */
+function payloadFits(
+  event: DomainEvent,
+  schemaFor?: (name: string) => ZodType | undefined,
+): boolean {
+  try {
+    return schemaFor?.(event.name)?.safeParse(event.payload).success ?? true;
+  } catch {
+    // A schema that cannot run synchronously (an async refinement) cannot vouch for the payload.
+    return false;
+  }
 }
 
 /** One use-case execution may only publish the events in its `emits`, and only while it runs. */
 export function guardEmits(
   record: UseCaseRecord,
-  deliver: (event: DomainEvent) => Promise<void>,
+  deliver: (batch: readonly DomainEvent[]) => Promise<void>,
   check: () => void = () => {},
+  schemaFor?: (name: string) => ZodType | undefined,
 ): EmitsGuard {
   let active = true;
   let undeclared = false;
+  let refusal: Error | undefined;
+  let failed: { error: unknown } | undefined;
+  const settling: Promise<void>[] = [];
+  const refuse = (message: string) => {
+    undeclared = true;
+    const error = new Error(message);
+    refusal ??= error;
+    return error;
+  };
   const assertActive = () => {
     if (!active) throw new Error('Use-case execution already ended');
   };
@@ -23,33 +105,46 @@ export function guardEmits(
     get undeclared() {
       return undeclared;
     },
+    get refusal() {
+      return refusal;
+    },
+    get failed() {
+      return failed;
+    },
     end() {
       active = false;
     },
-    async publish(batch) {
-      check();
-      assertActive();
-      // By name, like the IR and skills: identity breaks when a module is loaded twice.
-      const refused = batch.find(
-        (event) => !record.emits.some((cls) => cls.name === event.name),
-      );
-      if (refused) {
-        undeclared = true;
-        throw new Error(
-          `Event ${refused.name} is not declared in emits of use-case ${record.name}`,
-        );
-      }
-      for (const event of batch) {
+    publish(batch) {
+      // Every refusal happens here, before anything is delivered, and comes back as a rejection.
+      try {
         check();
-        // An un-awaited batch must not keep delivering after the execution ended.
         assertActive();
-        // Earlier, or concurrently while this batch awaited the bus.
+        const message = refusalFor(record, batch, schemaFor);
+        if (message) throw refuse(message);
         if (undeclared)
           throw new Error(
             `Use-case ${record.name} already published an undeclared event`,
           );
-        await deliver(event);
+      } catch (error) {
+        return Promise.reject(error);
       }
+      // `ctx.publish(aggregate.pullEvents())` with nothing raised must not reach a bus that refuses an empty batch.
+      if (!batch.length) return Promise.resolve();
+      const delivery = deliver(batch);
+      // An awaiting caller still sees the rejection; a caller that forgot to await does not
+      // leave an unhandled one, and the guard keeps the failure for the execution to rethrow.
+      settling.push(
+        delivery.catch((error: unknown) => {
+          failed ??= { error };
+        }),
+      );
+      return delivery;
+    },
+    async drain() {
+      // A delivery can start while an earlier one settles, so walk the list as it grows.
+      for (let i = 0; i < settling.length; i++) await settling[i];
+      // Closed in the same tick, or a publish made before the caller resumes would be delivered unobserved.
+      active = false;
     },
   };
 }

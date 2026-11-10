@@ -10,10 +10,11 @@ import {
   type UseCaseRecord,
 } from '@agentic-ddd/decorators';
 import { buildIR, irHash, type IRModule } from '../contracts/ir';
-import { limitsError } from '../contracts/limits';
+import { limitsError, timeoutError } from '../contracts/limits';
 import { declarationsInModules } from '../contracts/scope';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import { InMemoryEventBus } from './event-bus';
+import { schemaLookup } from './emits-guard';
 import type { LlmTool, OperatorRunResult, RunInput } from './types';
 
 export type UseCaseInstances = ReadonlyMap<ClassRef, UseCase<unknown, unknown>>;
@@ -26,10 +27,19 @@ export interface RuntimeOptions {
   /** Must match the compiler's complete module configuration. */
   modules: readonly IRModule[];
   registry?: Registry;
+  /**
+   * Deadline in ms for a use-case run outside an operator; operator runs keep their own
+   * `limits.timeoutMs`. Unset means no deadline. The Elysia routes apply it; a direct caller of
+   * `executeUseCase` passes `runtime.useCaseTimeoutMs` as `options.timeoutMs`; `AgenticModule`
+   * (NestJS) accepts and validates it, but nothing there runs a use-case outside an operator.
+   */
+  useCaseTimeoutMs?: number;
 }
 export interface MountedOperator {
   record: OperatorRecord;
   system: string;
+  /** `@AgentEvent` payload schema by event name. */
+  schemaFor: ReturnType<typeof schemaLookup>;
   tools: LlmTool[];
   useCases: Map<
     string,
@@ -41,8 +51,15 @@ export class OperatorRuntime {
   readonly eventBus: EventBus;
   /** The declarations this runtime resolves operators and use-cases from. */
   readonly registry: Registry;
+  /** `RuntimeOptions.useCaseTimeoutMs`, validated; undefined means no deadline. */
+  readonly useCaseTimeoutMs: number | undefined;
   #operators = new Map<string, MountedOperator>();
   constructor(private readonly options: RuntimeOptions) {
+    const timeout = options.useCaseTimeoutMs;
+    const problem =
+      timeout === undefined ? null : timeoutError('useCaseTimeoutMs', timeout);
+    if (problem !== null) throw new Error(problem);
+    this.useCaseTimeoutMs = timeout;
     this.eventBus = options.eventBus ?? new InMemoryEventBus();
     this.registry = options.registry ?? defaultRegistry;
   }
@@ -117,6 +134,7 @@ export class OperatorRuntime {
     this.#operators.set(record.name, {
       record,
       system: `${record.instructions}\n\n${front![2]}`,
+      schemaFor: schemaLookup(registry),
       tools,
       useCases,
     });
