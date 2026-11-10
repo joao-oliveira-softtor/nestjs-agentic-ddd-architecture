@@ -325,4 +325,52 @@ describe('event payload schema', () => {
     await executeUseCase(recordFor(BadRing), new BadRing(), { times: 1 }, bus);
     expect(bus.events).toHaveLength(1);
   });
+
+  test('a lookup with no schema for the name delivers the event', async () => {
+    const bus = new InMemoryEventBus({ record: true });
+    await executeUseCase(recordFor(BadRing), new BadRing(), { times: 1 }, bus, {
+      schemaFor: () => undefined,
+    });
+    expect(bus.events).toHaveLength(1);
+  });
+
+  test('one invalid payload refuses the whole batch', async () => {
+    class Mixed implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        await ctx.publish([
+          new Rang({ times: 1 }),
+          new Rang({ times: 'many' }),
+        ]);
+        return { ok: true as const };
+      }
+    }
+    const bus = new InMemoryEventBus({ record: true });
+    expect(
+      await rejection(
+        executeUseCase(recordFor(Mixed), new Mixed(), { times: 1 }, bus, {
+          schemaFor,
+        }),
+      ),
+    ).toContain('Event Rang');
+    expect(bus.events).toEqual([]);
+  });
+
+  test('a schema that throws while validating fails the execution even when the use-case swallows it', async () => {
+    const throwing = z.object({ times: z.number() }).refine(async () => true);
+    class Swallows implements UseCase<{ times: number }, { ok: true }> {
+      async execute(_: { times: number }, ctx: UseCaseContext) {
+        await ctx.publish([new Rang({ times: 1 })]).catch(() => {});
+        return { ok: true as const };
+      }
+    }
+    const bus = new InMemoryEventBus({ record: true });
+    expect(
+      await rejection(
+        executeUseCase(recordFor(Swallows), new Swallows(), { times: 1 }, bus, {
+          schemaFor: () => throwing,
+        }),
+      ),
+    ).toContain('Event Rang');
+    expect(bus.events).toEqual([]);
+  });
 });

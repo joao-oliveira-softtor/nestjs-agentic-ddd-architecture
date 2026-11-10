@@ -74,12 +74,16 @@ export function guardEmits(
           );
         }
         // Only validates: the payload stays as the use-case built it.
-        const invalid = batch.find(
-          (event) =>
-            !(
+        const invalid = batch.find((event) => {
+          try {
+            return !(
               schemaFor?.(event.name)?.safeParse(event.payload).success ?? true
-            ),
-        );
+            );
+          } catch {
+            // A schema that cannot run synchronously (an async refinement) cannot vouch for the payload.
+            return true;
+          }
+        });
         if (invalid) {
           throw refuse(
             `Event ${invalid.name} has a payload that does not match its @AgentEvent schema (use-case ${record.name})`,

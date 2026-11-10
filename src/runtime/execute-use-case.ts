@@ -5,7 +5,7 @@ import { guardEmits } from './emits-guard';
 import type { EventBus } from './ports';
 
 export interface UseCaseOptions {
-  /** The `@AgentEvent` payload schema of an event name, if any. */
+  /** The `@AgentEvent` payload schema of an event name, if any. Validation only: transforms and defaults do not change the delivered payload. */
   schemaFor?: (name: string) => ZodType | undefined;
 }
 
