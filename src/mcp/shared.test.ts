@@ -31,10 +31,10 @@ const published = createPublishedLock(
   DEFAULT_CONVENTIONS,
 );
 
-async function call(
+async function rpc(
   server: ReturnType<typeof createDomainServer>,
-  name: string,
-  args: object = {},
+  method: string,
+  params: object,
   scopes?: string[],
 ): Promise<any> {
   const response = await createMcpHandler(() => server).fetch(
@@ -47,8 +47,8 @@ async function call(
       body: JSON.stringify({
         jsonrpc: '2.0',
         id: 1,
-        method: 'tools/call',
-        params: { name, arguments: args },
+        method,
+        params,
       }),
     }),
     scopes && {
@@ -63,6 +63,13 @@ async function call(
   );
   return parseSseData(await response.text());
 }
+
+const call = (
+  server: ReturnType<typeof createDomainServer>,
+  name: string,
+  args: object = {},
+  scopes?: string[],
+) => rpc(server, 'tools/call', { name, arguments: args }, scopes);
 
 const overview = (s: ReturnType<typeof createDomainServer>) =>
   call(s, 'domain_overview');
@@ -281,5 +288,115 @@ describe('the catalogue is memoised by access, in published mode only', () => {
     await call(workingCopy(shared), 'authoring_guide');
     await call(workingCopy(shared), 'authoring_guide');
     expect(builds()).toBe(2);
+  });
+
+  describe('the memo key covers everything that decides the answer', () => {
+    // A change that also touched `legacy`, a module the lock no longer has: only a token that reads both sees it.
+    const [base] = repoLock.changes;
+    const legacyChange = {
+      ...base!,
+      id: '0902',
+      title: 'Legacy retirement',
+      summary: 'Touches orders and legacy.',
+      items: [
+        {
+          classification: 'behavioral' as const,
+          id: repoLock.ir.entities[0]!.id,
+          kind: 'modified' as const,
+          module: 'orders',
+        },
+        {
+          classification: 'behavioral' as const,
+          id: 'entity:Gone',
+          kind: 'removed' as const,
+          module: 'legacy',
+        },
+      ],
+    };
+    const withLegacy = (version: string) =>
+      createPublishedLock(
+        version,
+        { ...repoLock, changes: [...repoLock.changes, legacyChange] },
+        [],
+        DEFAULT_CONVENTIONS,
+      );
+    const serverOf = (
+      p: typeof published,
+      shared: ReturnType<typeof createShared>,
+    ) =>
+      createDomainServer({ published: p }, true, undefined, undefined, shared);
+    const history = (
+      p: typeof published,
+      shared: ReturnType<typeof createShared>,
+      scopes: string[],
+    ) =>
+      call(
+        serverOf(p, shared),
+        'authoring_guide',
+        { doc: 'skill://orders-dev/references/history.md' },
+        scopes,
+      );
+
+    test('a token never gets the catalogue of one that can read a module the lock no longer has', async () => {
+      const shared = createShared(skillDir);
+      const p = withLegacy('1');
+      const both = await history(p, shared, [
+        'skill:read:orders',
+        'skill:read:legacy',
+      ]);
+      const ordersOnly = await history(p, shared, ['skill:read:orders']);
+      expect(both.result.content[0].text).toContain('Legacy retirement');
+      expect(ordersOnly.result.content[0].text).not.toContain(
+        'Legacy retirement',
+      );
+    });
+
+    test('two published locks never share an entry', async () => {
+      const keys: unknown[] = [];
+      const shared = createShared(skillDir, {
+        catalogue: (input) => {
+          keys.push(input.fullLock);
+          return catalogue(input);
+        },
+      });
+      const scopes = ['skill:read:orders'];
+      await history(withLegacy('1'), shared, scopes);
+      await history(withLegacy('2'), shared, scopes);
+      expect(keys).toHaveLength(2);
+    });
+
+    test('the memo is emptied before it passes 256 entries', async () => {
+      const shared = createShared(skillDir);
+      const fill = (n: number) => {
+        shared.catalogues.clear();
+        for (let i = 0; i < n; i++) shared.catalogues.set(`k${i}`, []);
+      };
+      fill(255);
+      await history(published, shared, ['skill:read:orders']);
+      expect(shared.catalogues.size).toBe(256);
+      fill(256);
+      await history(published, shared, ['skill:read:orders']);
+      expect(shared.catalogues.size).toBe(1);
+    });
+  });
+});
+
+describe('a token without the skill grant does not load the authoring skill', () => {
+  test('listing the resources with a broken skill directory still answers nothing', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'agentic-shared-'));
+    try {
+      // `references` is a file: a load would fail with ENOTDIR.
+      await Bun.write(join(tmp, 'references'), 'not a directory');
+      const out = await rpc(
+        publishedServer(createShared(tmp)),
+        'resources/list',
+        {},
+        ['domain:read'],
+      );
+      expect(out.error).toBeUndefined();
+      expect(out.result.resources).toEqual([]);
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
   });
 });

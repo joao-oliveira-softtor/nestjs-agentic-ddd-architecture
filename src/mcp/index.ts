@@ -72,6 +72,18 @@ export const withPublishSlot = oneAtATime('mcp.publish-busy', 'publish_change');
 
 const noGrant = (access: ModuleAccess) => access !== 'all' && access.size === 0;
 
+function requireGrant(
+  access: ModuleAccess,
+  capability: string,
+  what: string,
+): void {
+  if (noGrant(access))
+    throw new AgenticError(
+      'auth.scope-missing',
+      `the ${capability} scope is needed to ${what}`,
+    );
+}
+
 function assertInputSize(args: unknown, max = MAX_INPUT_BYTES): void {
   if (Buffer.byteLength(JSON.stringify(args)) > max)
     throw new AgenticError(
@@ -146,11 +158,7 @@ async function publishChange(
   access: ModuleAccess,
   args: PublishArgs,
 ): Promise<PublishedChange> {
-  if (noGrant(access))
-    throw new AgenticError(
-      'auth.scope-missing',
-      `the ${PUBLISH_CAPABILITY} scope is needed to publish a change`,
-    );
+  requireGrant(access, PUBLISH_CAPABILITY, 'publish a change');
   assertInputSize(args, MAX_PUBLISH_BYTES);
   if (!publish || 'published' in source)
     throw new AgenticError(
@@ -201,9 +209,40 @@ export function createShared(
   };
 }
 
+// Distinct access sets are few in practice; this bounds the memo against a flood of crafted ones.
+const MAX_CATALOGUES = 256;
+
+// Published mode: the lock never changes, so the catalogue depends only on the lock and on which of its modules the
+// token reads. The key names every module the lock mentions (a change may cite one `ir.modules` no longer has: it
+// decides whether the change is visible) and the lock's digest.
+function publishedCatalogue(
+  shared: Shared,
+  published: PublishedLock,
+  input: Parameters<typeof catalogue>[0],
+): SkillDoc[] {
+  const { fullLock, skillAccess: access } = input;
+  const known = new Set([
+    ...fullLock.ir.modules.map((m) => m.name),
+    ...fullLock.changes.flatMap((c) => c.items.map((i) => i.module)),
+  ]);
+  const key = `${published.digest}:${
+    access === 'all'
+      ? 'all'
+      : JSON.stringify([...known].filter((name) => access.has(name)).sort())
+  }`;
+  let docs = shared.catalogues.get(key);
+  if (!docs) {
+    // shortcut: crude cap on distinct access sets, upgrade to LRU if real deployments exceed it
+    if (shared.catalogues.size >= MAX_CATALOGUES) shared.catalogues.clear();
+    shared.catalogues.set(key, (docs = shared.catalogue(input)));
+  }
+  return docs;
+}
+
 // The tools and skill documents, shared by the stdio (local, sees all) and HTTP (`remote`) transports.
 // `publish` is where publish_change sends a bundle (its sink and the project config); without it that tool answers `mcp.publish-unavailable`.
-// `shared` is built once by a long-lived caller; without it the server keeps its own.
+// `shared` is built once by a long-lived caller; without it the server keeps its own, built from `authoringDir`.
+// When `shared` is passed, `authoringDir` is ignored: the `Shared` carries its own directory.
 export function createDomainServer(
   source: Source,
   remote: boolean,
@@ -262,10 +301,11 @@ export function createDomainServer(
     authoring: boolean;
     unavailable?: AgenticError;
   }> => {
+    // Before any work: a token without the grant does not trigger the load.
+    if (noGrant(accessOf(ctx, SKILL_CAPABILITY)))
+      return { docs: [], authoring: false };
     const authoring = await shared.authoringDocs();
     const available = authoring !== null;
-    if (noGrant(accessOf(ctx, SKILL_CAPABILITY)))
-      return { docs: [], authoring: available };
     try {
       const s = await scopedFor(ctx, SKILL_CAPABILITY);
       const input = {
@@ -275,22 +315,13 @@ export function createDomainServer(
         skillAccess: s.access,
         conventions: s.conventions,
       };
-      if (!('published' in source))
-        return { docs: shared.catalogue(input), authoring: available };
-      // Keyed by the modules the token has that the lock has: names it invented do not grow the memo.
-      const { access } = s;
-      const key =
-        access === 'all'
-          ? 'all'
-          : JSON.stringify(
-              s.fullLock.ir.modules
-                .map((m) => m.name)
-                .filter((name) => access.has(name))
-                .sort(),
-            );
-      let docs = shared.catalogues.get(key);
-      if (!docs) shared.catalogues.set(key, (docs = shared.catalogue(input)));
-      return { docs, authoring: available };
+      return {
+        docs:
+          'published' in source
+            ? publishedCatalogue(shared, source.published, input)
+            : shared.catalogue(input),
+        authoring: available,
+      };
     } catch (error) {
       if (!(error instanceof AgenticError)) throw error;
       return {
@@ -336,11 +367,7 @@ export function createDomainServer(
     ) =>
     (args: A, ctx?: Ctx) =>
       respond(async () => {
-        if (noGrant(accessOf(ctx, capability)))
-          throw new AgenticError(
-            'auth.scope-missing',
-            'the domain:read scope is needed to read the domain',
-          );
+        requireGrant(accessOf(ctx, capability), capability, 'read the domain');
         return run(await scopedFor(ctx, capability), args);
       });
   // Resource callbacks: the SDK sends error.message to the client, so a remote caller gets only coded ones.
@@ -484,11 +511,11 @@ export function createDomainServer(
     ({ doc }: { doc?: string }, ctx?: Ctx) =>
       respond(async () => {
         // Not the snapshot-bound `guarded`: the authoring skill is served without one.
-        if (noGrant(accessOf(ctx, SKILL_CAPABILITY)))
-          throw new AgenticError(
-            'auth.scope-missing',
-            `the ${SKILL_CAPABILITY} scope is needed to read skill documents`,
-          );
+        requireGrant(
+          accessOf(ctx, SKILL_CAPABILITY),
+          SKILL_CAPABILITY,
+          'read skill documents',
+        );
         const { docs, authoring, unavailable } = await docsOf(ctx);
         if (doc === undefined)
           return index(
