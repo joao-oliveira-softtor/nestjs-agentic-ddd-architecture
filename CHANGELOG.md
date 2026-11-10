@@ -2,7 +2,7 @@
 
 ## [Não lançado]
 
-- **`compile` no longer deletes the skills before rewriting them (#170):** `compile` used to remove every generated skill directory and then write the new files, so a failure in the middle left the project without the skills it had. Files are now overwritten in place, and the stale files of a kept directory and the directories of removed modules are deleted only after every generated file was written. A failure mid-write can still leave a kept directory half updated, but never emptier than before. `compile` and `compile --check` share one rule for what counts as a stale file.
+- **`compile` no longer deletes the skills before rewriting them (#170):** `compile` used to remove every generated skill directory and then write the new files, so a failure in the middle left the project without the skills it had. Files are now overwritten in place, and the stale files of a kept directory and the directories of removed modules are deleted only after every generated file was written. A failure mid-write can still leave a kept directory half updated, but never emptier than before. A skill directory that is, or contains, a symbolic link is still removed first, as before, so nothing is written or deleted through a link. `compile` and `compile --check` share one rule for what counts as a stale file.
 
 - **`compile --check` ignores CRLF-only differences (#168):** on a checkout where git converts text to CRLF (Windows with `core.autocrlf=true`), `compile --check` no longer reports the generated files, the `AGENTS.md` block or the lock as outdated when they differ only by line endings. Only the text read from disk is normalized for the comparison: the write path still keeps the line endings of the text outside the generated block. `docs/distribution.md` recommends `* text=auto eol=lf` in the consumer project's `.gitattributes`.
 
@@ -12,7 +12,7 @@
 
 - **`BUNDLE.md` and ADR-0007 D15 state the trust model of `agentic apply` (#178):** `BUNDLE.md` now says that applying a bundle runs its code (the `compile` step imports the module files), so apply only bundles you trust; ADR-0007 D15 records this trust model (integrity, not authorship; no sandbox for now). The bundle hash is unchanged (`BUNDLE.md` is derived and not hashed), so existing bundles apply as before.
 
-- **Behaviour change — `compile` stops before writing when a user file cannot be read (#169):** `compile` and `compile --check` now fail when `AGENTS.md` or `CLAUDE.md` exists but cannot be read (for example it is a directory or permission is denied), instead of treating it as absent. `compile` reads both before it removes or writes any file, so nothing is changed on failure, and the lock and `AGENTS.md` are written atomically (temporary file plus rename, following a symbolic link to its target).
+- **Behaviour change — `compile` stops before writing when a user file cannot be read (#169):** `compile` and `compile --check` now fail when `AGENTS.md` or `CLAUDE.md` exists but cannot be read (for example it is a directory or permission is denied), instead of treating it as absent. `compile` reads both before it removes or writes any file, so no generated file is changed on failure (a draft written by `--draft-change` in the same run stays), and the lock and `AGENTS.md` are written atomically (temporary file plus rename, following a symbolic link to its target; when the system refuses the rename, as Windows does for a file held open, it falls back to writing in place).
 
 ## [0.6.0] — 2026-11-09
 

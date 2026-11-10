@@ -167,6 +167,13 @@ async function generatedSkillDirs(base: string): Promise<string[]> {
   return result;
 }
 
+// The directory itself or anything inside it is a link; hard links are out of scope. Bun's recursive readdir lists a linked directory without descending into it.
+async function containsLink(dir: string): Promise<boolean> {
+  if ((await lstat(dir)).isSymbolicLink()) return true;
+  const entries = await readdir(dir, { recursive: true, withFileTypes: true });
+  return entries.some((entry) => entry.isSymbolicLink());
+}
+
 async function conflictingDirs(
   config: ResolvedConfig,
   rendered: Rendered,
@@ -270,8 +277,12 @@ export async function writeOutputs(
   const keptDirs: [string, string][] = [];
   for (const [base, keep] of managedBases(config, rendered)) {
     for (const dir of await generatedSkillDirs(join(config.outRoot, base))) {
+      const absolute = join(config.outRoot, base, dir);
       if (keep.includes(dir)) {
-        keptDirs.push([base, dir]);
+        // rm removes a link without following it, so nothing is written or pruned through one
+        if (await containsLink(absolute))
+          await rm(absolute, { recursive: true, force: true });
+        else keptDirs.push([base, dir]);
       } else {
         removedOrphans.add(resolve(join(config.outRoot, base, dir)));
         written.push(`${base}/${dir} (removed)`);
@@ -352,7 +363,10 @@ export async function checkOutputs(
 
   for (const [path, content] of rendered.files) {
     if (inConflict(conflicts, path)) continue;
-    const actual = await readOrNull(join(config.outRoot, path));
+    // Unreadable (a directory, EACCES) counts as missing here; only AGENTS.md and CLAUDE.md are strict.
+    const actual = await readOrNull(join(config.outRoot, path)).catch(
+      () => null,
+    );
     if (actual === null) drift.push({ path, reason: 'missing' });
     // A checkout with CRLF is not drift: only the text read from disk is normalized.
     else if (toLf(actual) !== content) drift.push({ path, reason: 'changed' });

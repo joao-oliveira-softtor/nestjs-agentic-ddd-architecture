@@ -7,6 +7,7 @@ import {
   readdir,
   readFile,
   readlink,
+  rename,
   rm,
   symlink,
   writeFile,
@@ -258,6 +259,60 @@ describe('writeOutputs / checkOutputs', () => {
     expect(await checkOutputs(config, rendered)).toEqual([]);
   });
 
+  test('a kept skill directory that is a symbolic link becomes a real directory and its target is untouched', async () => {
+    await writeOutputs(config, rendered);
+    const dir = join(out, '.agents/skills/shop-dev');
+    const target = join(out, 'outside/shop-dev');
+    await mkdir(join(out, 'outside'));
+    await rename(dir, target);
+    await writeFile(join(target, 'extra.md'), 'extra\n');
+    const oldSkill = `${await readFile(join(target, 'SKILL.md'), 'utf8')}\nold\n`;
+    await writeFile(join(target, 'SKILL.md'), oldSkill);
+    await symlink(target, dir);
+
+    await writeOutputs(config, rendered);
+
+    expect((await lstat(dir)).isDirectory()).toBe(true);
+    expect(await readFile(join(dir, 'SKILL.md'), 'utf8')).toBe(
+      rendered.files.get('.agents/skills/shop-dev/SKILL.md')!,
+    );
+    expect(await readFile(join(target, 'extra.md'), 'utf8')).toBe('extra\n');
+    expect(await readFile(join(target, 'SKILL.md'), 'utf8')).toBe(oldSkill);
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+  });
+
+  test('a symbolic link inside a kept skill directory is never written through', async () => {
+    await writeOutputs(config, rendered);
+    const path = [...rendered.files.keys()].find((file) =>
+      file.startsWith('.agents/skills/shop-dev/references/'),
+    )!;
+    const outside = join(out, 'outside.md');
+    await writeFile(outside, 'outside\n');
+    await rm(join(out, path));
+    await symlink(outside, join(out, path));
+
+    await writeOutputs(config, rendered);
+
+    expect(await readFile(outside, 'utf8')).toBe('outside\n');
+    expect((await lstat(join(out, path))).isFile()).toBe(true);
+    expect(await readFile(join(out, path), 'utf8')).toBe(
+      rendered.files.get(path)!,
+    );
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+  });
+
+  test('a rendered file that cannot be read is reported as missing by check', async () => {
+    await writeOutputs(config, rendered);
+    const path = '.agents/skills/shop-dev/references/history.md';
+    await rm(join(out, path));
+    await mkdir(join(out, path));
+
+    expect(await checkOutputs(config, rendered)).toContainEqual({
+      path,
+      reason: 'missing',
+    });
+  });
+
   test('a failure in the middle of the writes leaves the other skill directories as they were', async () => {
     await writeOutputs(config, rendered);
     const sentinel = join(out, '.agents/skills/shop-dev/references/history.md');
@@ -460,24 +515,27 @@ describe('writeOutputs / checkOutputs', () => {
     ]);
   });
 
-  test('AGENTS.md that cannot be read fails write and check without touching the skills', async () => {
-    await writeOutputs(config, rendered);
-    const skillPath = join(out, '.agents/skills/shop-dev/SKILL.md');
-    // a hand edit that a rewrite of the skill directory would erase
-    const before = `${await readFile(skillPath, 'utf8')}\nhand edit\n`;
-    await writeFile(skillPath, before);
-    await rm(join(out, 'AGENTS.md'));
-    await mkdir(join(out, 'AGENTS.md'));
+  test.each(['AGENTS.md', 'CLAUDE.md'])(
+    '%s that cannot be read fails write and check without touching the skills',
+    async (name) => {
+      await writeOutputs(config, rendered);
+      const skillPath = join(out, '.agents/skills/shop-dev/SKILL.md');
+      // a hand edit that a rewrite of the skill directory would erase
+      const before = `${await readFile(skillPath, 'utf8')}\nhand edit\n`;
+      await writeFile(skillPath, before);
+      await rm(join(out, name));
+      await mkdir(join(out, name));
 
-    expect(await rejection(writeOutputs(config, rendered))).toMatchObject({
-      message: expect.stringMatching(/AGENTS\.md/),
-    });
-    expect(await readFile(skillPath, 'utf8')).toBe(before);
-    expect((await lstat(join(out, 'AGENTS.md'))).isDirectory()).toBe(true);
-    expect(await rejection(checkOutputs(config, rendered))).toMatchObject({
-      message: expect.stringMatching(/AGENTS\.md/),
-    });
-  });
+      expect(await rejection(writeOutputs(config, rendered))).toMatchObject({
+        message: expect.stringContaining(name),
+      });
+      expect(await readFile(skillPath, 'utf8')).toBe(before);
+      expect((await lstat(join(out, name))).isDirectory()).toBe(true);
+      expect(await rejection(checkOutputs(config, rendered))).toMatchObject({
+        message: expect.stringContaining(name),
+      });
+    },
+  );
 
   test('a kept skill directory whose SKILL.md is a directory is a conflict, not a crash', async () => {
     const dir = join(out, '.agents/skills/shop-dev');
