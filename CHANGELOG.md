@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **CI (#171):** a pull request's superseded runs are cancelled (one concurrency group per ref; each push to `main` keeps its own group and is never cancelled), and every job has a time limit: `ci` 20 min, `ci-windows` 25 min, `evals` 60 min.
+
 ## [0.6.0] — 2026-11-09
 
 - **Published on npm as `agentic-ddd`:** the package was called `nestjs-agentic-ddd-architecture` and shipped only as a GitHub release tarball; it is now public on the npm registry. Imports change from `nestjs-agentic-ddd-architecture/<boundary>` to `agentic-ddd/<boundary>` (same eight boundaries, same `agentic-ddd` binary). `private: true` and the `prepublishOnly` gate (`scripts/block-publish.cjs`) are gone; `docs/distribution.md` lists the publication steps.
