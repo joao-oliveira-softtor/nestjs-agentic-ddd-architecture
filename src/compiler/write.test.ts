@@ -243,6 +243,57 @@ describe('writeOutputs / checkOutputs', () => {
     expect(await checkOutputs(config, rendered)).toEqual([]);
   });
 
+  test('a stale file inside a kept skill directory is removed and check is clean', async () => {
+    await writeOutputs(config, rendered);
+    const stale = join(out, '.agents/skills/shop-dev/references/stale.md');
+    await writeFile(stale, 'stale\n');
+    expect(await checkOutputs(config, rendered)).toContainEqual({
+      path: '.agents/skills/shop-dev/references/stale.md',
+      reason: 'extra',
+    });
+
+    await writeOutputs(config, rendered);
+
+    expect(await lstat(stale).catch(() => null)).toBeNull();
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+  });
+
+  test('a failure in the middle of the writes leaves the other skill directories as they were', async () => {
+    await writeOutputs(config, rendered);
+    const sentinel = join(out, '.agents/skills/shop-dev/references/history.md');
+    await writeFile(sentinel, 'previous content\n');
+    // the runtime directory is written first; its references path cannot be created
+    const blocked = join(out, '.agentic/runtime/catalog-operator/references');
+    await rm(blocked, { recursive: true });
+    await writeFile(blocked, 'not a directory\n');
+
+    expect(await rejection(writeOutputs(config, rendered))).not.toBeNull();
+
+    expect(await readFile(sentinel, 'utf8')).toBe('previous content\n');
+    expect(
+      await readFile(join(out, '.agents/skills/shop-dev/SKILL.md'), 'utf8'),
+    ).toBe(rendered.files.get('.agents/skills/shop-dev/SKILL.md')!);
+  });
+
+  test('the directory of a removed module goes away with its mirror link', async () => {
+    const gone = join(out, '.agents/skills/gone-dev');
+    await mkdir(gone, { recursive: true });
+    await writeFile(
+      join(gone, 'SKILL.md'),
+      '---\nname: gone-dev\nmetadata:\n  agentic-ddd.generated: "true"\n---\n',
+    );
+    const skills = join(out, '.claude/skills');
+    await mkdir(skills, { recursive: true });
+    await symlink('../../.agents/skills/gone-dev', join(skills, 'gone-dev'));
+
+    const { written } = await writeOutputs(config, rendered);
+
+    expect(await lstat(gone).catch(() => null)).toBeNull();
+    expect(await lstat(join(skills, 'gone-dev')).catch(() => null)).toBeNull();
+    expect(written).toContain('.agents/skills/gone-dev (removed)');
+    expect(written).toContain('.claude/skills/gone-dev (link removed)');
+  });
+
   test('AGENTS.md: preserva texto manual e só o bloco conta para o check', async () => {
     await writeFile(join(out, 'AGENTS.md'), '# Projeto\n\nNotas do time.\n');
     await writeOutputs(config, rendered);

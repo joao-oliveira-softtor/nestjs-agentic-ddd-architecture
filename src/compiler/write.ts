@@ -199,6 +199,19 @@ async function listFiles(dir: string): Promise<string[]> {
   return files.sort();
 }
 
+// The one rule for "a file the generator no longer owns", shared by write and check.
+async function extraFiles(
+  config: ResolvedConfig,
+  rendered: Rendered,
+  base: string,
+  dir: string,
+): Promise<string[]> {
+  const files = await listFiles(join(config.outRoot, base, dir));
+  return files
+    .map((file) => `${base}/${dir}/${file}`)
+    .filter((path) => !rendered.files.has(path));
+}
+
 function managedBases(
   config: ResolvedConfig,
   rendered: Rendered,
@@ -252,13 +265,15 @@ export async function writeOutputs(
     );
   }
 
+  // Nothing is deleted before the new files are written: a failure in between keeps the old skills.
   const removedOrphans = new Set<string>();
+  const keptDirs: [string, string][] = [];
   for (const [base, keep] of managedBases(config, rendered)) {
     for (const dir of await generatedSkillDirs(join(config.outRoot, base))) {
-      const absolute = join(config.outRoot, base, dir);
-      await rm(absolute, { recursive: true, force: true });
-      if (!keep.includes(dir)) {
-        removedOrphans.add(resolve(absolute));
+      if (keep.includes(dir)) {
+        keptDirs.push([base, dir]);
+      } else {
+        removedOrphans.add(resolve(join(config.outRoot, base, dir)));
         written.push(`${base}/${dir} (removed)`);
       }
     }
@@ -271,6 +286,13 @@ export async function writeOutputs(
     await writeFile(absolute, content);
     written.push(path);
   }
+
+  for (const [base, dir] of keptDirs) {
+    for (const path of await extraFiles(config, rendered, base, dir))
+      await rm(join(config.outRoot, path), { force: true });
+  }
+  for (const absolute of removedOrphans)
+    await rm(absolute, { recursive: true, force: true });
 
   await mkdir(dirname(agentsPath), { recursive: true });
   await writeFileAtomic(
@@ -342,10 +364,8 @@ export async function checkOutputs(
         drift.push({ path: `${base}/${dir}`, reason: 'extra' });
         continue;
       }
-      for (const file of await listFiles(join(config.outRoot, base, dir))) {
-        const path = `${base}/${dir}/${file}`;
-        if (!rendered.files.has(path)) drift.push({ path, reason: 'extra' });
-      }
+      for (const path of await extraFiles(config, rendered, base, dir))
+        drift.push({ path, reason: 'extra' });
     }
   }
 

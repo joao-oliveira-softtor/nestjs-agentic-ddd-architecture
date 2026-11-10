@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **`compile` no longer deletes the skills before rewriting them (#170):** `compile` used to remove every generated skill directory and then write the new files, so a failure in the middle left the project without the skills it had. Files are now overwritten in place, and the stale files of a kept directory and the directories of removed modules are deleted only after every write succeeded. A failure mid-write can still leave a kept directory half updated, but never emptier than before. `compile` and `compile --check` share one rule for what counts as a stale file.
+
 - **`compile --check` ignores CRLF-only differences (#168):** on a checkout where git converts text to CRLF (Windows with `core.autocrlf=true`), `compile --check` no longer reports the generated files, the `AGENTS.md` block or the lock as outdated when they differ only by line endings. Only the text read from disk is normalized for the comparison: the write path still keeps the line endings of the text outside the generated block. `docs/distribution.md` recommends `* text=auto eol=lf` in the consumer project's `.gitattributes`.
 
 - **Proposals tolerate a BOM and CRLF checkouts (#167, #168):** `proposal.md` may start with a UTF-8 BOM (it used to fail with `proposal.frontmatter-missing`), and an archived proposal now hashes the same in LF and CRLF, so a Windows checkout no longer reports `proposal.applied-edited`. The hash is taken over the text without the BOM and with LF line endings; the file itself is never rewritten, and locks written before this change still verify.
