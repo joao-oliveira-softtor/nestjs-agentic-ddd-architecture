@@ -54,7 +54,7 @@ export async function loadAuthoringDocs(dir: string): Promise<AuthoringDoc[]> {
   }
 }
 
-/** `loadAuthoringDocs` once, on first use: the skill comes from the installed package and does not change. `null` when it is not shipped. */
+/** `loadAuthoringDocs` once, on first use: the skill comes from the installed package and does not change. `null` when it is not shipped. A failed read is not kept: the next call tries again. */
 export function authoringLoader(
   dir: string,
 ): () => Promise<AuthoringDoc[] | null> {
@@ -66,6 +66,7 @@ export function authoringLoader(
         error.code === 'mcp.skills-unavailable'
       )
         return null;
+      loaded = undefined;
       throw error;
     }));
 }

@@ -285,34 +285,36 @@ describe('authoring_guide over the Domain MCP', () => {
     }
   });
 
-  test('a skill:read token sees no domain data from any domain tool', async () => {
-    const calls = [
-      ['domain_source', {}],
-      ['domain_overview', {}],
-      ['domain_element', { id: 'entity:Order' }],
-      ['domain_changes', {}],
-      ['rules_for_path', { path: 'examples/orders/a.ts' }],
-    ] as const;
-    for (const [name, args] of calls) {
-      const out = await rpc(remote, 'tools/call', { name, arguments: args }, [
-        'skill:read',
-      ]);
-      // The caller's own id may be echoed in a refusal; anything else would be data.
-      const text = JSON.stringify(out.result.content).replaceAll(
-        'entity:Order',
-        '',
-      );
-      expect(text).not.toContain('Order');
-      expect(text).not.toContain('billing');
-      // domain_source is unguarded by design; the others refuse a token with no domain grant.
-      if (name === 'domain_source') expect(out.result.isError).toBeUndefined();
-      else {
-        expect(out.result.isError).toBe(true);
-        expect(text).toContain('auth.scope-missing');
-        expect(text).not.toContain('open rule');
+  for (const scope of ['skill:read', 'change:propose'])
+    test(`a ${scope} token sees no domain data from any domain tool`, async () => {
+      const calls = [
+        ['domain_source', {}],
+        ['domain_overview', {}],
+        ['domain_element', { id: 'entity:Order' }],
+        ['domain_changes', {}],
+        ['rules_for_path', { path: 'examples/orders/a.ts' }],
+      ] as const;
+      for (const [name, args] of calls) {
+        const out = await rpc(remote, 'tools/call', { name, arguments: args }, [
+          scope,
+        ]);
+        // The caller's own id may be echoed in a refusal; anything else would be data.
+        const text = JSON.stringify(out.result.content).replaceAll(
+          'entity:Order',
+          '',
+        );
+        expect(text).not.toContain('Order');
+        expect(text).not.toContain('billing');
+        // domain_source is unguarded by design; the others refuse a token with no domain grant.
+        if (name === 'domain_source')
+          expect(out.result.isError).toBeUndefined();
+        else {
+          expect(out.result.isError).toBe(true);
+          expect(text).toContain('auth.scope-missing');
+          expect(text).not.toContain('open rule');
+        }
       }
-    }
-  });
+    });
 
   test('crafted resource URIs are refused like an unknown document', async () => {
     const unknown = await rpc(

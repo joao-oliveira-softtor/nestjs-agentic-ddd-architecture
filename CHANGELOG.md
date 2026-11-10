@@ -3,6 +3,7 @@
 ## [Não lançado]
 
 - **Breaking, MCP: a token without `domain:read` is refused by the domain tools (#166).** `domain_overview`, `domain_element`, `domain_changes` and `rules_for_path` now answer `auth.scope-missing` instead of an empty result when the token has no `domain:read` grant (for example `skill:read` only, or only `change:propose`/`change:publish`), and no longer scan the project for it. `domain_source` and tokens with `domain:read:<module>` are unchanged.
+- **MCP HTTP server no longer redoes the same work per request (#165).** `agentic-ddd mcp --http` now reads the authoring skill once per process (a failed read is retried on the next call), shares one snapshot check among simultaneous requests for the same root (a request that arrives after the check finished starts a new one, so nothing stale is served), and, when it serves a published lock, builds the skill catalogue once per access set instead of on every `authoring_guide` call and resource list or read. Responses and error codes are unchanged.
 
 ## [0.6.0] — 2026-11-09
 
