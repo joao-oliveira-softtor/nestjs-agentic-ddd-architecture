@@ -13,17 +13,21 @@ const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/;
 
 const stripBom = (text: string): string =>
-  text.startsWith('﻿') ? text.slice(1) : text;
+  text.startsWith('\uFEFF') ? text.slice(1) : text;
 
 /** Hash of an archived proposal: BOM and line-ending agnostic, so a CRLF checkout keeps it. */
 export const proposalHash = (raw: string): string =>
   sha256(toLf(stripBom(raw)));
 
 /** The recorded hash, or the one an older version wrote from CRLF bytes. */
-export const proposalHashMatches = (raw: string, recorded: string): boolean =>
-  recorded === proposalHash(raw) ||
-  recorded === sha256(toLf(stripBom(raw)).replaceAll('\n', '\r\n')) ||
-  recorded === sha256(raw);
+export const proposalHashMatches = (raw: string, recorded: string): boolean => {
+  const lf = toLf(stripBom(raw));
+  return (
+    recorded === sha256(lf) ||
+    recorded === sha256(lf.replaceAll('\n', '\r\n')) ||
+    recorded === sha256(raw)
+  );
+};
 
 /** YAML frontmatter as an object; throws if it is not an object. */
 export function parseFrontmatterData(yaml: string): Record<string, unknown> {

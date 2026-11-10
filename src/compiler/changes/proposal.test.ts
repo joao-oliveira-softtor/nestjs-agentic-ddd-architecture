@@ -221,7 +221,7 @@ describe('parseProposal', () => {
 });
 
 describe('BOM and CRLF tolerance', () => {
-  const BOM = '﻿';
+  const BOM = '\uFEFF';
   const crlf = VALID.replaceAll('\n', '\r\n');
 
   test('a proposal that starts with a BOM parses to the same fields, raw untouched', () => {
@@ -248,6 +248,13 @@ describe('BOM and CRLF tolerance', () => {
     expect(proposalHashMatches(VALID, sha256(crlf))).toBe(true);
     expect(proposalHashMatches(crlf, sha256(`${VALID}x`))).toBe(false);
     expect(proposalHashMatches(crlf, 'outro-hash')).toBe(false);
+  });
+
+  test('proposalHashMatches accepts a legacy hash of the raw bytes when the line endings are mixed', () => {
+    const mixed = 'a\r\nb\n';
+    expect(proposalHashMatches(mixed, sha256(mixed))).toBe(true);
+    expect(proposalHashMatches(mixed, sha256('a\nb\n'))).toBe(true);
+    expect(proposalHashMatches('a\r\nc\n', sha256(mixed))).toBe(false);
   });
 });
 
@@ -401,7 +408,7 @@ describe('listProposals', () => {
   });
 
   test('a proposal file with a BOM and CRLF is listed with raw as read', async () => {
-    const raw = `﻿${VALID.replaceAll('\n', '\r\n')}`;
+    const raw = `\uFEFF${VALID.replaceAll('\n', '\r\n')}`;
     await mkdir(join(dir, '0002-cancelamento-exige-motivo'), {
       recursive: true,
     });

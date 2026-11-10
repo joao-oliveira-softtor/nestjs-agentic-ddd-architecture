@@ -106,6 +106,27 @@ describe('reconcile', () => {
     ]);
   });
 
+  test.each([
+    ['CRLF', (raw: string) => raw.replaceAll('\n', '\r\n')],
+    ['a BOM', (raw: string) => `\uFEFF${raw}`],
+  ])(
+    'the hash recorded on apply ignores %s in the open proposal',
+    (_, transform) => {
+      const lf = proposal({ motivo: 'Base do histórico.' });
+      const open = parseProposal(
+        transform(lf.raw),
+        `${lf.id}-${lf.slug}`,
+        lf.path,
+        false,
+      ).proposal!;
+      const plan = reconcile(input(null, [open]));
+      expect(plan.errors).toEqual([]);
+      expect(plan.nextLock?.changes[0]?.hash).toBe(
+        proposalHash(markApplied(lf.raw)),
+      );
+    },
+  );
+
   test('an empty Motivo and delta divergences stay pending', () => {
     const delta: Delta = {
       added: [
