@@ -55,7 +55,7 @@ test('FakeApproval supports allow, deny and asynchronous decisions with history'
 
 class Created extends DomainEvent {}
 test('bus awaits handlers in publication order, including concurrent batches, and unsubscribes', async () => {
-  const bus = new InMemoryEventBus();
+  const bus = new InMemoryEventBus({ record: true });
   const seen: string[] = [];
   const remove = bus.subscribe(async (event) => {
     await Bun.sleep(2);
@@ -74,7 +74,11 @@ test('bus awaits handlers in publication order, including concurrent batches, an
 });
 
 test('bus rejects reentrant awaited publication without poisoning subsequent delivery', async () => {
-  const bus = new InMemoryEventBus();
+  const errors: unknown[] = [];
+  const bus = new InMemoryEventBus({
+    record: true,
+    onError: (error) => errors.push(error),
+  });
   const remove = bus.subscribe(async (event) => {
     if (event.payload === 'outer') await bus.publish([new Created('inner')]);
   });
@@ -85,8 +89,78 @@ test('bus rejects reentrant awaited publication without poisoning subsequent del
     ),
     Bun.sleep(30).then(() => 'deadlocked'),
   ]);
-  expect(result).toContain('Reentrant publication');
+  expect(result).toBe('delivered');
+  expect(errors.map(String)).toEqual([
+    expect.stringContaining('Reentrant publication'),
+  ]);
   remove();
   await bus.publish([new Created('next')]);
   expect(bus.events.map((event) => event.payload)).toEqual(['outer', 'next']);
+});
+
+test('bus isolates a throwing handler: later handlers and events are still delivered', async () => {
+  const failures: [unknown, DomainEvent][] = [];
+  const bus = new InMemoryEventBus({
+    onError: (error, event) => failures.push([error, event]),
+  });
+  const boom = new Error('boom');
+  const seen: string[] = [];
+  bus.subscribe((event) => {
+    if (event.payload === 'a') throw boom;
+  });
+  bus.subscribe((event) => {
+    seen.push(String(event.payload));
+  });
+  const [a, b] = [new Created('a'), new Created('b')];
+  await bus.publish([a, b]);
+  expect(seen).toEqual(['a', 'b']);
+  expect(failures).toEqual([[boom, a]]);
+});
+
+test('bus reports a handler error to console.error without onError', async () => {
+  const original = console.error;
+  const calls: unknown[][] = [];
+  console.error = (...args: unknown[]) => void calls.push(args);
+  try {
+    const bus = new InMemoryEventBus();
+    const boom = new Error('boom');
+    bus.subscribe(async () => {
+      throw boom;
+    });
+    await bus.publish([new Created('a')]);
+    expect(calls.flat()).toContain(boom);
+  } finally {
+    console.error = original;
+  }
+});
+
+test('bus sends an error thrown by onError to console.error and still resolves', async () => {
+  const original = console.error;
+  const calls: unknown[][] = [];
+  console.error = (...args: unknown[]) => void calls.push(args);
+  try {
+    const hookError = new Error('hook');
+    const bus = new InMemoryEventBus({
+      onError: () => {
+        throw hookError;
+      },
+    });
+    bus.subscribe(() => {
+      throw new Error('boom');
+    });
+    await bus.publish([new Created('a')]);
+    expect(calls.flat()).toContain(hookError);
+  } finally {
+    console.error = original;
+  }
+});
+
+test('bus keeps no events unless record is true', async () => {
+  const events = [new Created('a'), new Created('b')];
+  const plain = new InMemoryEventBus();
+  await plain.publish(events);
+  expect(plain.events).toEqual([]);
+  const recording = new InMemoryEventBus({ record: true });
+  await recording.publish(events);
+  expect(recording.events).toEqual(events);
 });

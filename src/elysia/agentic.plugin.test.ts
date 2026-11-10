@@ -57,7 +57,7 @@ test('the decorated runtime runs the operator, which gets no HTTP route (ADR-000
     },
     { content: [{ type: 'text', text: 'Criado.' }], stopReason: 'end' },
   ]);
-  const eventBus = new InMemoryEventBus();
+  const eventBus = new InMemoryEventBus({ record: true });
   const { app, orders } = await createOrdersApp({ root, llm, eventBus });
   const result = await app.decorator.agentic.run('order-operator', {
     message: 'Crie o pedido',
@@ -76,7 +76,7 @@ test('the decorated runtime runs the operator, which gets no HTTP route (ADR-000
 });
 
 test('use-case route through Eden: typed, publishes the event and maps DomainError', async () => {
-  const eventBus = new InMemoryEventBus();
+  const eventBus = new InMemoryEventBus({ record: true });
   const { app } = await createOrdersApp({
     root,
     llm: new FakeLlm([]),

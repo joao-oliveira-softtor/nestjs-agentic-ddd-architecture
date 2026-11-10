@@ -42,7 +42,7 @@ class Ring implements UseCase<{ times: number }, { ok: true }> {
 }
 
 test('publishes declared events stamped with one id per call and validates the output', async () => {
-  const bus = new InMemoryEventBus();
+  const bus = new InMemoryEventBus({ record: true });
   expect(
     await executeUseCase(recordFor(Ring), new Ring(), { times: 1 }, bus),
   ).toEqual({ ok: true });
@@ -52,7 +52,7 @@ test('publishes declared events stamped with one id per call and validates the o
 });
 
 test('each call gets a fresh UUID, with correlationId equal to causationId', async () => {
-  const bus = new InMemoryEventBus();
+  const bus = new InMemoryEventBus({ record: true });
   for (let i = 0; i < 2; i++)
     await executeUseCase(recordFor(Ring), new Ring(), { times: 1 }, bus);
   const [first, second] = bus.events;
@@ -85,7 +85,7 @@ test('an event outside emits fails the execution even if the use-case swallows t
       return { ok: true as const };
     }
   }
-  const bus = new InMemoryEventBus();
+  const bus = new InMemoryEventBus({ record: true });
   expect(
     await rejection(
       executeUseCase(recordFor(Sneaky), new Sneaky(), { times: 1 }, bus),

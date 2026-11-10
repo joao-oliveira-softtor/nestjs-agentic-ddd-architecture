@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **Behaviour change — the default event bus no longer keeps events, and a throwing subscriber no longer fails the publication (#161, #162):** `InMemoryEventBus` (the default bus of `OperatorRuntime` and `AgenticModule`) used to append every event to `events` forever; it now keeps them only with `new InMemoryEventBus({ record: true })`, which tests use. A subscriber that throws no longer rejects `publish` or skips the subscribers and events after it: the error goes to the new `onError(error, event)` option, or to `console.error`. A run therefore no longer ends `failed` because a subscriber threw after the use-case saved. Publications are still delivered one batch at a time for the whole bus, now stated in the class documentation.
+
 ## [0.6.0] — 2026-11-09
 
 - **Published on npm as `agentic-ddd`:** the package was called `nestjs-agentic-ddd-architecture` and shipped only as a GitHub release tarball; it is now public on the npm registry. Imports change from `nestjs-agentic-ddd-architecture/<boundary>` to `agentic-ddd/<boundary>` (same eight boundaries, same `agentic-ddd` binary). `private: true` and the `prepublishOnly` gate (`scripts/block-publish.cjs`) are gone; `docs/distribution.md` lists the publication steps.

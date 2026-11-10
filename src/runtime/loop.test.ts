@@ -51,7 +51,7 @@ async function setup(
     );
   }
   const llm = new FakeLlm(script);
-  const eventBus = new InMemoryEventBus();
+  const eventBus = new InMemoryEventBus({ record: true });
   const runtime = new OperatorRuntime({ ...f, llm, eventBus, ...options });
   await runtime.register(f.Agent, new Map([[f.Tool, { execute }]]));
   return { runtime, llm, eventBus };
