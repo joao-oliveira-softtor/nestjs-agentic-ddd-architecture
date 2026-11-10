@@ -168,13 +168,15 @@ export async function runOperator(
         }
         const guard = guardEmits(
           tool.record,
-          async (event) => {
-            event.stamp(runId, step.id);
-            trace.events.push(event);
-            step.events.push(event);
-            events.push(event);
-            // One event at a time: after timeout no next publication is admitted.
-            await wait(() => ports.eventBus.publish([event]));
+          async (batch) => {
+            for (const event of batch) {
+              event.stamp(runId, step.id);
+              trace.events.push(event);
+              step.events.push(event);
+              events.push(event);
+            }
+            // One call per batch, under the run deadline: after timeout no later publication is admitted.
+            await wait(() => ports.eventBus.publish(batch));
           },
           check,
         );
@@ -187,7 +189,12 @@ export async function runOperator(
           const output = await wait(() =>
             tool.instance.execute(parsed.data, ctx),
           );
+          await wait(() => guard.drain());
           if (guard.undeclared) return finish('failed', 'use_case_error');
+          if (guard.failed) {
+            if (guard.failed.error instanceof RunTimeout) throw guard.failed.error;
+            return finish('failed', 'use_case_error');
+          }
           const validated = tool.record.output.safeParse(output);
           if (!validated.success) return finish('failed', 'use_case_error');
           result(

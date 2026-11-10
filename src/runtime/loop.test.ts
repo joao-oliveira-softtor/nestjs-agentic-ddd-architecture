@@ -16,6 +16,7 @@ import {
   type LlmResponse,
   type RuntimeOptions,
 } from './index';
+import type { EventBus } from './ports';
 
 const end: LlmResponse = {
   content: [{ type: 'text', text: 'done' }],
@@ -460,7 +461,87 @@ test('a concurrent batch stops reaching the bus once another publish is refused'
   });
   const result = await f.runtime.run('agent', { message: 'go' });
   expect(result).toMatchObject(failedUseCase);
-  expect(f.eventBus.events.map((e) => e.payload)).toEqual(['a1']);
+  expect(f.eventBus.events.map((e) => e.payload)).toEqual(['a1', 'a2']);
+});
+
+test('a published batch reaches the bus in one call', async () => {
+  const batches: string[][] = [];
+  const eventBus: EventBus = {
+    publish: async (events) => {
+      batches.push(events.map((e) => e.name));
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      await ctx.publish([new Changed('a'), new Changed('b')]);
+      return input;
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result.status).toBe('completed');
+  expect(batches).toEqual([['Changed', 'Changed']]);
+  expect(result.events).toHaveLength(2);
+});
+
+test('a batch [declared, undeclared] delivers nothing and fails the run', async () => {
+  const published: number[] = [];
+  const eventBus: EventBus = {
+    publish: async (events) => {
+      published.push(events.length);
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      await ctx.publish([new Changed('ok'), new Other('x')]);
+      return input;
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+  expect(published).toEqual([]);
+  expect(result.events).toEqual([]);
+});
+
+test('a bus failure on an un-awaited publish fails the run', async () => {
+  const eventBus: EventBus = {
+    publish: async () => {
+      await Bun.sleep(5);
+      throw new Error('bus down');
+    },
+    subscribe: () => () => {},
+  };
+  const f = await setup(
+    [calls(call()), end],
+    async (input, ctx) => {
+      void ctx.publish([new Changed('a')]);
+      return input;
+    },
+    { eventBus },
+  );
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result).toMatchObject(failedUseCase);
+});
+
+test('a publish made after the run ended is refused', async () => {
+  let late!: UseCaseContext['publish'];
+  const f = await setup([calls(call()), end], async (input, ctx) => {
+    late = (batch) => ctx.publish(batch);
+    return input;
+  });
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result.status).toBe('completed');
+  const outcome = await late([new Changed('late')]).then(
+    () => 'resolved',
+    () => 'refused',
+  );
+  expect(outcome).toBe('refused');
+  expect(f.eventBus.events).toEqual([]);
 });
 
 test('a second copy of a declared event class is accepted by name, like the IR', async () => {

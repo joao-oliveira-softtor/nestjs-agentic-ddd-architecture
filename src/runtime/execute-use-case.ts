@@ -25,9 +25,9 @@ export async function runUseCase(
   eventBus: EventBus,
 ): Promise<unknown> {
   const id = crypto.randomUUID();
-  const guard = guardEmits(record, async (event) => {
-    event.stamp(id, id);
-    await eventBus.publish([event]);
+  const guard = guardEmits(record, async (batch) => {
+    for (const event of batch) event.stamp(id, id);
+    await eventBus.publish(batch);
   });
   let output: unknown;
   try {
@@ -36,6 +36,7 @@ export async function runUseCase(
       causationId: id,
       publish: guard.publish,
     });
+    await guard.drain();
   } catch (error) {
     if (!guard.undeclared) throw error;
   } finally {
@@ -43,5 +44,6 @@ export async function runUseCase(
   }
   if (guard.undeclared)
     throw new Error(`Use-case ${record.name} published an undeclared event`);
+  if (guard.failed) throw guard.failed.error;
   return record.output.parse(output);
 }
