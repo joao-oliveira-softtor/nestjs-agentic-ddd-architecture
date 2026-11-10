@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { cp, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
@@ -111,8 +111,44 @@ describe('authoringLoader', () => {
     }
   });
 
+  test('a failed read is not kept: the next call tries again', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'agentic-retry-'));
+    try {
+      // `references` is a file: readdir fails with ENOTDIR, which is not the "skill missing" case.
+      await writeFile(join(tmp, 'references'), 'not a directory');
+      const load = authoringLoader(tmp);
+      expect(
+        await load().then(
+          () => 'read',
+          () => 'failed',
+        ),
+      ).toBe('failed');
+      await rm(join(tmp, 'references'));
+      await cp(resolve(root, 'skills/agentic-ddd'), tmp, { recursive: true });
+      expect((await load())?.map((a) => a.path)).toContain('SKILL.md');
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
+  });
+
   test('a missing directory is null, not an error, and carries no path', async () => {
     expect(await authoringLoader(resolve(root, 'no-such-dir'))()).toBeNull();
+  });
+
+  test('a missing directory is not kept: the skill appearing later is read once and then kept', async () => {
+    const tmp = await mkdtemp(join(tmpdir(), 'agentic-late-'));
+    const dir = join(tmp, 'skill');
+    try {
+      const load = authoringLoader(dir);
+      expect(await load()).toBeNull();
+      await cp(resolve(root, 'skills/agentic-ddd'), dir, { recursive: true });
+      const loaded = await load();
+      expect(loaded?.map((d) => d.path)).toContain('SKILL.md');
+      await rm(dir, { recursive: true, force: true });
+      expect(await load()).toBe(loaded);
+    } finally {
+      await rm(tmp, { recursive: true, force: true });
+    }
   });
 });
 
