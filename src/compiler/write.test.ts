@@ -23,6 +23,7 @@ import {
   extractAgentsBlock,
   checkOutputs,
   mergeAgentsBlock,
+  writeFileAtomic,
   writeOutputs,
 } from './write';
 
@@ -35,6 +36,12 @@ const block = `${BLOCK_BEGIN}\nconteúdo\n${BLOCK_END}`;
 
 let out: string;
 let config: ResolvedConfig;
+
+const rejection = (promise: Promise<unknown>): Promise<unknown> =>
+  promise.then(
+    () => null,
+    (error: unknown) => error,
+  );
 
 beforeEach(async () => {
   out = await mkdtemp(join(tmpdir(), 'agentic-write-'));
@@ -338,6 +345,69 @@ describe('writeOutputs / checkOutputs', () => {
     expect(await checkOutputs(config, rendered)).toEqual([
       { path: '.agents/skills/shop-dev', reason: 'conflict' },
     ]);
+  });
+
+  test('AGENTS.md that cannot be read fails write and check without touching the skills', async () => {
+    await writeOutputs(config, rendered);
+    const skillPath = join(out, '.agents/skills/shop-dev/SKILL.md');
+    // a hand edit that a rewrite of the skill directory would erase
+    const before = `${await readFile(skillPath, 'utf8')}\nhand edit\n`;
+    await writeFile(skillPath, before);
+    await rm(join(out, 'AGENTS.md'));
+    await mkdir(join(out, 'AGENTS.md'));
+
+    expect(await rejection(writeOutputs(config, rendered))).toBeInstanceOf(
+      Error,
+    );
+    expect(await readFile(skillPath, 'utf8')).toBe(before);
+    expect((await lstat(join(out, 'AGENTS.md'))).isDirectory()).toBe(true);
+    expect(await rejection(checkOutputs(config, rendered))).toBeInstanceOf(
+      Error,
+    );
+  });
+
+  test('a stray plain file among the skill directories breaks neither write nor check', async () => {
+    await mkdir(join(out, '.agents/skills'), { recursive: true });
+    await writeFile(join(out, '.agents/skills/stray.txt'), 'stray\n');
+
+    await writeOutputs(config, rendered);
+
+    expect(await checkOutputs(config, rendered)).toEqual([]);
+    expect(await readFile(join(out, '.agents/skills/stray.txt'), 'utf8')).toBe(
+      'stray\n',
+    );
+  });
+
+  test('a symbolic link AGENTS.md stays a link and its target gets the block', async () => {
+    const target = join(out, 'real-agents.md');
+    await writeFile(target, '# Team notes\n');
+    await symlink(target, join(out, 'AGENTS.md'));
+
+    await writeOutputs(config, rendered);
+
+    expect((await lstat(join(out, 'AGENTS.md'))).isSymbolicLink()).toBe(true);
+    const text = await readFile(target, 'utf8');
+    expect(text.startsWith('# Team notes\n')).toBe(true);
+    expect(text).toContain(BLOCK_BEGIN);
+    expect((await readdir(out)).filter((n) => n.endsWith('.tmp'))).toEqual([]);
+  });
+
+  test('writeFileAtomic replaces the content and leaves no temporary file', async () => {
+    const path = join(out, 'atomic.txt');
+    await writeFile(path, 'old\n');
+    await writeFileAtomic(path, 'new\n');
+    expect(await readFile(path, 'utf8')).toBe('new\n');
+    expect((await readdir(out)).filter((n) => n.endsWith('.tmp'))).toEqual([]);
+  });
+
+  test('writeFileAtomic keeps the destination and cleans up when the rename fails', async () => {
+    const path = join(out, 'is-a-dir');
+    await mkdir(path);
+    expect(await rejection(writeFileAtomic(path, 'x\n'))).toBeInstanceOf(
+      Error,
+    );
+    expect((await lstat(path)).isDirectory()).toBe(true);
+    expect((await readdir(out)).filter((n) => n.endsWith('.tmp'))).toEqual([]);
   });
 
   test('a marca de gerado só vale no frontmatter', async () => {

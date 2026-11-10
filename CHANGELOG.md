@@ -8,6 +8,8 @@
 
 - **`BUNDLE.md` and ADR-0007 D15 state the trust model of `agentic apply` (#178):** `BUNDLE.md` now says that applying a bundle runs its code (the `compile` step imports the module files), so apply only bundles you trust; ADR-0007 D15 records this trust model (integrity, not authorship; no sandbox for now). The bundle hash is unchanged (`BUNDLE.md` is derived and not hashed), so existing bundles apply as before.
 
+- **Behaviour change — `compile` stops before writing when a user file cannot be read (#169):** `compile` and `compile --check` now fail when `AGENTS.md` or `CLAUDE.md` exists but cannot be read (for example it is a directory or permission is denied), instead of treating it as absent. `compile` reads both before it removes or writes any file, so nothing is changed on failure, and the lock and `AGENTS.md` are written atomically (temporary file plus rename, following a symbolic link to its target).
+
 ## [0.6.0] — 2026-11-09
 
 - **Published on npm as `agentic-ddd`:** the package was called `nestjs-agentic-ddd-architecture` and shipped only as a GitHub release tarball; it is now public on the npm registry. Imports change from `nestjs-agentic-ddd-architecture/<boundary>` to `agentic-ddd/<boundary>` (same eight boundaries, same `agentic-ddd` binary). `private: true` and the `prepublishOnly` gate (`scripts/block-publish.cjs`) are gone; `docs/distribution.md` lists the publication steps.

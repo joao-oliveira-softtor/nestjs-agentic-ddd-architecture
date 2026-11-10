@@ -1,15 +1,18 @@
+import { randomUUID } from 'node:crypto';
 import {
   lstat,
   mkdir,
   readFile,
   readdir,
   readlink,
+  realpath,
+  rename,
   rm,
   symlink,
   writeFile,
 } from 'node:fs/promises';
 import type { Stats } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import type { ResolvedConfig } from './config';
 import { toPosix, type Coded } from './ir';
 import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
@@ -36,11 +39,34 @@ export interface WriteResult {
 export const GENERATED_MARK = 'agentic-ddd.generated: "true"';
 export const CLAUDE_MD_CONTENT = '@AGENTS.md\n';
 
+export async function writeFileAtomic(
+  path: string,
+  content: string,
+): Promise<void> {
+  // A symbolic link is written through, so the user's link is not replaced by a file.
+  const target = await realpath(path).catch(() => path);
+  const temporary = join(
+    dirname(target),
+    `.${basename(target)}.${randomUUID()}.tmp`,
+  );
+  try {
+    await writeFile(temporary, content);
+    await rename(temporary, target);
+  } catch (error) {
+    await rm(temporary, { force: true });
+    throw error;
+  }
+}
+
+const ABSENT = new Set(['ENOENT', 'ENOTDIR']);
+
+// Only "does not exist" is null: an unreadable file (EISDIR, EACCES) must not look absent.
 async function readOrNull(path: string): Promise<string | null> {
   try {
     return await readFile(path, 'utf8');
-  } catch {
-    return null;
+  } catch (error) {
+    if (ABSENT.has((error as NodeJS.ErrnoException).code ?? '')) return null;
+    throw error;
   }
 }
 
@@ -185,6 +211,11 @@ export async function writeOutputs(
 ): Promise<WriteResult> {
   const written: string[] = [];
   const warnings: string[] = [];
+  // Read the user's files first: if one cannot be read, nothing has been written yet.
+  const agentsPath = join(config.outRoot, config.out.agentsMd);
+  const claudePath = join(config.outRoot, config.out.claudeMd);
+  const existingAgents = await readOrNull(agentsPath);
+  const existingClaude = await readOrNull(claudePath);
   const conflicts = await conflictingDirs(config, rendered);
   for (const dir of [...conflicts].sort()) {
     warnings.push(
@@ -212,16 +243,14 @@ export async function writeOutputs(
     written.push(path);
   }
 
-  const agentsPath = join(config.outRoot, config.out.agentsMd);
   await mkdir(dirname(agentsPath), { recursive: true });
-  await writeFile(
+  await writeFileAtomic(
     agentsPath,
-    mergeAgentsBlock(await readOrNull(agentsPath), rendered.agentsBlock),
+    mergeAgentsBlock(existingAgents, rendered.agentsBlock),
   );
   written.push(config.out.agentsMd);
 
-  const claudePath = join(config.outRoot, config.out.claudeMd);
-  if ((await readOrNull(claudePath)) === null) {
+  if (existingClaude === null) {
     await mkdir(dirname(claudePath), { recursive: true });
     await writeFile(claudePath, CLAUDE_MD_CONTENT);
     written.push(config.out.claudeMd);

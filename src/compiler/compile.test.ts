@@ -103,6 +103,17 @@ describe('compile (exemplo orders)', () => {
     ]);
   });
 
+  test('a successful write leaves no temporary file next to the lock or AGENTS.md', async () => {
+    await bootstrapChanges(out);
+    await compile({ configPath, outRoot: out, mode: 'write' });
+    expect(
+      [...(await readdir(out)), ...(await readdir(join(out, '.agentic')))].filter(
+        (name) => name.endsWith('.tmp'),
+      ),
+    ).toEqual([]);
+    await access(join(out, '.agentic/domain.lock.json'));
+  });
+
   test('avisa quando CLAUDE.md existe sem @AGENTS.md', async () => {
     await writeFile(join(out, 'CLAUDE.md'), 'meu arquivo\n');
     const result = await compile({ configPath, outRoot: out, mode: 'write' });

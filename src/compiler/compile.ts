@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { defaultRegistry, type Registry } from '@agentic-ddd/decorators';
 import { analyze } from './analyze';
@@ -25,7 +25,12 @@ import { removeSnapshot, sourceLines, writeSnapshot } from './snapshot';
 import { stableStringify } from './canonical';
 import { registrySizes, scopeRegistry } from './scope';
 import { relationWarnings } from './validate';
-import { checkOutputs, writeOutputs, type Drift } from './write';
+import {
+  checkOutputs,
+  writeFileAtomic,
+  writeOutputs,
+  type Drift,
+} from './write';
 
 export interface CompileOptions {
   readonly configPath: string;
@@ -249,7 +254,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   }
   if (commit && lockText !== null) {
     await mkdir(dirname(lockAbs), { recursive: true });
-    await writeFile(lockAbs, lockText);
+    await writeFileAtomic(lockAbs, lockText);
     written.push(config.out.lock);
   }
   if (
