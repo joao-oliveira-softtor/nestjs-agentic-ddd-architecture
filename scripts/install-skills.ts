@@ -236,6 +236,13 @@ export function parseInstallArgs(args: string[]): InstallOptions {
   };
 }
 
+export function symlinkHint(error: unknown): string | undefined {
+  const { code, syscall } = (error ?? {}) as NodeJS.ErrnoException;
+  return code === 'EPERM' && syscall === 'symlink'
+    ? 'Enable Windows Developer Mode or run as administrator to create symlinks.'
+    : undefined;
+}
+
 if (import.meta.main) {
   let options: InstallOptions;
   try {
@@ -248,6 +255,8 @@ if (import.meta.main) {
     for (const path of await installSkills(options)) console.log(path);
   } catch (error) {
     console.error(String(error));
+    const hint = symlinkHint(error);
+    if (hint) console.error(hint);
     process.exitCode = 1;
   }
 }

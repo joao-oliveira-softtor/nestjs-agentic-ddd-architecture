@@ -3,6 +3,7 @@
 ## [Não lançado]
 
 - **Proposals tolerate a BOM and CRLF checkouts (#167, #168):** `proposal.md` may start with a UTF-8 BOM (it used to fail with `proposal.frontmatter-missing`), and an archived proposal now hashes the same in LF and CRLF, so a Windows checkout no longer reports `proposal.applied-edited`. The hash is taken over the text without the BOM and with LF line endings; the file itself is never rewritten, and locks written before this change still verify.
+- **`skills:example` cleans up after a failure (#173):** `skills:example` now removes the half-built destination when it fails after creating it, so a rerun no longer stops at "Destino já existe", and `skills:example`/`skills:install` print a hint to enable Windows Developer Mode or run as administrator when symlink creation fails with `EPERM`.
 
 ## [0.6.0] — 2026-11-09
 
