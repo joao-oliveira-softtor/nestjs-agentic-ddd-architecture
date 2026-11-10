@@ -2,7 +2,7 @@
 
 ## [Não lançado]
 
-- **`compile` no longer deletes the skills before rewriting them (#170):** `compile` used to remove every generated skill directory and then write the new files, so a failure in the middle left the project without the skills it had. Files are now overwritten in place, and the stale files of a kept directory and the directories of removed modules are deleted only after every write succeeded. A failure mid-write can still leave a kept directory half updated, but never emptier than before. `compile` and `compile --check` share one rule for what counts as a stale file.
+- **`compile` no longer deletes the skills before rewriting them (#170):** `compile` used to remove every generated skill directory and then write the new files, so a failure in the middle left the project without the skills it had. Files are now overwritten in place, and the stale files of a kept directory and the directories of removed modules are deleted only after every generated file was written. A failure mid-write can still leave a kept directory half updated, but never emptier than before. `compile` and `compile --check` share one rule for what counts as a stale file.
 
 - **`compile --check` ignores CRLF-only differences (#168):** on a checkout where git converts text to CRLF (Windows with `core.autocrlf=true`), `compile --check` no longer reports the generated files, the `AGENTS.md` block or the lock as outdated when they differ only by line endings. Only the text read from disk is normalized for the comparison: the write path still keeps the line endings of the text outside the generated block. `docs/distribution.md` recommends `* text=auto eol=lf` in the consumer project's `.gitattributes`.
 

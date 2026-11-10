@@ -266,9 +266,17 @@ describe('writeOutputs / checkOutputs', () => {
     const blocked = join(out, '.agentic/runtime/catalog-operator/references');
     await rm(blocked, { recursive: true });
     await writeFile(blocked, 'not a directory\n');
+    const orphan = join(out, '.agents/skills/gone-dev');
+    await mkdir(orphan, { recursive: true });
+    await writeFile(
+      join(orphan, 'SKILL.md'),
+      '---\nname: gone-dev\nmetadata:\n  agentic-ddd.generated: "true"\n---\n',
+    );
 
     expect(await rejection(writeOutputs(config, rendered))).not.toBeNull();
 
+    // an orphan directory is removed only after every write, so it survives too
+    expect((await lstat(join(orphan, 'SKILL.md'))).isFile()).toBe(true);
     expect(await readFile(sentinel, 'utf8')).toBe('previous content\n');
     expect(
       await readFile(join(out, '.agents/skills/shop-dev/SKILL.md'), 'utf8'),
