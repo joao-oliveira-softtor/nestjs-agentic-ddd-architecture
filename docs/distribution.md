@@ -30,7 +30,7 @@ Não adicione paths de `@agentic-ddd/*` ao tsconfig do consumidor. Esses aliases
 | `agentic-ddd/decorators` | Declarações e registry compartilhado                                                                   |
 | `agentic-ddd/compiler`   | Configuração, IR, geração, verificação e coordenação                                                   |
 | `agentic-ddd/runtime`    | OperatorRuntime, ports, tipos e event bus                                                              |
-| `agentic-ddd/nestjs`     | AgenticModule e tokens de DI                                                                           |
+| `agentic-ddd/nestjs`     | AgenticModule, AgenticHttpModule e tokens de DI                                                                           |
 | `agentic-ddd/testing`    | covers, context e fakes; não exige bun:test                                                            |
 | `agentic-ddd/mcp`        | Servidor MCP local (stdio), somente leitura; requer o peer opcional @modelcontextprotocol/server 2.3.1 |
 | `agentic-ddd/elysia`     | Plugin `agentic()` e rotas de use-case tipadas para Eden; requer o peer opcional `elysia` ^1.4.30      |
@@ -46,6 +46,59 @@ A aplicação fornece agentic.config.ts com defineConfig do export compiler, dec
 Em checkout com conversão para CRLF (Windows com `core.autocrlf=true`), `compile --check` ignora a diferença de fim de linha nos arquivos gerados, no bloco do `AGENTS.md` e no lock; para manter o repositório estável, recomenda-se `* text=auto eol=lf` no `.gitattributes` da aplicação consumidora.
 
 CLI e compilador interpretam os caminhos a partir do config do consumidor. As instruções geradas usam o nome público do pacote. Imports privados de dist não são parte da API.
+
+## Runtime MCP in a Nest application
+
+Install the optional peers and the validated HTTP adapter alongside the Nest dependencies above.
+
+```bash
+bun add @modelcontextprotocol/server@2.3.1 jose@6.2.14 @nestbun/platform@0.1.2
+```
+
+After compiling the runtime skills, add the HTTP module alongside the root runtime and the feature that mounts your Operator. The application supplies its LLM, use-case providers and repositories through the usual Nest modules.
+
+```ts
+import { Module } from '@nestjs/common';
+import { AgenticHttpModule, AgenticModule } from 'agentic-ddd/nestjs';
+
+@Module({
+  imports: [
+    AgenticModule.forRoot({ modules, llm }),
+    OrdersModule,
+    AgenticHttpModule.forRoot({
+      issuer: 'https://identity.example.com',
+      resource: 'https://orders.example.com/mcp',
+      operatorAllowlist: ['order-operator'],
+      resolveContext: (claims) => ({ userId: claims.sub }),
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+Connect an MCP client using Streamable HTTP at `/mcp`. The public metadata at `/.well-known/oauth-protected-resource/mcp` identifies the authorization server. Request a bearer access token for the configured resource. The resource server discovers keys from the issuer, or the app can supply `jwksUri`. Use HTTPS for these URLs. HTTP is supported for loopback testing.
+
+A tool appears in `tools/list` when its Operator is mounted, its name is allowlisted, and the token grants `operator:run:<name>` or `operator:run:<name>:<module>` for its declared module. For example, `operator:run:order-operator:orders` grants the example Operator. The same check applies to `tools/call`. An empty allowlist exposes zero tools. Allowlisted names are public in the OAuth metadata. Send one JSON-RPC message per POST.
+
+Call a tool with `{"message":"Create an order"}`. The optional resolver receives the verified JWT claims. Return only the context fields the model needs, as the runtime includes the context in its conversation. Treat model context as prompt data. Enforce record-level authorization inside the application before committing changes. The runtime passes correlation IDs and a deadline signal to use cases. Approval goes through the application's `ApprovalPort`, which defaults to deny. A successful MCP call returns `structuredContent` with `runId`, `operator`, `status` and, when present, `reason` and `output`. This includes runs ending in `failed` or `timeout`. Set `includeEvents: true` to expose event names, payloads and metadata to authorized callers.
+
+When the app uses a global prefix, exclude both root routes. This BunAdapter configuration accepts JSON bodies up to 100 KiB and allows a run to spend up to 180 seconds waiting on a provider before the connection idles out.
+
+```ts
+const adapter = new BunAdapter({
+  bodyLimit: '100kb',
+  serve: { maxRequestBodySize: 102400, idleTimeout: 180 },
+});
+const app = await NestFactory.create(AppModule, adapter);
+app.setGlobalPrefix('api', {
+  exclude: ['mcp', '.well-known/oauth-protected-resource/mcp'],
+});
+await app.listen(3000);
+```
+
+A disconnected client can leave an Operator running until its deadline. When bundling a Nest app without Runtime MCP, mark the optional MCP SDK and `jose` as external dependencies.
+
+At a reverse proxy, preserve the public `Host` including any non-default port, forward the bearer header and the original `Origin`, and disable buffering for SSE. The endpoint compares the actual `Host` and any supplied `Origin` with `resource`. Set both the proxy's read timeout and Bun's idle timeout above the longest exposed Operator deadline, allowing time for authentication and response delivery.
 
 ## Servidor MCP local
 
@@ -128,7 +181,7 @@ A allowlist exclui testes, fixtures, snapshots, configurações, avaliações, n
 
 Não há workflow de publicação automática: quem publica é o mantenedor, a partir da `main` com o CI verde.
 
-1. Na PR de release: versão no `package.json` e no servidor MCP (`src/mcp/index.ts`), `CHANGELOG.md`, `docs/releases/<versão>.md` e a linha "Release atual" do README.
+1. Na PR de release: versão no `package.json` e nos servidores MCP (`src/mcp/version.ts`), `CHANGELOG.md`, `docs/releases/<versão>.md` e a linha "Release atual" do README.
 2. Depois do merge, na `main` atualizada: `bun install --frozen-lockfile` e `bun run test:package`, que constrói, empacota, audita e instala o tarball real.
 3. `npm pack` (o `prepack` gera o `dist` de novo) e `sha256sum agentic-ddd-<versão>.tgz > SHA256SUMS`: o `test:package` apaga o tarball que auditou, e o `npm publish` sem argumento não deixa nenhum.
 4. `npm publish agentic-ddd-<versão>.tgz`, que publica exatamente esse tarball (o npm pede a senha de uso único quando a conta tem 2FA).

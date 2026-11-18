@@ -13,6 +13,8 @@ import { stableStringify } from '../contracts/canonical';
 import { AgenticError, canonicalPath, formatCoded } from '../contracts/ir';
 import { compileBundle, type Bundle } from '../compiler/bundle/index';
 import { moduleAccess, type ModuleAccess } from '../auth/scopes';
+import { MCP_SERVER_VERSION } from './version';
+import { rejectHostOrigin } from './host-origin';
 import type { McpConfig } from '../compiler/config';
 import type { DomainLock } from '../compiler/lock';
 import type { ResolvedConventions } from '../compiler/conventions';
@@ -391,7 +393,7 @@ export function createDomainServer(
   };
   const annotations = { readOnlyHint: true, openWorldHint: false };
   const server = new McpServer(
-    { name: 'agentic-ddd', version: '0.7.0' },
+    { name: 'agentic-ddd', version: MCP_SERVER_VERSION },
     { instructions: INSTRUCTIONS },
   );
 
@@ -672,25 +674,6 @@ function allowedHostsAndOrigins(host: string, port: number, resource: URL) {
       [...hosts].map((h) => `http://${h}`).concat(resource.origin),
     ),
   };
-}
-
-function rejectHostOrigin(
-  request: Request,
-  { hosts, origins }: ReturnType<typeof allowedHostsAndOrigins>,
-): Response | undefined {
-  const refuse = (
-    code: 'mcp.host-denied' | 'mcp.origin-denied',
-    what: string,
-  ) =>
-    new Response(formatCoded({ code, message: `${what} not allowed` }), {
-      status: 403,
-    });
-  // A missing Origin is a non-browser client: allowed.
-  const origin = request.headers.get('origin');
-  if (!hosts.has((request.headers.get('host') ?? '').toLowerCase()))
-    return refuse('mcp.host-denied', 'Host');
-  if (origin !== null && !origins.has(origin.toLowerCase()))
-    return refuse('mcp.origin-denied', 'Origin');
 }
 
 export async function startMcpHttpServer({

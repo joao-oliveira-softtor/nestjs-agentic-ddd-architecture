@@ -37,6 +37,8 @@ export interface RuntimeOptions {
 }
 export interface MountedOperator {
   record: OperatorRecord;
+  /** IR module that owns the operator declaration. */
+  module: string;
   system: string;
   /** `@AgentEvent` payload schema by event name. */
   schemaFor: ReturnType<typeof schemaLookup>;
@@ -133,6 +135,7 @@ export class OperatorRuntime {
       throw new Error(`Duplicate operator ${record.name}`);
     this.#operators.set(record.name, {
       record,
+      module: ir.operators.find((o) => o.name === record.name)!.module,
       system: `${record.instructions}\n\n${front![2]}`,
       schemaFor: schemaLookup(registry),
       tools,
@@ -143,6 +146,17 @@ export class OperatorRuntime {
   /** The `@AgentUseCase` declaration of a class in this runtime's registry. */
   useCase(target: ClassRef): UseCaseRecord | undefined {
     return this.registry.useCases.find((u) => u.target === target);
+  }
+
+  /** Detached metadata of the mounted operators, sorted by name. */
+  listOperators(): { name: string; description: string; module: string }[] {
+    return [...this.#operators.values()]
+      .map(({ record, module }) => ({
+        name: record.name,
+        description: record.description,
+        module,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async run(name: string, input: RunInput): Promise<OperatorRunResult> {

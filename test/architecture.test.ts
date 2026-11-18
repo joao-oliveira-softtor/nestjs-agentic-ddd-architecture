@@ -99,14 +99,16 @@ describe('arquitetura', () => {
     expect([...fromCompiler, ...fromRuntime]).toEqual([]);
   });
 
-  test('nenhum @Controller no repositório', () => {
+  test('nenhum @Controller no repositório além do controller do Runtime MCP', () => {
     const files = [
       ...filesIn('src', { includeTests: true }),
       ...filesIn('examples', { includeTests: true }),
     ];
     expect(
-      files.filter((f) =>
-        readFileSync(resolve(ROOT, f), 'utf8').includes('@Controller('),
+      files.filter(
+        (f) =>
+          f !== 'src/nestjs/runtime-mcp.controller.ts' &&
+          readFileSync(resolve(ROOT, f), 'utf8').includes('@Controller('),
       ),
     ).toEqual([]);
   });
@@ -128,6 +130,7 @@ describe('arquitetura', () => {
       s === 'zod' ||
       s.startsWith('node:') ||
       s.startsWith('@modelcontextprotocol/') ||
+      (f === 'src/mcp/runtime-http.ts' && s === '@agentic-ddd/runtime') ||
       resolvesInto(f, s, 'src/mcp') ||
       /^\.\.\/compiler\/(lock|canonical|rules|snapshot|ir|config|published|conventions|graph|bundle\/index|delta\/schema|changes\/proposal|render\/dev-skill)$/.test(
         s,

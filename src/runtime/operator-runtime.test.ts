@@ -44,6 +44,24 @@ test('registration loads matching skill; request uses instructions, allowlist, s
   expect(req.toolChoice).toBe('auto');
 });
 
+test('listOperators returns detached name, description and module of mounted operators only', async () => {
+  const f = fixture();
+  const runtime = new OperatorRuntime({ ...f, llm: new FakeLlm([]) });
+  expect(runtime.listOperators()).toEqual([]);
+  await runtime.register(
+    f.Agent,
+    new Map([[f.Tool, { execute: async (input: unknown) => input }]]),
+  );
+  const [listed] = runtime.listOperators();
+  expect(listed).toEqual({
+    name: 'agent',
+    description: 'Agent',
+    module: 'app',
+  });
+  listed!.description = 'mutated';
+  expect(runtime.listOperators()[0]!.description).toBe('Agent');
+});
+
 for (const variant of [
   'missing',
   'stale',
