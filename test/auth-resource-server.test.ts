@@ -762,5 +762,37 @@ describe('resource server', () => {
         .json()) as { scopes_supported: string[] };
       expect(document.scopes_supported).toEqual(['base', SCOPE, 'skill:read']);
     });
+
+    test('supportedScopes only changes what is advertised, not what the gate requires', async () => {
+      const server = createResourceServer({
+        issuer: auth.issuer,
+        resource: RESOURCE,
+        requiredScopes: [],
+        anyOfScopes: ['operator:run:a'],
+        supportedScopes: ['operator:run:a', 'operator:run:b'],
+      });
+      const document = (await server
+        .metadata(new Request(RESOURCE))
+        .json()) as { scopes_supported: string[] };
+      expect(document.scopes_supported).toEqual([
+        'operator:run:a',
+        'operator:run:b',
+      ]);
+      const denied = await server.gate(
+        bearer(await mint(rsa, auth.issuer, { scope: 'operator:run:b' })),
+      );
+      await expectChallenge(denied, 403, 'auth.scope-missing');
+    });
+  });
+
+  test('the verified payload is exposed as extra.claims', async () => {
+    const result = (await gate(
+      bearer(await mint(rsa, auth.issuer)),
+    )) as AuthInfo;
+    expect(result.extra?.claims).toMatchObject({
+      iss: auth.issuer,
+      client_id: 'client-1',
+      scope: SCOPE,
+    });
   });
 });

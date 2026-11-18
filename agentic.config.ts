@@ -29,6 +29,7 @@ export default defineConfig({
       './test/package-transform.test.ts',
       './test/package.test.ts',
       './test/reviewer-report.test.ts',
+      './test/runtime-mcp.test.ts',
       './test/skills-example.test.ts',
       './test/skills-install.test.ts',
     ],

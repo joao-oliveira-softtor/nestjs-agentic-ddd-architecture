@@ -232,6 +232,21 @@ try {
   assert(agents.includes('bun run agentic-ddd status'));
   assert(!/\bbun run agentic\b(?!-ddd)/.test(agents));
   await run(['bun', 'run', 'agentic-ddd', 'status', '--static']);
+  // The same isolated consumer must also be able to use Nest without the HTTP peers.
+  for (const peer of ['@modelcontextprotocol/server', 'jose']) {
+    await rm(join(consumer, 'node_modules', peer), { recursive: true });
+  }
+  await run([
+    'bun',
+    '-e',
+    `
+    import { AgenticModule, AgenticHttpModule } from '${pkg.name}/nestjs';
+    if (typeof AgenticModule.forRoot !== 'function' || typeof AgenticHttpModule.forRoot !== 'function') {
+      throw new Error('Missing Nest module export');
+    }
+  `,
+  ]);
+  await run(['node', 'node_modules/typescript/bin/tsc', '-p', 'tsconfig.json']);
   console.log(
     `Package smoke passed (source + bundle, IR ${source.hash}, ${source.source}).`,
   );

@@ -35,6 +35,8 @@ export interface ResourceServerOptions {
   readonly requiredScopes: readonly string[];
   /** When set, the token must also grant at least one of these (same grammar as `requiredScopes`). */
   readonly anyOfScopes?: readonly string[];
+  /** Scopes advertised in public resource metadata. Defaults to the scopes checked by the gate. */
+  readonly supportedScopes?: readonly string[];
   /** Minimum delay between JWKS re-fetches on an unknown `kid` (default: jose's 30s). */
   readonly jwksCooldownMs?: number;
   /** Clock in ms (default `Date.now`); injectable for the failure window. */
@@ -252,6 +254,7 @@ function createVerifier(options: ResourceServerOptions): OAuthTokenVerifier {
         scopes: tokenScopes(payload),
         expiresAt: payload.exp,
         resource: new URL(resource),
+        extra: { claims: payload },
       };
     },
   };
@@ -276,7 +279,7 @@ export function createResourceServer(
   const document = {
     resource: options.resource,
     authorization_servers: [options.issuer],
-    scopes_supported: challenge.requiredScopes,
+    scopes_supported: options.supportedScopes ?? challenge.requiredScopes,
     bearer_methods_supported: ['header'],
   };
 
