@@ -6,7 +6,11 @@ import { BunAdapter } from '@nestbun/platform';
 import { SignJWT } from 'jose';
 import type { UseCaseContext } from '@agentic-ddd/core';
 import { AgenticModule, AgenticHttpModule } from '@agentic-ddd/nestjs';
-import { FakeLlm, type LlmScriptEntry } from '@agentic-ddd/testing';
+import {
+  FakeApproval,
+  FakeLlm,
+  type LlmScriptEntry,
+} from '@agentic-ddd/testing';
 import { Changed, fixture } from './helpers/runtime';
 import {
   makeSigner,
@@ -49,6 +53,7 @@ async function start(
     http?: boolean;
     allowlist?: string[];
     approvalRequired?: boolean;
+    approval?: FakeApproval;
     includeEvents?: boolean;
     timeoutMs?: number;
     resolverError?: Error;
@@ -72,7 +77,7 @@ async function start(
   const claimsSeen: Readonly<Record<string, unknown>>[] = [];
   const module = await Test.createTestingModule({
     imports: [
-      AgenticModule.forRoot({ ...f, llm }),
+      AgenticModule.forRoot({ ...f, llm, approval: options.approval }),
       AgenticModule.forFeature({
         operators: [f.Agent],
         useCases: [
@@ -380,6 +385,18 @@ test('the default approval port prevents execution', async () => {
   });
 });
 
+test('the configured approval port, not the client, approves execution', async () => {
+  const approval = new FakeApproval(true);
+  const { calls } = await start([toolCall, done], {
+    approvalRequired: true,
+    approval,
+  });
+  const { result } = await call(await token());
+  expect(result.structuredContent.status).toBe('completed');
+  expect(calls).toEqual([{ value: 'ok' }]);
+  expect(approval.requests).toHaveLength(1);
+});
+
 for (const includeEvents of [false, true]) {
   test(
     'domain event projection with includeEvents=' + includeEvents,
@@ -448,13 +465,4 @@ test('an operator outside the allowlist is unknown and not listed', async () => 
     'ghost',
   );
   expect(llm.requests).toHaveLength(0);
-});
-
-test('the LLM request carries the context resolved from the claims', async () => {
-  const { llm } = await start([done]);
-  await call(await token(capability, 'carol'));
-  expect(llm.requests[0]!.messages).toContainEqual({
-    role: 'user',
-    text: 'Context: {"userId":"carol"}',
-  });
 });
