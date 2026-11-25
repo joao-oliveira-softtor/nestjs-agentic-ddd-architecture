@@ -166,7 +166,7 @@ export async function installSkills(
           (await readFile(artifact.path, 'utf8')) === artifact.content;
     if (!matches)
       conflicts.push(
-        `${artifact.path}: conflito; recuso substituir arquivo/link existente`,
+        `${artifact.path}: conflito; recuso substituir arquivo/link existente (remova ${artifact.path} e rode de novo)`,
       );
   }
   if (conflicts.length) throw new Error([...new Set(conflicts)].join('\n'));
