@@ -86,3 +86,16 @@ describe('moduleOfPath', () => {
     expect(moduleOfPath([rich], 'a/x.ts')?.extra).toBe(1);
   });
 });
+
+describe('isInModule on case-insensitive paths', () => {
+  test('ignores case on win32', () => {
+    expect(
+      isInModule('Examples/Orders/x.ts', 'examples/orders', 'win32'),
+    ).toBe(true);
+  });
+  test('keeps case on other platforms', () => {
+    expect(
+      isInModule('Examples/Orders/x.ts', 'examples/orders', 'linux'),
+    ).toBe(false);
+  });
+});
