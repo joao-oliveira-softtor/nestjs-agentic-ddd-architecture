@@ -45,7 +45,13 @@ function copyRecord(
   >;
   seen.set(source, copy);
   for (const [key, value] of Object.entries(source)) {
-    copy[key] = copyDeep(value, seen);
+    // defineProperty: `copy[key] =` com a chave "__proto__" trocaria o protótipo.
+    Object.defineProperty(copy, key, {
+      value: copyDeep(value, seen),
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
   }
   return Object.freeze(copy);
 }
