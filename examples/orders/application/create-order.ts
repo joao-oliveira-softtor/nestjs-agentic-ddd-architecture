@@ -55,6 +55,7 @@ export class CreateOrder implements UseCase<
     input: CreateOrderInput,
     ctx: UseCaseContext,
   ): Promise<CreateOrderOutput> {
+    // Check-then-act: on a real database two concurrent creates with the same id can both pass findById; rely on a unique constraint in the repository.
     if (await this.orders.findById(input.order_id)) {
       throw new DomainError(
         'ORDER_ALREADY_EXISTS',
