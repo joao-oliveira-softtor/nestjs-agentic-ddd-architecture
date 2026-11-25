@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- `changeOwners` builds the owner index once per change instead of rebuilding the work items for every delta id (#175).
+
 - Nest applications can expose mounted Operators as scoped MCP tools over Streamable HTTP with `AgenticHttpModule.forRoot`. The optional module uses the shared OAuth resource server, accepts server-derived run context and supports opt-in domain events. [Configuration](docs/distribution.md#runtime-mcp-in-a-nest-application) (#123, #124).
 
 ## [0.7.0] — 2026-11-10
