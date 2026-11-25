@@ -430,3 +430,31 @@ test('failed and timed-out runs are MCP successes without internal errors', asyn
     expect(JSON.stringify(result)).not.toContain('private provider diagnostic');
   }
 });
+
+test('a message of the wrong type is rejected before the LLM is called', async () => {
+  const { llm } = await start();
+  const { error } = await call(await token(), 'agent', { message: 42 });
+  expect(error).toMatchObject({ code: -32602, message: 'Invalid arguments' });
+  expect(llm.requests).toHaveLength(0);
+});
+
+test('an operator outside the allowlist is unknown and not listed', async () => {
+  const { llm } = await start();
+  const bearer = await token();
+  const { error } = await call(bearer, 'ghost');
+  expect(error).toMatchObject({ code: -32602, message: 'Unknown tool' });
+  const tools = (await rpc('tools/list', {}, bearer)).result.tools;
+  expect(tools.map((tool: { name: string }) => tool.name)).not.toContain(
+    'ghost',
+  );
+  expect(llm.requests).toHaveLength(0);
+});
+
+test('the LLM request carries the context resolved from the claims', async () => {
+  const { llm } = await start([done]);
+  await call(await token(capability, 'carol'));
+  expect(llm.requests[0]!.messages).toContainEqual({
+    role: 'user',
+    text: 'Context: {"userId":"carol"}',
+  });
+});
