@@ -1,6 +1,7 @@
 import type { Proposal } from './changes/proposal';
 import { workItems, type WorkItem } from './graph';
 import { AgenticError, type IR } from './ir';
+import type { DomainLock } from './lock';
 import { itemSpecification, specHash } from './item-spec';
 import type { TestCaseResult, TestRun } from './verify/test-run';
 
@@ -42,12 +43,18 @@ export function evaluateStatus(input: {
   readonly ir: IR;
   readonly implemented: ReadonlyMap<string, boolean>;
   readonly proposals: readonly Proposal[];
+  readonly lock?: DomainLock | null;
   readonly evidence: TestRun;
   readonly mode: ProjectStatus['mode'];
   readonly diagnostics?: readonly string[];
 }): ProjectStatus {
   const items = workItems(input.ir).map((item): WorkItemStatus => {
-    const specification = itemSpecification(input.ir, item, input.proposals);
+    const specification = itemSpecification(
+      input.ir,
+      item,
+      input.proposals,
+      input.lock,
+    );
     const relevant = input.evidence.cases
       .filter((t) =>
         t.covers.some((id) => specification.obligations.includes(id)),

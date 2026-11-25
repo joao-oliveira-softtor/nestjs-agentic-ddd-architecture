@@ -414,3 +414,71 @@ test('selectChange monta os work items uma vez, não uma por id do delta', () =>
     spy.mockRestore();
   }
 });
+
+test('#179: emit acrescentado por proposta aberta sem teste que o cubra não chega a done', () => {
+  const added = parseProposal(
+    `---
+id: "0004"
+title: Publicação emite evento
+status: proposed
+origin: proposal-first
+delta:
+  modified: [usecase:publish_product]
+acceptance: []
+---
+## Motivo
+Novo evento.
+`,
+    '0004-evento',
+    'changes/0004-evento/proposal.md',
+    false,
+  ).proposal!;
+  const baseIr: IR = {
+    ...ir,
+    useCases: ir.useCases.map((u) =>
+      u.id === 'usecase:publish_product' ? { ...u, uses: [], emits: [] } : u,
+    ),
+  };
+  const lock = { lockVersion: 1 as const, ir: baseIr, changes: [] };
+  const id = 'addition:0004/usecase:publish_product/event:ProductPublished';
+  const use = 'addition:0004/usecase:publish_product/method:Product.publish';
+  const state = (cases: TestCaseResult[]) =>
+    evaluateStatus({
+      ir,
+      implemented,
+      proposals: [added],
+      lock,
+      evidence: { cases, exitCode: 0 },
+      mode: 'dynamic',
+    }).items.find((i) => i.id === 'usecase:publish_product')!;
+  expect(state(tests).state).toBe('implemented');
+  expect(state(tests).missingObligations).toEqual([id, use]);
+  const covered = state([
+    ...tests,
+    { ...tests[0]!, name: id, covers: [id, use] },
+  ]);
+  expect(covered.state).toBe('done');
+  // Aplicada, a proposta é arquivada e o lock passa a ser a IR atual: a adição vem do registro no lock.
+  const applied = (additions?: Record<string, string[]>) =>
+    evaluateStatus({
+      ir,
+      implemented,
+      proposals: [{ ...added, archived: true }],
+      lock: {
+        lockVersion: 1,
+        ir,
+        changes: [
+          { id: '0004', title: 't', path: 'p', summary: 's', hash: 'h', items: [], additions },
+        ],
+      },
+      evidence: { cases: tests, exitCode: 0 },
+      mode: 'dynamic',
+    }).items.find((i) => i.id === 'usecase:publish_product')!;
+  expect(
+    applied({
+      'usecase:publish_product': ['event:ProductPublished', 'method:Product.publish'],
+    }).missingObligations,
+  ).toEqual([id, use]);
+  // Mudança registrada antes do campo `additions` não ganha obrigação nova.
+  expect(applied().state).toBe('done');
+});

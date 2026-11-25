@@ -89,7 +89,12 @@ export async function packet(options: PacketOptions): Promise<string> {
     );
   return renderPacket(
     item,
-    itemSpecification(context.project.ir, item, context.proposals),
+    itemSpecification(
+      context.project.ir,
+      item,
+      context.proposals,
+      context.lock,
+    ),
     options.configPath,
   );
 }

@@ -58,7 +58,7 @@ export async function analyzeCandidate(
         specHash: item.specHash,
         packet: renderPacket(
           item,
-          itemSpecification(ir, item, context.proposals),
+          itemSpecification(ir, item, context.proposals, context.lock),
           configPath,
         ),
       };

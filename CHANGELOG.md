@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **Behaviour change — `verify` requires a test for the `uses` and `emits` a proposal adds to a use-case (#179):** an item whose Delta added a method to `uses` or an event to `emits` was certified `done` with no test exercising it. Each `uses`/`emits` a use-case listed in `delta.modified` has that the lock's IR did not becomes the obligation `addition:<proposal>/<use-case>/<method or event>`, to be named in a test's `covers` (which now accepts the `addition:` prefix). While the proposal is open the obligation is measured against the lock; when `compile` applies it, the lock's change entry records it in the new optional field `additions` (use-case id → added refs), so the obligation survives the archive. The lock version stays 1, older locks parse unchanged and changes applied before this release get no new obligation. Such an item drops from `done` to `implemented` until it has that test, and its spec hash changes.
+
 - `changeOwners` builds the owner index once per change instead of rebuilding the work items for every delta id (#175).
 
 - Nest applications can expose mounted Operators as scoped MCP tools over Streamable HTTP with `AgenticHttpModule.forRoot`. The optional module uses the shared OAuth resource server, accepts server-derived run context and supports opt-in domain events. [Configuration](docs/distribution.md#runtime-mcp-in-a-nest-application) (#123, #124).

@@ -1,6 +1,7 @@
 import { EMPTY_IR, elementsOf, semanticDiff, type DiffItem } from '../diff';
 import { workItems } from '../graph';
 import type { Coded, CompileError, IR } from '../ir';
+import { addedRefs } from '../item-spec';
 import type { DomainLock, LockChange } from '../lock';
 import {
   markApplied,
@@ -223,6 +224,8 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
     hash: proposalHash(appliedRaw),
     items,
   };
+  const additions = addedRefs(lock?.ir, input.ir, proposal.delta.modified);
+  if (Object.keys(additions).length) Object.assign(change, { additions });
   return {
     diff,
     nextLock: { lockVersion: 1, ir: input.ir, changes: [...recorded, change] },

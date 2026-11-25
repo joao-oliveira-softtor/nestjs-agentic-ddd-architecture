@@ -4,6 +4,7 @@ import { listProposals } from './changes/proposal';
 import { analyzeProject, type ProjectAnalysis } from './compile';
 import { implementation } from './implementation';
 import { AgenticError, formatCoded } from './ir';
+import { readLock, type DomainLock } from './lock';
 import {
   evaluateStatus,
   selectChange,
@@ -22,6 +23,8 @@ export interface StatusOptions {
 export interface StateContext {
   readonly project: ProjectAnalysis;
   readonly proposals: Proposal[];
+  /** The lock (`null` without one): base of an open proposal's additions and record of applied ones. */
+  readonly lock: DomainLock | null;
 }
 
 export async function stateContext(configPath: string): Promise<StateContext> {
@@ -40,7 +43,11 @@ export async function stateContext(configPath: string): Promise<StateContext> {
       'state.proposals-invalid',
       `invalid proposals:\n${listed.errors.map((e) => `${e.source}: ${formatCoded(e)}`).join('\n')}`,
     );
-  return { project, proposals: listed.proposals };
+  const lock = await readLock(
+    join(project.config.outRoot, project.config.out.lock),
+    project.config.out.lock,
+  );
+  return { project, proposals: listed.proposals, lock };
 }
 
 export function statusFromEvidence(
@@ -53,6 +60,7 @@ export function statusFromEvidence(
     ir: context.project.ir,
     implemented: implementation(context.project.ir, context.project.registry),
     proposals: context.proposals,
+    lock: context.lock,
     evidence,
     mode,
     diagnostics,

@@ -12,6 +12,8 @@ export interface LockChange {
   readonly summary: string;
   readonly hash: string;
   readonly items: DiffItem[];
+  /** `uses`/`emits` the change added to each modified use-case (#179); absent in locks written before. */
+  readonly additions?: Record<string, string[]>;
 }
 
 export interface DomainLock {
@@ -58,7 +60,15 @@ function isValidLockStructure(lock: unknown): lock is DomainLock {
       typeof ch.path !== 'string' ||
       typeof ch.summary !== 'string' ||
       typeof ch.hash !== 'string' ||
-      !Array.isArray(ch.items)
+      !Array.isArray(ch.items) ||
+      (ch.additions !== undefined &&
+        (ch.additions === null ||
+          typeof ch.additions !== 'object' ||
+          Array.isArray(ch.additions) ||
+          !Object.values(ch.additions).every(
+            (refs) =>
+              Array.isArray(refs) && refs.every((r) => typeof r === 'string'),
+          )))
     ) {
       return false;
     }

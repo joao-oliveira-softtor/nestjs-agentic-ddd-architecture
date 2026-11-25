@@ -10,6 +10,7 @@ import {
   type CompileError,
 } from '../ir';
 import { driftProblem } from '../write';
+import { additionObligations } from '../item-spec';
 import { readLock } from '../lock';
 import { statusFromEvidence } from '../project-state';
 import { workItemFindings } from './work-items';
@@ -91,6 +92,7 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
     ...proposals.flatMap((p) =>
       p.acceptance.map((c) => `criterion:${p.id}/${c.id}`),
     ),
+    ...[...additionObligations(check.ir, lock, proposals).values()].flat(),
   ]);
   return evaluateGates({
     workItemFindings: workItemFindings(
@@ -104,6 +106,7 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
             errors: [],
           },
           proposals,
+          lock,
         },
         tests,
       ),
