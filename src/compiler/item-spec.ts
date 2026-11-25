@@ -102,7 +102,8 @@ export function itemSpecification(
   ir: IR,
   item: WorkItem,
   proposals: readonly Proposal[],
-  lock?: DomainLock | null,
+  /** `additionObligations` of the whole project, computed once by the caller. */
+  additions: ReadonlyMap<string, string[]> = new Map(),
 ): ItemSpecification {
   const construction = (e: IREntity) => ({
     ...e,
@@ -199,7 +200,7 @@ export function itemSpecification(
       ...new Set([
         ...item.obligations,
         ...criteria.map((c) => c.obligation),
-        ...(additionObligations(ir, lock, proposals).get(item.id) ?? []),
+        ...(additions.get(item.id) ?? []),
       ]),
     ].sort(),
     criteria,

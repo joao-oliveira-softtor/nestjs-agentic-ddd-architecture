@@ -69,6 +69,20 @@ describe('lock', () => {
     ).toBe('lock.incomplete');
   });
 
+  test('additions da mudança (#179): mapa de listas de string aceito, outro formato recusado', () => {
+    const withAdditions = (v: unknown): string =>
+      JSON.stringify({
+        ...lock,
+        changes: [{ ...lock.changes[0], additions: v }],
+      });
+    const ok = { 'usecase:pay_order': ['event:OrderRefunded'] };
+    expect(parseLock(withAdditions(ok), 'l.json').changes[0]!.additions).toEqual(ok);
+    for (const bad of [null, [], 'x', { u: 'x' }, { u: [1] }])
+      expect(codeOf(() => parseLock(withAdditions(bad), 'l.json'))).toBe(
+        'lock.incomplete',
+      );
+  });
+
   test('valueObjects no lock: array aceito, outro tipo recusado', () => {
     const withVo = (v: unknown): string =>
       JSON.stringify({ ...lock, ir: { ...lock.ir, valueObjects: v } });

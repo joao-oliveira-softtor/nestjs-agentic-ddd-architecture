@@ -12,6 +12,7 @@ import {
 } from './state';
 import { itemSpecification, specHash } from './item-spec';
 import type { IR, IRUseCase } from './ir';
+import type { DomainLock } from './lock';
 import type { TestCaseResult } from './verify/test-run';
 import { parseProposal } from './changes/proposal';
 import { workItems } from './graph';
@@ -481,4 +482,43 @@ Novo evento.
   ).toEqual([id, use]);
   // Mudança registrada antes do campo `additions` não ganha obrigação nova.
   expect(applied().state).toBe('done');
+});
+
+test('#179: specHash do item é o mesmo com a proposta aberta e depois de aplicada', async () => {
+  const { reconcile } = await import('./changes/reconcile');
+  const { additionObligations } = await import('./item-spec');
+  const baseIr: IR = {
+    ...ir,
+    useCases: ir.useCases.map((u) =>
+      u.id === 'usecase:publish_product' ? { ...u, uses: [], emits: [] } : u,
+    ),
+  };
+  const base: DomainLock = { lockVersion: 1, ir: baseIr, changes: [] };
+  const open = parseProposal(
+    `---
+id: "0004"
+title: Publicação
+status: proposed
+origin: proposal-first
+delta:
+  modified: [usecase:publish_product]
+acceptance: []
+---
+## Motivo
+Novo evento.
+`,
+    '0004-evento',
+    'changes/0004-evento/proposal.md',
+    false,
+  ).proposal!;
+  const plan = reconcile({ ir, lock: base, proposals: [open], changesDir: 'changes' });
+  expect(plan.errors).toEqual([]);
+  const item = workItems(ir).find((i) => i.id === 'usecase:publish_product')!;
+  const hash = (lock: DomainLock, proposals: (typeof open)[]) =>
+    specHash(
+      itemSpecification(ir, item, proposals, additionObligations(ir, lock, proposals)),
+    );
+  const before = hash(base, [open]);
+  expect(hash(plan.nextLock!, [{ ...open, archived: true }])).toBe(before);
+  expect(hash(base, [])).not.toBe(before);
 });

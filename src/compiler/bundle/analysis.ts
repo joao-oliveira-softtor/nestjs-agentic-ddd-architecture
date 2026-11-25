@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { z } from 'zod';
 import { semanticDiff } from '../diff';
-import { itemSpecification } from '../item-spec';
+import { additionObligations, itemSpecification } from '../item-spec';
 import { parseLock } from '../lock';
 import { renderPacket } from '../packet';
 import { collectStatus, stateContext } from '../project-state';
@@ -47,6 +47,7 @@ export async function analyzeCandidate(
     delta: { added: [], modified: touched, removed: [] },
   });
   const order = waves({ ...report, items: selected }).waves;
+  const additions = additionObligations(ir, context.lock, context.proposals);
   return {
     waves: order,
     items: order.flat().map((id) => {
@@ -58,7 +59,7 @@ export async function analyzeCandidate(
         specHash: item.specHash,
         packet: renderPacket(
           item,
-          itemSpecification(ir, item, context.proposals, context.lock),
+          itemSpecification(ir, item, context.proposals, additions),
           configPath,
         ),
       };

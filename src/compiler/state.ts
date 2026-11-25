@@ -2,7 +2,11 @@ import type { Proposal } from './changes/proposal';
 import { workItems, type WorkItem } from './graph';
 import { AgenticError, type IR } from './ir';
 import type { DomainLock } from './lock';
-import { itemSpecification, specHash } from './item-spec';
+import {
+  additionObligations,
+  itemSpecification,
+  specHash,
+} from './item-spec';
 import type { TestCaseResult, TestRun } from './verify/test-run';
 
 export type BaseState = 'declared' | 'implemented' | 'covered' | 'done';
@@ -48,12 +52,13 @@ export function evaluateStatus(input: {
   readonly mode: ProjectStatus['mode'];
   readonly diagnostics?: readonly string[];
 }): ProjectStatus {
+  const additions = additionObligations(input.ir, input.lock, input.proposals);
   const items = workItems(input.ir).map((item): WorkItemStatus => {
     const specification = itemSpecification(
       input.ir,
       item,
       input.proposals,
-      input.lock,
+      additions,
     );
     const relevant = input.evidence.cases
       .filter((t) =>

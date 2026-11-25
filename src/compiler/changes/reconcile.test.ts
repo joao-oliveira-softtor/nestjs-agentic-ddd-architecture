@@ -106,6 +106,33 @@ describe('reconcile', () => {
     ]);
   });
 
+  test('#179: aplicar registra no lock os uses/emits acrescentados ao use-case modificado', () => {
+    const base: IR = {
+      ...ir,
+      useCases: ir.useCases.map((u) =>
+        u.id === 'usecase:publish_product' ? { ...u, emits: [] } : u,
+      ),
+    };
+    const lock: DomainLock = { lockVersion: 1, ir: base, changes: [] };
+    const open = proposal({
+      delta: {
+        added: [],
+        modified: semanticDiff(base, ir).map((i) => i.id),
+        removed: [],
+      },
+      motivo: 'Novo evento.',
+    });
+    const plan = reconcile(input(lock, [open]));
+    expect(plan.pending).toEqual([]);
+    expect(plan.nextLock?.changes[0]?.additions).toEqual({
+      'usecase:publish_product': ['event:ProductPublished'],
+    });
+    // Nada acrescentado (o teste acima, estado inicial): o campo não é escrito.
+    expect(
+      'additions' in reconcile(input(null, [proposal({ motivo: 'Base.' })])).nextLock!.changes[0]!,
+    ).toBe(false);
+  });
+
   test.each([
     ['CRLF', (raw: string) => raw.replaceAll('\n', '\r\n')],
     ['a BOM', (raw: string) => `\uFEFF${raw}`],
