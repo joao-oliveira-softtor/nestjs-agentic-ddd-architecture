@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { z } from 'zod';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import {
@@ -8,11 +9,12 @@ import {
   renderBrief,
 } from '../briefs';
 import { sha256, stableStringify } from '../canonical';
-import { loadConfig, type ModuleConfig, type ResolvedConfig } from '../config';
+import type { ModuleConfig, ResolvedConfig } from '../config';
+import { ERROR_CODES, type ErrorCode } from '../../contracts/codes';
 import { DEFAULT_CONVENTIONS } from '../conventions';
 import { AgenticError, canonicalPath, toPosix } from '../ir';
 import { parseLock, type DomainLock } from '../lock';
-import { briefRules, loadRules, type Rule } from '../rules';
+import { briefRules, type Rule } from '../rules';
 import { renderDelta, type RenderResult } from '../delta/render';
 import { validateDelta, type Delta } from '../delta/schema';
 import { splice, type Fragment } from '../delta/splice';
@@ -137,41 +139,72 @@ interface Base {
   readonly lock: DomainLock;
 }
 
+/**
+ * The `bundle-base` child's output. The config and rules are produced by our own CLI code, so they
+ * are typed, not re-validated; the code of a refusal is checked against the known codes.
+ */
+const baseOutputSchema = z.union([
+  z.strictObject({
+    error: z.strictObject({
+      code: z
+        .string()
+        .refine((code): code is ErrorCode => Object.hasOwn(ERROR_CODES, code)),
+      message: z.string(),
+    }),
+  }),
+  z.strictObject({
+    config: z.custom<ResolvedConfig>(
+      (v) => typeof v === 'object' && v !== null,
+    ),
+    rules: z.array(z.custom<Rule>((v) => typeof v === 'object' && v !== null)),
+    module: z.custom<ModuleConfig>((v) => typeof v === 'object' && v !== null),
+    lockText: z.string(),
+  }),
+]);
+
+/** Reads the base config in a child process: importing it here would pile up module copies in the server (#177). */
 async function loadBase(
   dir: string,
   configRel: string,
   delta: unknown,
+  run: { cliEntry: string; remaining: () => number; hide: readonly string[] },
 ): Promise<Base> {
   if (!existsSync(join(dir, configRel)))
     throw new AgenticError(
       'bundle.config-missing',
       `the project config ${quote(configRel)} is not committed in the base ref`,
     );
-  const config = await loadConfig(join(dir, configRel));
   const wanted = (delta as { module?: unknown } | null)?.module;
-  const module = config.modules.find((m) => m.name === wanted);
-  if (!module)
+  const out = join(dir, '.bundle-base.json');
+  await runCandidateCli(
+    dir,
+    run.cliEntry,
+    [
+      'bundle-base',
+      '--config',
+      configRel,
+      '--module',
+      String(wanted),
+      '--out',
+      out,
+    ],
+    run.remaining(),
+    'base config',
+    run.hide,
+  );
+  const text = await readFile(out, 'utf8').catch(() => {
     throw new AgenticError(
-      'bundle.module-unknown',
-      `module ${quote(String(wanted))} is not configured in the base project`,
+      'bundle.compile-failed',
+      'reading the base config produced no result',
     );
-  // EOL rule: every text that feeds a hash is LF (`toLf`). A checkout may be CRLF
-  // (core.autocrlf), but the committed bytes, which `apply` recomputes from, are LF.
-  const lockText = await readFile(join(config.outRoot, config.out.lock), 'utf8')
-    .then(toLf)
-    .catch(() => null);
-  if (lockText === null)
-    throw new AgenticError(
-      'bundle.base-lock-missing',
-      `the base commit has no ${config.out.lock}; run \`agentic compile\` there first`,
-    );
+  });
+  const base = baseOutputSchema.parse(JSON.parse(text));
+  if ('error' in base)
+    throw new AgenticError(base.error.code, base.error.message);
   return {
-    config,
-    rules: await loadRules(config),
-    module,
-    moduleRoot: resolve(config.root, module.path),
-    lockText,
-    lock: parseLock(lockText, config.out.lock),
+    ...base,
+    moduleRoot: resolve(base.config.root, base.module.path),
+    lock: parseLock(base.lockText, base.config.out.lock),
   };
 }
 
@@ -498,7 +531,12 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
     baseRef,
     2 * timeoutMs,
     async (dir) => {
-      const base = await loadBase(dir, configRel, input.delta);
+      const hide = [input.baseRoot, top];
+      const base = await loadBase(dir, configRel, input.delta, {
+        cliEntry,
+        remaining,
+        hide,
+      });
       const rendered = await renderOnBase(input.delta, base);
       await writeRendered(base.moduleRoot, rendered);
       const numbered = await writeProposal(base, proposal);
@@ -507,7 +545,7 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
         cliEntry,
         remaining,
         configRel,
-        hide: [input.baseRoot, top],
+        hide,
         base,
       });
       return assemble({

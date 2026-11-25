@@ -9,6 +9,7 @@ import { packetCommand } from './commands/packet';
 import { mcpCommand } from './commands/mcp';
 import { publishLockCommand } from './commands/publishLock';
 import { bundleAnalysisCommand } from './commands/bundleAnalysis';
+import { bundleBaseCommand } from './commands/bundleBase';
 
 export { USAGE };
 
@@ -25,6 +26,7 @@ const COMMANDS: Readonly<
   mcp: (args) => mcpCommand(args),
   'publish-lock': publishLockCommand,
   'bundle-analysis': bundleAnalysisCommand,
+  'bundle-base': bundleBaseCommand,
 };
 
 export async function main(argv: readonly string[]): Promise<number> {

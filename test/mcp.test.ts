@@ -248,7 +248,16 @@ describe('propose_change concurrency', () => {
     try {
       await mkdir(repo.work, { recursive: true });
       const slow = join(repo.work, 'slow-cli.ts');
-      await writeFile(slow, 'await Bun.sleep(60_000);\n');
+      // bundle-base goes to the real CLI (#177), so the hang is in the compile child.
+      await writeFile(
+        slow,
+        `if (process.argv[2] === 'bundle-base') {
+  const { main } = await import(${JSON.stringify(join(import.meta.dir, '../src/cli/main.ts'))});
+  process.exit(await main(process.argv.slice(2)));
+}
+await Bun.sleep(60_000);
+`,
+      );
       const input = {
         delta: additionDelta(),
         baseRoot: repo.root,

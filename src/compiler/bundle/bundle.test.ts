@@ -23,6 +23,12 @@ import { compileBundle, type Bundle } from './index';
 import { neutralLeaks } from './__fixtures__/neutral-testkit';
 
 const ROOT = resolve(import.meta.dir, '../../..');
+/** Script prefix: hands `bundle-base` to the real CLI, so a fake CLI fails only at the step it targets. */
+const FORWARD_BASE = `if (process.argv[2] === 'bundle-base') {
+  const { main } = await import(${JSON.stringify(join(ROOT, 'src/cli/main.ts'))});
+  process.exit(await main(process.argv.slice(2)));
+}
+`;
 const dirs: string[] = [];
 
 /** The shared shop fixture, its root tracked for cleanup. */
@@ -187,19 +193,49 @@ describe('compileBundle on the shop project', () => {
 
   test('stores nothing after a compile failure', async () => {
     const script = join(repo.work, 'fail-cli.ts');
-    await writeFile(script, 'console.error("boom");\nprocess.exit(1);\n');
+    await writeFile(
+      script,
+      `${FORWARD_BASE}console.error("boom");\nprocess.exit(1);\n`,
+    );
     expect(await refusal(compileBundle({ ...input(), cliEntry: script }))).toBe(
       'bundle.compile-failed',
     );
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
   }, 120_000);
 
-  test('stops a compile that outlives the timeout and stores nothing', async () => {
-    const script = join(repo.work, 'hang-cli.ts');
-    await writeFile(script, 'await Bun.sleep(60_000);\n');
+  test('a failing base-config child is refused as compile-failed (#177)', async () => {
+    const script = join(repo.work, 'fail-base-cli.ts');
+    await writeFile(script, 'process.exit(1);\n');
+    expect(await refusal(compileBundle({ ...input(), cliEntry: script }))).toBe(
+      'bundle.compile-failed',
+    );
+  }, 120_000);
+
+  test('a hanging base-config child is stopped as compile-timeout (#177)', async () => {
+    const script = join(repo.work, 'hang-base-cli.ts');
+    await writeFile(
+      script,
+      "if (process.argv[2] === 'bundle-base') await Bun.sleep(60_000);\nprocess.exit(1);\n",
+    );
     expect(
       await refusal(
         compileBundle({ ...input(), cliEntry: script, timeoutMs: 500 }),
+      ),
+    ).toBe('bundle.compile-timeout');
+  }, 120_000);
+
+  test('the server process never loads the project config or rules (#177)', async () => {
+    const source = await readFile(join(import.meta.dir, 'index.ts'), 'utf8');
+    expect(source).not.toMatch(/\bloadConfig\b/);
+    expect(source).not.toMatch(/\bloadRules\b/);
+  });
+
+  test('stops a compile that outlives the timeout and stores nothing', async () => {
+    const script = join(repo.work, 'hang-cli.ts');
+    await writeFile(script, `${FORWARD_BASE}await Bun.sleep(60_000);\n`);
+    expect(
+      await refusal(
+        compileBundle({ ...input(), cliEntry: script, timeoutMs: 5000 }),
       ),
     ).toBe('bundle.compile-timeout');
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
@@ -364,7 +400,7 @@ export {};
     await writeFile(
       script,
       `import { writeFileSync } from 'node:fs';
-if (process.argv[2] === 'compile') process.exit(0);
+${FORWARD_BASE}if (process.argv[2] === 'compile') process.exit(0);
 writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));
 await Bun.sleep(60_000);
 `,
@@ -415,12 +451,18 @@ describe('the project config and the team rules', () => {
   test('the executor briefs carry the team rules that apply to their file', async () => {
     const ruled = await shopRepo(async (root) => {
       await mkdir(join(root, '.ai/rules'), { recursive: true });
-      await writeFile(join(root, '.ai/rules/style.md'), '- Prefer early returns.\n');
+      await writeFile(
+        join(root, '.ai/rules/style.md'),
+        '- Prefer early returns.\n',
+      );
     });
     const bundle = await compileBundle(asBundle(ruled));
-    const briefs = bundle.files.filter((f) => f.path.startsWith('target/briefs/'));
+    const briefs = bundle.files.filter((f) =>
+      f.path.startsWith('target/briefs/'),
+    );
     expect(briefs.length).toBeGreaterThan(0);
-    for (const b of briefs) expect(b.content).toContain('Prefer early returns.');
+    for (const b of briefs)
+      expect(b.content).toContain('Prefer early returns.');
   }, 120_000);
 
   test('team rules over the brief budget are a coded error, not an internal one', async () => {
