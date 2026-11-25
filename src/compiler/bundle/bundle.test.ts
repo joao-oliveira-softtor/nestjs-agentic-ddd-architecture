@@ -224,6 +224,77 @@ describe('compileBundle on the shop project', () => {
     ).toBe('bundle.compile-timeout');
   }, 120_000);
 
+  /** A fake CLI that writes `body` (JS, `out` in scope) to the `--out` of the step `step`. */
+  const writesOut = async (name: string, step: string, body: string) => {
+    const script = join(repo.work, name);
+    await writeFile(
+      script,
+      `import { readFileSync, writeFileSync } from 'node:fs';
+const out = process.argv[process.argv.indexOf('--out') + 1];
+if (process.argv[2] === ${JSON.stringify(step)}) {
+${body}
+  process.exit(0);
+}
+${FORWARD_BASE}process.exit(0);
+`,
+    );
+    return script;
+  };
+
+  test('a malformed base-config or analysis output is refused as compile-failed (#177)', async () => {
+    for (const step of ['bundle-base', 'bundle-analysis']) {
+      const script = await writesOut(
+        `garbage-${step}.ts`,
+        step,
+        "writeFileSync(out, '{not json');",
+      );
+      expect(
+        await refusal(compileBundle({ ...input(), cliEntry: script })),
+      ).toBe('bundle.compile-failed');
+      const shape = await writesOut(
+        `shape-${step}.ts`,
+        step,
+        'writeFileSync(out, \'{"x":1}\');',
+      );
+      expect(
+        await refusal(compileBundle({ ...input(), cliEntry: shape })),
+      ).toBe('bundle.compile-failed');
+    }
+  }, 240_000);
+
+  test('a base config whose root or module is outside the worktree is refused (#177)', async () => {
+    for (const [name, edit] of [
+      ['root', "base.config.root = '/';"],
+      ['module', "base.module.path = '../../outside';"],
+    ]) {
+      const script = await writesOut(
+        `escape-${name}.ts`,
+        'bundle-base',
+        `  const { main } = await import(${JSON.stringify(join(ROOT, 'src/cli/main.ts'))});
+  await main(process.argv.slice(2));
+  const base = JSON.parse(readFileSync(out, 'utf8'));
+  ${edit}
+  writeFileSync(out, JSON.stringify(base));`,
+      );
+      expect(
+        await refusal(compileBundle({ ...input(), cliEntry: script })),
+      ).toBe('bundle.path-escape');
+    }
+  }, 120_000);
+
+  test('a coded refusal from the base child has the worktree path redacted (#177)', async () => {
+    const script = await writesOut(
+      'leaky-base.ts',
+      'bundle-base',
+      "writeFileSync(out, JSON.stringify({ error: { code: 'bundle.module-unknown', message: 'at ' + process.cwd() } }));",
+    );
+    const error = (await compileBundle({ ...input(), cliEntry: script }).catch(
+      (e: unknown) => e,
+    )) as { code: string; message: string };
+    expect(error.code).toBe('bundle.module-unknown');
+    expect(error.message).toBe('at <candidate>');
+  }, 120_000);
+
   test('the server process never loads the project config or rules (#177)', async () => {
     const source = await readFile(join(import.meta.dir, 'index.ts'), 'utf8');
     expect(source).not.toMatch(/\bloadConfig\b/);

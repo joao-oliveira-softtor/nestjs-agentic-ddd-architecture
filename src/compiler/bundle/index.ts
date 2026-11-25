@@ -24,6 +24,7 @@ import {
   DEFAULT_TIMEOUT_MS,
   defaultCliEntry,
   quote,
+  redact,
   repoTop,
   resolveBase,
   runCandidateCli,
@@ -139,6 +140,18 @@ interface Base {
   readonly lock: DomainLock;
 }
 
+/** A child's JSON output, checked once; broken output is a failed step, not a raw parse error. */
+function parseChild<T>(schema: z.ZodType<T>, text: string, what: string): T {
+  try {
+    return schema.parse(JSON.parse(text));
+  } catch {
+    throw new AgenticError(
+      'bundle.compile-failed',
+      `${what} of the candidate tree produced malformed output`,
+    );
+  }
+}
+
 /**
  * The `bundle-base` child's output. The config and rules are produced by our own CLI code, so they
  * are typed, not re-validated; the code of a refusal is checked against the known codes.
@@ -198,12 +211,25 @@ async function loadBase(
       'reading the base config produced no result',
     );
   });
-  const base = baseOutputSchema.parse(JSON.parse(text));
+  const base = parseChild(baseOutputSchema, text, 'the base config');
   if ('error' in base)
-    throw new AgenticError(base.error.code, base.error.message);
+    throw new AgenticError(
+      base.error.code,
+      redact(base.error.message, [
+        [dir, '<candidate>'],
+        ...run.hide.map((p): [string, string] => [p, '<base>']),
+      ]),
+    );
+  // The child read candidate-controlled config: its paths must stay in the worktree.
+  if (canonicalPath(base.config.root) !== canonicalPath(dir))
+    inside(canonicalPath(dir), canonicalPath(base.config.root));
+  const moduleRoot = inside(
+    canonicalPath(dir),
+    resolve(canonicalPath(base.config.root), base.module.path),
+  );
   return {
     ...base,
-    moduleRoot: resolve(base.config.root, base.module.path),
+    moduleRoot,
     lock: parseLock(base.lockText, base.config.out.lock),
   };
 }
@@ -365,7 +391,7 @@ async function analyzeTree(run: {
       'analysis of the candidate tree produced no result',
     );
   });
-  return analysisSchema.parse(JSON.parse(text));
+  return parseChild(analysisSchema, text, 'the analysis');
 }
 
 /** The rendered files and fragments, as full contents of the candidate. */

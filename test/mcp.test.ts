@@ -264,9 +264,9 @@ await Bun.sleep(60_000);
         baseRef: 'HEAD',
         proposal: shopProposal(),
       };
-      // The first call hangs in the child until the 1 s timeout, so the second arrives mid-flight.
+      // The first call hangs in the child until the 5 s timeout, so the second arrives mid-flight.
       const first = withProposeSlot(() =>
-        compileBundle({ ...input, cliEntry: slow, timeoutMs: 1000 }),
+        compileBundle({ ...input, cliEntry: slow, timeoutMs: 5000 }),
       ).catch((e: { code: string }) => e.code);
       const second = await withProposeSlot(async () => 'ran').catch(
         (e: { code: string }) => e.code,
