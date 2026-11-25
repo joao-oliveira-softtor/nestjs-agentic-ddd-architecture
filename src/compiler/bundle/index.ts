@@ -1,7 +1,20 @@
 import { existsSync } from 'node:fs';
 import { z } from 'zod';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import {
+  mkdir,
+  readFile,
+  readdir,
+  realpath,
+  writeFile,
+} from 'node:fs/promises';
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+} from 'node:path';
 import {
   briefFileName,
   firstBriefClash,
@@ -140,6 +153,29 @@ interface Base {
   readonly lock: DomainLock;
 }
 
+/**
+ * `path` with symlinks resolved (through its nearest existing ancestor, for a path not yet
+ * created), refused with `bundle.path-escape` unless it is inside `top` (or equal, with `same`).
+ */
+async function realInside(
+  top: string,
+  path: string,
+  same = false,
+): Promise<string> {
+  let head = resolve(path);
+  let tail = '';
+  for (;;) {
+    const real = await realpath(head).catch(() => null);
+    if (real !== null) {
+      const full = join(real, tail);
+      return same && full === top ? full : inside(top, full);
+    }
+    tail = join(basename(head), tail);
+    if (dirname(head) === head) return inside(top, resolve(path));
+    head = dirname(head);
+  }
+}
+
 /** A child's JSON output, checked once; broken output is a failed step, not a raw parse error. */
 function parseChild<T>(schema: z.ZodType<T>, text: string, what: string): T {
   try {
@@ -220,13 +256,11 @@ async function loadBase(
         ...run.hide.map((p): [string, string] => [p, '<base>']),
       ]),
     );
-  // The child read candidate-controlled config: its paths must stay in the worktree.
-  if (canonicalPath(base.config.root) !== canonicalPath(dir))
-    inside(canonicalPath(dir), canonicalPath(base.config.root));
-  const moduleRoot = inside(
-    canonicalPath(dir),
-    resolve(canonicalPath(base.config.root), base.module.path),
-  );
+  // The child read candidate-controlled config: what the server writes must stay in the worktree.
+  const top = await realpath(dir);
+  const root = await realInside(top, base.config.root, true);
+  const moduleRoot = await realInside(top, resolve(root, base.module.path));
+  await realInside(top, join(base.config.outRoot, base.config.changesDir));
   return {
     ...base,
     moduleRoot,

@@ -263,9 +263,17 @@ ${FORWARD_BASE}process.exit(0);
   }, 240_000);
 
   test('a base config whose root or module is outside the worktree is refused (#177)', async () => {
+    // Outside the worktree; tracked in `dirs`, so afterAll removes it.
+    const outside = await mkdtemp(join(tmpdir(), 'escape-'));
+    dirs.push(outside);
     for (const [name, edit] of [
       ['root', "base.config.root = '/';"],
       ['module', "base.module.path = '../../outside';"],
+      ['outroot', `base.config.outRoot = ${JSON.stringify(outside)};`],
+      [
+        'symlink',
+        `require('node:fs').symlinkSync(${JSON.stringify(outside)}, 'evil'); base.module.path = 'evil';`,
+      ],
     ]) {
       const script = await writesOut(
         `escape-${name}.ts`,
