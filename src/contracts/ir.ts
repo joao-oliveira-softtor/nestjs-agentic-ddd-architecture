@@ -6,7 +6,7 @@ import {
   type Registry,
   type SourceLoc,
 } from '@agentic-ddd/decorators';
-import { byId, sha256, stableStringify } from './canonical';
+import { byId, compareStrings, sha256, stableStringify } from './canonical';
 import type { ErrorCode } from './codes';
 import { moduleOfPath } from './module-path';
 
@@ -401,7 +401,7 @@ export function buildIR(
           root: `entity:${root.name}`,
           methods: Object.entries(rec.methods)
             .map(([name, description]) => ({ name, description }))
-            .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)),
+            .sort((a, b) => compareStrings(a.name, b.name)),
           source: loc(rec.source),
         },
       ];
@@ -557,7 +557,7 @@ export function buildIR(
       irVersion: 1,
       modules: [...options.modules]
         .map((m) => ({ name: m.name, path: m.path }))
-        .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)),
+        .sort((a, b) => compareStrings(a.name, b.name)),
       entities,
       ...(vos.length > 0 && { valueObjects: vos }),
       events,

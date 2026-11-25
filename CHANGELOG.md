@@ -4,6 +4,13 @@
 
 - Nest applications can expose mounted Operators as scoped MCP tools over Streamable HTTP with `AgenticHttpModule.forRoot`. The optional module uses the shared OAuth resource server, accepts server-derived run context and supports opt-in domain events. [Configuration](docs/distribution.md#runtime-mcp-in-a-nest-application) (#123, #124).
 
+- **Robustness fixes from an audit (#176):**
+  - `compile` writes the lock before it archives the applied proposal, and `archiveProposal` accepts a proposal that was already moved, so a crash in between no longer leaves `proposal.archived-not-in-lock` with a lock that git cannot restore, and the next `compile` finishes the interrupted archive instead of failing with `proposal.applied-not-archived`; the hint of that finding now says where to restore the lock from.
+  - `verify` runs each configured command (and the item typecheck) through one `runCommand` helper: a failing command now shows the last 20 lines of its stderr, and a command that runs longer than 10 minutes is killed and reported as the new `verify.command-timeout` instead of hanging `verify`.
+  - The skills installer says which path to remove, and to run again, when it refuses to replace a file or link.
+  - A `ValueObject` built from props with an own `__proto__` key (for example from `JSON.parse`) keeps its prototype.
+  - The `ci` and `ci-windows` jobs are one matrix (same check names), and `CompileResult.ir` is no longer typed as nullable.
+
 ## [0.7.0] — 2026-11-10
 
 - **Elysia routes and `executeUseCase` can have a deadline (#186):** a use-case run outside an operator awaited `execute` with no bound, so a hung dependency pinned the HTTP request. The new `RuntimeOptions.useCaseTimeoutMs` applies only outside an operator, and leaving it unset means no deadline, the old behaviour. It bounds the execution and the delivery of its events. On expiry it aborts `ctx.signal`, refuses any later publish, and fails with an `AgenticError` coded `runtime.use-case-timeout` (new code), which wins over a refused event, a bus failure or the use-case's own error. An Elysia route maps that code to 504 `{ code, message }`, typed for Eden like the domain 422. A 504 can come after `save` committed, and events already handed to the bus may still be delivered, so a route a client retries should be idempotent. The value is validated like `limits.timeoutMs` (finite, positive, at most 2147483647), and `OperatorRuntime` refuses an invalid one in its constructor. `executeUseCase` / `runUseCase` take it as `options.timeoutMs`. `@agentic-ddd/runtime` now also exports `AgenticError`, `ErrorCode` and `schemaLookup`.

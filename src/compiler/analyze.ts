@@ -5,6 +5,7 @@ import {
   type IRBuildOptions,
   type IRBuildResult,
 } from './ir';
+import { compareStrings } from './canonical';
 import { validate } from './validate';
 
 function errorKey(error: CompileError): string {
@@ -19,8 +20,6 @@ export function analyze(
   const errors = [
     ...built.errors,
     ...validate(built.ir, registry, options.root),
-  ].sort((a, b) =>
-    errorKey(a) < errorKey(b) ? -1 : errorKey(a) > errorKey(b) ? 1 : 0,
-  );
+  ].sort((a, b) => compareStrings(errorKey(a), errorKey(b)));
   return { ir: built.ir, errors };
 }

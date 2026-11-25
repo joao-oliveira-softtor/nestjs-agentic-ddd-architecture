@@ -1,4 +1,4 @@
-import { canonicalize, sha256, toLf } from '../canonical';
+import { canonicalize, compareStrings, sha256, toLf } from '../canonical';
 import type { RenderedExample } from '../delta/render';
 import { shellQuote } from '../packet';
 
@@ -54,7 +54,7 @@ export interface BundleManifest {
 }
 
 export const byPath = (a: { path: string }, b: { path: string }): number =>
-  a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
+  compareStrings(a.path, b.path);
 
 export { toLf };
 

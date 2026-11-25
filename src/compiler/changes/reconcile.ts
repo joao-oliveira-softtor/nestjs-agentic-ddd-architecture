@@ -26,6 +26,14 @@ export interface ReconcilePlan {
   readonly errors: CompileError[];
 }
 
+const safeMarkApplied = (raw: string): string => {
+  try {
+    return markApplied(raw);
+  } catch {
+    return raw;
+  }
+};
+
 const entry = (kind: string, id: string): string => `${kind} ${id}`;
 
 export function archivedPathOf(proposal: Proposal, changesDir: string): string {
@@ -69,9 +77,21 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
   const pending: Coded[] = [];
   const recorded = lock?.changes ?? [];
 
+  // Lock written, archive interrupted: the next run finishes the archive instead of failing.
+  let resume: Proposal | null = null;
   for (const change of recorded) {
     const archived = proposals.find((p) => p.archived && p.id === change.id);
-    if (!archived) {
+    const interrupted = archived
+      ? undefined
+      : proposals.find(
+          (p) =>
+            !p.archived &&
+            p.status === 'proposed' &&
+            p.id === change.id &&
+            proposalHashMatches(safeMarkApplied(p.raw), change.hash),
+        );
+    if (interrupted) resume = interrupted;
+    else if (!archived) {
       errors.push({
         code: 'proposal.applied-not-archived',
         message: `the applied proposal ${change.id} is not in ${input.changesDir}/archive`,
@@ -111,7 +131,9 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
       });
     }
   }
-  const open = proposals.filter((p) => !p.archived && p.status === 'proposed');
+  const open = proposals.filter(
+    (p) => !p.archived && p.status === 'proposed' && p !== resume,
+  );
   if (open.length > 1) {
     errors.push({
       code: 'proposal.multiple-open',
@@ -163,6 +185,15 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
     errors,
   });
   if (errors.length > 0) return unchanged();
+  if (resume)
+    return {
+      diff,
+      nextLock: lock,
+      apply: resume,
+      archivedPath: recorded.find((c) => c.id === resume!.id)!.path,
+      pending,
+      errors,
+    };
 
   const required = diff.filter((item) => item.classification !== 'docs');
   const proposal = open[0] ?? null;

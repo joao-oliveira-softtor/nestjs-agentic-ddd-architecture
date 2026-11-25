@@ -14,7 +14,8 @@ import { readLock } from '../lock';
 import { statusFromEvidence } from '../project-state';
 import { workItemFindings } from './work-items';
 import { evaluateGates, type CommandResult, type VerifyReport } from './gates';
-import { VERIFY_ENV, runTests } from './test-run';
+import { runCommand } from './run-command';
+import { runTests } from './test-run';
 
 export interface VerifyOptions {
   readonly configPath: string;
@@ -35,11 +36,6 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
     mode: 'check',
   });
   const { config } = check;
-  if (check.ir === null)
-    throw new AgenticError(
-      'verify.domain-unanalyzable',
-      'verify: could not analyze the domain',
-    );
   const lock = await readLock(
     join(config.outRoot, config.out.lock),
     config.out.lock,
@@ -69,13 +65,11 @@ export async function verify(options: VerifyOptions): Promise<VerifyReport> {
   const tests = await runTests(config.verify.test, config.root);
   const commands: CommandResult[] = [];
   for (const { name, command } of config.verify.commands) {
-    const proc = Bun.spawn([...command], {
-      cwd: config.root,
-      env: { ...process.env, [VERIFY_ENV]: '1' },
-      stdout: 'ignore',
-      stderr: 'ignore',
+    commands.push({
+      name,
+      command,
+      ...(await runCommand(command, config.root)),
     });
-    commands.push({ name, command, exitCode: await proc.exited });
   }
   const checkProblems: Coded[] = [
     ...check.errors.map((e) => ({

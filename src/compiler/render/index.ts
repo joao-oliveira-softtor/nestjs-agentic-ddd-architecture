@@ -1,4 +1,5 @@
 import { DEFAULT_CONVENTIONS, type ResolvedConventions } from '../conventions';
+import { compareStrings } from '../canonical';
 import { irHash, type IR } from '../ir';
 import type { LockChange } from '../lock';
 import type { Rule } from '../rules';
@@ -57,7 +58,7 @@ export function renderAll(
     for (const [rel, content] of renderRuntimeSkill(ir, operator, hash))
       entries.push([`${out.runtimeSkills}/${operator.name}/${rel}`, content]);
   }
-  entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  entries.sort(([a], [b]) => compareStrings(a, b));
   return {
     files: new Map(entries),
     agentsBlock: renderAgentsBlock(

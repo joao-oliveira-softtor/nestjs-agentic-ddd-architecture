@@ -23,6 +23,10 @@ export function sha256(text: string): string {
 
 export const toLf = (s: string): string => s.replaceAll('\r\n', '\n');
 
+/** Plain code-unit comparison, so the order never depends on the locale. */
+export const compareStrings = (a: string, b: string): number =>
+  a < b ? -1 : a > b ? 1 : 0;
+
 export function byId<T extends { readonly id: string }>(a: T, b: T): number {
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  return compareStrings(a.id, b.id);
 }

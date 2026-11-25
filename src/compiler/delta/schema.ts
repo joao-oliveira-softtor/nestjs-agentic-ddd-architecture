@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { compareStrings } from '../canonical';
 import type { Coded, ErrorCode, IR, IREntity, IRUseCase } from '../ir';
 import { KEBAB, PASCAL } from '../validate';
 import {
@@ -234,9 +235,7 @@ export function pascalOfSnake(snake: string): string {
     .join('');
 }
 
-/** Plain code-unit comparison, so the order never depends on the locale. */
-export const compareText = (a: string, b: string): number =>
-  a < b ? -1 : a > b ? 1 : 0;
+export const compareText = compareStrings;
 
 /** The one error order: path, then code, then message. */
 export const compareErrors = (a: DeltaError, b: DeltaError): number =>
