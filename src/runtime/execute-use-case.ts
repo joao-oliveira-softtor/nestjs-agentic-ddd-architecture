@@ -3,7 +3,7 @@ import type { UseCaseRecord } from '@agentic-ddd/decorators';
 import type { ZodType } from 'zod';
 import { AgenticError } from '../contracts/codes';
 import { createDeadline } from './deadline';
-import { guardEmits, guardFailure } from './emits-guard';
+import { executeStep, StepFailure } from './execute-step';
 import type { EventBus } from './ports';
 
 export interface UseCaseOptions {
@@ -57,41 +57,22 @@ export async function runUseCase(
         `Use-case ${record.name} did not finish within useCaseTimeoutMs (${timeoutMs} ms)`,
       ),
   );
-  const guard = guardEmits(
-    record,
-    async (batch) => {
-      for (const event of batch) event.stamp(id, id);
-      await eventBus.publish(batch);
-    },
-    // After the deadline the use-case may still run, but publishes nothing more.
-    deadline.check,
-    options?.schemaFor,
-  );
-  let output: unknown;
-  let thrown: { error: unknown } | undefined;
   try {
-    try {
-      output = await deadline.wait(() =>
-        instance.execute(parsed, {
-          correlationId: id,
-          causationId: id,
-          signal: deadline.signal,
-          publish: guard.publish,
-        }),
-      );
-    } catch (error) {
-      thrown = { error };
-    }
-    // Drain on every path: an un-awaited delivery may still fail after the use-case threw.
-    // Under the deadline, so a timeout (of execute or of the drain) wins over every other outcome.
-    await deadline.wait(() => guard.drain());
+    const outcome = await executeStep(record, instance, parsed, {
+      correlationId: id,
+      causationId: id,
+      signal: deadline.signal,
+      // After the deadline the use-case may still run, but publishes nothing more.
+      check: deadline.check,
+      wait: deadline.wait,
+      schemaFor: options?.schemaFor,
+      publishEvent: (batch) => eventBus.publish(batch),
+    });
+    if ('domainError' in outcome) throw outcome.domainError;
+    return outcome.output;
+  } catch (error) {
+    throw error instanceof StepFailure ? error.error : error;
   } finally {
-    guard.end();
     deadline.dispose();
   }
-  // Precedence: undeclared event, then a bus failure, then the use-case's own error.
-  const blocked = guardFailure(guard);
-  if (blocked) throw blocked.error;
-  if (thrown) throw thrown.error;
-  return record.output.parse(output);
 }
