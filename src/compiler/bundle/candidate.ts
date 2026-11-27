@@ -23,9 +23,9 @@ const killTree = (child: Subprocess): Promise<void> =>
 function killGroup(pid: number): void {
   try {
     process.kill(-pid, 'SIGKILL');
-  } catch (error) {
-    // The group is already gone; a group id is not reused while any member is alive.
-    if ((error as NodeJS.ErrnoException).code !== 'ESRCH') throw error;
+  } catch {
+    // ESRCH: the group is gone (its id is not reused while a member lives); EPERM: the id is no
+    // longer ours. Either way there is nothing of ours to kill, and the caller must not throw.
   }
 }
 
