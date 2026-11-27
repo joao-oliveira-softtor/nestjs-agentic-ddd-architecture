@@ -154,9 +154,10 @@ describe('compile (exemplo orders)', () => {
     await bootstrapChanges(out);
     await compile({ configPath, outRoot: out, mode: 'write' });
     expect(
-      [...(await readdir(out)), ...(await readdir(join(out, '.agentic')))].filter(
-        (name) => name.endsWith('.tmp'),
-      ),
+      [
+        ...(await readdir(out)),
+        ...(await readdir(join(out, '.agentic'))),
+      ].filter((name) => name.endsWith('.tmp')),
     ).toEqual([]);
     await access(join(out, '.agentic/domain.lock.json'));
   });
@@ -265,11 +266,14 @@ describe('compile (exemplo orders)', () => {
     const archiving = spyOn(archive, 'archiveProposal').mockRejectedValueOnce(
       new Error('EIO: archive failed'),
     );
-    expect(
-      await failure(compile({ configPath, outRoot: out, mode: 'write' })),
-    ).toMatch(/EIO: archive failed/);
-    expect(archiving).toHaveBeenCalledTimes(1);
-    archiving.mockRestore();
+    try {
+      expect(
+        await failure(compile({ configPath, outRoot: out, mode: 'write' })),
+      ).toMatch(/EIO: archive failed/);
+      expect(archiving).toHaveBeenCalledTimes(1);
+    } finally {
+      archiving.mockRestore();
+    }
     const lock = JSON.parse(
       await readFile(join(out, '.agentic/domain.lock.json'), 'utf8'),
     ) as { changes: { id: string }[] };
