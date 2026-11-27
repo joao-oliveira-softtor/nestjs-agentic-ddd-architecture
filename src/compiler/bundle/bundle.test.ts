@@ -481,12 +481,14 @@ symlinkSync(${at('shop-dev/secret.txt')}, 'src/shop/domain/order.ts');`,
       `rmSync('src/shop/domain/order.ts');
 linkSync(${JSON.stringify(order)}, 'src/shop/domain/order.ts');`,
     );
-    await compileBundle({
+    const error = (await compileBundle({
       ...input(),
       baseRoot: base.root,
       baseRef: base.ref,
       cliEntry: script,
-    });
+    }).catch((e: unknown) => e)) as { code?: string };
+    // The file to extend is refused before it is read, so neither its text nor a write leaves.
+    expect(error.code).toBe('bundle.path-escape');
     expect(await readFile(order, 'utf8')).not.toContain('refund');
   }, 120_000);
 

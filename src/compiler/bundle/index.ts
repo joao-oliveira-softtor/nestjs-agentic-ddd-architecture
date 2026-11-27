@@ -362,7 +362,9 @@ async function extendFile(base: Base, fragment: Fragment): Promise<void> {
     base.top,
     inside(base.moduleRoot, fragment.path),
   );
-  const source = await readFile(target, 'utf8').catch(() => {
+  // readInside: a hard link to a file outside is refused before its text is read and spliced.
+  const source = await readInside(base.top, target).catch((error: unknown) => {
+    if (error instanceof AgenticError) throw error;
     throw new AgenticError(
       'delta.splice-anchor-missing',
       `the file to extend, ${quote(fragment.path)}, does not exist in the base`,
