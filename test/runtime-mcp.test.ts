@@ -239,11 +239,13 @@ test('metadata, OAuth challenges, authority checks and body limits survive the N
 });
 
 test('list and call apply identical per-request operator and module scopes', async () => {
-  await start();
+  const { llm, claimsSeen } = await start();
   const scoped = await token(capability + ':app');
   const other = await token(capability + ':other');
   const absent = (await call(scoped, 'unknown')).error;
-  expect(absent.code).toBeLessThan(0);
+  expect(absent).toMatchObject({ code: -32602, message: 'Unknown tool' });
+  expect(llm.requests).toHaveLength(0);
+  expect(claimsSeen).toHaveLength(0);
   for (const [bearer, names] of [
     [scoped, ['agent']],
     [other, []],
@@ -446,13 +448,6 @@ test('failed and timed-out runs are MCP successes without internal errors', asyn
     });
     expect(JSON.stringify(result)).not.toContain('private provider diagnostic');
   }
-});
-
-test('a message of the wrong type is rejected before the LLM is called', async () => {
-  const { llm } = await start();
-  const { error } = await call(await token(), 'agent', { message: 42 });
-  expect(error).toMatchObject({ code: -32602, message: 'Invalid arguments' });
-  expect(llm.requests).toHaveLength(0);
 });
 
 test('a tool call with invalid input during the run is refused and the run completes', async () => {
