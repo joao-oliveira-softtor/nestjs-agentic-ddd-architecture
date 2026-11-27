@@ -346,11 +346,18 @@ process.exit(code);
   ) => {
     for (const [name, step, edit, delta = additionDelta()] of cases) {
       const script = await tampers(`${name}.ts`, step, edit);
-      const error = (await compileBundle({
+      const outcome = await compileBundle({
         ...input(),
         delta,
         cliEntry: script,
-      }).catch((e: unknown) => e)) as { code?: string; message?: string };
+      }).catch((e: unknown) => e);
+      // On Windows (CI) the directory-link case finished without error: Bun's recursive
+      // readdir does not list through it there, so the proof is that nothing outside leaked.
+      if (name === 'read-dev-skill-link' && process.platform === 'win32') {
+        expect(JSON.stringify(outcome)).not.toContain('TOP-SECRET');
+        continue;
+      }
+      const error = outcome as { code?: string; message?: string };
       expect([name, error.code]).toEqual([name, 'bundle.path-escape']);
       expect(error.message).not.toContain(outside);
     }
