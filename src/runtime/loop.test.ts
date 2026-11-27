@@ -242,6 +242,13 @@ test('provider_error stops and records attempted request', async () => {
   expect(result.reason).toBe('provider_error');
   expect(result.steps).toHaveLength(1);
 });
+test('a tool_calls response with no calls fails provider_error after one request (#174)', async () => {
+  const f = await setup([{ content: [], stopReason: 'tool_calls' }, end]);
+  const result = await f.runtime.run('agent', { message: 'go' });
+  expect(result.status).toBe('failed');
+  expect(result.reason).toBe('provider_error');
+  expect(f.llm.requests).toHaveLength(1);
+});
 for (const variant of ['throw', 'output'] as const) {
   test(`use_case_error (${variant}) prevents subsequent tool and LLM calls`, async () => {
     let executions = 0;

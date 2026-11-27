@@ -103,6 +103,8 @@ export async function runOperator(
             .map((b) => b.text)
             .join('\n'),
         );
+      if (!calls.length && response.stopReason === 'tool_calls')
+        return finish('failed', 'provider_error');
       const results: ToolResult[] = [];
       for (const call of calls) {
         check();
