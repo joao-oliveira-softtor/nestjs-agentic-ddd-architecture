@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import {
   access,
   link,
@@ -8,7 +8,6 @@ import {
   readdir,
   rename,
   rm,
-  symlink,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -18,6 +17,7 @@ import {
   archiveProposal,
   compile,
 } from '@agentic-ddd/compiler';
+import * as archive from './changes/archive';
 import { checkSnapshot } from './snapshot';
 import { bootstrapChanges } from '../../test/helpers/bootstrap';
 
@@ -261,11 +261,15 @@ describe('compile (exemplo orders)', () => {
       path,
       (await readFile(path, 'utf8')).replace(MOTIVO_PLACEHOLDER, 'Motivo.'),
     );
-    // A dangling link at changes/archive: scanning sees no archive, mkdir of it fails (any user).
-    await symlink(join(out, 'nowhere'), join(out, 'changes/archive'));
+    // The archive step fails (a dangling link behaves differently on Windows, so it is simulated).
+    const archiving = spyOn(archive, 'archiveProposal').mockRejectedValueOnce(
+      new Error('EIO: archive failed'),
+    );
     expect(
       await failure(compile({ configPath, outRoot: out, mode: 'write' })),
-    ).toMatch(/EEXIST|ENOTDIR|ENOENT/);
+    ).toMatch(/EIO: archive failed/);
+    expect(archiving).toHaveBeenCalledTimes(1);
+    archiving.mockRestore();
     const lock = JSON.parse(
       await readFile(join(out, '.agentic/domain.lock.json'), 'utf8'),
     ) as { changes: { id: string }[] };
