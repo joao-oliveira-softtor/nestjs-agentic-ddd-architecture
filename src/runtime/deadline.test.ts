@@ -45,6 +45,29 @@ describe('createDeadline', () => {
     deadline.dispose();
   });
 
+  test('an operation that rejects when the signal aborts still surfaces the onExpire error', async () => {
+    const deadline = createDeadline(10, () => new Expired());
+    const outcome = await settle(
+      deadline.wait(
+        () =>
+          new Promise<never>((_, reject) =>
+            deadline.signal.addEventListener('abort', () =>
+              reject(new Error('aborted')),
+            ),
+          ),
+      ),
+    );
+    expect(outcome).toBeInstanceOf(Expired);
+    deadline.dispose();
+  });
+
+  test('an operation that rejects before the deadline keeps its own error', async () => {
+    const deadline = createDeadline(1_000, () => new Expired());
+    const boom = new Error('boom');
+    expect(await settle(deadline.wait(() => Promise.reject(boom)))).toBe(boom);
+    deadline.dispose();
+  });
+
   test('expiry rejects wait with the onExpire error and aborts the signal', async () => {
     const deadline = createDeadline(10, () => new Expired());
     const outcome = await settle(

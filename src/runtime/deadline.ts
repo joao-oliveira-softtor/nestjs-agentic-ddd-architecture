@@ -51,7 +51,14 @@ export function createDeadline(
     check,
     wait: async (operation) => {
       check();
-      const value = await Promise.race([operation(), expired]);
+      let value: Awaited<ReturnType<typeof operation>>;
+      try {
+        value = await Promise.race([operation(), expired]);
+      } catch (error) {
+        // The abort fires before `expired` rejects, so a rejecting operation can win the race: a reached deadline still reports as onExpire.
+        check();
+        throw error;
+      }
       check();
       return value;
     },
