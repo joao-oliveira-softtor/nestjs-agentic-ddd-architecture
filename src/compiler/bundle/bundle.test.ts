@@ -311,6 +311,7 @@ ${FORWARD_BASE}process.exit(0);
     await writeFile(
       script,
       `import { cpSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { relative } from 'node:path';
 const out = process.argv[process.argv.indexOf('--out') + 1];
 const { main } = await import(${JSON.stringify(join(ROOT, 'src/cli/main.ts'))});
 const code = await main(process.argv.slice(2));
@@ -370,6 +371,37 @@ symlinkSync(${at('changes')}, 'changes');`,
       await readFile(join(outside, 'domain/order.ts'), 'utf8'),
     ).not.toContain('refund');
     expect(await readdir(outside)).toEqual(['domain']);
+  }, 240_000);
+
+  test('nothing outside the worktree is read into the bundle through the config or a symlink (#177)', async () => {
+    const outside = await mkdtemp(join(tmpdir(), 'read-escape-'));
+    dirs.push(outside);
+    await mkdir(join(outside, 'shop-dev'));
+    await writeFile(join(outside, 'shop-dev/secret.txt'), 'TOP-SECRET');
+    const at = (p: string) => JSON.stringify(join(outside, p));
+    await expectEscapes(outside, [
+      // The config points the dev skills folder outside.
+      [
+        'read-dev-skills',
+        'bundle-base',
+        `const base = JSON.parse(readFileSync(out, 'utf8'));
+base.config.out.devSkills = relative(base.config.outRoot, ${JSON.stringify(outside)});
+writeFileSync(out, JSON.stringify(base));`,
+      ],
+      // A link inside the dev skill folder leads outside.
+      [
+        'read-dev-skill-link',
+        'bundle-analysis',
+        `symlinkSync(${at('shop-dev')}, '.agents/skills/shop-dev/leak');`,
+      ],
+      // A file of the skeleton is swapped for a link after it was written.
+      [
+        'read-skeleton',
+        'bundle-analysis',
+        `rmSync('src/shop/domain/order.ts');
+symlinkSync(${at('shop-dev/secret.txt')}, 'src/shop/domain/order.ts');`,
+      ],
+    ]);
   }, 240_000);
 
   test('a coded refusal from the base child has the worktree path redacted (#177)', async () => {

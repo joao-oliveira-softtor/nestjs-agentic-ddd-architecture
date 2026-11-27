@@ -103,6 +103,10 @@ const lf = (path: string, content: string): BundleFile => ({
   content: toLf(content),
 });
 
+/** A path from its base that climbs out of it. */
+const climbsOut = (back: string): boolean =>
+  back.startsWith('..') || isAbsolute(back);
+
 const escapes = (shown: string): AgenticError =>
   new AgenticError(
     'bundle.path-escape',
@@ -113,8 +117,7 @@ const escapes = (shown: string): AgenticError =>
 export function inside(base: string, rel: string, shown = rel): string {
   const abs = resolve(base, rel);
   const back = relative(base, abs);
-  if (back === '' || back.startsWith('..') || isAbsolute(back))
-    throw escapes(shown);
+  if (back === '' || climbsOut(back)) throw escapes(shown);
   return abs;
 }
 
@@ -162,14 +165,15 @@ interface Base {
 /**
  * `path` with symlinks resolved (through its nearest existing ancestor, for a path not yet
  * created), refused with `bundle.path-escape` unless it is inside `top` (or equal, with `same`).
- * The message shows `path` from `top`, never where a link points.
+ * The message shows `path` from `top` when it is written inside, never where it or a link points.
  */
 async function realInside(
   top: string,
   path: string,
   same = false,
 ): Promise<string> {
-  const shown = toPosix(relative(top, resolve(path)));
+  const lexical = toPosix(relative(top, resolve(path)));
+  const shown = climbsOut(lexical) ? '<outside>' : lexical;
   let head = resolve(path);
   let tail = '';
   for (;;) {
@@ -464,22 +468,32 @@ async function skeletonFiles(
     paths.map(async (rel, i) =>
       lf(
         `target/skeleton/${skeleton[i]}`,
-        await readFile(join(base.moduleRoot, rel), 'utf8'),
+        await readFile(
+          await realInside(base.top, join(base.moduleRoot, rel)),
+          'utf8',
+        ),
       ),
     ),
   );
   return { skeleton, files };
 }
 
+/** Read after the candidate children ran: the folder and each file are checked at read time. */
 async function devSkillFiles(base: Base): Promise<BundleFile[]> {
-  const dir = join(
-    base.config.outRoot,
-    base.config.out.devSkills,
-    `${base.module.name}-dev`,
+  const dir = await realInside(
+    base.top,
+    join(
+      base.config.outRoot,
+      base.config.out.devSkills,
+      `${base.module.name}-dev`,
+    ),
   );
   return Promise.all(
     (await filesUnder(dir)).map(async (rel) =>
-      lf(`target/dev-skill/${rel}`, await readFile(join(dir, rel), 'utf8')),
+      lf(
+        `target/dev-skill/${rel}`,
+        await readFile(await realInside(base.top, join(dir, rel)), 'utf8'),
+      ),
     ),
   );
 }
