@@ -274,6 +274,20 @@ ${FORWARD_BASE}process.exit(0);
         'symlink',
         `require('node:fs').symlinkSync(${JSON.stringify(outside)}, 'evil'); base.module.path = 'evil';`,
       ],
+      [
+        'symlink-missing-tail',
+        `require('node:fs').symlinkSync(${JSON.stringify(outside)}, 'evil'); base.module.path = 'evil/not-yet';`,
+      ],
+      // The root may equal the worktree, the module may not (refused even with a valid root).
+      [
+        'module-is-worktree',
+        "const top = require('node:fs').realpathSync(process.cwd()); base.config.root = top; base.module.path = top;",
+      ],
+      // A root outside the worktree is refused on its own, not only through the module path.
+      [
+        'root-only',
+        `const top = require('node:fs').realpathSync(process.cwd()); base.config.root = ${JSON.stringify(outside)}; base.module.path = top + '/inner';`,
+      ],
     ]) {
       const script = await writesOut(
         `escape-${name}.ts`,
