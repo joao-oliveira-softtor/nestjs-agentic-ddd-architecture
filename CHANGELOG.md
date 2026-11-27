@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- Internal: the operator loop and `runUseCase` now share one step executor (`executeStep`) for the emits guard, the drain and the outcome of a use-case execution. No behaviour change (#187).
+
 - **Behaviour change — `verify` requires a test for the `uses` and `emits` a proposal adds to a use-case (#179):** an item whose Delta added a method to `uses` or an event to `emits` was certified `done` with no test exercising it. Each `uses`/`emits` a use-case listed in `delta.modified` has that the lock's IR did not becomes the obligation `addition:<proposal>/<use-case>/<method or event>`, to be named in a test's `covers` (which now accepts the `addition:` prefix). While the proposal is open the obligation is measured against the lock; when `compile` applies it, the lock's change entry records it in the new optional field `additions` (use-case id → added refs), so the obligation survives the archive while the use-case still has that ref. The lock version stays 1, older locks parse unchanged and changes applied before this release get no new obligation. A use-case added whole (`delta.added`) gets no addition obligation: it must be covered entirely anyway. Such an item drops from `done` to `implemented` until it has that test, and its spec hash changes.
 
 - `changeOwners` builds the owner index once per change instead of rebuilding the work items for every delta id (#175).
@@ -16,6 +18,8 @@
   - The skills installer says which path to remove, and to run again, when it refuses to replace a file or link.
   - A `ValueObject` built from props with an own `__proto__` key (for example from `JSON.parse`) keeps its prototype.
   - The `ci` and `ci-windows` jobs are one matrix (same check names), and `CompileResult.ir` is no longer typed as nullable.
+
+- **`propose_change` reads the base config in a child process (#177):** the MCP server imported the project's `agentic.config.ts` (and the domain it loads) on every `propose_change`, so each call left another copy of those modules in the long-lived server. The base config, module, lock and team rules are now read by an internal `bundle-base` CLI step in a child process, like the compile and analysis steps, under the same time limit and scrubbed environment. Refusals keep their codes; a crash of that step is reported as `bundle.compile-failed` and a hang as `bundle.compile-timeout`. Files the server reads or writes for the bundle must stay inside the worktree: a symlink or hard link that leads out, or a child output path that already exists, is refused (`bundle.path-escape` or `bundle.compile-failed`).
 
 - **Follow-ups from the Runtime MCP review (#141):** `isInModule` and `moduleOfPath` compare paths case-insensitively on Windows only; the MCP server types its request context with the SDK's `ServerContext`; the Windows `canonicalPath` cache is cleared when it passes 1000 entries.
 

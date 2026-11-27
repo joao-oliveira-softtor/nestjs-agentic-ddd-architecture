@@ -7,6 +7,7 @@ import {
   rename,
   readdir,
   rm,
+  symlink,
   utimes,
   writeFile,
 } from 'node:fs/promises';
@@ -23,6 +24,12 @@ import { compileBundle, type Bundle } from './index';
 import { neutralLeaks } from './__fixtures__/neutral-testkit';
 
 const ROOT = resolve(import.meta.dir, '../../..');
+/** Script prefix: hands `bundle-base` to the real CLI, so a fake CLI fails only at the step it targets. */
+const FORWARD_BASE = `if (process.argv[2] === 'bundle-base') {
+  const { main } = await import(${JSON.stringify(join(ROOT, 'src/cli/main.ts'))});
+  process.exit(await main(process.argv.slice(2)));
+}
+`;
 const dirs: string[] = [];
 
 /** The shared shop fixture, its root tracked for cleanup. */
@@ -54,6 +61,20 @@ const input = () => ({
   baseRoot: repo.root,
   baseRef: repo.ref,
   proposal: shopProposal(),
+});
+
+/** The shared Delta plus a new entity, rendered as the new file `domain/refund.ts`. */
+const entityDelta = () => ({
+  ...additionDelta(),
+  entities: [
+    {
+      name: 'Refund',
+      description: 'A refund.',
+      states: ['issued'],
+      invariants: [],
+      methods: [],
+    },
+  ],
 });
 
 /** One compile of the shared input, for the tests that only read the bundle. */
@@ -187,19 +208,346 @@ describe('compileBundle on the shop project', () => {
 
   test('stores nothing after a compile failure', async () => {
     const script = join(repo.work, 'fail-cli.ts');
-    await writeFile(script, 'console.error("boom");\nprocess.exit(1);\n');
+    await writeFile(
+      script,
+      `${FORWARD_BASE}console.error("boom");\nprocess.exit(1);\n`,
+    );
     expect(await refusal(compileBundle({ ...input(), cliEntry: script }))).toBe(
       'bundle.compile-failed',
     );
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
   }, 120_000);
 
-  test('stops a compile that outlives the timeout and stores nothing', async () => {
-    const script = join(repo.work, 'hang-cli.ts');
-    await writeFile(script, 'await Bun.sleep(60_000);\n');
+  test('a failing base-config child is refused as compile-failed (#177)', async () => {
+    const script = join(repo.work, 'fail-base-cli.ts');
+    await writeFile(script, 'process.exit(1);\n');
+    expect(await refusal(compileBundle({ ...input(), cliEntry: script }))).toBe(
+      'bundle.compile-failed',
+    );
+  }, 120_000);
+
+  test('a hanging base-config child is stopped as compile-timeout (#177)', async () => {
+    const script = join(repo.work, 'hang-base-cli.ts');
+    await writeFile(
+      script,
+      "if (process.argv[2] === 'bundle-base') await Bun.sleep(60_000);\nprocess.exit(1);\n",
+    );
     expect(
       await refusal(
         compileBundle({ ...input(), cliEntry: script, timeoutMs: 500 }),
+      ),
+    ).toBe('bundle.compile-timeout');
+  }, 120_000);
+
+  /** A fake CLI that writes `body` (JS, `out` in scope) to the `--out` of the step `step`. */
+  const writesOut = async (name: string, step: string, body: string) => {
+    const script = join(repo.work, name);
+    await writeFile(
+      script,
+      `import { readFileSync, writeFileSync } from 'node:fs';
+const out = process.argv[process.argv.indexOf('--out') + 1];
+if (process.argv[2] === ${JSON.stringify(step)}) {
+${body}
+  process.exit(0);
+}
+${FORWARD_BASE}process.exit(0);
+`,
+    );
+    return script;
+  };
+
+  test('a malformed base-config or analysis output is refused as compile-failed (#177)', async () => {
+    for (const step of ['bundle-base', 'bundle-analysis']) {
+      const script = await writesOut(
+        `garbage-${step}.ts`,
+        step,
+        "writeFileSync(out, '{not json');",
+      );
+      expect(
+        await refusal(compileBundle({ ...input(), cliEntry: script })),
+      ).toBe('bundle.compile-failed');
+      const shape = await writesOut(
+        `shape-${step}.ts`,
+        step,
+        'writeFileSync(out, \'{"x":1}\');',
+      );
+      expect(
+        await refusal(compileBundle({ ...input(), cliEntry: shape })),
+      ).toBe('bundle.compile-failed');
+    }
+  }, 240_000);
+
+  test('a base config whose root or module is outside the worktree is refused (#177)', async () => {
+    // Outside the worktree; tracked in `dirs`, so afterAll removes it.
+    const outside = await mkdtemp(join(tmpdir(), 'escape-'));
+    dirs.push(outside);
+    for (const [name, edit] of [
+      ['root', "base.config.root = '/';"],
+      ['module', "base.module.path = '../../outside';"],
+      ['outroot', `base.config.outRoot = ${JSON.stringify(outside)};`],
+      [
+        'symlink',
+        `require('node:fs').symlinkSync(${JSON.stringify(outside)}, 'evil'); base.module.path = 'evil';`,
+      ],
+      [
+        'symlink-missing-tail',
+        `require('node:fs').symlinkSync(${JSON.stringify(outside)}, 'evil'); base.module.path = 'evil/not-yet';`,
+      ],
+      // The root may equal the worktree, the module may not (refused even with a valid root).
+      [
+        'module-is-worktree',
+        "const top = require('node:fs').realpathSync(process.cwd()); base.config.root = top; base.module.path = top;",
+      ],
+      // A root outside the worktree is refused on its own, not only through the module path.
+      [
+        'root-only',
+        `const top = require('node:fs').realpathSync(process.cwd()); base.config.root = ${JSON.stringify(outside)}; base.module.path = top + '/inner';`,
+      ],
+    ]) {
+      const script = await writesOut(
+        `escape-${name}.ts`,
+        'bundle-base',
+        `  const { main } = await import(${JSON.stringify(join(ROOT, 'src/cli/main.ts'))});
+  await main(process.argv.slice(2));
+  const base = JSON.parse(readFileSync(out, 'utf8'));
+  ${edit}
+  writeFileSync(out, JSON.stringify(base));`,
+      );
+      expect(
+        await refusal(compileBundle({ ...input(), cliEntry: script })),
+      ).toBe('bundle.path-escape');
+    }
+  }, 120_000);
+
+  /** A fake CLI that runs every step for real, then `edit` (JS, cwd = worktree, `out` in scope) after `step`. */
+  const tampers = async (name: string, step: string, edit: string) => {
+    const script = join(repo.work, name);
+    await mkdir(repo.work, { recursive: true });
+    await writeFile(
+      script,
+      `import { cpSync, linkSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { relative } from 'node:path';
+const out = process.argv[process.argv.indexOf('--out') + 1];
+const { main } = await import(${JSON.stringify(join(ROOT, 'src/cli/main.ts'))});
+const code = await main(process.argv.slice(2));
+if (process.argv[2] === ${JSON.stringify(step)}) {
+${edit}
+}
+process.exit(code);
+`,
+    );
+    return script;
+  };
+
+  /** Runs each `[name, step, edit]` case and expects a path-escape whose message hides `outside`. */
+  const expectEscapes = async (
+    outside: string,
+    cases: readonly (readonly [string, string, string, unknown?])[],
+  ) => {
+    for (const [name, step, edit, delta = additionDelta()] of cases) {
+      const script = await tampers(`${name}.ts`, step, edit);
+      const outcome = await compileBundle({
+        ...input(),
+        delta,
+        cliEntry: script,
+      }).catch((e: unknown) => e);
+      // On Windows (CI) the directory-link case finished without error: Bun's recursive
+      // readdir does not list through it there, so the proof is that nothing outside leaked.
+      if (name === 'read-dev-skill-link' && process.platform === 'win32') {
+        expect(JSON.stringify(outcome)).not.toContain('TOP-SECRET');
+        continue;
+      }
+      const error = outcome as { code?: string; message?: string };
+      expect([name, error.code]).toEqual([name, 'bundle.path-escape']);
+      expect(error.message).not.toContain(outside);
+    }
+  };
+
+  test('nothing the server writes lands outside the worktree through a symlink (#177)', async () => {
+    const outside = await mkdtemp(join(tmpdir(), 'write-escape-'));
+    dirs.push(outside);
+    const at = (p: string) => JSON.stringify(join(outside, p));
+    await expectEscapes(outside, [
+      // The folder of the file to extend is a link to a copy outside.
+      [
+        'write-extend',
+        'bundle-base',
+        `cpSync('src/shop/domain', ${at('domain')}, { recursive: true });
+rmSync('src/shop/domain', { recursive: true });
+symlinkSync(${at('domain')}, 'src/shop/domain');`,
+      ],
+      // The proposal folder is a dangling link to a folder outside.
+      [
+        'write-proposal',
+        'bundle-base',
+        `rmSync('changes', { recursive: true, force: true });
+symlinkSync(${at('changes')}, 'changes');`,
+      ],
+      // A new file to write is a dangling link to a file outside.
+      [
+        'write-new-file',
+        'bundle-base',
+        `symlinkSync(${at('refund.ts')}, 'src/shop/domain/refund.ts');`,
+        entityDelta(),
+      ],
+      // The compile child plants a dangling link where the server writes the base lock.
+      [
+        'write-base-lock',
+        'compile',
+        `symlinkSync(${at('lock.json')}, '.bundle-base-lock.json');`,
+      ],
+    ]);
+    expect(
+      await readFile(join(outside, 'domain/order.ts'), 'utf8'),
+    ).not.toContain('refund');
+    expect(await readdir(outside)).toEqual(['domain']);
+  }, 240_000);
+
+  test('nothing outside the worktree is read into the bundle through the config or a symlink (#177)', async () => {
+    const outside = await mkdtemp(join(tmpdir(), 'read-escape-'));
+    dirs.push(outside);
+    await mkdir(join(outside, 'shop-dev'));
+    await writeFile(join(outside, 'shop-dev/secret.txt'), 'TOP-SECRET');
+    // A hard link must stay on one file system: this one sits next to the worktrees.
+    await mkdir(repo.work, { recursive: true });
+    const secret = join(repo.work, 'secret.txt');
+    await writeFile(secret, 'TOP-SECRET');
+    const at = (p: string) => JSON.stringify(join(outside, p));
+    /** After `step`, its `--out` is moved outside and replaced by a link to it. */
+    const linkedOut = (file: string) =>
+      `cpSync(out, ${at(file)}); rmSync(out); symlinkSync(${at(file)}, out);`;
+    await expectEscapes(outside, [
+      ['read-base-output', 'bundle-base', linkedOut('base.json')],
+      ['read-analysis-output', 'bundle-analysis', linkedOut('analysis.json')],
+      // A file of the skeleton is swapped for a hard link to a file outside.
+      [
+        'read-hardlink',
+        'bundle-analysis',
+        `rmSync('src/shop/domain/order.ts');
+linkSync(${JSON.stringify(secret)}, 'src/shop/domain/order.ts');`,
+      ],
+      // The config points the dev skills folder outside.
+      [
+        'read-dev-skills',
+        'bundle-base',
+        `const base = JSON.parse(readFileSync(out, 'utf8'));
+base.config.out.devSkills = relative(base.config.outRoot, ${JSON.stringify(outside)});
+writeFileSync(out, JSON.stringify(base));`,
+      ],
+      // A link inside the dev skill folder leads outside.
+      [
+        'read-dev-skill-link',
+        'bundle-analysis',
+        `symlinkSync(${at('shop-dev')}, '.agents/skills/shop-dev/leak');`,
+      ],
+      // A file of the skeleton is swapped for a link after it was written.
+      [
+        'read-skeleton',
+        'bundle-analysis',
+        `rmSync('src/shop/domain/order.ts');
+symlinkSync(${at('shop-dev/secret.txt')}, 'src/shop/domain/order.ts');`,
+      ],
+    ]);
+  }, 240_000);
+
+  test('a committed link at a child output file does not overwrite what it points to (#177)', async () => {
+    for (const name of ['.bundle-base.json', '.bundle-analysis.json']) {
+      const outside = await mkdtemp(join(tmpdir(), 'committed-link-'));
+      dirs.push(outside);
+      const victim = join(outside, 'victim.json');
+      await writeFile(victim, 'untouched');
+      const linked = await shopRepo((root) =>
+        symlink(victim, join(root, name)),
+      );
+      const call = compileBundle({
+        ...input(),
+        baseRoot: linked.root,
+        baseRef: linked.ref,
+      });
+      expect([name, await refusal(call)]).toEqual([
+        name,
+        'bundle.compile-failed',
+      ]);
+      expect(await readFile(victim, 'utf8')).toBe('untouched');
+    }
+  }, 240_000);
+
+  test('a hard link to the base checkout does not carry the server write out of the worktree (#177)', async () => {
+    const base = await shopRepo();
+    const order = join(base.root, 'src/shop/domain/order.ts');
+    const script = await tampers(
+      'hardlink-write.ts',
+      'bundle-base',
+      `rmSync('src/shop/domain/order.ts');
+linkSync(${JSON.stringify(order)}, 'src/shop/domain/order.ts');`,
+    );
+    const error = (await compileBundle({
+      ...input(),
+      baseRoot: base.root,
+      baseRef: base.ref,
+      cliEntry: script,
+    }).catch((e: unknown) => e)) as { code?: string };
+    // The file to extend is refused before it is read, so neither its text nor a write leaves.
+    expect(error.code).toBe('bundle.path-escape');
+    expect(await readFile(order, 'utf8')).not.toContain('refund');
+  }, 120_000);
+
+  test('a base-config field of the wrong type is refused as compile-failed (#177)', async () => {
+    const rule = "{ key: 'k', file: null, paths: null, body: 'b' }";
+    for (const [i, edit] of [
+      'base.config.root = 1;',
+      'base.config.outRoot = 1;',
+      'base.config.changesDir = 1;',
+      'base.config.out.lock = 1;',
+      'base.config.out.devSkills = 1;',
+      "base.config.rules.briefMaxTokens = '1';",
+      'base.config.conventions = {};',
+      'base.module.name = 1;',
+      'base.module.path = 1;',
+      `base.rules = [{ ...${rule}, key: 1 }];`,
+      `base.rules = [{ ...${rule}, file: 1 }];`,
+      `base.rules = [{ ...${rule}, paths: [1] }];`,
+      `base.rules = [{ ...${rule}, body: 1 }];`,
+    ].entries()) {
+      const script = await tampers(
+        `wrong-type-${i}.ts`,
+        'bundle-base',
+        `const base = JSON.parse(readFileSync(out, 'utf8'));
+${edit}
+writeFileSync(out, JSON.stringify(base));`,
+      );
+      expect([
+        edit,
+        await refusal(compileBundle({ ...input(), cliEntry: script })),
+      ]).toEqual([edit, 'bundle.compile-failed']);
+    }
+  }, 240_000);
+
+  test('a coded refusal from the base child has the worktree path redacted (#177)', async () => {
+    const script = await writesOut(
+      'leaky-base.ts',
+      'bundle-base',
+      "writeFileSync(out, JSON.stringify({ error: { code: 'bundle.module-unknown', message: 'at ' + process.cwd() } }));",
+    );
+    const error = (await compileBundle({ ...input(), cliEntry: script }).catch(
+      (e: unknown) => e,
+    )) as { code: string; message: string };
+    expect(error.code).toBe('bundle.module-unknown');
+    expect(error.message).toBe('at <candidate>');
+  }, 120_000);
+
+  test('the server process never loads the project config or rules (#177)', async () => {
+    const source = await readFile(join(import.meta.dir, 'index.ts'), 'utf8');
+    expect(source).not.toMatch(/\bloadConfig\b/);
+    expect(source).not.toMatch(/\bloadRules\b/);
+  });
+
+  test('stops a compile that outlives the timeout and stores nothing', async () => {
+    const script = join(repo.work, 'hang-cli.ts');
+    await writeFile(script, `${FORWARD_BASE}await Bun.sleep(60_000);\n`);
+    expect(
+      await refusal(
+        compileBundle({ ...input(), cliEntry: script, timeoutMs: 5000 }),
       ),
     ).toBe('bundle.compile-timeout');
     expect(await leftovers(repo)).toEqual({ dirs: [], worktrees: 1 });
@@ -268,21 +616,7 @@ describe('compileBundle on the shop project', () => {
   }, 60_000);
 
   test('a Delta that adds an entity puts its new file in the skeleton', async () => {
-    const bundle = await compileBundle({
-      ...input(),
-      delta: {
-        ...additionDelta(),
-        entities: [
-          {
-            name: 'Refund',
-            description: 'A refund.',
-            states: ['issued'],
-            invariants: [],
-            methods: [],
-          },
-        ],
-      },
-    });
+    const bundle = await compileBundle({ ...input(), delta: entityDelta() });
     const skeleton = bundle.manifest.layers.target.skeleton;
     expect(skeleton).toContain('src/shop/domain/refund.ts');
     expect(bundle.manifest.layers.target.items.map((i) => i.id)).toContain(
@@ -364,7 +698,7 @@ export {};
     await writeFile(
       script,
       `import { writeFileSync } from 'node:fs';
-if (process.argv[2] === 'compile') process.exit(0);
+${FORWARD_BASE}if (process.argv[2] === 'compile') process.exit(0);
 writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));
 await Bun.sleep(60_000);
 `,
@@ -415,12 +749,18 @@ describe('the project config and the team rules', () => {
   test('the executor briefs carry the team rules that apply to their file', async () => {
     const ruled = await shopRepo(async (root) => {
       await mkdir(join(root, '.ai/rules'), { recursive: true });
-      await writeFile(join(root, '.ai/rules/style.md'), '- Prefer early returns.\n');
+      await writeFile(
+        join(root, '.ai/rules/style.md'),
+        '- Prefer early returns.\n',
+      );
     });
     const bundle = await compileBundle(asBundle(ruled));
-    const briefs = bundle.files.filter((f) => f.path.startsWith('target/briefs/'));
+    const briefs = bundle.files.filter((f) =>
+      f.path.startsWith('target/briefs/'),
+    );
     expect(briefs.length).toBeGreaterThan(0);
-    for (const b of briefs) expect(b.content).toContain('Prefer early returns.');
+    for (const b of briefs)
+      expect(b.content).toContain('Prefer early returns.');
   }, 120_000);
 
   test('team rules over the brief budget are a coded error, not an internal one', async () => {
