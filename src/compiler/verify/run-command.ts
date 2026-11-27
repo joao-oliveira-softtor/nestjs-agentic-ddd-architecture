@@ -3,14 +3,14 @@ import { VERIFY_ENV } from './test-run';
 
 export interface CommandRun {
   readonly exitCode: number;
-  readonly stderrTail: string;
+  readonly outputTail: string;
   readonly timedOut: boolean;
 }
 
-const STDERR_LINES = 20;
+const OUTPUT_LINES = 20;
 export const COMMAND_TIMEOUT_MS = 10 * 60 * 1000;
 
-/** Runs a verify command; keeps the last stderr lines and kills it after `timeoutMs`. */
+/** Runs a verify command; keeps the last output lines (stdout then stderr) and kills it after `timeoutMs`. */
 export async function runCommand(
   command: readonly string[],
   cwd: string,
@@ -19,7 +19,7 @@ export async function runCommand(
   const proc = Bun.spawn([...command], {
     cwd,
     env: { ...process.env, [VERIFY_ENV]: '1' },
-    stdout: 'ignore',
+    stdout: 'pipe',
     stderr: 'pipe',
   });
   let timedOut = false;
@@ -28,16 +28,17 @@ export async function runCommand(
     proc.kill();
   }, timeoutMs);
   try {
-    const [stderr, exitCode] = await Promise.all([
+    const [stdout, stderr, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
       new Response(proc.stderr).text(),
       proc.exited,
     ]);
-    const stderrTail = stderr
+    const outputTail = `${stdout}\n${stderr}`
       .trimEnd()
       .split('\n')
-      .slice(-STDERR_LINES)
+      .slice(-OUTPUT_LINES)
       .join('\n');
-    return { exitCode, stderrTail, timedOut };
+    return { exitCode, outputTail, timedOut };
   } finally {
     clearTimeout(timer);
   }
@@ -45,7 +46,7 @@ export async function runCommand(
 
 export interface CommandOutcome {
   readonly exitCode: number;
-  readonly stderrTail?: string;
+  readonly outputTail?: string;
   readonly timedOut?: boolean;
 }
 
@@ -59,4 +60,4 @@ export const commandCode = <C extends ErrorCode>(
 export const commandMessage = (name: string, run: CommandOutcome): string =>
   run.timedOut
     ? `${name} did not finish in time and was killed`
-    : `${name} exited with ${run.exitCode}${run.stderrTail ? `: ${run.stderrTail}` : ''}`;
+    : `${name} exited with ${run.exitCode}${run.outputTail ? `: ${run.outputTail}` : ''}`;

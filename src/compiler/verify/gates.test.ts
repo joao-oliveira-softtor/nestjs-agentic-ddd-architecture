@@ -351,7 +351,7 @@ describe('evaluateGates', () => {
             name: 'lint',
             command: ['bun', 'run', 'lint'],
             exitCode: 1,
-            stderrTail: 'error: unused variable x',
+            outputTail: 'error: unused variable x',
           },
           {
             name: 'typecheck',

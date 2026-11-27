@@ -50,7 +50,7 @@ export interface CommandResult {
   readonly name: string;
   readonly command: readonly string[];
   readonly exitCode: number;
-  readonly stderrTail?: string;
+  readonly outputTail?: string;
   readonly timedOut?: boolean;
 }
 

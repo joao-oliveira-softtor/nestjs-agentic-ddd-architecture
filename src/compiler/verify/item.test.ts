@@ -145,7 +145,7 @@ test('closureObligations stops on a dependency cycle and on an unknown id', () =
 
 test('typecheckFindings: a timed out typecheck carries the coded verify.command-timeout', () => {
   const [finding] = typecheckFindings(
-    { exitCode: 143, stderrTail: '', timedOut: true },
+    { exitCode: 143, outputTail: '', timedOut: true },
     ['bun', 'run', 'typecheck'],
     'a.ts:1',
   );
@@ -158,7 +158,7 @@ test('typecheckFindings: a timed out typecheck carries the coded verify.command-
 });
 
 test('typecheckFindings: a failing typecheck keeps verify.item-typecheck-failed with the stderr tail; a passing one has no finding', () => {
-  const failed = { exitCode: 2, stderrTail: 'TS2304', timedOut: false };
+  const failed = { exitCode: 2, outputTail: 'TS2304', timedOut: false };
   expect(typecheckFindings(failed, ['tsc'], null)).toEqual([
     {
       code: 'verify.item-typecheck-failed',
@@ -168,7 +168,7 @@ test('typecheckFindings: a failing typecheck keeps verify.item-typecheck-failed 
     },
   ]);
   expect(
-    typecheckFindings({ ...failed, stderrTail: '' }, ['tsc'], null)[0]!.message,
+    typecheckFindings({ ...failed, outputTail: '' }, ['tsc'], null)[0]!.message,
   ).toBe('typecheck exited with 2');
   expect(typecheckFindings({ ...failed, exitCode: 0 }, ['tsc'], null)).toEqual(
     [],
