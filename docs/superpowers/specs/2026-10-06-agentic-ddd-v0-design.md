@@ -424,7 +424,8 @@ Escopo: por padrão, **o projeto inteiro** (dívida existente, como item sem tes
 
 ```ts
 interface LlmPort {
-  complete(req: LlmRequest): Promise<LlmResponse>;
+  // signal: aborted when the run deadline is reached; adapters may ignore it (ADR-0004 F8 (a), #208)
+  complete(req: LlmRequest, signal?: AbortSignal): Promise<LlmResponse>;
 }
 type LlmRequest = {
   model: string;                       // chave lógica ('default'), resolvida pelo adapter
