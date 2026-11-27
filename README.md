@@ -119,6 +119,7 @@ O resultado inclui `runId`, operator, status, output textual, steps e eventos. C
 | Deadline do run (inclui LLM, aprovação, execute e bus) | timeout                        | não                         |
 | max_tokens / refusal                                   | failed / max_tokens ou refused | não                         |
 | Exceção do provider                                    | failed / provider_error        | o que foi lançado           |
+| stopReason tool_calls sem nenhuma chamada              | failed / provider_error        | não                         |
 | Contexto sem representação JSON                        | failed / invalid_context       | o erro da serialização      |
 | Exceção do `ApprovalPort`                              | failed / approval_error        | o que foi lançado           |
 | Falha do bus ao publicar                               | failed / event_bus_error       | o erro do bus               |
