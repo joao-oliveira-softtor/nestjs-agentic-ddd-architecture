@@ -17,7 +17,7 @@ describe('runCommand', () => {
     );
     expect(result.exitCode).toBe(3);
     expect(result.timedOut).toBe(false);
-    expect(result.outputTail).toContain('ultima');
+    expect(result.outputTail).toBe('primeira\nultima');
   });
 
   test('guarda só as últimas linhas do stderr', async () => {

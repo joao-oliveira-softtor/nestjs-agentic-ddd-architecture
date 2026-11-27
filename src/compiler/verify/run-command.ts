@@ -22,7 +22,7 @@ export async function runCommand(
     env: { ...process.env, [VERIFY_ENV]: '1' },
   });
   const outputTail = `${stdout}\n${stderr}`
-    .trimEnd()
+    .trim()
     .split('\n')
     .slice(-OUTPUT_LINES)
     .join('\n');
