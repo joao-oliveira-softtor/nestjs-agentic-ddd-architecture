@@ -8,7 +8,7 @@
 
 - Nest applications can expose mounted Operators as scoped MCP tools over Streamable HTTP with `AgenticHttpModule.forRoot`. The optional module uses the shared OAuth resource server, accepts server-derived run context and supports opt-in domain events. [Configuration](docs/distribution.md#runtime-mcp-in-a-nest-application) (#123, #124).
 
-- **`propose_change` reads the base config in a child process (#177):** the MCP server imported the project's `agentic.config.ts` (and the domain it loads) on every `propose_change`, so each call left another copy of those modules in the long-lived server. The base config, module, lock and team rules are now read by an internal `bundle-base` CLI step in a child process, like the compile and analysis steps, under the same time limit and scrubbed environment. Refusals keep their codes; a crash of that step is reported as `bundle.compile-failed` and a hang as `bundle.compile-timeout`.
+- **`propose_change` reads the base config in a child process (#177):** the MCP server imported the project's `agentic.config.ts` (and the domain it loads) on every `propose_change`, so each call left another copy of those modules in the long-lived server. The base config, module, lock and team rules are now read by an internal `bundle-base` CLI step in a child process, like the compile and analysis steps, under the same time limit and scrubbed environment. Refusals keep their codes; a crash of that step is reported as `bundle.compile-failed` and a hang as `bundle.compile-timeout`. Files the server reads or writes for the bundle must stay inside the worktree: a symlink or hard link that leads out, or a child output path that already exists, is refused (`bundle.path-escape` or `bundle.compile-failed`).
 
 ## [0.7.0] — 2026-11-10
 
