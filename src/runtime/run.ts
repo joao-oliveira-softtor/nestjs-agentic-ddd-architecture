@@ -77,7 +77,9 @@ export async function runOperator(
       };
       steps.push(step);
       failure = 'provider_error';
-      const response = await wait(() => ports.llm.complete(request));
+      const response = await wait(() =>
+        ports.llm.complete(request, deadline.signal),
+      );
       step.response = response;
       if (response.stopReason === 'max_tokens')
         return finish('failed', 'max_tokens');

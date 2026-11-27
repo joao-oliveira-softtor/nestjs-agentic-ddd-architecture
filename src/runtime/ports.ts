@@ -7,7 +7,8 @@ import type {
 } from './types';
 
 export interface LlmPort {
-  complete(request: LlmRequest): Promise<LlmResponse>;
+  /** `signal` aborts when the run deadline is reached; adapters may ignore it. */
+  complete(request: LlmRequest, signal?: AbortSignal): Promise<LlmResponse>;
 }
 export interface ApprovalPort {
   request(request: ApprovalRequest): Promise<ApprovalDecision>;

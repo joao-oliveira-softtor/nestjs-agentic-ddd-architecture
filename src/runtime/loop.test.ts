@@ -17,7 +17,7 @@ import {
   type LlmResponse,
   type RuntimeOptions,
 } from './index';
-import type { EventBus } from './ports';
+import type { EventBus, LlmPort } from './ports';
 
 const end: LlmResponse = {
   content: [{ type: 'text', text: 'done' }],
@@ -387,6 +387,24 @@ test('a use-case that blocks the event loop past the deadline ends the run as ti
     {},
     { timeoutMs: 20 },
   );
+  expect((await f.runtime.run('agent', { message: 'go' })).status).toBe(
+    'timeout',
+  );
+  expect(signal?.aborted).toBe(true);
+});
+
+test('the deadline aborts the signal passed to a pending llm.complete and the run ends as timeout', async () => {
+  let signal: AbortSignal | undefined;
+  const llm: LlmPort = {
+    complete: (_request, received) =>
+      new Promise<never>((_, reject) => {
+        signal = received;
+        received?.addEventListener('abort', () =>
+          reject(new Error('request aborted')),
+        );
+      }),
+  };
+  const f = await setup([], undefined, { llm }, { timeoutMs: 20 });
   expect((await f.runtime.run('agent', { message: 'go' })).status).toBe(
     'timeout',
   );
