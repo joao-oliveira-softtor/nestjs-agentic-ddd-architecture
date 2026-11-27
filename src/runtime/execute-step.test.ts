@@ -3,6 +3,7 @@ import { DomainError, DomainEvent, type UseCase } from '@agentic-ddd/core';
 import { FakeLlm, InMemoryEventBus } from '@agentic-ddd/testing';
 import { Changed, fixture } from '../../test/helpers/runtime';
 import { schemaLookup } from './emits-guard';
+import { executeStep } from './execute-step';
 import { executeUseCase } from './execute-use-case';
 import { OperatorRuntime } from './index';
 
@@ -115,3 +116,32 @@ for (const c of cases)
     }
     expect(direct).toEqual(c.direct);
   });
+
+test('an empty causationId is kept, only a missing one falls back to the correlationId', async () => {
+  const f = fixture();
+  const stampOf = async (causationId?: string) => {
+    const published: DomainEvent[] = [];
+    await executeStep(
+      f.registry.useCases[0]!,
+      {
+        execute: async (input, ctx) => {
+          await ctx.publish([new Changed({ value: 'a' })]);
+          return input;
+        },
+      },
+      { value: 'a' },
+      {
+        correlationId: 'corr',
+        causationId,
+        publishEvent: (b) => void published.push(...b),
+        wait: (op) => op(),
+        check: () => {},
+        signal: new AbortController().signal,
+        schemaFor: schemaLookup(f.registry),
+      },
+    );
+    return published[0]!.causationId;
+  };
+  expect(await stampOf('')).toBe('');
+  expect(await stampOf()).toBe('corr');
+});
