@@ -62,6 +62,20 @@ const input = () => ({
   proposal: shopProposal(),
 });
 
+/** The shared Delta plus a new entity, rendered as the new file `domain/refund.ts`. */
+const entityDelta = () => ({
+  ...additionDelta(),
+  entities: [
+    {
+      name: 'Refund',
+      description: 'A refund.',
+      states: ['issued'],
+      invariants: [],
+      methods: [],
+    },
+  ],
+});
+
 /** One compile of the shared input, for the tests that only read the bundle. */
 let first: Promise<Bundle> | undefined;
 const firstBundle = (): Promise<Bundle> => (first ??= compileBundle(input()));
@@ -327,12 +341,13 @@ process.exit(code);
   /** Runs each `[name, step, edit]` case and expects a path-escape whose message hides `outside`. */
   const expectEscapes = async (
     outside: string,
-    cases: readonly (readonly [string, string, string])[],
+    cases: readonly (readonly [string, string, string, unknown?])[],
   ) => {
-    for (const [name, step, edit] of cases) {
+    for (const [name, step, edit, delta = additionDelta()] of cases) {
       const script = await tampers(`${name}.ts`, step, edit);
       const error = (await compileBundle({
         ...input(),
+        delta,
         cliEntry: script,
       }).catch((e: unknown) => e)) as { code?: string; message?: string };
       expect([name, error.code]).toEqual([name, 'bundle.path-escape']);
@@ -359,6 +374,13 @@ symlinkSync(${at('domain')}, 'src/shop/domain');`,
         'bundle-base',
         `rmSync('changes', { recursive: true, force: true });
 symlinkSync(${at('changes')}, 'changes');`,
+      ],
+      // A new file to write is a dangling link to a file outside.
+      [
+        'write-new-file',
+        'bundle-base',
+        `symlinkSync(${at('refund.ts')}, 'src/shop/domain/refund.ts');`,
+        entityDelta(),
       ],
       // The compile child plants a dangling link where the server writes the base lock.
       [
@@ -528,21 +550,7 @@ writeFileSync(out, JSON.stringify(base));`,
   }, 60_000);
 
   test('a Delta that adds an entity puts its new file in the skeleton', async () => {
-    const bundle = await compileBundle({
-      ...input(),
-      delta: {
-        ...additionDelta(),
-        entities: [
-          {
-            name: 'Refund',
-            description: 'A refund.',
-            states: ['issued'],
-            invariants: [],
-            methods: [],
-          },
-        ],
-      },
-    });
+    const bundle = await compileBundle({ ...input(), delta: entityDelta() });
     const skeleton = bundle.manifest.layers.target.skeleton;
     expect(skeleton).toContain('src/shop/domain/refund.ts');
     expect(bundle.manifest.layers.target.items.map((i) => i.id)).toContain(
