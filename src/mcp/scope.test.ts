@@ -346,6 +346,23 @@ describe('narrowRuleGlobs', () => {
     ).toEqual(['examples/orders/a/**']);
   });
 
+  test('ignores case on win32, like isInModule, and keeps the glob as written', () => {
+    const globs = [
+      'Examples/Billing/**',
+      'BILLING/**',
+      'Examples/{Orders,Billing}/**',
+    ];
+    const on = (platform: NodeJS.Platform) =>
+      narrowRuleGlobs([rule('r', globs)], lock, orders, platform)[0]?.paths;
+    expect(on('win32')).toEqual(['Examples/Orders/**']);
+    expect(on('linux')).toEqual([
+      'Examples/Billing/**',
+      'BILLING/**',
+      'Examples/Orders/**',
+      'Examples/Billing/**',
+    ]);
+  });
+
   test('drops a glob whose braces are too many to expand', () => {
     const many = Array.from({ length: 10 }, () => '{a,b,c}').join('/');
     expect(globsOf([many, 'test/**'])).toEqual(['test/**']);
