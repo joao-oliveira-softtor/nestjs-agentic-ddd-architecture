@@ -6,7 +6,11 @@ import { BunAdapter } from '@nestbun/platform';
 import { SignJWT } from 'jose';
 import type { UseCaseContext } from '@agentic-ddd/core';
 import { AgenticModule, AgenticHttpModule } from '@agentic-ddd/nestjs';
-import { FakeLlm, type LlmScriptEntry } from '@agentic-ddd/testing';
+import {
+  FakeApproval,
+  FakeLlm,
+  type LlmScriptEntry,
+} from '@agentic-ddd/testing';
 import { Changed, fixture } from './helpers/runtime';
 import {
   makeSigner,
@@ -49,6 +53,7 @@ async function start(
     http?: boolean;
     allowlist?: string[];
     approvalRequired?: boolean;
+    approval?: FakeApproval;
     includeEvents?: boolean;
     timeoutMs?: number;
     resolverError?: Error;
@@ -72,7 +77,7 @@ async function start(
   const claimsSeen: Readonly<Record<string, unknown>>[] = [];
   const module = await Test.createTestingModule({
     imports: [
-      AgenticModule.forRoot({ ...f, llm }),
+      AgenticModule.forRoot({ ...f, llm, approval: options.approval }),
       AgenticModule.forFeature({
         operators: [f.Agent],
         useCases: [
@@ -234,11 +239,13 @@ test('metadata, OAuth challenges, authority checks and body limits survive the N
 });
 
 test('list and call apply identical per-request operator and module scopes', async () => {
-  await start();
+  const { llm, claimsSeen } = await start();
   const scoped = await token(capability + ':app');
   const other = await token(capability + ':other');
   const absent = (await call(scoped, 'unknown')).error;
-  expect(absent.code).toBeLessThan(0);
+  expect(absent).toMatchObject({ code: -32602, message: 'Unknown tool' });
+  expect(llm.requests).toHaveLength(0);
+  expect(claimsSeen).toHaveLength(0);
   for (const [bearer, names] of [
     [scoped, ['agent']],
     [other, []],
@@ -380,6 +387,18 @@ test('the default approval port prevents execution', async () => {
   });
 });
 
+test('the configured approval port, not the client, approves execution', async () => {
+  const approval = new FakeApproval(true);
+  const { calls } = await start([toolCall, done], {
+    approvalRequired: true,
+    approval,
+  });
+  const { result } = await call(await token());
+  expect(result.structuredContent.status).toBe('completed');
+  expect(calls).toEqual([{ value: 'ok' }]);
+  expect(approval.requests).toHaveLength(1);
+});
+
 for (const includeEvents of [false, true]) {
   test(
     'domain event projection with includeEvents=' + includeEvents,
@@ -429,4 +448,21 @@ test('failed and timed-out runs are MCP successes without internal errors', asyn
     });
     expect(JSON.stringify(result)).not.toContain('private provider diagnostic');
   }
+});
+
+test('a tool call with invalid input during the run is refused and the run completes', async () => {
+  const badInput: LlmScriptEntry = {
+    stopReason: 'tool_calls',
+    content: [
+      { type: 'tool_call', name: 'tool', id: 't', input: { value: 1 } },
+    ],
+  };
+  const { calls, llm } = await start([badInput, done]);
+  const { result } = await call(await token());
+  expect(result.structuredContent.status).toBe('completed');
+  expect(calls).toEqual([]);
+  expect(llm.requests[1]?.messages.at(-1)).toMatchObject({
+    role: 'tool',
+    results: [{ isError: true, content: { code: 'invalid_input' } }],
+  });
 });

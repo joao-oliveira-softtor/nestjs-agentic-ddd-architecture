@@ -25,11 +25,17 @@ export interface NextReport {
   readonly diagnostics: string[];
 }
 
+/** id de item ou de obrigação -> item dono (o primeiro que casa, como `ownerOf`). */
+export function ownerIndex(ir: IR): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const item of workItems(ir))
+    for (const key of [item.id, ...item.obligations])
+      if (!index.has(key)) index.set(key, item.id);
+  return index;
+}
+
 export function ownerOf(ir: IR, id: string): string | null {
-  return (
-    workItems(ir).find((i) => i.id === id || i.obligations.includes(id))?.id ??
-    null
-  );
+  return ownerIndex(ir).get(id) ?? null;
 }
 
 export function evaluateStatus(input: {
@@ -116,8 +122,12 @@ export function usersOfPort(ir: IR, portId: string): string[] {
 }
 
 /** Donos de um id do delta: o item dono ou, para um port, os use-cases e adapters que o usam. */
-export function changeOwners(ir: IR, id: string): string[] {
-  const owner = ownerOf(ir, id);
+export function changeOwners(
+  ir: IR,
+  id: string,
+  index: Map<string, string> = ownerIndex(ir),
+): string[] {
+  const owner = index.get(id);
   if (owner) return [owner];
   return id.startsWith('port:') ? usersOfPort(ir, id) : [];
 }
@@ -128,6 +138,7 @@ export function selectChange(
   proposal: Pick<Proposal, 'id' | 'delta'>,
 ): ProjectStatus {
   const byId = new Map(report.items.map((i) => [i.id, i]));
+  const index = ownerIndex(ir);
   const selected = new Set<string>();
   const add = (id: string) => {
     if (selected.has(id)) return;
@@ -136,7 +147,7 @@ export function selectChange(
       if (byId.get(dep)!.state !== 'done') add(dep);
   };
   for (const id of [...proposal.delta.added, ...proposal.delta.modified]) {
-    for (const owner of changeOwners(ir, id)) add(owner);
+    for (const owner of changeOwners(ir, id, index)) add(owner);
   }
   return {
     ...report,
