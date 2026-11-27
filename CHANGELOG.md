@@ -2,7 +2,7 @@
 
 ## [Não lançado]
 
-- `LlmPort.complete` takes an optional `AbortSignal` as its second parameter, and the run aborts it when the run deadline is reached, so a provider call no longer keeps going after a `timeout`. Adapters that ignore the signal keep working, and a deadline that wins over a rejecting call still ends the run as `timeout`, not `provider_error` (#208).
+- `LlmPort.complete` takes an optional `AbortSignal` as its second parameter, and the run aborts it when the run deadline is reached, so a provider call no longer keeps going after a `timeout`. Adapters that ignore the signal keep working, and a deadline that wins over a rejecting call still ends the run as `timeout`, not `provider_error`. The same deadline guards the use-case, the approval and the event delivery: one that rejects as soon as the deadline's signal aborts now also reports the timeout (`timeout`, or `runtime.use-case-timeout` from `executeUseCase`) instead of its own error, as the 0.7.0 note of #186 already stated (#208).
 
 - Internal: the operator loop and `runUseCase` now share one step executor (`executeStep`) for the emits guard, the drain and the outcome of a use-case execution. No behaviour change (#187).
 
