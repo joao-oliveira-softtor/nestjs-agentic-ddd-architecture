@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **Behaviour change — `verify` requires a test for the `uses` and `emits` a proposal adds to a use-case (#179):** an item whose Delta added a method to `uses` or an event to `emits` was certified `done` with no test exercising it. Each `uses`/`emits` a use-case listed in `delta.modified` has that the lock's IR did not becomes the obligation `addition:<proposal>/<use-case>/<method or event>`, to be named in a test's `covers` (which now accepts the `addition:` prefix). While the proposal is open the obligation is measured against the lock; when `compile` applies it, the lock's change entry records it in the new optional field `additions` (use-case id → added refs), so the obligation survives the archive while the use-case still has that ref. The lock version stays 1, older locks parse unchanged and changes applied before this release get no new obligation. A use-case added whole (`delta.added`) gets no addition obligation: it must be covered entirely anyway. Such an item drops from `done` to `implemented` until it has that test, and its spec hash changes.
+
 - `changeOwners` builds the owner index once per change instead of rebuilding the work items for every delta id (#175).
 
 - A provider response that stops with `tool_calls` but carries no call now ends the operator run `failed` / `provider_error` at once, instead of repeating until `step_limit` (#174).

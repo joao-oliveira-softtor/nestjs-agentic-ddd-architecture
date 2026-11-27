@@ -673,7 +673,7 @@ exports[`pacote de value object traz declaração e obrigações: valueobject:Di
 - ID: \`valueobject:Dinheiro\`
 - Layer: domain
 - Module: vo
-- source: \`src/compiler/packet.test.ts:157\`
+- source: \`src/compiler/packet.test.ts:158\`
 - State: implemented (static: tests not run; never certifies done)
 - specHash: \`c0634298f217a038e048f539defcc47c11de603b62ab37e0b182baaa086e459a\`
 - Dependencies: —

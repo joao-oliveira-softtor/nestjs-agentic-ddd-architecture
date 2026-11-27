@@ -1,6 +1,10 @@
 import { stableStringify } from './canonical';
 import { AgenticError } from './ir';
-import { itemSpecification, type ItemSpecification } from './item-spec';
+import {
+  additionObligations,
+  itemSpecification,
+  type ItemSpecification,
+} from './item-spec';
 import { collectStatus, stateContext } from './project-state';
 import type { WorkItemStatus } from './state';
 
@@ -89,7 +93,16 @@ export async function packet(options: PacketOptions): Promise<string> {
     );
   return renderPacket(
     item,
-    itemSpecification(context.project.ir, item, context.proposals),
+    itemSpecification(
+      context.project.ir,
+      item,
+      context.proposals,
+      additionObligations(
+        context.project.ir,
+        context.lock,
+        context.proposals,
+      ),
+    ),
     options.configPath,
   );
 }

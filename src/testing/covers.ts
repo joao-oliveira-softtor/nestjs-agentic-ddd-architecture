@@ -1,7 +1,7 @@
 import { AgenticError } from '../contracts/codes';
 
 const ELEMENT_ID =
-  /^(entity|invariant|method|event|usecase|operator|criterion|valueobject|port):\S+$/;
+  /^(entity|invariant|method|event|usecase|operator|criterion|addition|valueobject|port):\S+$/;
 const COVERS_PREFIX = /^\[covers: ([^\]]+)\]/;
 
 export function covers(ids: readonly string[], title: string): string {

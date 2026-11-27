@@ -12,6 +12,8 @@ export interface LockChange {
   readonly summary: string;
   readonly hash: string;
   readonly items: DiffItem[];
+  /** `uses`/`emits` the change added to each modified use-case (#179); absent in locks written before. */
+  readonly additions?: Record<string, string[]>;
 }
 
 export interface DomainLock {
@@ -22,6 +24,28 @@ export interface DomainLock {
 
 export function serializeLock(lock: DomainLock): string {
   return stableStringify(lock);
+}
+
+function isValidAdditions(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (value === null || typeof value !== 'object' || Array.isArray(value))
+    return false;
+  return Object.values(value).every(
+    (refs) => Array.isArray(refs) && refs.every((r) => typeof r === 'string'),
+  );
+}
+
+function isValidChange(change: unknown): boolean {
+  if (change === null || typeof change !== 'object' || Array.isArray(change))
+    return false;
+  const ch = change as Record<string, unknown>;
+  return (
+    ['id', 'title', 'path', 'summary', 'hash'].every(
+      (k) => typeof ch[k] === 'string',
+    ) &&
+    Array.isArray(ch.items) &&
+    isValidAdditions(ch.additions)
+  );
 }
 
 function isValidLockStructure(lock: unknown): lock is DomainLock {
@@ -48,22 +72,7 @@ function isValidLockStructure(lock: unknown): lock is DomainLock {
   if (irObj.adapters !== undefined && !Array.isArray(irObj.adapters))
     return false;
   if (!Array.isArray(obj.changes)) return false;
-  for (const change of obj.changes) {
-    if (change === null || typeof change !== 'object' || Array.isArray(change))
-      return false;
-    const ch = change as Record<string, unknown>;
-    if (
-      typeof ch.id !== 'string' ||
-      typeof ch.title !== 'string' ||
-      typeof ch.path !== 'string' ||
-      typeof ch.summary !== 'string' ||
-      typeof ch.hash !== 'string' ||
-      !Array.isArray(ch.items)
-    ) {
-      return false;
-    }
-  }
-  return true;
+  return obj.changes.every(isValidChange);
 }
 
 export function parseLock(text: string, displayPath: string): DomainLock {
