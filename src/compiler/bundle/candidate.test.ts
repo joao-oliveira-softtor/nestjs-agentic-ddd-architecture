@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test } from 'bun:test';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import {
   mkdir,
   mkdtemp,
@@ -231,4 +231,130 @@ describe('run', () => {
     expect(result.timedOut).toBe(false);
     expect(Date.now() - started).toBeLessThan(30_000);
   });
+
+  test('a timeout kills the descendants of the command, not only the command (#205)', async () => {
+    const { dir, parent } = await descendants();
+    const beat = join(dir, 'beat');
+    const result = await run([process.execPath, parent, beat], dir, {
+      timeoutMs: 3000,
+    });
+    expect(result.timedOut).toBe(true);
+    await expectStopped(beat);
+  }, 20_000);
+
+  test('an abort kills the descendants of the command too (#205)', async () => {
+    const { dir, parent } = await descendants();
+    const beat = join(dir, 'beat');
+    const abort = new AbortController();
+    const running = run([process.execPath, parent, beat], dir, {
+      signal: abort.signal,
+    });
+    await until(() => size(beat) > 0);
+    abort.abort();
+    await running;
+    await expectStopped(beat);
+  }, 20_000);
+
+  describe.skipIf(process.platform === 'win32')(
+    'a signal to the process that runs the commands (#205)',
+    () => {
+      test.each(['SIGINT', 'SIGHUP', 'SIGTERM'] as const)(
+        '%s stops both running commands and their descendants, then the process by that signal',
+        async (signal) => {
+          const { runner, pids } = await signalled('none');
+          runner.kill(signal);
+          await runner.exited;
+          expect(runner.signalCode).toBe(signal);
+          for (const pid of pids) await until(() => !alive(pid));
+        },
+        30_000,
+      );
+
+      test('an app listener of its own still decides how the process ends', async () => {
+        const { runner, pids, dir } = await signalled('once');
+        runner.kill('SIGINT');
+        expect(await runner.exited).toBe(0);
+        expect(existsSync(join(dir, 'foreign'))).toBe(true);
+        for (const pid of pids) await until(() => !alive(pid));
+      }, 30_000);
+    },
+  );
 });
+
+/** A command (`parent`) whose child appends to the file named by its argument every 100 ms, while the command sleeps. */
+async function descendants(): Promise<{ dir: string; parent: string }> {
+  const dir = await mkdtemp(join(tmpdir(), 'run-tree-'));
+  dirs.push(dir);
+  const beat = join(dir, 'heartbeat.ts');
+  await writeFile(
+    beat,
+    "import { appendFileSync } from 'node:fs';\nsetInterval(() => appendFileSync(process.argv[2]!, 'x'), 100);\n",
+  );
+  const parent = join(dir, 'parent.ts');
+  await writeFile(
+    parent,
+    [
+      "import { writeFileSync } from 'node:fs';",
+      `const child = Bun.spawn([process.execPath, ${JSON.stringify(beat)}, process.argv[2]!], { stdout: 'inherit', stderr: 'inherit' });`,
+      "writeFileSync(`${process.argv[2]}.pid`, String(child.pid));",
+      'await Bun.sleep(60_000);',
+      '',
+    ].join('\n'),
+  );
+  return { dir, parent };
+}
+
+/** A process that runs two commands through `run` at once; `once` adds an app SIGINT listener of its own first. */
+async function signalled(mode: 'none' | 'once') {
+  const { dir, parent } = await descendants();
+  const runner = join(dir, 'runner.ts');
+  await writeFile(
+    runner,
+    [
+      "import { writeFileSync } from 'node:fs';",
+      `const { run } = await import(${JSON.stringify(join(import.meta.dir, 'candidate.ts'))});`,
+      `if (${JSON.stringify(mode)} === 'once') process.once('SIGINT', () => { writeFileSync(${JSON.stringify(join(dir, 'foreign'))}, 'x'); process.exit(0); });`,
+      `await Promise.all(['a', 'b'].map((n) => run([process.execPath, ${JSON.stringify(parent)}, ${JSON.stringify(dir)} + '/' + n], ${JSON.stringify(dir)})));`,
+      '',
+    ].join('\n'),
+  );
+  const proc = Bun.spawn([process.execPath, runner], {
+    stdout: 'ignore',
+    stderr: 'inherit',
+  });
+  const pids: number[] = [];
+  for (const n of ['a', 'b']) {
+    const file = join(dir, `${n}.pid`);
+    await until(() => existsSync(file) && size(join(dir, n)) > 0);
+    pids.push(Number(await Bun.file(file).text()));
+  }
+  return { runner: proc, pids, dir };
+}
+
+const size = (file: string): number =>
+  existsSync(file) ? statSync(file).size : 0;
+
+function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function until(done: () => boolean, ms = 10_000): Promise<void> {
+  const end = Date.now() + ms;
+  while (!done()) {
+    if (Date.now() > end) throw new Error('timed out waiting');
+    await Bun.sleep(50);
+  }
+}
+
+/** The heartbeat ran, and it no longer grows: the descendant is gone. */
+async function expectStopped(beat: string): Promise<void> {
+  const before = size(beat);
+  expect(before).toBeGreaterThan(0);
+  await Bun.sleep(600);
+  expect(size(beat)).toBe(before);
+}
