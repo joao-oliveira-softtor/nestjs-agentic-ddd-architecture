@@ -4,6 +4,8 @@
 
 - Internal: the operator loop and `runUseCase` now share one step executor (`executeStep`) for the emits guard, the drain and the outcome of a use-case execution. No behaviour change (#187).
 
+- `changeOwners` builds the owner index once per change instead of rebuilding the work items for every delta id (#175).
+
 - A provider response that stops with `tool_calls` but carries no call now ends the operator run `failed` / `provider_error` at once, instead of repeating until `step_limit` (#174).
 
 - Nest applications can expose mounted Operators as scoped MCP tools over Streamable HTTP with `AgenticHttpModule.forRoot`. The optional module uses the shared OAuth resource server, accepts server-derived run context and supports opt-in domain events. [Configuration](docs/distribution.md#runtime-mcp-in-a-nest-application) (#123, #124).
