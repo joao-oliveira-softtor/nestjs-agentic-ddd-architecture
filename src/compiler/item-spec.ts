@@ -85,6 +85,22 @@ export function additionsField(
   return Object.keys(additions).length ? { additions } : {};
 }
 
+/** O lock guarda o que a mudança acrescentou, mas uma mudança posterior pode ter tirado o ref: só vale o que o IR atual ainda tem. */
+function stillInIr(
+  ir: IR,
+  additions: Record<string, string[]>,
+): Record<string, string[]> {
+  const live = (uc: string, refs: string[]) => {
+    const now = ir.useCases.find((u) => u.id === uc);
+    return refs.filter((r) =>
+      [...(now?.uses ?? []), ...(now?.emits ?? [])].includes(r),
+    );
+  };
+  return Object.fromEntries(
+    Object.entries(additions).map(([uc, refs]) => [uc, live(uc, refs)]),
+  );
+}
+
 /**
  * `addition:<change>/<use-case>/<ref>` obligations (#179): what an open proposal added since the lock,
  * plus what each applied change recorded in the lock. The only producer of these ids.
@@ -102,7 +118,8 @@ export function additionObligations(
         ...refs.map((r) => `addition:${change}/${uc}/${r}`),
       ]);
   };
-  for (const c of lock?.changes ?? []) add(c.id, c.additions ?? {});
+  for (const c of lock?.changes ?? [])
+    add(c.id, stillInIr(ir, c.additions ?? {}));
   for (const p of proposals.filter((p) => !p.archived))
     add(p.id, addedRefs(lock?.ir, ir, p.delta.modified));
   return result;

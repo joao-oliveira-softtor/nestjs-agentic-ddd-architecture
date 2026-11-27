@@ -480,6 +480,13 @@ Novo evento.
       'usecase:publish_product': ['event:ProductPublished', 'method:Product.publish'],
     }).missingObligations,
   ).toEqual([id, use]);
+  // Ref que uma mudança posterior tirou do IR, ou caso de uso que sumiu, não gera obrigação.
+  expect(
+    applied({
+      'usecase:publish_product': ['event:ProductPublished', 'method:Product.gone'],
+      'usecase:gone': ['method:Product.publish'],
+    }).missingObligations,
+  ).toEqual([id]);
   // Mudança registrada antes do campo `additions` não ganha obrigação nova.
   expect(applied().state).toBe('done');
 });
