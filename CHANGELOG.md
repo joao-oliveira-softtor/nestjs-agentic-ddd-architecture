@@ -2,6 +2,8 @@
 
 ## [Não lançado]
 
+- **A timed-out or aborted command no longer leaves its descendants running (#205):** `verify` commands and the bundle's child steps killed only the direct process, so the `tsc` that `bun run typecheck` starts kept running. On Linux and macOS the command now runs in a process group of its own, and a timeout or an abort kills the whole group; on Windows the process tree is killed with `taskkill /T`. Because a command in its own group no longer gets the signals sent to the terminal's group, `SIGINT` (Ctrl-C), `SIGHUP` and `SIGTERM` are handed on to every running command; with no other listener for that signal the process then ends by it as before, and an application that listens for it itself (the MCP server) still decides. Limits: the kill is `SIGKILL`, so the command's own cleanup does not run; a descendant that starts its own session escapes; on Windows a descendant whose parent already exited is not reached. A command in its own session has no controlling terminal, so one that asks for a password on `/dev/tty` now fails instead of asking.
+
 - On Windows, the MCP hides another module's rule globs whatever their case (`Examples/Billing/**`), with the same case rule as `isInModule` (#195).
 
 - Internal: the operator loop and `runUseCase` now share one step executor (`executeStep`) for the emits guard, the drain and the outcome of a use-case execution. No behaviour change (#187).
@@ -16,7 +18,7 @@
 
 - **Robustness fixes from an audit (#176):**
   - `compile` writes the lock before it archives the applied proposal, and `archiveProposal` accepts a proposal that was already moved, so a crash in between no longer leaves `proposal.archived-not-in-lock` with a lock that git cannot restore, and the next `compile` finishes the interrupted archive instead of failing with `proposal.applied-not-archived`; the hint of that finding now says where to restore the lock from.
-  - `verify` runs each configured command (and the item typecheck) through one `runCommand` helper: a failing command now shows the last 20 lines of its output (stdout, then stderr), and a command that runs longer than 10 minutes is killed (the direct process only, #205) and reported as the new `verify.command-timeout` instead of hanging `verify`.
+  - `verify` runs each configured command (and the item typecheck) through one `runCommand` helper: a failing command now shows the last 20 lines of its output (stdout, then stderr), and a command that runs longer than 10 minutes is killed with its descendants (#205) and reported as the new `verify.command-timeout` instead of hanging `verify`.
   - The skills installer says which path to remove, and to run again, when it refuses to replace a file or link.
   - A `ValueObject` built from props with an own `__proto__` key (for example from `JSON.parse`) keeps its prototype.
   - The `ci` and `ci-windows` jobs are one matrix (same check names), and `CompileResult.ir` is no longer typed as nullable.

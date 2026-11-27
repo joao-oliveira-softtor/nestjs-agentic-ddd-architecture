@@ -1,6 +1,7 @@
 import { existsSync, realpathSync } from 'node:fs';
 import { mkdir, mkdtemp, readdir, rm, stat } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
+import type { Subprocess } from 'bun';
 import { AgenticError } from '../ir';
 
 export const DEFAULT_TIMEOUT_MS = 120_000;
@@ -12,6 +13,67 @@ export interface Run {
   readonly timedOut: boolean;
 }
 
+const POSIX = process.platform !== 'win32';
+const TIMED_OUT: Run = { code: null, stdout: '', stderr: '', timedOut: true };
+
+/** Kills the command with its descendants: its process group on POSIX, its process tree on Windows. */
+const killTree = (child: Subprocess): Promise<void> =>
+  POSIX ? Promise.resolve(killGroup(child.pid)) : killWindowsTree(child);
+
+function killGroup(pid: number): void {
+  try {
+    process.kill(-pid, 'SIGKILL');
+  } catch {
+    // ESRCH: the group is gone (its id is not reused while a member lives); EPERM: the id is no
+    // longer ours. Either way there is nothing of ours to kill, and the caller must not throw.
+  }
+}
+
+async function killWindowsTree(child: Subprocess): Promise<void> {
+  // Once the command exited its pid may belong to another process: only its own handle is killed.
+  if (child.exitCode === null)
+    await Bun.spawn(['taskkill', '/T', '/F', '/PID', String(child.pid)], {
+      stdout: 'ignore',
+      stderr: 'ignore',
+    }).exited;
+  child.kill();
+}
+
+/**
+ * The commands running now in a group of their own. A detached command no longer gets the
+ * signals sent to our process group (Ctrl-C, a closed terminal, a CI cancel), so one listener
+ * per signal hands each of them on, while at least one command runs.
+ */
+const running = new Set<() => void>();
+const FORWARDED = ['SIGINT', 'SIGHUP', 'SIGTERM'] as const;
+const forwarders = new Map(
+  FORWARDED.map((signal) => [signal, () => forward(signal)] as const),
+);
+
+function forward(signal: (typeof FORWARDED)[number]): void {
+  for (const kill of running) kill();
+  // Prepended, it runs before an app listener of its own (even a `once` one), which then decides.
+  if (process.listenerCount(signal) > 1) return;
+  // Alone, it stands for the default action: the process ends by the same signal.
+  process.removeListener(signal, forwarders.get(signal)!);
+  process.kill(process.pid, signal);
+}
+
+/** Adds `kill` to the forwarded commands; the returned function removes it. */
+function track(kill: () => void): () => void {
+  if (running.size === 0)
+    for (const [signal, listener] of forwarders)
+      process.prependListener(signal, listener);
+  running.add(kill);
+  return () => {
+    running.delete(kill);
+    if (running.size === 0)
+      for (const [signal, listener] of forwarders)
+        process.removeListener(signal, listener);
+  };
+}
+
+/** Runs `cmd`; a timeout or an abort kills it with its descendants (#205). Never throws for the command's failure. */
 export async function run(
   cmd: readonly string[],
   cwd: string,
@@ -30,37 +92,44 @@ export async function run(
     env: options.env,
     stdout: 'pipe',
     stderr: 'pipe',
+    // POSIX: a session and process group of its own, so the whole group can be killed.
+    detached: POSIX,
   });
-  options.signal?.addEventListener('abort', () => child.kill(), {
-    once: true,
-  });
-  const finished = Promise.all([
-    new Response(child.stdout).text(),
-    new Response(child.stderr).text(),
-    child.exited,
-  ]).then(([stdout, stderr, code]) => ({
-    code,
-    stdout,
-    stderr,
-    timedOut: false,
-  }));
-  if (options.timeoutMs === undefined) return finished;
+  const kill = () => void killTree(child);
+  options.signal?.addEventListener('abort', kill, { once: true });
+  const untrack = POSIX ? track(kill) : () => {};
   let timer: ReturnType<typeof setTimeout> | undefined;
-  // The timer is raced against the whole read, not only the exit: a grandchild that keeps the
-  // pipes open after the kill cannot hold the await.
-  const expired = new Promise<Run>((resolve) => {
-    timer = setTimeout(() => {
-      child.kill();
-      // Resolved once the process is gone: the caller removes the directory it runs in next.
-      void child.exited.then(() =>
-        resolve({ code: null, stdout: '', stderr: '', timedOut: true }),
-      );
-    }, options.timeoutMs);
-  });
   try {
-    return await Promise.race([finished, expired]);
+    const finished = Promise.all([
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+      child.exited,
+    ]).then(([stdout, stderr, code]) => ({
+      code,
+      stdout,
+      stderr,
+      timedOut: false,
+    }));
+    if (options.timeoutMs === undefined) return await finished;
+    // The timer is raced against the whole read, not only the exit: a grandchild that keeps the
+    // pipes open after the kill cannot hold the await.
+    let timedOut = false;
+    const expired = new Promise<Run>((resolve) => {
+      timer = setTimeout(() => {
+        timedOut = true;
+        // Resolved once the process is gone: the caller removes the directory it runs in next.
+        void killTree(child)
+          .then(() => child.exited)
+          .then(() => resolve(TIMED_OUT));
+      }, options.timeoutMs);
+    });
+    const result = await Promise.race([finished, expired]);
+    // The killed group may close the pipes before `expired` settles: the timeout still decides.
+    return timedOut ? TIMED_OUT : result;
   } finally {
     clearTimeout(timer);
+    options.signal?.removeEventListener('abort', kill);
+    untrack();
   }
 }
 
