@@ -1,6 +1,24 @@
+import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { z } from 'zod';
+import {
+  lstat,
+  mkdir,
+  readFile,
+  readdir,
+  realpath,
+  rename,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  join,
+  relative,
+  resolve,
+} from 'node:path';
 import {
   briefFileName,
   firstBriefClash,
@@ -8,11 +26,15 @@ import {
   renderBrief,
 } from '../briefs';
 import { sha256, stableStringify } from '../canonical';
-import { loadConfig, type ModuleConfig, type ResolvedConfig } from '../config';
-import { DEFAULT_CONVENTIONS } from '../conventions';
+import { ERROR_CODES, type ErrorCode } from '../../contracts/codes';
+import {
+  DEFAULT_CONVENTIONS,
+  isResolvedConventions,
+  type ResolvedConventions,
+} from '../conventions';
 import { AgenticError, canonicalPath, toPosix } from '../ir';
 import { parseLock, type DomainLock } from '../lock';
-import { briefRules, loadRules, type Rule } from '../rules';
+import { briefRules } from '../rules';
 import { renderDelta, type RenderResult } from '../delta/render';
 import { validateDelta, type Delta } from '../delta/schema';
 import { splice, type Fragment } from '../delta/splice';
@@ -22,6 +44,7 @@ import {
   DEFAULT_TIMEOUT_MS,
   defaultCliEntry,
   quote,
+  redact,
   repoTop,
   resolveBase,
   runCandidateCli,
@@ -86,15 +109,21 @@ const lf = (path: string, content: string): BundleFile => ({
   content: toLf(content),
 });
 
-/** `base/rel`, refusing a result outside `base`. */
-export function inside(base: string, rel: string): string {
+/** A path from its base that climbs out of it. */
+const climbsOut = (back: string): boolean =>
+  back.startsWith('..') || isAbsolute(back);
+
+const escapes = (shown: string): AgenticError =>
+  new AgenticError(
+    'bundle.path-escape',
+    `path ${quote(shown)} resolves outside its directory`,
+  );
+
+/** `base/rel`, refusing a result outside `base`; the message shows `shown`. */
+export function inside(base: string, rel: string, shown = rel): string {
   const abs = resolve(base, rel);
   const back = relative(base, abs);
-  if (back === '' || back.startsWith('..') || isAbsolute(back))
-    throw new AgenticError(
-      'bundle.path-escape',
-      `path ${quote(rel)} resolves outside its directory`,
-    );
+  if (back === '' || climbsOut(back)) throw escapes(shown);
   return abs;
 }
 
@@ -127,51 +156,175 @@ export function configInRepo(
 }
 
 /** What the base commit gives the candidate: its config, the module to extend and its lock. */
-interface Base {
-  readonly config: ResolvedConfig;
-  readonly rules: readonly Rule[];
-  readonly module: ModuleConfig;
+interface Base extends BaseOutput {
+  /** The worktree, symlinks resolved: every file the server reads or writes is checked against it. */
+  readonly top: string;
   readonly moduleRoot: string;
   /** LF text, as committed: the bundle hashes it. */
   readonly lockText: string;
   readonly lock: DomainLock;
 }
 
+/**
+ * `path` with symlinks resolved (through its nearest existing ancestor, for a path not yet
+ * created), refused with `bundle.path-escape` unless it is inside `top` (or equal, with `same`).
+ * The message shows `path` from `top` when it is written inside, never where it or a link points.
+ */
+async function realInside(
+  top: string,
+  path: string,
+  same = false,
+): Promise<string> {
+  const lexical = toPosix(relative(top, resolve(path)));
+  const shown = climbsOut(lexical) ? '<outside>' : lexical;
+  let head = resolve(path);
+  let tail = '';
+  for (;;) {
+    const real = await realpath(head).catch(() => null);
+    if (real !== null) {
+      const full = join(real, tail);
+      return same && full === top ? full : inside(top, full, shown);
+    }
+    // A dangling link: where a write through it lands is outside our check.
+    if (
+      await lstat(head).then(
+        () => true,
+        () => false,
+      )
+    )
+      throw escapes(shown);
+    tail = join(basename(head), tail);
+    if (dirname(head) === head) return inside(top, resolve(path), shown);
+    head = dirname(head);
+  }
+}
+
+/**
+ * Text of a worktree file that goes into the bundle. A hard link is refused: `realpath` cannot
+ * tell where its other names live, and one of them may be outside.
+ */
+async function readInside(top: string, path: string): Promise<string> {
+  const real = await realInside(top, path);
+  if ((await stat(real)).nlink > 1) throw escapes(toPosix(relative(top, real)));
+  return readFile(real, 'utf8');
+}
+
+/**
+ * Writes `target` as a new file renamed over it: a hard link planted there is replaced, not
+ * written through, and the last path step cannot be swapped between the check and the write.
+ */
+async function replaceFile(target: string, content: string): Promise<void> {
+  const temp = `${target}.${randomUUID()}.tmp`;
+  await writeFile(temp, content, { flag: 'wx' });
+  await rename(temp, target);
+}
+
+/** A child's JSON output, checked once; broken output is a failed step, not a raw parse error. */
+function parseChild<T>(schema: z.ZodType<T>, text: string, what: string): T {
+  try {
+    return schema.parse(JSON.parse(text));
+  } catch {
+    throw new AgenticError(
+      'bundle.compile-failed',
+      `${what} of the candidate tree produced malformed output`,
+    );
+  }
+}
+
+/**
+ * The `bundle-base` child's output. The child imports the candidate config, which sees `--out` and
+ * can rewrite it, so every field the server reads is checked here, with its type; a refusal's code
+ * must be a known code.
+ */
+const baseOutputSchema = z.union([
+  z.strictObject({
+    error: z.strictObject({
+      code: z
+        .string()
+        .refine((code): code is ErrorCode => Object.hasOwn(ERROR_CODES, code)),
+      message: z.string(),
+    }),
+  }),
+  z.strictObject({
+    config: z.object({
+      root: z.string(),
+      outRoot: z.string(),
+      changesDir: z.string(),
+      out: z.object({ lock: z.string(), devSkills: z.string() }),
+      rules: z.object({ briefMaxTokens: z.number() }),
+      conventions: z
+        .custom<ResolvedConventions>(isResolvedConventions)
+        .optional(),
+    }),
+    rules: z.array(
+      z.object({
+        key: z.string(),
+        file: z.string().nullable(),
+        paths: z.array(z.string()).nullable(),
+        body: z.string(),
+      }),
+    ),
+    module: z.object({ name: z.string(), path: z.string() }),
+    lockText: z.string(),
+  }),
+]);
+
+type BaseOutput = Exclude<z.infer<typeof baseOutputSchema>, { error: unknown }>;
+
+/** Reads the base config in a child process: importing it here would pile up module copies in the server (#177). */
 async function loadBase(
   dir: string,
   configRel: string,
   delta: unknown,
+  run: { cliEntry: string; remaining: () => number; hide: readonly string[] },
 ): Promise<Base> {
   if (!existsSync(join(dir, configRel)))
     throw new AgenticError(
       'bundle.config-missing',
       `the project config ${quote(configRel)} is not committed in the base ref`,
     );
-  const config = await loadConfig(join(dir, configRel));
   const wanted = (delta as { module?: unknown } | null)?.module;
-  const module = config.modules.find((m) => m.name === wanted);
-  if (!module)
+  const out = join(dir, '.bundle-base.json');
+  await runCandidateCli(
+    dir,
+    run.cliEntry,
+    [
+      'bundle-base',
+      '--config',
+      configRel,
+      '--module',
+      String(wanted),
+      '--out',
+      out,
+    ],
+    run.remaining(),
+    'base config',
+    run.hide,
+  );
+  // The child read candidate-controlled config: what the server reads or writes must stay in the worktree.
+  const top = await realpath(dir);
+  const text = await readFile(await realInside(top, out), 'utf8').catch(() => {
     throw new AgenticError(
-      'bundle.module-unknown',
-      `module ${quote(String(wanted))} is not configured in the base project`,
+      'bundle.compile-failed',
+      'reading the base config produced no result',
     );
-  // EOL rule: every text that feeds a hash is LF (`toLf`). A checkout may be CRLF
-  // (core.autocrlf), but the committed bytes, which `apply` recomputes from, are LF.
-  const lockText = await readFile(join(config.outRoot, config.out.lock), 'utf8')
-    .then(toLf)
-    .catch(() => null);
-  if (lockText === null)
+  });
+  const base = parseChild(baseOutputSchema, text, 'the base config');
+  if ('error' in base)
     throw new AgenticError(
-      'bundle.base-lock-missing',
-      `the base commit has no ${config.out.lock}; run \`agentic compile\` there first`,
+      base.error.code,
+      redact(base.error.message, [
+        [dir, '<candidate>'],
+        ...run.hide.map((p): [string, string] => [p, '<base>']),
+      ]),
     );
+  const root = await realInside(top, base.config.root, true);
+  const moduleRoot = await realInside(top, resolve(root, base.module.path));
   return {
-    config,
-    rules: await loadRules(config),
-    module,
-    moduleRoot: resolve(config.root, module.path),
-    lockText,
-    lock: parseLock(lockText, config.out.lock),
+    ...base,
+    top,
+    moduleRoot,
+    lock: parseLock(base.lockText, base.config.out.lock),
   };
 }
 
@@ -204,12 +357,14 @@ async function renderOnBase(delta: unknown, base: Base): Promise<Rendered> {
   return { ...rendered, delta: checked.delta };
 }
 
-async function extendFile(
-  moduleRoot: string,
-  fragment: Fragment,
-): Promise<void> {
-  const target = inside(moduleRoot, fragment.path);
-  const source = await readFile(target, 'utf8').catch(() => {
+async function extendFile(base: Base, fragment: Fragment): Promise<void> {
+  const target = await realInside(
+    base.top,
+    inside(base.moduleRoot, fragment.path),
+  );
+  // readInside: a hard link to a file outside is refused before its text is read and spliced.
+  const source = await readInside(base.top, target).catch((error: unknown) => {
+    if (error instanceof AgenticError) throw error;
     throw new AgenticError(
       'delta.splice-anchor-missing',
       `the file to extend, ${quote(fragment.path)}, does not exist in the base`,
@@ -218,21 +373,17 @@ async function extendFile(
   const spliced = splice(source, fragment);
   if (!spliced.ok)
     throw new AgenticError(spliced.error.code, spliced.error.message);
-  await writeFile(target, spliced.source);
+  await replaceFile(target, spliced.source);
 }
 
 /** New files first, then the fragments spliced into the existing ones. */
-async function writeRendered(
-  moduleRoot: string,
-  rendered: Rendered,
-): Promise<void> {
+async function writeRendered(base: Base, rendered: Rendered): Promise<void> {
   for (const f of rendered.files) {
-    const target = inside(moduleRoot, f.path);
+    const target = await realInside(base.top, inside(base.moduleRoot, f.path));
     await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, f.content);
+    await replaceFile(target, f.content);
   }
-  for (const fragment of rendered.fragments)
-    await extendFile(moduleRoot, fragment);
+  for (const fragment of rendered.fragments) await extendFile(base, fragment);
 }
 
 /** One past the highest `NNNN` among the names (change ids and `changes/` entries), as `NNNN`. */
@@ -273,7 +424,11 @@ async function writeProposal(
   base: Base,
   proposal: BundleInput['proposal'],
 ): Promise<NumberedProposal> {
-  const changesDir = join(base.config.outRoot, base.config.changesDir);
+  // Resolved once: the folder made under it is new, so nothing below it can be a link.
+  const changesDir = await realInside(
+    base.top,
+    join(base.config.outRoot, base.config.changesDir),
+  );
   const id = nextChangeId([
     ...base.lock.changes.map((c) => c.id),
     ...(await readdir(changesDir).catch(() => [])),
@@ -281,7 +436,7 @@ async function writeProposal(
   const acceptance = parseAcceptance(id, proposal.slug, proposal.markdown);
   const target = inside(changesDir, `${id}-${proposal.slug}/proposal.md`);
   await mkdir(dirname(target), { recursive: true });
-  await writeFile(target, proposal.markdown);
+  await replaceFile(target, proposal.markdown);
   return { ...proposal, id, acceptance };
 }
 
@@ -304,8 +459,12 @@ async function analyzeTree(run: {
     'compile',
     hide,
   );
-  const baseLock = join(dir, '.bundle-base-lock.json');
-  await writeFile(baseLock, base.lockText);
+  // The compile child ran candidate code: it may have planted a link here.
+  const baseLock = await realInside(
+    base.top,
+    join(dir, '.bundle-base-lock.json'),
+  );
+  await replaceFile(baseLock, base.lockText);
   // The child writes its result to a file: its stdout is shared with every module it imports.
   const out = join(dir, '.bundle-analysis.json');
   await runCandidateCli(
@@ -326,13 +485,15 @@ async function analyzeTree(run: {
     'analysis',
     hide,
   );
-  const text = await readFile(out, 'utf8').catch(() => {
-    throw new AgenticError(
-      'bundle.compile-failed',
-      'analysis of the candidate tree produced no result',
-    );
-  });
-  return analysisSchema.parse(JSON.parse(text));
+  const text = await readFile(await realInside(base.top, out), 'utf8').catch(
+    () => {
+      throw new AgenticError(
+        'bundle.compile-failed',
+        'analysis of the candidate tree produced no result',
+      );
+    },
+  );
+  return parseChild(analysisSchema, text, 'the analysis');
 }
 
 /** The rendered files and fragments, as full contents of the candidate. */
@@ -351,22 +512,26 @@ async function skeletonFiles(
     paths.map(async (rel, i) =>
       lf(
         `target/skeleton/${skeleton[i]}`,
-        await readFile(join(base.moduleRoot, rel), 'utf8'),
+        await readInside(base.top, join(base.moduleRoot, rel)),
       ),
     ),
   );
   return { skeleton, files };
 }
 
+/** Read after the candidate children ran: the folder and each file are checked at read time. */
 async function devSkillFiles(base: Base): Promise<BundleFile[]> {
-  const dir = join(
-    base.config.outRoot,
-    base.config.out.devSkills,
-    `${base.module.name}-dev`,
+  const dir = await realInside(
+    base.top,
+    join(
+      base.config.outRoot,
+      base.config.out.devSkills,
+      `${base.module.name}-dev`,
+    ),
   );
   return Promise.all(
     (await filesUnder(dir)).map(async (rel) =>
-      lf(`target/dev-skill/${rel}`, await readFile(join(dir, rel), 'utf8')),
+      lf(`target/dev-skill/${rel}`, await readInside(base.top, join(dir, rel))),
     ),
   );
 }
@@ -498,16 +663,21 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
     baseRef,
     2 * timeoutMs,
     async (dir) => {
-      const base = await loadBase(dir, configRel, input.delta);
+      const hide = [input.baseRoot, top];
+      const base = await loadBase(dir, configRel, input.delta, {
+        cliEntry,
+        remaining,
+        hide,
+      });
       const rendered = await renderOnBase(input.delta, base);
-      await writeRendered(base.moduleRoot, rendered);
+      await writeRendered(base, rendered);
       const numbered = await writeProposal(base, proposal);
       const analysis = await analyzeTree({
         dir,
         cliEntry,
         remaining,
         configRel,
-        hide: [input.baseRoot, top],
+        hide,
         base,
       });
       return assemble({

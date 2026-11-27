@@ -47,6 +47,6 @@ export async function bundleAnalysisCommand(
     parsed.baseLock,
     parsed.module,
   );
-  await writeFile(parsed.out, JSON.stringify(analysis));
+  await writeFile(parsed.out, JSON.stringify(analysis), { flag: 'wx' });
   return 0;
 }
