@@ -37,6 +37,17 @@ describe('runCommand', () => {
     expect(Date.now() - started).toBeLessThan(3000);
   });
 
+  test('um filho que segura o pipe aberto não estende o timeout', async () => {
+    const started = Date.now();
+    const result = await runCommand(
+      ['sh', '-c', 'sleep 8; true'],
+      process.cwd(),
+      200,
+    );
+    expect(result.timedOut).toBe(true);
+    expect(Date.now() - started).toBeLessThan(2000);
+  });
+
   test('um comando que passa não marca timeout', async () => {
     const result = await runCommand(['true'], process.cwd());
     expect(result).toEqual({ exitCode: 0, outputTail: '', timedOut: false });

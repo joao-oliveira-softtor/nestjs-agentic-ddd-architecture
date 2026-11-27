@@ -1,4 +1,5 @@
 import type { ErrorCode } from '../ir';
+import { run } from '../bundle/candidate';
 import { VERIFY_ENV } from './test-run';
 
 export interface CommandRun {
@@ -16,32 +17,16 @@ export async function runCommand(
   cwd: string,
   timeoutMs = COMMAND_TIMEOUT_MS,
 ): Promise<CommandRun> {
-  const proc = Bun.spawn([...command], {
-    cwd,
+  const { code, stdout, stderr, timedOut } = await run(command, cwd, {
+    timeoutMs,
     env: { ...process.env, [VERIFY_ENV]: '1' },
-    stdout: 'pipe',
-    stderr: 'pipe',
   });
-  let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    proc.kill();
-  }, timeoutMs);
-  try {
-    const [stdout, stderr, exitCode] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-      proc.exited,
-    ]);
-    const outputTail = `${stdout}\n${stderr}`
-      .trimEnd()
-      .split('\n')
-      .slice(-OUTPUT_LINES)
-      .join('\n');
-    return { exitCode, outputTail, timedOut };
-  } finally {
-    clearTimeout(timer);
-  }
+  const outputTail = `${stdout}\n${stderr}`
+    .trimEnd()
+    .split('\n')
+    .slice(-OUTPUT_LINES)
+    .join('\n');
+  return { exitCode: code ?? -1, outputTail, timedOut };
 }
 
 export interface CommandOutcome {
