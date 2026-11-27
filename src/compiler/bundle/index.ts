@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { z } from 'zod';
 import {
@@ -6,6 +7,8 @@ import {
   readFile,
   readdir,
   realpath,
+  rename,
+  stat,
   writeFile,
 } from 'node:fs/promises';
 import {
@@ -196,6 +199,26 @@ async function realInside(
   }
 }
 
+/**
+ * Text of a worktree file that goes into the bundle. A hard link is refused: `realpath` cannot
+ * tell where its other names live, and one of them may be outside.
+ */
+async function readInside(top: string, path: string): Promise<string> {
+  const real = await realInside(top, path);
+  if ((await stat(real)).nlink > 1) throw escapes(toPosix(relative(top, real)));
+  return readFile(real, 'utf8');
+}
+
+/**
+ * Writes `target` as a new file renamed over it: a hard link planted there is replaced, not
+ * written through, and the last path step cannot be swapped between the check and the write.
+ */
+async function replaceFile(target: string, content: string): Promise<void> {
+  const temp = `${target}.${randomUUID()}.tmp`;
+  await writeFile(temp, content, { flag: 'wx' });
+  await rename(temp, target);
+}
+
 /** A child's JSON output, checked once; broken output is a failed step, not a raw parse error. */
 function parseChild<T>(schema: z.ZodType<T>, text: string, what: string): T {
   try {
@@ -348,7 +371,7 @@ async function extendFile(base: Base, fragment: Fragment): Promise<void> {
   const spliced = splice(source, fragment);
   if (!spliced.ok)
     throw new AgenticError(spliced.error.code, spliced.error.message);
-  await writeFile(target, spliced.source);
+  await replaceFile(target, spliced.source);
 }
 
 /** New files first, then the fragments spliced into the existing ones. */
@@ -356,7 +379,7 @@ async function writeRendered(base: Base, rendered: Rendered): Promise<void> {
   for (const f of rendered.files) {
     const target = await realInside(base.top, inside(base.moduleRoot, f.path));
     await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, f.content);
+    await replaceFile(target, f.content);
   }
   for (const fragment of rendered.fragments) await extendFile(base, fragment);
 }
@@ -411,7 +434,7 @@ async function writeProposal(
   const acceptance = parseAcceptance(id, proposal.slug, proposal.markdown);
   const target = inside(changesDir, `${id}-${proposal.slug}/proposal.md`);
   await mkdir(dirname(target), { recursive: true });
-  await writeFile(target, proposal.markdown);
+  await replaceFile(target, proposal.markdown);
   return { ...proposal, id, acceptance };
 }
 
@@ -439,7 +462,7 @@ async function analyzeTree(run: {
     base.top,
     join(dir, '.bundle-base-lock.json'),
   );
-  await writeFile(baseLock, base.lockText);
+  await replaceFile(baseLock, base.lockText);
   // The child writes its result to a file: its stdout is shared with every module it imports.
   const out = join(dir, '.bundle-analysis.json');
   await runCandidateCli(
@@ -487,10 +510,7 @@ async function skeletonFiles(
     paths.map(async (rel, i) =>
       lf(
         `target/skeleton/${skeleton[i]}`,
-        await readFile(
-          await realInside(base.top, join(base.moduleRoot, rel)),
-          'utf8',
-        ),
+        await readInside(base.top, join(base.moduleRoot, rel)),
       ),
     ),
   );
@@ -509,10 +529,7 @@ async function devSkillFiles(base: Base): Promise<BundleFile[]> {
   );
   return Promise.all(
     (await filesUnder(dir)).map(async (rel) =>
-      lf(
-        `target/dev-skill/${rel}`,
-        await readFile(await realInside(base.top, join(dir, rel)), 'utf8'),
-      ),
+      lf(`target/dev-skill/${rel}`, await readInside(base.top, join(dir, rel))),
     ),
   );
 }

@@ -325,7 +325,7 @@ ${FORWARD_BASE}process.exit(0);
     await mkdir(repo.work, { recursive: true });
     await writeFile(
       script,
-      `import { cpSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+      `import { cpSync, linkSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { relative } from 'node:path';
 const out = process.argv[process.argv.indexOf('--out') + 1];
 const { main } = await import(${JSON.stringify(join(ROOT, 'src/cli/main.ts'))});
@@ -401,6 +401,10 @@ symlinkSync(${at('changes')}, 'changes');`,
     dirs.push(outside);
     await mkdir(join(outside, 'shop-dev'));
     await writeFile(join(outside, 'shop-dev/secret.txt'), 'TOP-SECRET');
+    // A hard link must stay on one file system: this one sits next to the worktrees.
+    await mkdir(repo.work, { recursive: true });
+    const secret = join(repo.work, 'secret.txt');
+    await writeFile(secret, 'TOP-SECRET');
     const at = (p: string) => JSON.stringify(join(outside, p));
     /** After `step`, its `--out` is moved outside and replaced by a link to it. */
     const linkedOut = (file: string) =>
@@ -408,6 +412,13 @@ symlinkSync(${at('changes')}, 'changes');`,
     await expectEscapes(outside, [
       ['read-base-output', 'bundle-base', linkedOut('base.json')],
       ['read-analysis-output', 'bundle-analysis', linkedOut('analysis.json')],
+      // A file of the skeleton is swapped for a hard link to a file outside.
+      [
+        'read-hardlink',
+        'bundle-analysis',
+        `rmSync('src/shop/domain/order.ts');
+linkSync(${JSON.stringify(secret)}, 'src/shop/domain/order.ts');`,
+      ],
       // The config points the dev skills folder outside.
       [
         'read-dev-skills',
@@ -453,6 +464,24 @@ symlinkSync(${at('shop-dev/secret.txt')}, 'src/shop/domain/order.ts');`,
       expect(await readFile(victim, 'utf8')).toBe('untouched');
     }
   }, 240_000);
+
+  test('a hard link to the base checkout does not carry the server write out of the worktree (#177)', async () => {
+    const base = await shopRepo();
+    const order = join(base.root, 'src/shop/domain/order.ts');
+    const script = await tampers(
+      'hardlink-write.ts',
+      'bundle-base',
+      `rmSync('src/shop/domain/order.ts');
+linkSync(${JSON.stringify(order)}, 'src/shop/domain/order.ts');`,
+    );
+    await compileBundle({
+      ...input(),
+      baseRoot: base.root,
+      baseRef: base.ref,
+      cliEntry: script,
+    });
+    expect(await readFile(order, 'utf8')).not.toContain('refund');
+  }, 120_000);
 
   test('a base-config field of the wrong type is refused as compile-failed (#177)', async () => {
     const rule = "{ key: 'k', file: null, paths: null, body: 'b' }";
