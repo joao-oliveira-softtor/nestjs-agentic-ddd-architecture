@@ -1,10 +1,6 @@
-import {
-  DomainError,
-  type DomainEvent,
-  type UseCaseContext,
-} from '@agentic-ddd/core';
+import type { DomainEvent } from '@agentic-ddd/core';
 import { createDeadline } from './deadline';
-import { guardEmits, guardFailure } from './emits-guard';
+import { executeStep, StepFailure } from './execute-step';
 import type { ApprovalPort, EventBus, LlmPort } from './ports';
 import type { MountedOperator } from './operator-runtime';
 import type {
@@ -158,68 +154,52 @@ export async function runOperator(
           // Only here: a port that resolves with no decision is still the port's failure.
           failure = 'use_case_error';
         }
-        const guard = guardEmits(
+        const outcome = await executeStep(
           tool.record,
-          async (batch) => {
-            for (const event of batch) {
-              event.stamp(runId, step.id);
-              trace.events.push(event);
-              step.events.push(event);
-              events.push(event);
-            }
+          tool.instance,
+          parsed.data,
+          {
+            correlationId: runId,
+            causationId: step.id,
+            signal: deadline.signal,
+            check,
+            wait,
+            schemaFor: operator.schemaFor,
             // One call per batch, under the run deadline: after timeout no later publication is admitted.
-            await wait(() => ports.eventBus.publish(batch));
+            publishEvent: async (batch) => {
+              for (const event of batch) {
+                trace.events.push(event);
+                step.events.push(event);
+                events.push(event);
+              }
+              await wait(() => ports.eventBus.publish(batch));
+            },
           },
-          check,
-          operator.schemaFor,
-        );
-        const ctx: UseCaseContext = {
-          correlationId: runId,
-          causationId: step.id,
-          signal: deadline.signal,
-          publish: guard.publish,
-        };
-        try {
-          let output: unknown;
-          let thrown: { error: unknown } | undefined;
-          try {
-            output = await wait(() => tool.instance.execute(parsed.data, ctx));
-          } catch (error) {
-            thrown = { error };
-          }
-          // Drain on every path: an un-awaited delivery may still fail after the use-case threw.
-          await wait(() => guard.drain());
-          // Precedence: undeclared event, then a bus failure, then the use-case's own error.
-          const blocked = guardFailure(guard);
-          if (blocked)
-            return finish('failed', blocked.reason, undefined, blocked.error);
-          if (thrown) {
-            const error = thrown.error;
-            if (!(error instanceof DomainError)) throw error;
-            result({ code: error.code, message: error.message }, true);
-          } else {
-            const validated = tool.record.output.safeParse(output);
-            if (!validated.success)
-              return finish(
-                'failed',
-                'use_case_error',
-                undefined,
-                validated.error,
-              );
-            result(
-              {
-                output: validated.data,
-                events: trace.events.map((event) => ({
-                  name: event.name,
-                  payload: event.payload,
-                })),
-              },
-              false,
-            );
-          }
-        } finally {
-          guard.end();
-        }
+        ).catch((error: unknown) => {
+          if (error instanceof StepFailure) return error;
+          throw error;
+        });
+        if (outcome instanceof StepFailure)
+          return finish('failed', outcome.reason, undefined, outcome.error);
+        if ('domainError' in outcome)
+          result(
+            {
+              code: outcome.domainError.code,
+              message: outcome.domainError.message,
+            },
+            true,
+          );
+        else
+          result(
+            {
+              output: outcome.output,
+              events: trace.events.map((event) => ({
+                name: event.name,
+                payload: event.payload,
+              })),
+            },
+            false,
+          );
       }
       messages.push({ role: 'tool', results });
     }
