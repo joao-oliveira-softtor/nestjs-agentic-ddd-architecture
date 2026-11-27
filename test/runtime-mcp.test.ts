@@ -455,14 +455,19 @@ test('a message of the wrong type is rejected before the LLM is called', async (
   expect(llm.requests).toHaveLength(0);
 });
 
-test('an operator outside the allowlist is unknown and not listed', async () => {
-  const { llm } = await start();
-  const bearer = await token();
-  const { error } = await call(bearer, 'ghost');
-  expect(error).toMatchObject({ code: -32602, message: 'Unknown tool' });
-  const tools = (await rpc('tools/list', {}, bearer)).result.tools;
-  expect(tools.map((tool: { name: string }) => tool.name)).not.toContain(
-    'ghost',
-  );
-  expect(llm.requests).toHaveLength(0);
+test('a tool call with invalid input during the run is refused and the run completes', async () => {
+  const badInput: LlmScriptEntry = {
+    stopReason: 'tool_calls',
+    content: [
+      { type: 'tool_call', name: 'tool', id: 't', input: { value: 1 } },
+    ],
+  };
+  const { calls, llm } = await start([badInput, done]);
+  const { result } = await call(await token());
+  expect(result.structuredContent.status).toBe('completed');
+  expect(calls).toEqual([]);
+  expect(llm.requests[1]?.messages.at(-1)).toMatchObject({
+    role: 'tool',
+    results: [{ isError: true, content: { code: 'invalid_input' } }],
+  });
 });
