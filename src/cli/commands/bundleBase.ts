@@ -60,6 +60,6 @@ export async function bundleBaseCommand(
       return { error: { code: e.code, message: e.message } };
     },
   );
-  await writeFile(get('--out'), JSON.stringify(result));
+  await writeFile(get('--out'), JSON.stringify(result), { flag: 'wx' });
   return 0;
 }

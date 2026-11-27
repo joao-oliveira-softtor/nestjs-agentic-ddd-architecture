@@ -278,7 +278,9 @@ async function loadBase(
     'base config',
     run.hide,
   );
-  const text = await readFile(out, 'utf8').catch(() => {
+  // The child read candidate-controlled config: what the server reads or writes must stay in the worktree.
+  const top = await realpath(dir);
+  const text = await readFile(await realInside(top, out), 'utf8').catch(() => {
     throw new AgenticError(
       'bundle.compile-failed',
       'reading the base config produced no result',
@@ -293,8 +295,6 @@ async function loadBase(
         ...run.hide.map((p): [string, string] => [p, '<base>']),
       ]),
     );
-  // The child read candidate-controlled config: what the server writes must stay in the worktree.
-  const top = await realpath(dir);
   const root = await realInside(top, base.config.root, true);
   const moduleRoot = await realInside(top, resolve(root, base.module.path));
   return {
@@ -460,12 +460,14 @@ async function analyzeTree(run: {
     'analysis',
     hide,
   );
-  const text = await readFile(out, 'utf8').catch(() => {
-    throw new AgenticError(
-      'bundle.compile-failed',
-      'analysis of the candidate tree produced no result',
-    );
-  });
+  const text = await readFile(await realInside(base.top, out), 'utf8').catch(
+    () => {
+      throw new AgenticError(
+        'bundle.compile-failed',
+        'analysis of the candidate tree produced no result',
+      );
+    },
+  );
   return parseChild(analysisSchema, text, 'the analysis');
 }
 

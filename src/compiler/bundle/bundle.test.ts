@@ -7,6 +7,7 @@ import {
   rename,
   readdir,
   rm,
+  symlink,
   utimes,
   writeFile,
 } from 'node:fs/promises';
@@ -401,7 +402,12 @@ symlinkSync(${at('changes')}, 'changes');`,
     await mkdir(join(outside, 'shop-dev'));
     await writeFile(join(outside, 'shop-dev/secret.txt'), 'TOP-SECRET');
     const at = (p: string) => JSON.stringify(join(outside, p));
+    /** After `step`, its `--out` is moved outside and replaced by a link to it. */
+    const linkedOut = (file: string) =>
+      `cpSync(out, ${at(file)}); rmSync(out); symlinkSync(${at(file)}, out);`;
     await expectEscapes(outside, [
+      ['read-base-output', 'bundle-base', linkedOut('base.json')],
+      ['read-analysis-output', 'bundle-analysis', linkedOut('analysis.json')],
       // The config points the dev skills folder outside.
       [
         'read-dev-skills',
@@ -424,6 +430,28 @@ writeFileSync(out, JSON.stringify(base));`,
 symlinkSync(${at('shop-dev/secret.txt')}, 'src/shop/domain/order.ts');`,
       ],
     ]);
+  }, 240_000);
+
+  test('a committed link at a child output file does not overwrite what it points to (#177)', async () => {
+    for (const name of ['.bundle-base.json', '.bundle-analysis.json']) {
+      const outside = await mkdtemp(join(tmpdir(), 'committed-link-'));
+      dirs.push(outside);
+      const victim = join(outside, 'victim.json');
+      await writeFile(victim, 'untouched');
+      const linked = await shopRepo((root) =>
+        symlink(victim, join(root, name)),
+      );
+      const call = compileBundle({
+        ...input(),
+        baseRoot: linked.root,
+        baseRef: linked.ref,
+      });
+      expect([name, await refusal(call)]).toEqual([
+        name,
+        'bundle.compile-failed',
+      ]);
+      expect(await readFile(victim, 'utf8')).toBe('untouched');
+    }
   }, 240_000);
 
   test('a base-config field of the wrong type is refused as compile-failed (#177)', async () => {

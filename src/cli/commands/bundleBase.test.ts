@@ -34,6 +34,9 @@ describe('bundleBaseCommand', () => {
     );
     expect(Array.isArray(base.rules)).toBe(true);
 
+    // The output is created, never written through: a file already there is refused.
+    await expect(run('shop')).rejects.toThrow();
+    await rm(out);
     expect(await run('nope')).toBe(0);
     expect(JSON.parse(await readFile(out, 'utf8')).error.code).toBe(
       'bundle.module-unknown',
