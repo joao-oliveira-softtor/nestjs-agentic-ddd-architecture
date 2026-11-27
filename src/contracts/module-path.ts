@@ -1,5 +1,13 @@
-/** The one rule for "a posix path is inside a module": equal to its `path`, or under `${path}/` (no I/O). */
-export function isInModule(file: string, modulePath: string): boolean {
+/** The one rule for "a posix path is inside a module": equal to its `path`, or under `${path}/` (no I/O). Case-insensitive on win32. */
+export function isInModule(
+  file: string,
+  modulePath: string,
+  platform: NodeJS.Platform = process.platform,
+): boolean {
+  if (platform === 'win32') {
+    file = file.toLowerCase();
+    modulePath = modulePath.toLowerCase();
+  }
   return file === modulePath || file.startsWith(`${modulePath}/`);
 }
 

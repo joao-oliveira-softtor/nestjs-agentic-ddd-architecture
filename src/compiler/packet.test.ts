@@ -119,6 +119,7 @@ test('spec de item enriquecido não duplica critérios e preserva o hash publica
   const proposal = {
     id: '0009',
     archived: false,
+    delta: { added: [] as string[], modified: [] as string[], removed: [] as string[] },
     acceptance: [
       {
         id: 'novo',
