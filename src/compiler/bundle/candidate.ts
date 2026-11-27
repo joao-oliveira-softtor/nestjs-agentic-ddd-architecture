@@ -17,16 +17,19 @@ const POSIX = process.platform !== 'win32';
 const TIMED_OUT: Run = { code: null, stdout: '', stderr: '', timedOut: true };
 
 /** Kills the command with its descendants: its process group on POSIX, its process tree on Windows. */
-async function killTree(child: Subprocess): Promise<void> {
-  if (POSIX) {
-    try {
-      process.kill(-child.pid, 'SIGKILL');
-    } catch (error) {
-      // The group is already gone; a group id is not reused while any member is alive.
-      if ((error as NodeJS.ErrnoException).code !== 'ESRCH') throw error;
-    }
-    return;
+const killTree = (child: Subprocess): Promise<void> =>
+  POSIX ? Promise.resolve(killGroup(child.pid)) : killWindowsTree(child);
+
+function killGroup(pid: number): void {
+  try {
+    process.kill(-pid, 'SIGKILL');
+  } catch (error) {
+    // The group is already gone; a group id is not reused while any member is alive.
+    if ((error as NodeJS.ErrnoException).code !== 'ESRCH') throw error;
   }
+}
+
+async function killWindowsTree(child: Subprocess): Promise<void> {
   // Once the command exited its pid may belong to another process: only its own handle is killed.
   if (child.exitCode === null)
     await Bun.spawn(['taskkill', '/T', '/F', '/PID', String(child.pid)], {

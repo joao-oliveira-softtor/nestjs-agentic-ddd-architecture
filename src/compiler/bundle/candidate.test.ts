@@ -270,6 +270,23 @@ describe('run', () => {
         30_000,
       );
 
+      test('hands a signal on to a running command in this process, leaving the exit to the app listener', async () => {
+        const { dir, parent } = await descendants();
+        const beat = join(dir, 'beat');
+        const app = () => {};
+        process.on('SIGINT', app);
+        try {
+          const running = run([process.execPath, parent, beat], dir);
+          await until(() => size(beat) > 0);
+          process.emit('SIGINT');
+          expect((await running).code).not.toBe(0);
+          await expectStopped(beat);
+          expect(process.listeners('SIGINT')).toEqual([app]);
+        } finally {
+          process.removeListener('SIGINT', app);
+        }
+      }, 20_000);
+
       test('an app listener of its own still decides how the process ends', async () => {
         const { runner, pids, dir } = await signalled('once');
         runner.kill('SIGINT');
