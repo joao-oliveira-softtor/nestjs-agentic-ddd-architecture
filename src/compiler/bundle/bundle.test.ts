@@ -404,6 +404,37 @@ symlinkSync(${at('shop-dev/secret.txt')}, 'src/shop/domain/order.ts');`,
     ]);
   }, 240_000);
 
+  test('a base-config field of the wrong type is refused as compile-failed (#177)', async () => {
+    const rule = "{ key: 'k', file: null, paths: null, body: 'b' }";
+    for (const [i, edit] of [
+      'base.config.root = 1;',
+      'base.config.outRoot = 1;',
+      'base.config.changesDir = 1;',
+      'base.config.out.lock = 1;',
+      'base.config.out.devSkills = 1;',
+      "base.config.rules.briefMaxTokens = '1';",
+      'base.config.conventions = {};',
+      'base.module.name = 1;',
+      'base.module.path = 1;',
+      `base.rules = [{ ...${rule}, key: 1 }];`,
+      `base.rules = [{ ...${rule}, file: 1 }];`,
+      `base.rules = [{ ...${rule}, paths: [1] }];`,
+      `base.rules = [{ ...${rule}, body: 1 }];`,
+    ].entries()) {
+      const script = await tampers(
+        `wrong-type-${i}.ts`,
+        'bundle-base',
+        `const base = JSON.parse(readFileSync(out, 'utf8'));
+${edit}
+writeFileSync(out, JSON.stringify(base));`,
+      );
+      expect([
+        edit,
+        await refusal(compileBundle({ ...input(), cliEntry: script })),
+      ]).toEqual([edit, 'bundle.compile-failed']);
+    }
+  }, 240_000);
+
   test('a coded refusal from the base child has the worktree path redacted (#177)', async () => {
     const script = await writesOut(
       'leaky-base.ts',

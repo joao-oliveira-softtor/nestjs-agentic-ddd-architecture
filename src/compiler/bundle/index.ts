@@ -23,12 +23,15 @@ import {
   renderBrief,
 } from '../briefs';
 import { sha256, stableStringify } from '../canonical';
-import type { ModuleConfig, ResolvedConfig } from '../config';
 import { ERROR_CODES, type ErrorCode } from '../../contracts/codes';
-import { DEFAULT_CONVENTIONS } from '../conventions';
+import {
+  DEFAULT_CONVENTIONS,
+  isResolvedConventions,
+  type ResolvedConventions,
+} from '../conventions';
 import { AgenticError, canonicalPath, toPosix } from '../ir';
 import { parseLock, type DomainLock } from '../lock';
-import { briefRules, type Rule } from '../rules';
+import { briefRules } from '../rules';
 import { renderDelta, type RenderResult } from '../delta/render';
 import { validateDelta, type Delta } from '../delta/schema';
 import { splice, type Fragment } from '../delta/splice';
@@ -150,12 +153,9 @@ export function configInRepo(
 }
 
 /** What the base commit gives the candidate: its config, the module to extend and its lock. */
-interface Base {
+interface Base extends BaseOutput {
   /** The worktree, symlinks resolved: every file the server reads or writes is checked against it. */
   readonly top: string;
-  readonly config: ResolvedConfig;
-  readonly rules: readonly Rule[];
-  readonly module: ModuleConfig;
   readonly moduleRoot: string;
   /** LF text, as committed: the bundle hashes it. */
   readonly lockText: string;
@@ -209,8 +209,9 @@ function parseChild<T>(schema: z.ZodType<T>, text: string, what: string): T {
 }
 
 /**
- * The `bundle-base` child's output. The config and rules are produced by our own CLI code, so they
- * are typed, not re-validated; the code of a refusal is checked against the known codes.
+ * The `bundle-base` child's output. The child imports the candidate config, which sees `--out` and
+ * can rewrite it, so every field the server reads is checked here, with its type; a refusal's code
+ * must be a known code.
  */
 const baseOutputSchema = z.union([
   z.strictObject({
@@ -222,14 +223,30 @@ const baseOutputSchema = z.union([
     }),
   }),
   z.strictObject({
-    config: z.custom<ResolvedConfig>(
-      (v) => typeof v === 'object' && v !== null,
+    config: z.object({
+      root: z.string(),
+      outRoot: z.string(),
+      changesDir: z.string(),
+      out: z.object({ lock: z.string(), devSkills: z.string() }),
+      rules: z.object({ briefMaxTokens: z.number() }),
+      conventions: z
+        .custom<ResolvedConventions>(isResolvedConventions)
+        .optional(),
+    }),
+    rules: z.array(
+      z.object({
+        key: z.string(),
+        file: z.string().nullable(),
+        paths: z.array(z.string()).nullable(),
+        body: z.string(),
+      }),
     ),
-    rules: z.array(z.custom<Rule>((v) => typeof v === 'object' && v !== null)),
-    module: z.custom<ModuleConfig>((v) => typeof v === 'object' && v !== null),
+    module: z.object({ name: z.string(), path: z.string() }),
     lockText: z.string(),
   }),
 ]);
+
+type BaseOutput = Exclude<z.infer<typeof baseOutputSchema>, { error: unknown }>;
 
 /** Reads the base config in a child process: importing it here would pile up module copies in the server (#177). */
 async function loadBase(
