@@ -1,6 +1,6 @@
 import type { ModuleAccess } from '../auth/scopes';
 import type { DomainLock } from '../compiler/lock';
-import { moduleOfPath } from '../contracts/module-path';
+import { moduleOfPath, pathKey } from '../contracts/module-path';
 import type { Rule } from '../compiler/rules';
 
 /**
@@ -156,21 +156,26 @@ function expandBraces(glob: string): string[] | undefined {
  * cannot read: each glob is brace-expanded and an alternative is dropped when it contains the name or
  * the path of a hidden module (a plain substring, so it may drop a glob that only looks similar).
  * A glob that names no module (`**\/*.ts`, `test/**`) stays. A rule left with no glob is dropped.
+ * Case-insensitive on win32, like `isInModule`.
  */
 export function narrowRuleGlobs(
   rules: readonly Rule[],
   fullLock: DomainLock,
   access: ModuleAccess,
+  platform: NodeJS.Platform = process.platform,
 ): Rule[] {
   if (access === 'all') return [...rules];
   const hidden = fullLock.ir.modules
     .filter((m) => !access.has(m.name))
-    .flatMap((m) => [m.name, m.path]);
+    .flatMap((m) => [m.name, m.path].map((s) => pathKey(s, platform)));
   return rules.flatMap((rule) => {
     if (rule.paths === null) return [rule];
     const paths = rule.paths
       .flatMap((glob) => expandBraces(glob) ?? [])
-      .filter((glob) => !hidden.some((name) => glob.includes(name)));
+      .filter((glob) => {
+        const key = pathKey(glob, platform);
+        return !hidden.some((name) => key.includes(name));
+      });
     return paths.length > 0 ? [{ ...rule, paths }] : [];
   });
 }

@@ -1,13 +1,19 @@
+/** A path as the platform compares it: lower-cased on win32 (case-insensitive file system), as is elsewhere. */
+export function pathKey(
+  path: string,
+  platform: NodeJS.Platform = process.platform,
+): string {
+  return platform === 'win32' ? path.toLowerCase() : path;
+}
+
 /** The one rule for "a posix path is inside a module": equal to its `path`, or under `${path}/` (no I/O). Case-insensitive on win32. */
 export function isInModule(
   file: string,
   modulePath: string,
   platform: NodeJS.Platform = process.platform,
 ): boolean {
-  if (platform === 'win32') {
-    file = file.toLowerCase();
-    modulePath = modulePath.toLowerCase();
-  }
+  file = pathKey(file, platform);
+  modulePath = pathKey(modulePath, platform);
   return file === modulePath || file.startsWith(`${modulePath}/`);
 }
 
