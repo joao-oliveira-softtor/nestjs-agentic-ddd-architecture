@@ -34,6 +34,45 @@ const safeMarkApplied = (raw: string): string => {
   }
 };
 
+interface Resume {
+  readonly proposal: Proposal;
+  readonly archivedPath: string;
+}
+type Recorded = NonNullable<ReconcileInput['lock']>['changes'];
+
+const interruptedOf = (
+  change: Recorded[number],
+  proposals: readonly Proposal[],
+): Proposal | undefined =>
+  proposals.some((p) => p.archived && p.id === change.id)
+    ? undefined
+    : proposals.find(
+        (p) =>
+          !p.archived &&
+          p.status === 'proposed' &&
+          p.id === change.id &&
+          proposalHashMatches(safeMarkApplied(p.raw), change.hash),
+      );
+
+/** Lock written, archive interrupted: such a proposal is finished by the next run, not reported. */
+export function splitInterrupted(
+  recorded: Recorded,
+  proposals: readonly Proposal[],
+): { resume: Resume | null; checked: Recorded } {
+  let resume: Resume | null = null;
+  const checked = recorded.filter((change) => {
+    const proposal = interruptedOf(change, proposals);
+    if (proposal) resume = { proposal, archivedPath: change.path };
+    return !proposal;
+  });
+  return { resume, checked };
+}
+
+const openProposals = (proposals: readonly Proposal[], resume: Resume | null) =>
+  proposals.filter(
+    (p) => !p.archived && p.status === 'proposed' && p !== resume?.proposal,
+  );
+
 const entry = (kind: string, id: string): string => `${kind} ${id}`;
 
 export function archivedPathOf(proposal: Proposal, changesDir: string): string {
@@ -77,21 +116,10 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
   const pending: Coded[] = [];
   const recorded = lock?.changes ?? [];
 
-  // Lock written, archive interrupted: the next run finishes the archive instead of failing.
-  let resume: Proposal | null = null;
-  for (const change of recorded) {
+  const { resume, checked } = splitInterrupted(recorded, proposals);
+  for (const change of checked) {
     const archived = proposals.find((p) => p.archived && p.id === change.id);
-    const interrupted = archived
-      ? undefined
-      : proposals.find(
-          (p) =>
-            !p.archived &&
-            p.status === 'proposed' &&
-            p.id === change.id &&
-            proposalHashMatches(safeMarkApplied(p.raw), change.hash),
-        );
-    if (interrupted) resume = interrupted;
-    else if (!archived) {
+    if (!archived) {
       errors.push({
         code: 'proposal.applied-not-archived',
         message: `the applied proposal ${change.id} is not in ${input.changesDir}/archive`,
@@ -131,9 +159,7 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
       });
     }
   }
-  const open = proposals.filter(
-    (p) => !p.archived && p.status === 'proposed' && p !== resume,
-  );
+  const open = openProposals(proposals, resume);
   if (open.length > 1) {
     errors.push({
       code: 'proposal.multiple-open',
@@ -189,8 +215,8 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
     return {
       diff,
       nextLock: lock,
-      apply: resume,
-      archivedPath: recorded.find((c) => c.id === resume!.id)!.path,
+      apply: resume.proposal,
+      archivedPath: resume.archivedPath,
       pending,
       errors,
     };

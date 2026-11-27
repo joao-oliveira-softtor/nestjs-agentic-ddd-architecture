@@ -1,3 +1,4 @@
+import type { ErrorCode } from '../ir';
 import { VERIFY_ENV } from './test-run';
 
 export interface CommandRun {
@@ -41,3 +42,21 @@ export async function runCommand(
     clearTimeout(timer);
   }
 }
+
+export interface CommandOutcome {
+  readonly exitCode: number;
+  readonly stderrTail?: string;
+  readonly timedOut?: boolean;
+}
+
+/** A timeout always has the coded `verify.command-timeout`; any other failure keeps `failedCode`. */
+export const commandCode = <C extends ErrorCode>(
+  run: CommandOutcome,
+  failedCode: C,
+): C | 'verify.command-timeout' =>
+  run.timedOut ? 'verify.command-timeout' : failedCode;
+
+export const commandMessage = (name: string, run: CommandOutcome): string =>
+  run.timedOut
+    ? `${name} did not finish in time and was killed`
+    : `${name} exited with ${run.exitCode}${run.stderrTail ? `: ${run.stderrTail}` : ''}`;

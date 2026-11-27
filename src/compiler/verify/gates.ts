@@ -3,6 +3,7 @@ import { deltaProblems } from '../changes/reconcile';
 import type { DiffItem } from '../diff';
 import type { Coded, ErrorCode } from '../ir';
 import type { DomainLock } from '../lock';
+import { commandCode, commandMessage } from './run-command';
 import type { TestCaseResult, TestRun } from './test-run';
 
 export type GateId =
@@ -234,12 +235,8 @@ export function evaluateGates(input: GateInput): VerifyReport {
   const g5: Finding[] = input.commands
     .filter((c) => c.exitCode !== 0)
     .map((c) => ({
-      code: c.timedOut
-        ? ('verify.command-timeout' as const)
-        : ('verify.command-failed' as const),
-      message: c.timedOut
-        ? `${c.name} did not finish in time and was killed`
-        : `${c.name} exited with ${c.exitCode}${c.stderrTail ? `: ${c.stderrTail}` : ''}`,
+      code: commandCode(c, 'verify.command-failed'),
+      message: commandMessage(c.name, c),
       fix: `run ${c.command.join(' ')} and fix it`,
       source: null,
     }));
