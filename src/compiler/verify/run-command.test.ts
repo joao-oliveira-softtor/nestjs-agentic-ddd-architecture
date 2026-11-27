@@ -34,6 +34,7 @@ describe('runCommand', () => {
     const started = Date.now();
     const result = await runCommand(['sleep', '5'], process.cwd(), 100);
     expect(result.timedOut).toBe(true);
+    expect(result.exitCode).toBe(-1);
     expect(Date.now() - started).toBeLessThan(3000);
   });
 
