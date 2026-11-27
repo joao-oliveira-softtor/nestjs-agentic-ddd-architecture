@@ -11,6 +11,8 @@ Este repositório é o framework `@agentic-ddd` (em `src/`) e o app de exemplo `
 - `examples/**` importa o framework só via `@agentic-ddd/*`; `src/core` só importa `zod`.
 - Testes com `bun:test`; snapshots em `__snapshots__/` são revisados como código.
 - Teste novo em `test/` fora de `evals-*` entra em `verify.test` do `agentic.config.ts` (o `evals-verification-scope` confere); teste que roda `verify --item` aninhado vai como `test/evals-*`.
+- `ts-pattern` é só devDependency: não importar em `src/` (quebra `test:package`); lá vale `switch`/narrowing manual.
+- Teste que simula falha com link simbólico (link quebrado, link de pasta) muda de comportamento no `ci-windows`; simule a falha com `spyOn` no export do módulo.
 - A sessão principal deve planejar com o ecc:plan e coordenar o trabalho separando em tasks identificando dependências entre as tasks e direcionando-as para subagents
 - Modelo de cada subagent pelo trabalho, sempre explícito no dispatch (um fork herda o modelo da sessão): haiku para tarefa mecânica com brief completo (resolver conflito de `CHANGELOG.md`); sonnet como padrão de implementação, correção, revisão de escopo claro e medição ub-mode (julgar mutante equivalente pede critério); opus para arquitetura, segurança, revisão final e causa raiz difícil. Escreva o brief para que o modelo mais barato que dá conta da tarefa a conclua sem perguntar. Isso vale para desenvolver este repo; o padrão do framework para os adaptadores continua `model: inherit` (ADR-0003).
 
