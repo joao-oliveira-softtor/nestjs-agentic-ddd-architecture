@@ -2,6 +2,7 @@ import {
   McpServer,
   ResourceNotFoundError,
   ResourceTemplate,
+  type ServerContext,
   createMcpHandler,
   getOAuthProtectedResourceMetadataUrl,
 } from '@modelcontextprotocol/server';
@@ -120,7 +121,7 @@ type Scoped = {
   root?: string;
 };
 
-type Ctx = { http?: { authInfo?: { scopes: string[] } } };
+type Ctx = Pick<ServerContext, 'http'>;
 
 type ProposeArgs = {
   delta: Record<string, unknown>;

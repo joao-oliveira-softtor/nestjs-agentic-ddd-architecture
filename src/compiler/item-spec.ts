@@ -2,6 +2,7 @@ import { sha256, stableStringify, byId } from './canonical';
 import type { AcceptanceCriterion, Proposal } from './changes/proposal';
 import type { WorkItem } from './graph';
 import type { IR, IREntity, IRMethod, IRUseCase } from './ir';
+import type { DomainLock } from './lock';
 
 export interface ItemCriterion extends AcceptanceCriterion {
   readonly change: string;
@@ -56,10 +57,83 @@ export function applicableCriteria(
     .sort((a, b) => a.obligation.localeCompare(b.obligation));
 }
 
+/** `uses`/`emits` each of `useCaseIds` has in `ir` and did not have in `baseIr`; use-cases with none are left out. */
+export function addedRefs(
+  baseIr: IR | null | undefined,
+  ir: IR,
+  useCaseIds: readonly string[],
+): Record<string, string[]> {
+  const result: Record<string, string[]> = {};
+  for (const id of useCaseIds) {
+    const now = ir.useCases.find((u) => u.id === id);
+    if (!now) continue;
+    const before = baseIr?.useCases.find((u) => u.id === id);
+    const old = new Set([...(before?.uses ?? []), ...(before?.emits ?? [])]);
+    const added = [...now.uses, ...now.emits].filter((x) => !old.has(x));
+    if (added.length) result[id] = added;
+  }
+  return result;
+}
+
+/** `{ additions }` for a lock entry, or `{}` when the change added nothing. */
+export function additionsField(
+  lock: DomainLock | null | undefined,
+  ir: IR,
+  useCaseIds: readonly string[],
+): { additions?: Record<string, string[]> } {
+  const additions = addedRefs(lock?.ir, ir, useCaseIds);
+  return Object.keys(additions).length ? { additions } : {};
+}
+
+/** O lock guarda o que a mudança acrescentou, mas uma mudança posterior pode ter tirado o ref: só vale o que o IR atual ainda tem. */
+function stillInIr(
+  ir: IR,
+  additions: Record<string, string[]>,
+): Record<string, string[]> {
+  const live = (uc: string, refs: string[]) => {
+    const now = ir.useCases.find((u) => u.id === uc);
+    return refs.filter((r) =>
+      [...(now?.uses ?? []), ...(now?.emits ?? [])].includes(r),
+    );
+  };
+  return Object.fromEntries(
+    Object.entries(additions).map(([uc, refs]) => [uc, live(uc, refs)]),
+  );
+}
+
+/**
+ * `addition:<change>/<use-case>/<ref>` obligations (#179): what an open proposal added since the lock,
+ * plus what each applied change recorded in the lock. The only producer of these ids.
+ */
+export function additionObligations(
+  ir: IR,
+  lock: DomainLock | null | undefined,
+  proposals: readonly Proposal[],
+): Map<string, string[]> {
+  const result = new Map<string, string[]>();
+  const add = (change: string, additions: Record<string, string[]>) => {
+    for (const [uc, refs] of Object.entries(additions))
+      result.set(uc, [
+        ...(result.get(uc) ?? []),
+        ...refs.map((r) => `addition:${change}/${uc}/${r}`),
+      ]);
+  };
+  for (const c of lock?.changes ?? [])
+    add(c.id, stillInIr(ir, c.additions ?? {}));
+  for (const p of proposals.filter((p) => !p.archived))
+    add(p.id, addedRefs(lock?.ir, ir, p.delta.modified));
+  return result;
+}
+
+const additionsOf = (m: ReadonlyMap<string, string[]>, id: string) =>
+  m.get(id) ?? [];
+
 export function itemSpecification(
   ir: IR,
   item: WorkItem,
   proposals: readonly Proposal[],
+  /** `additionObligations` of the whole project, computed once by the caller. */
+  additions: ReadonlyMap<string, string[]> = new Map(),
 ): ItemSpecification {
   const construction = (e: IREntity) => ({
     ...e,
@@ -153,7 +227,11 @@ export function itemSpecification(
     declaration,
     contracts: unique.sort(byId as (a: unknown, b: unknown) => number),
     obligations: [
-      ...new Set([...item.obligations, ...criteria.map((c) => c.obligation)]),
+      ...new Set([
+        ...item.obligations,
+        ...criteria.map((c) => c.obligation),
+        ...additionsOf(additions, item.id),
+      ]),
     ].sort(),
     criteria,
   }) as ItemSpecification;

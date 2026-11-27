@@ -112,7 +112,7 @@ export const SHOP_SOLUTIONS: Record<string, ShopSolution> = {
     test: `import { expect, test } from 'bun:test';
 import { covers, createTestContext } from '@agentic-ddd/testing';
 import { PayOrder } from './application/pay-order';
-test(covers(['usecase:pay_order'], 'pays and refunds an order and publishes both events'), async () => {
+test(covers(['usecase:pay_order', 'addition:0001/usecase:pay_order/method:Order.refund', 'addition:0001/usecase:pay_order/event:OrderRefunded'], 'pays and refunds an order and publishes both events'), async () => {
   const ctx = createTestContext();
   expect(await new PayOrder().execute({}, ctx)).toEqual({});
   expect(ctx.published.map((e) => e.name)).toEqual(['OrderPaid', 'OrderRefunded']);

@@ -20,6 +20,11 @@ describe('covers', () => {
     ).toBe('[covers: invariant:Order/x, method:Order.confirm] confirma');
   });
 
+  test('accepts an addition ID (#179)', () => {
+    const id = 'addition:0004/usecase:pay_order/event:OrderRefunded';
+    expect(covers([id], 'x')).toBe(`[covers: ${id}] x`);
+  });
+
   test('accepts a value object ID', () => {
     expect(
       covers(['valueobject:Dinheiro', 'invariant:Dinheiro/nao-negativo'], 'x'),

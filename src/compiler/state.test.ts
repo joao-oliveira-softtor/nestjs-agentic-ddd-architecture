@@ -1,7 +1,8 @@
-import { expect, test } from 'bun:test';
+import { expect, spyOn, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { defineShop, SHOP_MODULE } from './__fixtures__/shop';
 import { analyze } from './analyze';
+import * as graph from './graph';
 import {
   evaluateStatus,
   ownerOf,
@@ -11,6 +12,7 @@ import {
 } from './state';
 import { itemSpecification, specHash } from './item-spec';
 import type { IR, IRUseCase } from './ir';
+import type { DomainLock } from './lock';
 import type { TestCaseResult } from './verify/test-run';
 import { parseProposal } from './changes/proposal';
 import { workItems } from './graph';
@@ -393,4 +395,137 @@ test('item de adapter: spec com port e raiz nos contratos; G7 de port reprova ad
   expect(
     workItemFindings(adapterIr, declared, portChange).map((f) => f.code),
   ).toContain('verify.item-not-done');
+});
+
+test('selectChange monta os work items uma vez, não uma por id do delta', () => {
+  const ids = Array.from(
+    { length: 10 },
+    () => 'invariant:Product/publicacao-exige-estoque',
+  );
+  const many = {
+    id: proposal.id,
+    delta: { ...proposal.delta, added: [], modified: ids },
+  };
+  const report = evaluate([]);
+  const spy = spyOn(graph, 'workItems');
+  try {
+    selectChange(report, ir, many);
+    expect(spy).toHaveBeenCalledTimes(1);
+  } finally {
+    spy.mockRestore();
+  }
+});
+
+test('#179: emit acrescentado por proposta aberta sem teste que o cubra não chega a done', () => {
+  const added = parseProposal(
+    `---
+id: "0004"
+title: Publicação emite evento
+status: proposed
+origin: proposal-first
+delta:
+  modified: [usecase:publish_product]
+acceptance: []
+---
+## Motivo
+Novo evento.
+`,
+    '0004-evento',
+    'changes/0004-evento/proposal.md',
+    false,
+  ).proposal!;
+  const baseIr: IR = {
+    ...ir,
+    useCases: ir.useCases.map((u) =>
+      u.id === 'usecase:publish_product' ? { ...u, uses: [], emits: [] } : u,
+    ),
+  };
+  const lock = { lockVersion: 1 as const, ir: baseIr, changes: [] };
+  const id = 'addition:0004/usecase:publish_product/event:ProductPublished';
+  const use = 'addition:0004/usecase:publish_product/method:Product.publish';
+  const state = (cases: TestCaseResult[]) =>
+    evaluateStatus({
+      ir,
+      implemented,
+      proposals: [added],
+      lock,
+      evidence: { cases, exitCode: 0 },
+      mode: 'dynamic',
+    }).items.find((i) => i.id === 'usecase:publish_product')!;
+  expect(state(tests).state).toBe('implemented');
+  expect(state(tests).missingObligations).toEqual([id, use]);
+  const covered = state([
+    ...tests,
+    { ...tests[0]!, name: id, covers: [id, use] },
+  ]);
+  expect(covered.state).toBe('done');
+  // Aplicada, a proposta é arquivada e o lock passa a ser a IR atual: a adição vem do registro no lock.
+  const applied = (additions?: Record<string, string[]>) =>
+    evaluateStatus({
+      ir,
+      implemented,
+      proposals: [{ ...added, archived: true }],
+      lock: {
+        lockVersion: 1,
+        ir,
+        changes: [
+          { id: '0004', title: 't', path: 'p', summary: 's', hash: 'h', items: [], additions },
+        ],
+      },
+      evidence: { cases: tests, exitCode: 0 },
+      mode: 'dynamic',
+    }).items.find((i) => i.id === 'usecase:publish_product')!;
+  expect(
+    applied({
+      'usecase:publish_product': ['event:ProductPublished', 'method:Product.publish'],
+    }).missingObligations,
+  ).toEqual([id, use]);
+  // Ref que uma mudança posterior tirou do IR, ou caso de uso que sumiu, não gera obrigação.
+  expect(
+    applied({
+      'usecase:publish_product': ['event:ProductPublished', 'method:Product.gone'],
+      'usecase:gone': ['method:Product.publish'],
+    }).missingObligations,
+  ).toEqual([id]);
+  // Mudança registrada antes do campo `additions` não ganha obrigação nova.
+  expect(applied().state).toBe('done');
+});
+
+test('#179: specHash do item é o mesmo com a proposta aberta e depois de aplicada', async () => {
+  const { reconcile } = await import('./changes/reconcile');
+  const { additionObligations } = await import('./item-spec');
+  const baseIr: IR = {
+    ...ir,
+    useCases: ir.useCases.map((u) =>
+      u.id === 'usecase:publish_product' ? { ...u, uses: [], emits: [] } : u,
+    ),
+  };
+  const base: DomainLock = { lockVersion: 1, ir: baseIr, changes: [] };
+  const open = parseProposal(
+    `---
+id: "0004"
+title: Publicação
+status: proposed
+origin: proposal-first
+delta:
+  modified: [usecase:publish_product]
+acceptance: []
+---
+## Motivo
+Novo evento.
+`,
+    '0004-evento',
+    'changes/0004-evento/proposal.md',
+    false,
+  ).proposal!;
+  const plan = reconcile({ ir, lock: base, proposals: [open], changesDir: 'changes' });
+  expect(plan.errors).toEqual([]);
+  const item = workItems(ir).find((i) => i.id === 'usecase:publish_product')!;
+  const hash = (lock: DomainLock, proposals: (typeof open)[]) =>
+    specHash(
+      itemSpecification(ir, item, proposals, additionObligations(ir, lock, proposals)),
+    );
+  const before = hash(base, [open]);
+  expect(hash(plan.nextLock!, [{ ...open, archived: true }])).toBe(before);
+  expect(hash(base, [])).not.toBe(before);
 });

@@ -8,6 +8,17 @@ export interface SourceLoc {
 }
 
 const canonical = new Map<string, string>();
+export const CANONICAL_LIMIT = 1000;
+
+// shortcut: clears everything when full; swap for an LRU if measurement asks for it.
+export function remember(
+  cache: Map<string, string>,
+  key: string,
+  value: string,
+): void {
+  if (cache.size >= CANONICAL_LIMIT) cache.clear();
+  cache.set(key, value);
+}
 
 /**
  * Expande nomes 8.3 do Windows (RUNNER~1): o mesmo arquivo aparece com o nome curto ou o
@@ -26,7 +37,7 @@ export function canonicalPath(path: string): string {
       result =
         parent === path ? path : join(canonicalPath(parent), basename(path));
     }
-    canonical.set(path, result);
+    remember(canonical, path, result);
   }
   return result;
 }
