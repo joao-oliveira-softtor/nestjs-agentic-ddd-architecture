@@ -75,6 +75,16 @@ export function addedRefs(
   return result;
 }
 
+/** `{ additions }` for a lock entry, or `{}` when the change added nothing. */
+export function additionsField(
+  lock: DomainLock | null | undefined,
+  ir: IR,
+  useCaseIds: readonly string[],
+): { additions?: Record<string, string[]> } {
+  const additions = addedRefs(lock?.ir, ir, useCaseIds);
+  return Object.keys(additions).length ? { additions } : {};
+}
+
 /**
  * `addition:<change>/<use-case>/<ref>` obligations (#179): what an open proposal added since the lock,
  * plus what each applied change recorded in the lock. The only producer of these ids.
@@ -97,6 +107,9 @@ export function additionObligations(
     add(p.id, addedRefs(lock?.ir, ir, p.delta.modified));
   return result;
 }
+
+const additionsOf = (m: ReadonlyMap<string, string[]>, id: string) =>
+  m.get(id) ?? [];
 
 export function itemSpecification(
   ir: IR,
@@ -200,7 +213,7 @@ export function itemSpecification(
       ...new Set([
         ...item.obligations,
         ...criteria.map((c) => c.obligation),
-        ...(additions.get(item.id) ?? []),
+        ...additionsOf(additions, item.id),
       ]),
     ].sort(),
     criteria,
