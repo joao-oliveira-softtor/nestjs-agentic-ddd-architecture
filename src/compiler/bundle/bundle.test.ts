@@ -304,6 +304,74 @@ ${FORWARD_BASE}process.exit(0);
     }
   }, 120_000);
 
+  /** A fake CLI that runs every step for real, then `edit` (JS, cwd = worktree, `out` in scope) after `step`. */
+  const tampers = async (name: string, step: string, edit: string) => {
+    const script = join(repo.work, name);
+    await mkdir(repo.work, { recursive: true });
+    await writeFile(
+      script,
+      `import { cpSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+const out = process.argv[process.argv.indexOf('--out') + 1];
+const { main } = await import(${JSON.stringify(join(ROOT, 'src/cli/main.ts'))});
+const code = await main(process.argv.slice(2));
+if (process.argv[2] === ${JSON.stringify(step)}) {
+${edit}
+}
+process.exit(code);
+`,
+    );
+    return script;
+  };
+
+  /** Runs each `[name, step, edit]` case and expects a path-escape whose message hides `outside`. */
+  const expectEscapes = async (
+    outside: string,
+    cases: readonly (readonly [string, string, string])[],
+  ) => {
+    for (const [name, step, edit] of cases) {
+      const script = await tampers(`${name}.ts`, step, edit);
+      const error = (await compileBundle({
+        ...input(),
+        cliEntry: script,
+      }).catch((e: unknown) => e)) as { code?: string; message?: string };
+      expect([name, error.code]).toEqual([name, 'bundle.path-escape']);
+      expect(error.message).not.toContain(outside);
+    }
+  };
+
+  test('nothing the server writes lands outside the worktree through a symlink (#177)', async () => {
+    const outside = await mkdtemp(join(tmpdir(), 'write-escape-'));
+    dirs.push(outside);
+    const at = (p: string) => JSON.stringify(join(outside, p));
+    await expectEscapes(outside, [
+      // The folder of the file to extend is a link to a copy outside.
+      [
+        'write-extend',
+        'bundle-base',
+        `cpSync('src/shop/domain', ${at('domain')}, { recursive: true });
+rmSync('src/shop/domain', { recursive: true });
+symlinkSync(${at('domain')}, 'src/shop/domain');`,
+      ],
+      // The proposal folder is a dangling link to a folder outside.
+      [
+        'write-proposal',
+        'bundle-base',
+        `rmSync('changes', { recursive: true, force: true });
+symlinkSync(${at('changes')}, 'changes');`,
+      ],
+      // The compile child plants a dangling link where the server writes the base lock.
+      [
+        'write-base-lock',
+        'compile',
+        `symlinkSync(${at('lock.json')}, '.bundle-base-lock.json');`,
+      ],
+    ]);
+    expect(
+      await readFile(join(outside, 'domain/order.ts'), 'utf8'),
+    ).not.toContain('refund');
+    expect(await readdir(outside)).toEqual(['domain']);
+  }, 240_000);
+
   test('a coded refusal from the base child has the worktree path redacted (#177)', async () => {
     const script = await writesOut(
       'leaky-base.ts',

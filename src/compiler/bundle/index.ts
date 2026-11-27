@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { z } from 'zod';
 import {
+  lstat,
   mkdir,
   readFile,
   readdir,
@@ -102,15 +103,18 @@ const lf = (path: string, content: string): BundleFile => ({
   content: toLf(content),
 });
 
-/** `base/rel`, refusing a result outside `base`. */
-export function inside(base: string, rel: string): string {
+const escapes = (shown: string): AgenticError =>
+  new AgenticError(
+    'bundle.path-escape',
+    `path ${quote(shown)} resolves outside its directory`,
+  );
+
+/** `base/rel`, refusing a result outside `base`; the message shows `shown`. */
+export function inside(base: string, rel: string, shown = rel): string {
   const abs = resolve(base, rel);
   const back = relative(base, abs);
   if (back === '' || back.startsWith('..') || isAbsolute(back))
-    throw new AgenticError(
-      'bundle.path-escape',
-      `path ${quote(rel)} resolves outside its directory`,
-    );
+    throw escapes(shown);
   return abs;
 }
 
@@ -144,6 +148,8 @@ export function configInRepo(
 
 /** What the base commit gives the candidate: its config, the module to extend and its lock. */
 interface Base {
+  /** The worktree, symlinks resolved: every file the server reads or writes is checked against it. */
+  readonly top: string;
   readonly config: ResolvedConfig;
   readonly rules: readonly Rule[];
   readonly module: ModuleConfig;
@@ -156,22 +162,32 @@ interface Base {
 /**
  * `path` with symlinks resolved (through its nearest existing ancestor, for a path not yet
  * created), refused with `bundle.path-escape` unless it is inside `top` (or equal, with `same`).
+ * The message shows `path` from `top`, never where a link points.
  */
 async function realInside(
   top: string,
   path: string,
   same = false,
 ): Promise<string> {
+  const shown = toPosix(relative(top, resolve(path)));
   let head = resolve(path);
   let tail = '';
   for (;;) {
     const real = await realpath(head).catch(() => null);
     if (real !== null) {
       const full = join(real, tail);
-      return same && full === top ? full : inside(top, full);
+      return same && full === top ? full : inside(top, full, shown);
     }
+    // A dangling link: where a write through it lands is outside our check.
+    if (
+      await lstat(head).then(
+        () => true,
+        () => false,
+      )
+    )
+      throw escapes(shown);
     tail = join(basename(head), tail);
-    if (dirname(head) === head) return inside(top, resolve(path));
+    if (dirname(head) === head) return inside(top, resolve(path), shown);
     head = dirname(head);
   }
 }
@@ -260,9 +276,9 @@ async function loadBase(
   const top = await realpath(dir);
   const root = await realInside(top, base.config.root, true);
   const moduleRoot = await realInside(top, resolve(root, base.module.path));
-  await realInside(top, join(base.config.outRoot, base.config.changesDir));
   return {
     ...base,
+    top,
     moduleRoot,
     lock: parseLock(base.lockText, base.config.out.lock),
   };
@@ -297,11 +313,11 @@ async function renderOnBase(delta: unknown, base: Base): Promise<Rendered> {
   return { ...rendered, delta: checked.delta };
 }
 
-async function extendFile(
-  moduleRoot: string,
-  fragment: Fragment,
-): Promise<void> {
-  const target = inside(moduleRoot, fragment.path);
+async function extendFile(base: Base, fragment: Fragment): Promise<void> {
+  const target = await realInside(
+    base.top,
+    inside(base.moduleRoot, fragment.path),
+  );
   const source = await readFile(target, 'utf8').catch(() => {
     throw new AgenticError(
       'delta.splice-anchor-missing',
@@ -315,17 +331,13 @@ async function extendFile(
 }
 
 /** New files first, then the fragments spliced into the existing ones. */
-async function writeRendered(
-  moduleRoot: string,
-  rendered: Rendered,
-): Promise<void> {
+async function writeRendered(base: Base, rendered: Rendered): Promise<void> {
   for (const f of rendered.files) {
-    const target = inside(moduleRoot, f.path);
+    const target = await realInside(base.top, inside(base.moduleRoot, f.path));
     await mkdir(dirname(target), { recursive: true });
     await writeFile(target, f.content);
   }
-  for (const fragment of rendered.fragments)
-    await extendFile(moduleRoot, fragment);
+  for (const fragment of rendered.fragments) await extendFile(base, fragment);
 }
 
 /** One past the highest `NNNN` among the names (change ids and `changes/` entries), as `NNNN`. */
@@ -366,7 +378,11 @@ async function writeProposal(
   base: Base,
   proposal: BundleInput['proposal'],
 ): Promise<NumberedProposal> {
-  const changesDir = join(base.config.outRoot, base.config.changesDir);
+  // Resolved once: the folder made under it is new, so nothing below it can be a link.
+  const changesDir = await realInside(
+    base.top,
+    join(base.config.outRoot, base.config.changesDir),
+  );
   const id = nextChangeId([
     ...base.lock.changes.map((c) => c.id),
     ...(await readdir(changesDir).catch(() => [])),
@@ -397,7 +413,11 @@ async function analyzeTree(run: {
     'compile',
     hide,
   );
-  const baseLock = join(dir, '.bundle-base-lock.json');
+  // The compile child ran candidate code: it may have planted a link here.
+  const baseLock = await realInside(
+    base.top,
+    join(dir, '.bundle-base-lock.json'),
+  );
   await writeFile(baseLock, base.lockText);
   // The child writes its result to a file: its stdout is shared with every module it imports.
   const out = join(dir, '.bundle-analysis.json');
@@ -598,7 +618,7 @@ export async function compileBundle(input: BundleInput): Promise<Bundle> {
         hide,
       });
       const rendered = await renderOnBase(input.delta, base);
-      await writeRendered(base.moduleRoot, rendered);
+      await writeRendered(base, rendered);
       const numbered = await writeProposal(base, proposal);
       const analysis = await analyzeTree({
         dir,
