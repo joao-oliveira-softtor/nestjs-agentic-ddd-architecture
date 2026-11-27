@@ -12,7 +12,7 @@
 
 - **Robustness fixes from an audit (#176):**
   - `compile` writes the lock before it archives the applied proposal, and `archiveProposal` accepts a proposal that was already moved, so a crash in between no longer leaves `proposal.archived-not-in-lock` with a lock that git cannot restore, and the next `compile` finishes the interrupted archive instead of failing with `proposal.applied-not-archived`; the hint of that finding now says where to restore the lock from.
-  - `verify` runs each configured command (and the item typecheck) through one `runCommand` helper: a failing command now shows the last 20 lines of its stderr, and a command that runs longer than 10 minutes is killed and reported as the new `verify.command-timeout` instead of hanging `verify`.
+  - `verify` runs each configured command (and the item typecheck) through one `runCommand` helper: a failing command now shows the last 20 lines of its output (stdout, then stderr), and a command that runs longer than 10 minutes is killed (the direct process only, #205) and reported as the new `verify.command-timeout` instead of hanging `verify`.
   - The skills installer says which path to remove, and to run again, when it refuses to replace a file or link.
   - A `ValueObject` built from props with an own `__proto__` key (for example from `JSON.parse`) keeps its prototype.
   - The `ci` and `ci-windows` jobs are one matrix (same check names), and `CompileResult.ir` is no longer typed as nullable.

@@ -12,6 +12,7 @@ const OUTPUT_LINES = 20;
 export const COMMAND_TIMEOUT_MS = 10 * 60 * 1000;
 
 /** Runs a verify command; keeps the last output lines (stdout then stderr) and kills it after `timeoutMs`. */
+// shortcut: the timeout kills only the direct process, not its descendants (`bun run typecheck` spawns tsc); kill the tree in #205.
 export async function runCommand(
   command: readonly string[],
   cwd: string,
