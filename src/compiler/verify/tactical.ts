@@ -3,6 +3,7 @@ import ts from 'typescript';
 import type { EntityRecord } from '@agentic-ddd/decorators';
 import { findDecoratedClass } from '../ast';
 import { aggregateRoots } from '../graph';
+import { compareStrings } from '../canonical';
 import { sourceOf, type ErrorCode, type IR } from '../ir';
 import type { Finding } from './gates';
 
@@ -180,7 +181,7 @@ export function tacticalFindings(args: {
   return out.sort(
     (a, b) =>
       a.line - b.line ||
-      (a.message < b.message ? -1 : a.message > b.message ? 1 : 0),
+      compareStrings(a.message, b.message),
   );
 }
 

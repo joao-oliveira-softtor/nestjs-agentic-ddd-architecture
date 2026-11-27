@@ -139,7 +139,9 @@ test('preflight recusa arquivo alheio sem instalar parcialmente; check não alte
   await mkdir(join(root, '.claude/agents'), { recursive: true });
   const path = join(root, '.claude/agents/agentic-ddd-executor.md');
   await writeFile(path, 'agente do usuário');
-  expect(install(root).code).toBe(1);
+  const refused = install(root);
+  expect(refused.code).toBe(1);
+  expect(refused.output).toContain(`remova ${path} e rode de novo`);
   expect(await lstat(join(root, '.agents')).catch(() => null)).toBeNull();
   expect(install(root, '--check').code).toBe(1);
   expect(await readFile(path, 'utf8')).toBe('agente do usuário');
@@ -156,7 +158,11 @@ test('recusa links alheios e pais que não são diretórios antes de escrever', 
   expect(await lstat(join(root, '.cursor')).catch(() => null)).toBeNull();
   const other = await workspace();
   await writeFile(join(other, '.claude'), 'arquivo');
-  expect(install(other).code).toBe(1);
+  const blocked = install(other);
+  expect(blocked.code).toBe(1);
+  expect(blocked.output).toContain(
+    `remova ${join(other, '.claude')} e rode de novo`,
+  );
   expect(await lstat(join(other, '.agents')).catch(() => null)).toBeNull();
 });
 

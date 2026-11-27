@@ -343,6 +343,34 @@ describe('evaluateGates', () => {
     ).toEqual(['verify.command-failed', 'verify.suite-failed']);
   });
 
+  test('G5: a failing command shows the last stderr lines; a timeout has its own code', () => {
+    const g5 = evaluateGates(
+      input({
+        commands: [
+          {
+            name: 'lint',
+            command: ['bun', 'run', 'lint'],
+            exitCode: 1,
+            outputTail: 'error: unused variable x',
+          },
+          {
+            name: 'typecheck',
+            command: ['bun', 'run', 'typecheck'],
+            exitCode: 143,
+            timedOut: true,
+          },
+        ],
+      }),
+    ).gates.find((g) => g.id === 'G5')!;
+    expect(g5.findings.map((f) => f.code)).toEqual([
+      'verify.command-failed',
+      'verify.command-timeout',
+    ]);
+    expect(g5.findings[0]!.message).toBe(
+      'lint exited with 1: error: unused variable x',
+    );
+  });
+
   test('G5: a failing suite names the failing tests, capped, keeping the stable code', () => {
     const failing = [10, 20, 30, 40, 50].map((line) =>
       testCase([], 'failed', line),

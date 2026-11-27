@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import {
   access,
   link,
@@ -6,12 +6,18 @@ import {
   mkdtemp,
   readFile,
   readdir,
+  rename,
   rm,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
-import { compile } from '@agentic-ddd/compiler';
+import {
+  MOTIVO_PLACEHOLDER,
+  archiveProposal,
+  compile,
+} from '@agentic-ddd/compiler';
+import * as archive from './changes/archive';
 import { checkSnapshot } from './snapshot';
 import { bootstrapChanges } from '../../test/helpers/bootstrap';
 
@@ -148,9 +154,10 @@ describe('compile (exemplo orders)', () => {
     await bootstrapChanges(out);
     await compile({ configPath, outRoot: out, mode: 'write' });
     expect(
-      [...(await readdir(out)), ...(await readdir(join(out, '.agentic')))].filter(
-        (name) => name.endsWith('.tmp'),
-      ),
+      [
+        ...(await readdir(out)),
+        ...(await readdir(join(out, '.agentic'))),
+      ].filter((name) => name.endsWith('.tmp')),
     ).toEqual([]);
     await access(join(out, '.agentic/domain.lock.json'));
   });
@@ -241,6 +248,77 @@ describe('compile (exemplo orders)', () => {
       expect(snap.rules.length).toBeGreaterThan(0);
       expect(snap.rules.some((r) => r.body.includes('{{'))).toBe(false);
     }
+  });
+
+  test('o lock é gravado antes do arquivamento: falha ao arquivar não perde o lock', async () => {
+    const draft = await compile({
+      configPath,
+      outRoot: out,
+      mode: 'write',
+      draftChange: 'estado-inicial',
+    });
+    const path = join(out, draft.drafted!);
+    await writeFile(
+      path,
+      (await readFile(path, 'utf8')).replace(MOTIVO_PLACEHOLDER, 'Motivo.'),
+    );
+    // The archive step fails (a dangling link behaves differently on Windows, so it is simulated).
+    const archiving = spyOn(archive, 'archiveProposal').mockRejectedValueOnce(
+      new Error('EIO: archive failed'),
+    );
+    try {
+      expect(
+        await failure(compile({ configPath, outRoot: out, mode: 'write' })),
+      ).toMatch(/EIO: archive failed/);
+      expect(archiving).toHaveBeenCalledTimes(1);
+    } finally {
+      archiving.mockRestore();
+    }
+    const lock = JSON.parse(
+      await readFile(join(out, '.agentic/domain.lock.json'), 'utf8'),
+    ) as { changes: { id: string }[] };
+    expect(lock.changes.map((c) => c.id)).toEqual(['0001']);
+  });
+
+  test('a rodada seguinte a uma queda entre o lock e o arquivamento termina o arquivamento', async () => {
+    await bootstrapChanges(out);
+    const dir = join(out, 'changes/0001-estado-inicial');
+    await rename(join(out, 'changes/archive/0001-estado-inicial'), dir);
+    const file = join(dir, 'proposal.md');
+    await writeFile(
+      file,
+      (await readFile(file, 'utf8')).replace(
+        'status: applied',
+        'status: proposed',
+      ),
+    );
+    const result = await compile({ configPath, outRoot: out, mode: 'write' });
+    expect(result.errors).toEqual([]);
+    expect(result.applied).toBe('0001');
+    expect(
+      await readFile(
+        join(out, 'changes/archive/0001-estado-inicial/proposal.md'),
+        'utf8',
+      ),
+    ).toContain('status: applied');
+    expect(await failure(access(dir))).toContain('ENOENT');
+    expect(
+      (await compile({ configPath, outRoot: out, mode: 'check' })).ok,
+    ).toBe(true);
+  });
+
+  test('archiveProposal aceita a proposta que já foi movida', async () => {
+    const raw = '---\nstatus: proposed\n---\n# x\n';
+    const proposal = { path: 'changes/0001-x/proposal.md', raw };
+    const archived = 'changes/archive/0001-x/proposal.md';
+    await mkdir(join(out, 'changes/0001-x'), { recursive: true });
+    await writeFile(join(out, proposal.path), raw);
+    const config = { outRoot: out } as never;
+    await archiveProposal(config, proposal as never, archived);
+    await archiveProposal(config, proposal as never, archived);
+    expect(await readFile(join(out, archived), 'utf8')).toContain(
+      'status: applied',
+    );
   });
 
   test('diff só de docs atualiza o lock sem proposta', async () => {

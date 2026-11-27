@@ -402,6 +402,8 @@ export const ERROR_CODES = {
   'verify.collection-error':
     'The JUnit test collection is missing, invalid or incomplete.',
   'verify.command-failed': 'A configured verify command exited non-zero.',
+  'verify.command-timeout':
+    'A configured verify command did not finish in time and was killed.',
   'verify.covers-unknown': 'A test covers an id that does not exist.',
   'verify.criterion-manual-pending':
     'A manual acceptance criterion awaits human validation.',
@@ -410,6 +412,7 @@ export const ERROR_CODES = {
     'compile --check failed without a more specific problem.',
   'verify.domain-changed-after-proposal':
     'The code has a domain change after an archived proposal.',
+  // No longer emitted (compile always returns the IR); kept for consumers that match on it.
   'verify.domain-unanalyzable': 'The domain could not be analyzed.',
   'verify.item-dependency-not-done': 'A work item dependency is not done.',
   'verify.item-not-done': 'A work item touched by the change is not done.',

@@ -3,6 +3,7 @@ import { deltaProblems } from '../changes/reconcile';
 import type { DiffItem } from '../diff';
 import type { Coded, ErrorCode } from '../ir';
 import type { DomainLock } from '../lock';
+import { commandCode, commandMessage } from './run-command';
 import type { TestCaseResult, TestRun } from './test-run';
 
 export type GateId =
@@ -49,6 +50,8 @@ export interface CommandResult {
   readonly name: string;
   readonly command: readonly string[];
   readonly exitCode: number;
+  readonly outputTail?: string;
+  readonly timedOut?: boolean;
 }
 
 export interface GateInput {
@@ -128,7 +131,7 @@ export function evaluateGates(input: GateInput): VerifyReport {
       g1.push({
         code: 'proposal.archived-not-in-lock',
         message: `the proposal ${proposal.id} is in archive but not in the lock`,
-        fix: 'restore the lock from git',
+        fix: 'restore the lock from the commit that applied this proposal (compile writes the lock before archiving)',
         source: proposal.path,
       });
     } else if (!proposalHashMatches(proposal.raw, recorded.hash)) {
@@ -232,8 +235,8 @@ export function evaluateGates(input: GateInput): VerifyReport {
   const g5: Finding[] = input.commands
     .filter((c) => c.exitCode !== 0)
     .map((c) => ({
-      code: 'verify.command-failed' as const,
-      message: `${c.name} exited with ${c.exitCode}`,
+      code: commandCode(c, 'verify.command-failed'),
+      message: commandMessage(c.name, c),
       fix: `run ${c.command.join(' ')} and fix it`,
       source: null,
     }));

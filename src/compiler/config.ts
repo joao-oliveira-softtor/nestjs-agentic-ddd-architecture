@@ -9,6 +9,7 @@ import {
   type ImportTarget,
   type ResolvedConventions,
 } from './conventions';
+import { compareStrings } from './canonical';
 import { AgenticError, canonicalPath, toPosix } from './ir';
 import { DEFAULT_OUT, type OutputPaths } from './render/index';
 
@@ -428,7 +429,7 @@ export function resolveConfig(
           lint: ['bun', 'run', 'lint'],
         },
       )
-        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .sort(([a], [b]) => compareStrings(a, b))
         .map(([name, command]) => ({ name, command: [...command] })),
     },
     conventions: resolveConventions(config.conventions),

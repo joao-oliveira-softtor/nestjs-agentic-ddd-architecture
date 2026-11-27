@@ -56,6 +56,8 @@ async function readReplies(
   }
   throw new Error(`stdout closed before replies ${ids.join(', ')}`);
 }
+// Set once the MCP child exists: a failed assertion must not leave it running.
+let stopMcp = (): void => {};
 try {
   console.log('Packing and auditing the actual npm tarball...');
   const packed = JSON.parse(
@@ -113,13 +115,12 @@ try {
     '--moduleResolution',
     'bundler',
   ]);
-  const blocked = await run([
+  await run([
     'node',
     '--input-type=module',
     '-e',
     `try { await import('${pkg.name}/dist/decorators/registry.js'); process.exit(1); } catch(e) { if (e.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') throw e; }`,
   ]);
-  void blocked;
   const cli = join(consumer, 'node_modules/.bin/agentic-ddd');
   await run([cli, 'compile']);
   await run([cli, 'compile', '--check']);
@@ -139,6 +140,10 @@ try {
     stderr: 'inherit',
   });
   const timer = setTimeout(() => mcp.kill(), 30_000);
+  stopMcp = () => {
+    clearTimeout(timer);
+    mcp.kill();
+  };
   void mcp.stdin.write(
     [
       {
@@ -251,5 +256,6 @@ try {
     `Package smoke passed (source + bundle, IR ${source.hash}, ${source.source}).`,
   );
 } finally {
+  stopMcp();
   await rm(workspace, { recursive: true, force: true });
 }

@@ -1,4 +1,4 @@
-import { sha256, stableStringify } from './canonical';
+import { byId, sha256, stableStringify } from './canonical';
 import type { IR, JsonSchema } from './ir';
 
 export type ElementKind =
@@ -360,5 +360,5 @@ export function semanticDiff(before: IR, after: IR): DiffItem[] {
         module: element.module,
       });
   }
-  return items.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return items.sort(byId);
 }

@@ -27,6 +27,53 @@ export interface ReconcilePlan {
   readonly errors: CompileError[];
 }
 
+const safeMarkApplied = (raw: string): string => {
+  try {
+    return markApplied(raw);
+  } catch {
+    return raw;
+  }
+};
+
+interface Resume {
+  readonly proposal: Proposal;
+  readonly archivedPath: string;
+}
+type Recorded = NonNullable<ReconcileInput['lock']>['changes'];
+
+const interruptedOf = (
+  change: Recorded[number],
+  proposals: readonly Proposal[],
+): Proposal | undefined =>
+  proposals.some((p) => p.archived && p.id === change.id)
+    ? undefined
+    : proposals.find(
+        (p) =>
+          !p.archived &&
+          p.status === 'proposed' &&
+          p.id === change.id &&
+          proposalHashMatches(safeMarkApplied(p.raw), change.hash),
+      );
+
+/** Lock written, archive interrupted: such a proposal is finished by the next run, not reported. */
+export function splitInterrupted(
+  recorded: Recorded,
+  proposals: readonly Proposal[],
+): { resume: Resume | null; checked: Recorded } {
+  let resume: Resume | null = null;
+  const checked = recorded.filter((change) => {
+    const proposal = interruptedOf(change, proposals);
+    if (proposal) resume = { proposal, archivedPath: change.path };
+    return !proposal;
+  });
+  return { resume, checked };
+}
+
+const openProposals = (proposals: readonly Proposal[], resume: Resume | null) =>
+  proposals.filter(
+    (p) => !p.archived && p.status === 'proposed' && p !== resume?.proposal,
+  );
+
 const entry = (kind: string, id: string): string => `${kind} ${id}`;
 
 export function archivedPathOf(proposal: Proposal, changesDir: string): string {
@@ -70,7 +117,8 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
   const pending: Coded[] = [];
   const recorded = lock?.changes ?? [];
 
-  for (const change of recorded) {
+  const { resume, checked } = splitInterrupted(recorded, proposals);
+  for (const change of checked) {
     const archived = proposals.find((p) => p.archived && p.id === change.id);
     if (!archived) {
       errors.push({
@@ -112,7 +160,7 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
       });
     }
   }
-  const open = proposals.filter((p) => !p.archived && p.status === 'proposed');
+  const open = openProposals(proposals, resume);
   if (open.length > 1) {
     errors.push({
       code: 'proposal.multiple-open',
@@ -164,6 +212,15 @@ export function reconcile(input: ReconcileInput): ReconcilePlan {
     errors,
   });
   if (errors.length > 0) return unchanged();
+  if (resume)
+    return {
+      diff,
+      nextLock: lock,
+      apply: resume.proposal,
+      archivedPath: resume.archivedPath,
+      pending,
+      errors,
+    };
 
   const required = diff.filter((item) => item.classification !== 'docs');
   const proposal = open[0] ?? null;

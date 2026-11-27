@@ -10,7 +10,13 @@ import type { ProjectStatus, WorkItemStatus } from '../state';
 import { IGNORED_TEST_PATH } from '../static-tests';
 import type { Finding, GateResult } from './gates';
 import { hasTacticalElements, tacticalGate } from './tactical';
-import { runTests, VERIFY_ENV, type TestRun } from './test-run';
+import {
+  commandCode,
+  commandMessage,
+  runCommand,
+  type CommandRun,
+} from './run-command';
+import { runTests, type TestRun } from './test-run';
 
 export interface ItemVerifyOptions {
   readonly configPath: string;
@@ -145,6 +151,22 @@ async function scopedStatus(
   return statusFromEvidence(context, evidence);
 }
 
+export const typecheckFindings = (
+  run: CommandRun,
+  command: readonly string[],
+  source: string | null,
+): Finding[] =>
+  run.exitCode === 0
+    ? []
+    : [
+        {
+          code: commandCode(run, 'verify.item-typecheck-failed'),
+          message: commandMessage('typecheck', run),
+          fix: `run ${command.join(' ')} and fix it`,
+          source,
+        },
+      ];
+
 export async function verifyItem(
   options: ItemVerifyOptions,
 ): Promise<ItemVerifyReport> {
@@ -178,13 +200,7 @@ export async function verifyItem(
   const command = context.project.config.verify.commands.find(
     (c) => c.name === 'typecheck',
   )?.command ?? ['bun', 'run', 'typecheck'];
-  const proc = Bun.spawn([...command], {
-    cwd: context.project.config.root,
-    env: { ...process.env, [VERIFY_ENV]: '1' },
-    stdout: 'ignore',
-    stderr: 'ignore',
-  });
-  const exitCode = await proc.exited;
+  const typecheck = await runCommand(command, context.project.config.root);
   const gates = [
     gate(
       'I1',
@@ -230,15 +246,7 @@ export async function verifyItem(
         fix: 'fix the code or the test until it passes',
       })),
     ]),
-    gate(
-      'I5',
-      'Typecheck',
-      findings(
-        'verify.item-typecheck-failed',
-        exitCode !== 0 ? [`typecheck exited with ${exitCode}`] : [],
-        `run ${command.join(' ')} and fix it`,
-      ),
-    ),
+    gate('I5', 'Typecheck', typecheckFindings(typecheck, command, item.source)),
   ];
   const { ir, registry, config } = context.project;
   const target = (() => {

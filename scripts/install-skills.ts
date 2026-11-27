@@ -118,7 +118,9 @@ async function info(path: string) {
   try {
     return await lstat(path);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    // ENOTDIR: an ancestor is a file; the parent walk reports it as the conflict.
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT' || code === 'ENOTDIR') return null;
     throw error;
   }
 }
@@ -141,15 +143,10 @@ export async function installSkills(
       const stat = await info(parent);
       if (stat && !stat.isDirectory())
         conflicts.push(
-          `${parent}: pai não é diretório (links não são substituídos)`,
+          `${parent}: pai não é diretório (links não são substituídos; remova ${parent} e rode de novo)`,
         );
     }
-    const stat = await info(artifact.path).catch(
-      (error: NodeJS.ErrnoException) => {
-        if (error.code === 'ENOTDIR') return null;
-        throw error;
-      },
-    );
+    const stat = await info(artifact.path);
     if (!stat) {
       missing.push(artifact);
       continue;
@@ -166,7 +163,7 @@ export async function installSkills(
           (await readFile(artifact.path, 'utf8')) === artifact.content;
     if (!matches)
       conflicts.push(
-        `${artifact.path}: conflito; recuso substituir arquivo/link existente`,
+        `${artifact.path}: conflito; recuso substituir arquivo/link existente (remova ${artifact.path} e rode de novo)`,
       );
   }
   if (conflicts.length) throw new Error([...new Set(conflicts)].join('\n'));

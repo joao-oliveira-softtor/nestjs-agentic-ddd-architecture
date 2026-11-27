@@ -13,7 +13,7 @@ import {
 } from 'node:fs/promises';
 import type { Stats } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
-import { toLf } from './canonical';
+import { compareStrings, toLf } from './canonical';
 import type { ResolvedConfig } from './config';
 import { toPosix, type Coded } from './ir';
 import { BLOCK_BEGIN, BLOCK_END } from './render/agents-md';
@@ -430,5 +430,5 @@ export async function checkOutputs(
     }
   }
 
-  return drift.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  return drift.sort((a, b) => compareStrings(a.path, b.path));
 }

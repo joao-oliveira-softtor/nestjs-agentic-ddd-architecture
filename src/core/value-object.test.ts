@@ -149,4 +149,11 @@ describe('ValueObject: equals', () => {
       ),
     ).toBe(false);
   });
+
+  test('uma chave própria __proto__ não troca o protótipo da cópia', () => {
+    const props = JSON.parse('{"__proto__":{"polluted":1},"a":1}');
+    const bag = new Bag(props) as Bag<Record<string, unknown>>;
+    expect(Object.getPrototypeOf(bag.props)).toBe(Object.prototype);
+    expect(Object.keys(bag.props)).toContain('__proto__');
+  });
 });

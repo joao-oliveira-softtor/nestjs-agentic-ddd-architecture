@@ -22,7 +22,7 @@ import { readLock, serializeLock } from './lock';
 import { fillMarkers, loadRules, RuleError, type Rule } from './rules';
 import { renderAll, type Rendered } from './render/index';
 import { removeSnapshot, sourceLines, writeSnapshot } from './snapshot';
-import { stableStringify, toLf } from './canonical';
+import { compareStrings, stableStringify, toLf } from './canonical';
 import { registrySizes, scopeRegistry } from './scope';
 import { relationWarnings } from './validate';
 import {
@@ -48,7 +48,7 @@ export interface CompileResult {
   readonly written: string[];
   readonly warnings: string[];
   readonly lint: LintFinding[];
-  readonly ir: IR | null;
+  readonly ir: IR;
   readonly rendered: Rendered | null;
   readonly config: ResolvedConfig;
   readonly diff: DiffItem[];
@@ -99,8 +99,7 @@ const snapshotPlace = (config: ResolvedConfig, configPath: string) => ({
   rulesDir: config.rules.dir,
 });
 
-const byPath = (a: Drift, b: Drift): number =>
-  a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
+const byPath = (a: Drift, b: Drift): number => compareStrings(a.path, b.path);
 
 export async function compile(options: CompileOptions): Promise<CompileResult> {
   // Sources are read before importing: editing during compile leaves the MCP
@@ -249,14 +248,14 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   const written = [...result.written];
   // With lint errors the artifacts are written, but the proposal stays open and the lock does not advance
   const commit = lintErrors.length === 0;
-  if (commit && plan.apply && plan.archivedPath) {
-    await archiveProposal(config, plan.apply, plan.archivedPath);
-    written.push(plan.archivedPath);
-  }
   if (commit && lockText !== null) {
     await mkdir(dirname(lockAbs), { recursive: true });
     await writeFileAtomic(lockAbs, lockText);
     written.push(config.out.lock);
+  }
+  if (commit && plan.apply && plan.archivedPath) {
+    await archiveProposal(config, plan.apply, plan.archivedPath);
+    written.push(plan.archivedPath);
   }
   if (
     commit &&

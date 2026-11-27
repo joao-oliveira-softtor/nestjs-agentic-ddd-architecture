@@ -2,7 +2,12 @@ import { expect, test } from 'bun:test';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { closureObligations, scopedTestCommand, testFilesFor } from './item';
+import {
+  closureObligations,
+  scopedTestCommand,
+  testFilesFor,
+  typecheckFindings,
+} from './item';
 
 const ROOT = '/proj';
 
@@ -136,4 +141,36 @@ test('closureObligations stops on a dependency cycle and on an unknown id', () =
   const items = [node('a', ['b'], ['a1']), node('b', ['a'], ['b1'])];
   expect(closureObligations(items, 'a')).toEqual(['a1', 'b1']);
   expect(closureObligations(items, 'missing')).toEqual([]);
+});
+
+test('typecheckFindings: a timed out typecheck carries the coded verify.command-timeout', () => {
+  const [finding] = typecheckFindings(
+    { exitCode: 143, outputTail: '', timedOut: true },
+    ['bun', 'run', 'typecheck'],
+    'a.ts:1',
+  );
+  expect(finding).toEqual({
+    code: 'verify.command-timeout',
+    message: 'typecheck did not finish in time and was killed',
+    fix: 'run bun run typecheck and fix it',
+    source: 'a.ts:1',
+  });
+});
+
+test('typecheckFindings: a failing typecheck keeps verify.item-typecheck-failed with the stderr tail; a passing one has no finding', () => {
+  const failed = { exitCode: 2, outputTail: 'TS2304', timedOut: false };
+  expect(typecheckFindings(failed, ['tsc'], null)).toEqual([
+    {
+      code: 'verify.item-typecheck-failed',
+      message: 'typecheck exited with 2: TS2304',
+      fix: 'run tsc and fix it',
+      source: null,
+    },
+  ]);
+  expect(
+    typecheckFindings({ ...failed, outputTail: '' }, ['tsc'], null)[0]!.message,
+  ).toBe('typecheck exited with 2');
+  expect(typecheckFindings({ ...failed, exitCode: 0 }, ['tsc'], null)).toEqual(
+    [],
+  );
 });

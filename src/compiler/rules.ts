@@ -1,6 +1,6 @@
 import { realpath } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
-import { sha256 } from './canonical';
+import { compareStrings, sha256 } from './canonical';
 import type { ResolvedConfig } from './config';
 import { DEFAULT_CONVENTIONS, type ResolvedConventions } from './conventions';
 import { FRONTMATTER, parseFrontmatterData } from './changes/proposal';
@@ -209,7 +209,7 @@ export function composeRules(team: Rule[], exclude: readonly string[]): Rule[] {
     ...CORE_RULES.map((r) => byKey.get(r.key) ?? r),
     ...team
       .filter((r) => !coreKeys.has(r.key))
-      .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)),
+      .sort((a, b) => compareStrings(a.key, b.key)),
   ];
   return ordered.filter((r) => !dropped.has(r.key));
 }

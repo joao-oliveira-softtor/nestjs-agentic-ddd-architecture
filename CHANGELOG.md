@@ -12,6 +12,13 @@
 
 - Nest applications can expose mounted Operators as scoped MCP tools over Streamable HTTP with `AgenticHttpModule.forRoot`. The optional module uses the shared OAuth resource server, accepts server-derived run context and supports opt-in domain events. [Configuration](docs/distribution.md#runtime-mcp-in-a-nest-application) (#123, #124).
 
+- **Robustness fixes from an audit (#176):**
+  - `compile` writes the lock before it archives the applied proposal, and `archiveProposal` accepts a proposal that was already moved, so a crash in between no longer leaves `proposal.archived-not-in-lock` with a lock that git cannot restore, and the next `compile` finishes the interrupted archive instead of failing with `proposal.applied-not-archived`; the hint of that finding now says where to restore the lock from.
+  - `verify` runs each configured command (and the item typecheck) through one `runCommand` helper: a failing command now shows the last 20 lines of its output (stdout, then stderr), and a command that runs longer than 10 minutes is killed (the direct process only, #205) and reported as the new `verify.command-timeout` instead of hanging `verify`.
+  - The skills installer says which path to remove, and to run again, when it refuses to replace a file or link.
+  - A `ValueObject` built from props with an own `__proto__` key (for example from `JSON.parse`) keeps its prototype.
+  - The `ci` and `ci-windows` jobs are one matrix (same check names), and `CompileResult.ir` is no longer typed as nullable.
+
 - **`propose_change` reads the base config in a child process (#177):** the MCP server imported the project's `agentic.config.ts` (and the domain it loads) on every `propose_change`, so each call left another copy of those modules in the long-lived server. The base config, module, lock and team rules are now read by an internal `bundle-base` CLI step in a child process, like the compile and analysis steps, under the same time limit and scrubbed environment. Refusals keep their codes; a crash of that step is reported as `bundle.compile-failed` and a hang as `bundle.compile-timeout`. Files the server reads or writes for the bundle must stay inside the worktree: a symlink or hard link that leads out, or a child output path that already exists, is refused (`bundle.path-escape` or `bundle.compile-failed`).
 
 - **Follow-ups from the Runtime MCP review (#141):** `isInModule` and `moduleOfPath` compare paths case-insensitively on Windows only; the MCP server types its request context with the SDK's `ServerContext`; the Windows `canonicalPath` cache is cleared when it passes 1000 entries.
