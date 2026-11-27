@@ -1,7 +1,8 @@
-import { expect, test } from 'bun:test';
+import { expect, spyOn, test } from 'bun:test';
 import { resolve } from 'node:path';
 import { defineShop, SHOP_MODULE } from './__fixtures__/shop';
 import { analyze } from './analyze';
+import * as graph from './graph';
 import {
   evaluateStatus,
   ownerOf,
@@ -393,4 +394,23 @@ test('item de adapter: spec com port e raiz nos contratos; G7 de port reprova ad
   expect(
     workItemFindings(adapterIr, declared, portChange).map((f) => f.code),
   ).toContain('verify.item-not-done');
+});
+
+test('selectChange monta os work items uma vez, não uma por id do delta', () => {
+  const ids = Array.from(
+    { length: 10 },
+    () => 'invariant:Product/publicacao-exige-estoque',
+  );
+  const many = {
+    id: proposal.id,
+    delta: { ...proposal.delta, added: [], modified: ids },
+  };
+  const report = evaluate([]);
+  const spy = spyOn(graph, 'workItems');
+  try {
+    selectChange(report, ir, many);
+    expect(spy).toHaveBeenCalledTimes(1);
+  } finally {
+    spy.mockRestore();
+  }
 });
