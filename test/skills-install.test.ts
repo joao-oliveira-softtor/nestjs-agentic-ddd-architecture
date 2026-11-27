@@ -158,7 +158,11 @@ test('recusa links alheios e pais que não são diretórios antes de escrever', 
   expect(await lstat(join(root, '.cursor')).catch(() => null)).toBeNull();
   const other = await workspace();
   await writeFile(join(other, '.claude'), 'arquivo');
-  expect(install(other).code).toBe(1);
+  const blocked = install(other);
+  expect(blocked.code).toBe(1);
+  expect(blocked.output).toContain(
+    `remova ${join(other, '.claude')} e rode de novo`,
+  );
   expect(await lstat(join(other, '.agents')).catch(() => null)).toBeNull();
 });
 
